@@ -6,39 +6,32 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100);
-            $table->string('phone', 20)->unique();
-            $table->string('email', 150)->nullable()->unique();
+            $table->string('name');
+            $table->string('phone')->unique();
             $table->string('password')->nullable();
-            $table->enum('role', ['patient', 'pharmacy', 'admin'])->default('patient');
-            $table->boolean('status')->default(true)->index();
+            $table->enum('role', ['patient', 'pharmacy']);
+            $table->boolean('is_active')->default(true);
             $table->timestamp('phone_verified_at')->nullable();
+            $table->rememberToken();
             $table->timestamps();
         });
 
-        Schema::create('sessions', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
+        Schema::create('otp_codes', function (Blueprint $table) {
+            $table->id();
+            $table->string('phone');
+            $table->string('otp', 6);
+            $table->timestamp('expires_at');
+            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('users');
-        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('otp_codes');
     }
 };
