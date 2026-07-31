@@ -1,10 +1,20 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 
-Route::post('/login', [AuthController::class, 'login']);
+// مسار اختبار للتأكد أن الـ API يرجع JSON
+Route::get('/test', function () {
+    return response()->json(['message' => 'API is working!']);
+});
 
+// 1. مسارات عامة
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/otp/send', [AuthController::class, 'sendOtp']);
+Route::post('/otp/verify', [AuthController::class, 'verifyOtp']);
+
+// 2. مسارات محمية
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 });
