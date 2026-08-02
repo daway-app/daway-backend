@@ -10,7 +10,8 @@ Route::get('/test', function () {
 });
 
 // 1. مسارات عامة
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login/patient', [AuthController::class, 'patientLogin']);
+Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin']);
 Route::post('/otp/send', [AuthController::class, 'sendOtp']);
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp']);
 
