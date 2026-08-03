@@ -11,8 +11,66 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    // تسجيل دخول المريض (عن طريق OTP - بدون كلمة مرور)
+    public function patientLogin(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|exists:users,phone',
+            'otp' => 'required|digits:6'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'الرجاء إدخال رقم الهاتف ورمز التحقق'], 400);
+        }
+
+        // البحث عن الكود في قاعدة البيانات
+        $otpRecord = OtpCode::where('phone', $request->phone)
+                            ->where('otp', $request->otp)
+                            ->where('expires_at', '>', now())
+                            ->first();
+
+        if (!$otpRecord) {
+            return response()->json(['message' => 'رمز التحقق غير صحيح أو انتهى صلاحيته'], 400);
+        }
+
+        // جلب المستخدم
+        $user = User::where('phone', $request->phone)->first();
+
+        // التحقق من أن الحساب مفعل
+        if (!$user->is_active) {
+            return response()->json([
+                'message' => 'حسابك موقوف حالياً. يرجى التواصل مع الدعم.'
+            ], 403);
+        }
+
+        // حذف رمز التحقق بعد الاستخدام
+        $otpRecord->delete();
+
+        // تحديث وقت التحقق
+        $user->phone_verified_at = now();
+        $user->save();
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تسجيل الدخول بنجاح',
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'role' => $user->role,
+                ],
+                'token' => $token
+            ]
+        ]);
+    }
+
+    // تسجيل دخول الصيدلية (بالـ Pharmacy ID + كلمة المرور)
+    public function pharmacyLogin(Request $request)
+    {
+        // ملاحظة: هذا مثال، لو كان الـ Pharmacy ID هو رقم الهاتف أو الـ id فقط عدل حسب رغبتك
         $validator = Validator::make($request->all(), [
             'phone' => 'required|exists:users,phone',
             'password' => 'required',
@@ -28,7 +86,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'بيانات الدخول غير صحيحة'], 401);
         }
 
-        if (!$user->is_active)  {
+        if (!$user->is_active) {
             return response()->json([
                 'message' => 'حسابك موقوف حالياً. يرجى التواصل مع الدعم.'
             ], 403);
@@ -51,6 +109,7 @@ class AuthController extends Controller
         ]);
     }
 
+    // تسجيل الخروج
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -89,7 +148,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // التحقق من الكود
+    // التحقق من الكود (تستخدم في تسجيل الدخول و التسجيل)
     public function verifyOtp(Request $request)
     {
         $request->validate([
