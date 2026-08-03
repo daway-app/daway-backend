@@ -67,12 +67,11 @@ class AuthController extends Controller
         ]);
     }
 
-    // تسجيل دخول الصيدلية (بالـ Pharmacy ID + كلمة المرور)
+      // تسجيل دخول الصيدلية (بالـ Pharmacy ID + كلمة المرور)
     public function pharmacyLogin(Request $request)
     {
-        // ملاحظة: هذا مثال، لو كان الـ Pharmacy ID هو رقم الهاتف أو الـ id فقط عدل حسب رغبتك
         $validator = Validator::make($request->all(), [
-            'phone' => 'required|exists:users,phone',
+            'pharmacy_id' => 'required|exists:users,pharmacy_id', // اسم العمود في جدول users
             'password' => 'required',
         ]);
 
@@ -80,7 +79,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'بيانات الدخول غير صحيحة'], 401);
         }
 
-        $user = User::where('phone', $request->phone)->first();
+        $user = User::where('pharmacy_id', $request->pharmacy_id)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'بيانات الدخول غير صحيحة'], 401);
@@ -101,7 +100,7 @@ class AuthController extends Controller
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'phone' => $user->phone,
+                    'pharmacy_id' => $user->pharmacy_id,
                     'role' => $user->role,
                 ],
                 'token' => $token
