@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProfileController;
 
 // مسار اختبار للتأكد أن الـ API يرجع JSON
 Route::get('/test', function () {
@@ -15,7 +16,9 @@ Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin']);
 Route::post('/otp/send', [AuthController::class, 'sendOtp']);
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp']);
 
-// 2. مسارات محمية
+// 2. مسارات محمية (جميعها داخل مجموعة واحدة)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::post('/profile/update', [ProfileController::class, 'update']);
 });
