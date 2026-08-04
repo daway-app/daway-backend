@@ -16,15 +16,9 @@ Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin']);
 Route::post('/otp/send', [AuthController::class, 'sendOtp']);
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp']);
 
-// 2. مسارات محمية
+// 2. مسارات محمية (جميعها داخل مجموعة واحدة)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-});
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-
-    // مسارات الملف الشخصي الجديدة
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::post('/profile/update', [ProfileController::class, 'update']);
 });
