@@ -7,18 +7,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('first_aid', function (Blueprint $table) {
+        Schema::create('active_ingredients', function (Blueprint $table) {
             $table->id();
-            $table->string('title', 150)->index();
-            $table->string('category', 100);
-            $table->longText('instructions_steps');
-            $table->string('image_icon')->nullable();
+            $table->string('name', 150)->unique();
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('first_aid');
+        Schema::dropIfExists('active_ingredients');
     }
 };

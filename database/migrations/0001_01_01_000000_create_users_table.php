@@ -12,8 +12,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('phone')->unique();
+            $table->string('email')->nullable()->unique();
             $table->string('password')->nullable();
-            $table->enum('role', ['patient', 'pharmacy']);
+            $table->string('pharmacy_id')->unique()->nullable();
+
+            $table->enum('role', ['patient', 'pharmacy', 'admin']);
             $table->boolean('is_active')->default(true);
             $table->timestamp('phone_verified_at')->nullable();
             $table->rememberToken();

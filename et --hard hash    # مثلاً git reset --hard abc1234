@@ -1,0 +1,17 @@
+[33m43c02dc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/admin-dashboard[m[33m)[m backup before rollback
+[33mcbf5fe2[m[33m ([m[1;31morigin/develop[m[33m, [m[1;32mdevelop[m[33m)[m Merge pull request #3 from daway-app/feature/US-04-profile-api
+[33mf4faee1[m[33m ([m[1;31morigin/feature/US-04-profile-api[m[33m, [m[1;32mfeature/US-04-profile-api[m[33m)[m fix: combine logout and profile routes into one auth group
+[33m1b69390[m feat: complete patient profile API (show/update) with upload avatar
+[33m72ea2fc[m add test patient and pharmacy
+[33mc532f2d[m fix: update login routes for patient(OTP) and pharmacy(password)
+[33m0e3bf8a[m update login routes for patient and pharmacy
+[33m1271e84[m Add standard .env.example for team setup
+[33m56592ca[m fix: upgrade PHP version to 8.4 in Dockerfile
+[33m5ed61bb[m Add Dockerfile for Render
+[33m8166466[m Merge pull request #2 from daway-app/feature/US-02-auth-login
+[33m56b7d0e[m[33m ([m[1;31morigin/feature/US-02-auth-login[m[33m, [m[1;32mfeature/US-02-auth-login[m[33m)[m fix: remove duplicate personal_access_tokens migration
+[33m8c2788e[m Merge pull request #1 from daway-app/feature/US-02-auth-login
+[33m1a38c19[m feat: complete all Sprint 1 backend tasks (Login, Logout, OTP, Sanctum, Blocked Account)
+[33m1e33178[m fix: update bootstrap/app.php to load api routes and adjust AuthController status check
+[33m2cb2222[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m Fix gitignore and remove unnecessary files
+[33m3dd922c[m first commit
