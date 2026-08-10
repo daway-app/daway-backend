@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class OtpCode extends Model
 {
     use HasFactory;
-
+ public $timestamps = true;
     protected $fillable = [
         'phone',
         'otp',

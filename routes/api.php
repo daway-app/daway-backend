@@ -6,19 +6,21 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReminderController;
 
-// مسار اختبار للتأكد أن الـ API يرجع JSON
+// مسار اختبار
 Route::get('/test', function () {
     return response()->json(['message' => 'API is working!']);
 });
 
-// Public
+// ✅ Routes Public
 Route::post('/otp/send', [AuthController::class, 'sendOtp']);
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp']);
+Route::post('/login/patient', [AuthController::class, 'patientLogin']);
 Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin']);
 
-// Protected
+// ✅ Routes Protected
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/refresh-token', [AuthController::class, 'refreshToken']);
 
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::post('/profile/update', [ProfileController::class, 'update']);

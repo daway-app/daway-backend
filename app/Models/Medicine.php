@@ -62,4 +62,9 @@ class Medicine extends Model
     {
         return $this->morphMany(Favorite::class, 'favoritable');
     }
+
+    public function availabilityNotifications(): HasMany
+{
+    return $this->hasMany(AvailabilityNotification::class);
+}
 }

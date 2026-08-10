@@ -8,21 +8,43 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Favorite extends Model
 {
+    /**
+     * اسم الجدول المرتبط بالموديل.
+     *
+     * @var string
+     */
     protected $table = 'favorites';
 
-    // ما فيه updated_at بجدول favorites، بس created_at
+    /**
+     * إيقاف إدارة timestamps التلقائية لأن الجدول يحتوي فقط على created_at.
+     *
+     * @var bool
+     */
     public $timestamps = false;
+
+    /**
+     * اسم عمود created_at.
+     *
+     * @var string
+     */
     const CREATED_AT = 'created_at';
 
+    /**
+     * الأعمدة القابلة للتعبئة (Mass Assignment).
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'user_id',            // مين ضاف للمفضلة
-        'favoritable_type',    // اسم الموديل (Medicine أو FirstAid مثلاً) — بفضل morphMap رح يتخزن قصير ونظيف
-        'favoritable_id',      // id الصف المفضّل جوا هاد الموديل
+        'favoritable_type',   // نوع الموديل (يستخدم morphMap: 'medicine', 'first_aid')
+        'favoritable_id',     // ID العنصر المفضل
         'created_at',
     ];
 
     /**
-     * علاقة عكسية عادية: صاحب هاد العنصر بالمفضلة.
+     * علاقة عكسية: صاحب هذا العنصر في المفضلة.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function user(): BelongsTo
     {
@@ -30,18 +52,20 @@ class Favorite extends Model
     }
 
     /**
-     * هاي العلاقة الأهم بهاد الموديل: علاقة Polymorphic (متعددة الأشكال).
+     * علاقة Polymorphic (متعددة الأشكال) مع الموديلات المختلفة.
      *
-     * morphTo() بيقول لـ Laravel: "روح شوف عمودين بنفس السطر:
-     * favoritable_type (شو نوع الموديل) و favoritable_id (شو id تبعه)،
-     * وبناءً عليهم رجعلي الموديل الصحيح تلقائياً".
+     * تستخدم الـ morphMap المعرف في AppServiceProvider:
+     * - 'medicine'  => \App\Models\Medicine::class
+     * - 'first_aid' => \App\Models\FirstAid::class
      *
-     * يعني ممكن سطر بالمفضلة يكون Medicine، وسطر تاني يكون FirstAid،
-     * بنفس الجدول favorites، من دون ما نعمل جدول منفصل لكل نوع.
+     * هذا يسمح بتخزين نوع الموديل بشكل مختصر (مثل 'medicine')
+     * بدلاً من النص الكامل (مثل 'App\Models\Medicine').
      *
-     * الاسم 'favoritable' هون هو الجزء المشترك من اسمي العمودين
-     * (favoritable_type / favoritable_id)، ولازم يطابق بالضبط
-     * الاسم يلي استخدمناه بدالة morphMany() بموديلات Medicine و FirstAid.
+     * الاسم 'favoritable' هو الجزء المشترك من أسماء الأعمدة:
+     * - favoritable_type
+     * - favoritable_id
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
      */
     public function favoritable(): MorphTo
     {

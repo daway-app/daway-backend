@@ -6,8 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\HasOne;  // ✅ أضف هذا السطر
-use Illuminate\Database\Eloquent\Relations\HasMany; // ✅ هذا السطر موجود بالفعل
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
@@ -16,16 +17,15 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'email_verified_at',
         'phone',
         'password',
         'role',
         'is_active',
-        'phone_verified_at',
         'address',
         'birth_date',
         'avatar',
         'emergency_contact',
+        'pharmacy_id', //
     ];
 
     protected $hidden = [
@@ -40,10 +40,15 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
-
     public function pharmacy(): HasOne
     {
         return $this->hasOne(Pharmacy::class);
+    }
+
+
+    public function pharmacyByCustomId(): BelongsTo
+    {
+        return $this->belongsTo(Pharmacy::class, 'pharmacy_id', 'pharmacy_custom_id');
     }
 
     public function medicalProfile(): HasOne
@@ -65,4 +70,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Favorite::class);
     }
+    public function availabilityNotifications(): HasMany
+{
+    return $this->hasMany(AvailabilityNotification::class);
+}
 }

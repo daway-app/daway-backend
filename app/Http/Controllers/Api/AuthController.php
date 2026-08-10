@@ -13,11 +13,15 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+
     public function patientLogin(Request $request)
     {
         return $this->verifyOtp($request);
     }
 
+    /**
+     * تسجيل دخول الصيدلية باستخدام Pharmacy ID وكلمة المرور.
+     */
     public function pharmacyLogin(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -42,6 +46,11 @@ class AuthController extends Controller
             return response()->json(['message' => 'Account is inactive'], 403);
         }
 
+        // ✅ تحقق اختياري من البريد الإلكتروني
+        if (!$user->email_verified_at) {
+            return response()->json(['message' => 'Email not verified'], 403);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -59,6 +68,7 @@ class AuthController extends Controller
         ]);
     }
 
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()?->delete();
@@ -68,6 +78,7 @@ class AuthController extends Controller
             'message' => 'Logged out successfully',
         ]);
     }
+
 
     public function sendOtp(Request $request)
     {
@@ -98,10 +109,14 @@ class AuthController extends Controller
 
     public function verifyOtp(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'phone' => 'required|string|max:20',
             'otp' => 'required|digits:6',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Invalid OTP format'], 400);
+        }
 
         $otpRecord = OtpCode::where('phone', $request->phone)
             ->where('otp', $request->otp)
@@ -115,8 +130,10 @@ class AuthController extends Controller
         $user = User::where('phone', $request->phone)->first();
 
         if (!$user) {
+
             $user = User::create([
                 'name' => 'New User',
+                'email' => null,
                 'phone' => $request->phone,
                 'password' => Hash::make(Str::random(32)),
                 'role' => 'patient',
@@ -128,7 +145,8 @@ class AuthController extends Controller
                 return response()->json(['message' => 'Account is inactive'], 403);
             }
 
-            $user->forceFill(['phone_verified_at' => now()])->save();
+            // ✅ تحديث وقت التحقق
+            $user->update(['phone_verified_at' => now()]);
         }
 
         $otpRecord->delete();
@@ -147,6 +165,19 @@ class AuthController extends Controller
                 ],
                 'token' => $token,
             ],
+        ]);
+    }
+
+
+    public function refreshToken(Request $request)
+    {
+        $user = $request->user();
+        $user->tokens()->delete();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'token' => $token,
         ]);
     }
 }

@@ -71,4 +71,8 @@ class Pharmacy extends Model
     {
         return $this->hasMany(Rating::class);
     }
+    public function availabilityNotifications(): HasMany
+{
+    return $this->hasMany(AvailabilityNotification::class);
+}
 }
