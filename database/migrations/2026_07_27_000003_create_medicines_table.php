@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('active_ingredient', 150);
             $table->text('description')->nullable();
             $table->string('image')->nullable();
+            $table->boolean('is_available')->default(true);
+            $table->integer('stock')->default(0);
             $table->timestamps();
 
             $table->index(['trade_name', 'active_ingredient'], 'idx_search');

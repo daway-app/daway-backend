@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany; // Import BelongsToMany
 
 class Medicine extends Model
 {
@@ -14,15 +15,16 @@ class Medicine extends Model
     protected $table = 'medicines';
 
     protected $fillable = [
-        'trade_name',          // الاسم التجاري للدواء (زي Panadol)
-        'active_ingredient',   // المادة الفعالة (زي Paracetamol)
-        'description',          // وصف الدواء
-        'image',                // مسار صورة الدواء
+        'trade_name',
+        'active_ingredient',
+        'description',
+        'image',
+        'is_available',
+        'stock',
     ];
 
     /**
      * علاقة: كل دواء ممكن يكون موجود بأكتر من صيدلية، عن طريق جدول pharmacy_medicines
-     * (نفس فكرة العلاقة يلي شرحناها بموديل Pharmacy بس من الجهة التانية).
      */
     public function pharmacyMedicines(): HasMany
     {
@@ -30,28 +32,23 @@ class Medicine extends Model
     }
 
     /**
-     * علاقة: الأدوية البديلة لهاد الدواء (جدول alternatives).
-     * هون الدواء الحالي هو "medicine_id" وبنجيب كل الأدوية البديلة إلو
-     * (alternative_medicine_id) عن طريق موديل Alternative الوسيط.
+     * علاقة: الأدوية البديلة لهذا الدواء (علاقة many-to-many)
      */
-    public function alternatives(): HasMany
+    public function alternatives(): BelongsToMany
     {
-        return $this->hasMany(Alternative::class, 'medicine_id');
+        return $this->belongsToMany(Medicine::class, 'alternative_medicine', 'medicine_id', 'alternative_id');
     }
 
     /**
      * علاقة: الحالات يلي هاد الدواء يكون فيها هو "البديل" لدواء تاني.
-     * يعني منقلب الاتجاه: بنجيب كل سطر بجدول alternatives يلي
-     * alternative_medicine_id فيه بيساوي id تبع هاد الدواء.
      */
-    public function isAlternativeFor(): HasMany
+    public function isAlternativeFor(): BelongsToMany
     {
-        return $this->hasMany(Alternative::class, 'alternative_medicine_id');
+        return $this->belongsToMany(Medicine::class, 'alternative_medicine', 'alternative_id', 'medicine_id');
     }
 
     /**
-     * علاقة: الإشعارات المرتبطة بهاد الدواء (مثلاً تنبيه "خلص من المخزون"
-     * أو تنبيه انتهاء صلاحية). medicine_id بجدول notifications ممكن يكون null.
+     * علاقة: الإشعارات المرتبطة بهاد الدواء
      */
     public function notifications(): HasMany
     {
@@ -60,11 +57,6 @@ class Medicine extends Model
 
     /**
      * علاقة Polymorphic: كل الأشخاص يلي ضافوا هاد الدواء للمفضلة تبعهم.
-     * هون بنستخدم MorphMany بدل HasMany لأنه جدول favorites بيقدر
-     * يخزن أي نوع Model (دواء، أو first_aid، إلخ) مش بس Medicine.
-     *
-     * 'favoritable' هون لازم يطابق بالضبط الاسم يلي حطيناه بدالة favoritable()
-     * جوا موديل Favorite (morphTo('favoritable')).
      */
     public function favoritedBy(): MorphMany
     {

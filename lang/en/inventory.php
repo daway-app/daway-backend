@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'title' => 'Inventory Monitoring',
+    'main_heading' => 'Inventory and Orders Monitoring',
+    'main_description' => 'Track the availability status of medicines in all pharmacies.',
+    'breadcrumb_main' => 'Dashboard',
+    'breadcrumb_current' => 'Inventory Monitoring',
+    'total_items' => 'Total Items',
+    'in_stock' => 'In Stock',
+    'low_stock' => 'Low Stock',
+    'out_of_stock' => 'Out of Stock',
+    'availability_status_heading' => 'Medicines Availability Status',
+    'search_placeholder' => 'Search by medicine name...',
+    'col_medicine' => 'Medicine',
+    'col_total_quantity' => 'Total Quantity',
+    'col_pharmacies_available' => 'Pharmacies Available',
+    'col_general_status' => 'General Status',
+    'col_action' => 'Action',
+    'unit' => 'unit',
+    'pharmacy_count' => 'pharmacy',
+    'status_available' => '● Available',
+    'status_low' => '● Low',
+    'status_out_of_stock' => '● Out of Stock',
+    'view_details_tooltip' => 'View Details',
+];

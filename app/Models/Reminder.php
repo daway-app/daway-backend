@@ -13,26 +13,26 @@ class Reminder extends Model
     protected $table = 'reminders';
 
     protected $fillable = [
-        'user_id',              // صاحب التذكير
-        'medicine_name',         // اسم الدواء (نص حر، مش مرتبط بجدول medicines مباشرة)
-        'dosage',                 // الجرعة (مثلاً "500mg")
-        'reminder_time',          // وقت التذكير باليوم
-        'frequency',               // كل قد ايش (يومي، كل 8 ساعات...) — نص حر
-        'quantity_remaining',      // الكمية المتبقية من الدواء
-        'is_active',               // هل التذكير فعال أو تم إيقافه
+        'user_id',
+        'medicine_name',
+        'dosage',
+        'reminder_date',
+        'reminder_time',
+        'frequency',
+        'quantity_remaining',
+        'is_active',
     ];
 
     protected function casts(): array
     {
         return [
+            'reminder_date' => 'date:Y-m-d',
             'reminder_time' => 'datetime:H:i',
+            'quantity_remaining' => 'integer',
             'is_active' => 'boolean',
         ];
     }
 
-    /**
-     * علاقة عكسية: هاد التذكير تبع مستخدم وحيد.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

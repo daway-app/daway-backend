@@ -3,187 +3,150 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\OtpCode;
+use App\Models\Pharmacy;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    // تسجيل دخول المريض (عن طريق OTP - بدون كلمة مرور)
     public function patientLogin(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|exists:users,phone',
-            'otp' => 'required|digits:6'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => 'الرجاء إدخال رقم الهاتف ورمز التحقق'], 400);
-        }
-
-        // البحث عن الكود في قاعدة البيانات
-        $otpRecord = OtpCode::where('phone', $request->phone)
-                            ->where('otp', $request->otp)
-                            ->where('expires_at', '>', now())
-                            ->first();
-
-        if (!$otpRecord) {
-            return response()->json(['message' => 'رمز التحقق غير صحيح أو انتهى صلاحيته'], 400);
-        }
-
-        // جلب المستخدم
-        $user = User::where('phone', $request->phone)->first();
-
-        // التحقق من أن الحساب مفعل
-        if (!$user->is_active) {
-            return response()->json([
-                'message' => 'حسابك موقوف حالياً. يرجى التواصل مع الدعم.'
-            ], 403);
-        }
-
-        // حذف رمز التحقق بعد الاستخدام
-        $otpRecord->delete();
-
-        // تحديث وقت التحقق
-        $user->phone_verified_at = now();
-        $user->save();
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تسجيل الدخول بنجاح',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'phone' => $user->phone,
-                    'role' => $user->role,
-                ],
-                'token' => $token
-            ]
-        ]);
+        return $this->verifyOtp($request);
     }
 
-      // تسجيل دخول الصيدلية (بالـ Pharmacy ID + كلمة المرور)
     public function pharmacyLogin(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'pharmacy_id' => 'required|exists:users,pharmacy_id', // اسم العمود في جدول users
-            'password' => 'required',
+            'pharmacy_id' => 'required|string|exists:pharmacies,pharmacy_custom_id',
+            'password' => 'required|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'بيانات الدخول غير صحيحة'], 401);
+            return response()->json(['message' => 'Invalid login credentials'], 401);
         }
 
-        $user = User::where('pharmacy_id', $request->pharmacy_id)->first();
+        $pharmacy = Pharmacy::with('user')
+            ->where('pharmacy_custom_id', $request->pharmacy_id)
+            ->first();
+        $user = $pharmacy?->user;
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'بيانات الدخول غير صحيحة'], 401);
+            return response()->json(['message' => 'Invalid login credentials'], 401);
         }
 
-        if (!$user->is_active) {
-            return response()->json([
-                'message' => 'حسابك موقوف حالياً. يرجى التواصل مع الدعم.'
-            ], 403);
+        if (!$user->is_active || !$pharmacy->is_active) {
+            return response()->json(['message' => 'Account is inactive'], 403);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
-            'message' => 'تم تسجيل الدخول بنجاح',
+            'message' => 'Logged in successfully',
             'data' => [
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'pharmacy_id' => $user->pharmacy_id,
+                    'pharmacy_id' => $pharmacy->pharmacy_custom_id,
                     'role' => $user->role,
                 ],
-                'token' => $token
-            ]
+                'token' => $token,
+            ],
         ]);
     }
 
-    // تسجيل الخروج
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->currentAccessToken()?->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'تم تسجيل الخروج بنجاح'
+            'message' => 'Logged out successfully',
         ]);
     }
 
-    // إرسال كود التفعيل (OTP)
     public function sendOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'phone' => 'required|exists:users,phone',
+            'phone' => 'required|string|max:20',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'رقم الهاتف غير موجود'], 400);
+            return response()->json(['message' => 'Invalid phone number'], 400);
         }
 
-        $otp = rand(100000, 999999);
+        $otp = (string) rand(100000, 999999);
 
         OtpCode::updateOrCreate(
             ['phone' => $request->phone],
             [
                 'otp' => $otp,
-                'expires_at' => now()->addMinutes(10)
+                'expires_at' => now()->addMinutes(10),
             ]
         );
 
         return response()->json([
             'success' => true,
-            'message' => 'تم إرسال كود التفعيل بنجاح',
-            'otp' => $otp
+            'message' => 'OTP sent successfully',
+            'otp' => $otp,
         ]);
     }
 
-    // التحقق من الكود (تستخدم في تسجيل الدخول و التسجيل)
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'phone' => 'required|exists:users,phone',
-            'otp' => 'required|digits:6'
+            'phone' => 'required|string|max:20',
+            'otp' => 'required|digits:6',
         ]);
 
         $otpRecord = OtpCode::where('phone', $request->phone)
-                            ->where('otp', $request->otp)
-                            ->where('expires_at', '>', now())
-                            ->first();
+            ->where('otp', $request->otp)
+            ->where('expires_at', '>', now())
+            ->first();
 
         if (!$otpRecord) {
-            return response()->json(['message' => 'كود التحقق غير صحيح أو انتهى'], 400);
+            return response()->json(['message' => 'Invalid or expired OTP'], 400);
         }
 
         $user = User::where('phone', $request->phone)->first();
-        $user->phone_verified_at = now();
-        $user->save();
+
+        if (!$user) {
+            $user = User::create([
+                'name' => 'New User',
+                'phone' => $request->phone,
+                'password' => Hash::make(Str::random(32)),
+                'role' => 'patient',
+                'is_active' => true,
+                'phone_verified_at' => now(),
+            ]);
+        } else {
+            if (!$user->is_active) {
+                return response()->json(['message' => 'Account is inactive'], 403);
+            }
+
+            $user->forceFill(['phone_verified_at' => now()])->save();
+        }
 
         $otpRecord->delete();
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
-            'message' => 'تم التحقق وتسجيل الدخول بنجاح',
+            'message' => 'Logged in successfully',
             'data' => [
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'phone' => $user->phone,
                     'role' => $user->role,
+                    'is_new' => $user->wasRecentlyCreated,
                 ],
-                'token' => $token
-            ]
+                'token' => $token,
+            ],
         ]);
     }
 }

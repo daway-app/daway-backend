@@ -1,0 +1,41 @@
+<?php
+
+return [
+    // Sidebar
+    'app_title' => 'دوائي',
+    'app_subtitle' => 'الصحة، في مكان واحد',
+    'main_section' => 'الرئيسية',
+    'dashboard' => 'لوحة التحكم',
+    'management_section' => 'الإدارة',
+    'pharmacies' => 'الصيدليات',
+    'medicines' => 'الأدوية',
+    'inventory' => 'المخزون',
+    'patients' => 'المرضى',
+    'users' => 'المستخدمون',
+    'settings_section' => 'الإعدادات',
+    'system_settings' => 'إعدادات النظام',
+    'activity_log' => 'سجل الأنشطة',
+    'edit_profile_modal_title' => 'تعديل الملف الشخصي',
+    'change_picture_button' => 'تغيير الصورة',
+    'full_name_label' => 'الاسم الكامل',
+    'job_title_label' => 'المسمى الوظيفي',
+    'cancel_button' => 'إلغاء',
+    'save_changes_button' => 'حفظ التغييرات',
+    'logging_out_message' => 'جاري تسجيل الخروج...',
+
+    // Topbar
+    'search_placeholder' => 'البحث عن أدوية، صيدليات، الخ...',
+    'switch_language_tooltip' => 'تبديل اللغة',
+    'dark_mode_tooltip' => 'تبديل الوضع الداكن',
+    'notifications_tooltip' => 'الإشعارات',
+    'notifications_title' => 'الإشعارات',
+    'clear_all_notifications' => 'مسح الكل',
+    'no_new_notifications' => 'لا توجد إشعارات جديدة',
+    'view_all_notifications' => 'عرض جميع الإشعارات',
+    'loading_notifications' => 'جاري تحميل الإشعارات...',
+    'error_loading_notifications' => 'حدث خطأ أثناء تحميل الإشعارات.',
+    'all_notifications_title' => 'جميع الإشعارات',
+    'mark_all_as_read' => 'تحديد الكل كمقروء',
+    'no_notifications_yet' => 'لا توجد إشعارات بعد.',
+    'unread' => 'غير مقروء',
+];

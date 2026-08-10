@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'title' => 'Patients',
+    'main_heading' => 'Patients Management',
+    'main_description' => 'View and manage all registered patients in the system.',
+    'add_patient_button' => 'Add Patient',
+    'breadcrumb_main' => 'Dashboard',
+    'breadcrumb_current' => 'Patients',
+    'total_patients' => 'Total Patients',
+    'active_patients_this_month' => 'Active Patients This Month',
+    'registered_patients_list' => 'Registered Patients List',
+    'search_placeholder' => 'Search by name, email, or phone...',
+    'col_patient' => 'Patient',
+    'col_email' => 'Email',
+    'col_phone' => 'Phone Number',
+    'col_registration_date' => 'Registration Date',
+    'col_actions' => 'Actions',
+    'edit_patient_tooltip' => 'Edit Patient',
+    'delete_confirm' => 'Are you sure you want to delete this patient?',
+    'delete_patient_tooltip' => 'Delete Patient',
+    'no_patients_found' => 'No patients registered yet.',
+    'empty_state_description' => 'When new patients are added, they will appear here.',
+    'no_search_results' => 'No results found for your search',
+];

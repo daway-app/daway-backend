@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'title' => 'مراقبة المخزون',
+    'main_heading' => 'مراقبة المخزون والطلبات',
+    'main_description' => 'متابعة حالة توفر الأدوية في جميع الصيدليات.',
+    'breadcrumb_main' => 'الرئيسية',
+    'breadcrumb_current' => 'مراقبة المخزون',
+    'total_items' => 'إجمالي الأصناف',
+    'in_stock' => 'متوفر',
+    'low_stock' => 'مخزون منخفض',
+    'out_of_stock' => 'نفد',
+    'availability_status_heading' => 'حالة توفر الأدوية',
+    'search_placeholder' => 'ابحث باسم الدواء...',
+    'col_medicine' => 'الدواء',
+    'col_total_quantity' => 'إجمالي الكمية',
+    'col_pharmacies_available' => 'عدد الصيدليات المتوفر بها',
+    'col_general_status' => 'الحالة العامة',
+    'col_action' => 'إجراء',
+    'unit' => 'وحدة',
+    'pharmacy_count' => 'صيدلية',
+    'status_available' => '● متوفر',
+    'status_low' => '● منخفض',
+    'status_out_of_stock' => '● نفد',
+    'view_details_tooltip' => 'عرض التفاصيل',
+];

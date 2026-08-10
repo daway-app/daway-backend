@@ -1,0 +1,1257 @@
+@extends('layouts.app')
+
+@section('title', 'لوحة تحكم الصيدلية')
+
+@section('content')
+
+    <div class="pharmacy-dashboard" dir="rtl">
+
+        ```
+        {{-- =========================================================
+             HEADER
+        ========================================================== --}}
+        <header class="dashboard-header dashboard-animate">
+
+            <div class="header-content">
+
+                <div class="header-info">
+
+                    {{-- Pharmacy Icon --}}
+                    <div class="header-icon">
+                        <div class="icon-ring"></div>
+                        <i class="fas fa-clinic-medical"></i>
+                    </div>
+
+                    <div class="header-text">
+
+                        <h1>
+                             {{ $pharmacy->pharmacy_name }}
+                        </h1>
+
+                        <p>
+                            مرحباً بك — إليك تقرير أداء صيدليتك وحركة المخزون اللحظية.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="header-actions">
+
+
+
+                    <a
+                        href="{{ route('pharmacy.medicines.index') }}"
+                        class="manage-btn"
+                    >
+                        <i class="fas fa-pills"></i>
+
+                        <span>
+                    إدارة الأدوية
+                </span>
+
+                        <i class="fas fa-arrow-left btn-arrow"></i>
+                    </a>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        {{-- =========================================================
+             STATISTICS
+        ========================================================== --}}
+        <section class="stats-grid">
+
+            {{-- Rating --}}
+            <article class="stat-card rating-card dashboard-animate delay-1">
+
+                <div class="card-glow"></div>
+
+                <div class="floating-particle particle-1"></div>
+                <div class="floating-particle particle-2"></div>
+
+                <div class="stat-top">
+
+                    <div class="stat-content">
+
+                <span class="stat-title">
+                    متوسط تقييم المرضى
+                </span>
+
+                        <div class="rating-value">
+
+                            <strong>
+                                {{ number_format($averageRating, 1) }}
+                            </strong>
+
+                            <div class="rating-stars">
+
+                                @for($i = 1; $i <= 5; $i++)
+                                    <i class="fas fa-star"></i>
+                                @endfor
+
+                            </div>
+
+                        </div>
+
+                        <div class="rating-label">
+                            تقييم ممتاز
+                        </div>
+
+                    </div>
+
+                    <div class="stat-icon rating-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+
+                </div>
+
+                <div class="stat-footer">
+
+            <span>
+                <i class="fas fa-users"></i>
+                بناءً على تقييمات العملاء المعتمدين
+            </span>
+
+                </div>
+
+            </article>
+
+
+            {{-- Pharmacy Status --}}
+            <article
+                class="stat-card status-card dashboard-animate delay-2
+        {{ $isPharmacyOpen ? 'is-open' : 'is-closed' }}"
+            >
+
+                <div class="card-glow"></div>
+
+                <div class="floating-particle particle-3"></div>
+                <div class="floating-particle particle-4"></div>
+
+                <div class="stat-top">
+
+                    <div class="stat-content">
+
+                <span class="stat-title">
+                    حالة الصيدلية الحالية
+                </span>
+
+                        <div class="pharmacy-status">
+
+                            <span class="status-dot"></span>
+
+                            <span>
+                        {{ $isPharmacyOpen
+                            ? 'مفتوحة وتستقبل الطلبات'
+                            : 'الصيدلية مغلقة حالياً'
+                        }}
+                    </span>
+
+                        </div>
+
+                        <div class="status-label">
+                            حالة التشغيل الحالية
+                        </div>
+
+                    </div>
+
+                    <div class="stat-icon status-icon">
+
+                        <i class="fas fa-{{ $isPharmacyOpen ? 'store' : 'store-slash' }}"></i>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-footer">
+
+            <span>
+                <i class="fas fa-clock"></i>
+                يمكن تعديل ساعات العمل من ملف الصيدلية
+            </span>
+
+                </div>
+
+            </article>
+
+
+            {{-- Stock --}}
+            <article class="stat-card stock-card dashboard-animate delay-3">
+
+                <div class="card-glow"></div>
+
+                <div class="floating-particle particle-5"></div>
+                <div class="floating-particle particle-6"></div>
+
+                <div class="stat-top">
+
+                    <div class="stat-content">
+
+                <span class="stat-title">
+                    إجمالي الأدوية في المخزون
+                </span>
+
+                        <div class="stock-value">
+
+                            {{ $totalMedicinesInStock }}
+
+                            <span>
+                        صنف
+                    </span>
+
+                        </div>
+
+                        <div class="stock-label">
+                            متوفرة حالياً في الصيدلية
+                        </div>
+
+                    </div>
+
+                    <div class="stat-icon stock-icon">
+                        <i class="fas fa-boxes-stacked"></i>
+                    </div>
+
+                </div>
+
+                <div class="stat-footer">
+
+            <span>
+                <i class="fas fa-rotate"></i>
+                محدثة تلقائياً من النظام
+            </span>
+
+                </div>
+
+            </article>
+
+        </section>
+
+
+        {{-- =========================================================
+             WEEKLY ACTIVITY
+        ========================================================== --}}
+        <section class="dashboard-card chart-card dashboard-animate delay-4">
+
+            <div class="card-header">
+
+                <div class="section-title">
+
+                    <div class="section-icon animated-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+
+                    <div>
+
+                        <h2>
+                            مؤشر نشاط الأدوية والتقييمات الأسبوعي
+                        </h2>
+
+                        <p>
+                            متابعة الطلبات والتقييمات خلال آخر 7 أيام
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="live-badge">
+
+                    <span class="live-dot"></span>
+
+                    تحديث حي
+
+                </div>
+
+            </div>
+
+
+            <div class="chart-legend-mobile">
+
+        <span>
+            <i class="legend-line orders"></i>
+            الطلبات
+        </span>
+
+                <span>
+            <i class="legend-line ratings"></i>
+            التقييمات
+        </span>
+
+            </div>
+
+
+            <div class="chart-container">
+
+                <canvas id="pharmacyActivityChart"></canvas>
+
+            </div>
+
+        </section>
+
+
+        {{-- =========================================================
+             MEDICINES
+        ========================================================== --}}
+        <section class="dashboard-card medicines-card dashboard-animate delay-5">
+
+            <div class="card-header">
+
+                <div class="section-title">
+
+                    <div class="section-icon animated-icon">
+                        <i class="fas fa-pills"></i>
+                    </div>
+
+                    <div>
+
+                        <h2>
+                            أدوية صيدليتك المتاحة والمخزون
+                        </h2>
+
+                        <p>
+                            إدارة ومتابعة كميات وأسعار الأدوية
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <a
+                    href="{{ route('pharmacy.medicines.index') }}"
+                    class="view-all-btn"
+                >
+                    عرض الكل
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+
+            </div>
+
+
+            <div class="table-wrapper">
+
+                <table class="medicine-table">
+
+                    <thead>
+
+                    <tr>
+                        <th>اسم الدواء</th>
+                        <th>السعر</th>
+                        <th>المخزون</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    @forelse ($pharmacyMedicines as $pharmacyMedicine)
+
+                        <tr>
+
+                            {{-- Medicine --}}
+                            <td>
+
+                                <div class="medicine-name">
+
+                                    <div class="medicine-icon">
+                                        <i class="fas fa-capsules"></i>
+                                    </div>
+
+                                    <div>
+
+                                        <strong>
+                                            {{ $pharmacyMedicine->medicine->trade_name }}
+                                        </strong>
+
+                                        @if(isset($pharmacyMedicine->medicine->scientific_name))
+
+                                            <small>
+                                                {{ $pharmacyMedicine->medicine->scientific_name }}
+                                            </small>
+
+                                        @endif
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+
+                            {{-- Price --}}
+                            <td>
+
+                                <div class="price-wrapper">
+
+                                    <strong>
+                                        {{ number_format($pharmacyMedicine->price) }}
+                                    </strong>
+
+                                    <small>
+                                        ل.س
+                                    </small>
+
+                                </div>
+
+                            </td>
+
+
+                            {{-- Stock --}}
+                            <td>
+
+                                <div
+                                    class="stock-number
+                            {{ $pharmacyMedicine->quantity <= 10 ? 'low-stock' : '' }}"
+                                >
+
+                            <span>
+                                {{ $pharmacyMedicine->quantity }}
+                            </span>
+
+                                    <small>
+                                        وحدة
+                                    </small>
+
+                                </div>
+
+                            </td>
+
+
+                            {{-- Status --}}
+                            <td>
+
+                                @if ($pharmacyMedicine->is_available)
+
+                                    <span class="availability available">
+
+                                <span class="availability-dot"></span>
+
+                                متوفر
+
+                            </span>
+
+                                @else
+
+                                    <span class="availability unavailable">
+
+                                <span class="availability-dot"></span>
+
+                                غير متوفر
+
+                            </span>
+
+                                @endif
+
+                            </td>
+
+
+                            {{-- Actions --}}
+                            <td>
+
+                                <a
+                                    href="{{ route(
+                                'pharmacy.medicines.edit',
+                                $pharmacyMedicine->id
+                            ) }}"
+                                    class="edit-btn"
+                                >
+
+                                    <i class="fas fa-pen"></i>
+
+                                    تعديل
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                    @empty
+
+                        <tr>
+
+                            <td colspan="5">
+
+                                <div class="empty-state">
+
+                                    <div class="empty-icon">
+                                        <i class="fas fa-box-open"></i>
+                                    </div>
+
+                                    <h3>
+                                        لا توجد أدوية مضافة
+                                    </h3>
+
+                                    <p>
+                                        لا توجد أدوية مضافة في صيدليتك حالياً.
+                                    </p>
+
+                                    <a
+                                        href="{{ route('pharmacy.medicines.index') }}"
+                                        class="manage-btn"
+                                    >
+                                        إضافة دواء جديد
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    @endforelse
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            @if($pharmacyMedicines->hasPages())
+
+                <div class="pagination-wrapper">
+                    {{ $pharmacyMedicines->links() }}
+                </div>
+
+            @endif
+
+        </section>
+
+
+        {{-- =========================================================
+             RATINGS
+        ========================================================== --}}
+        <section class="dashboard-card ratings-card dashboard-animate delay-6">
+
+            <div class="card-header">
+
+                <div class="section-title">
+
+                    <div class="section-icon animated-icon">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+
+                    <div>
+
+                        <h2>
+                            آخر تقييمات وتعليقات المرضى
+                        </h2>
+
+                        <p>
+                            آراء العملاء حول خدمات الصيدلية
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <a
+                    href="{{ route('pharmacy.ratings.index') }}"
+                    class="view-all-btn"
+                >
+
+                    عرض الكل
+
+                    <i class="fas fa-arrow-left"></i>
+
+                </a>
+
+            </div>
+
+
+            <div class="ratings-grid">
+
+                @forelse ($latestRatings as $rating)
+
+                    <article class="rating-item">
+
+                        <div class="rating-header">
+
+                            <div class="user-info">
+
+                                <div class="avatar">
+                                    {{ mb_substr($rating->user->name ?? 'م', 0, 1) }}
+                                </div>
+
+                                <div class="user-details">
+
+                                    <strong>
+                                        {{ $rating->user->name ?? 'مستخدم مجهول' }}
+                                    </strong>
+
+                                    <span>
+                                عميل الصيدلية
+                            </span>
+
+                                </div>
+
+                            </div>
+
+                            <span class="rating-date">
+                        {{ $rating->created_at->diffForHumans() }}
+                    </span>
+
+                        </div>
+
+
+                        <div class="rating-stars">
+
+                            @for ($i = 1; $i <= 5; $i++)
+
+                                <i
+                                    class="{{ $i <= $rating->rating
+                                ? 'fas fa-star'
+                                : 'far fa-star empty-star'
+                            }}"
+                                ></i>
+
+                            @endfor
+
+                        </div>
+
+
+                        <div class="rating-comment">
+
+                            <i class="fas fa-quote-right"></i>
+
+                            <p>
+                                {{ $rating->comment }}
+                            </p>
+
+                        </div>
+
+                    </article>
+
+                @empty
+
+                    <div class="empty-ratings">
+
+                        <div class="empty-icon">
+                            <i class="far fa-comment-alt"></i>
+                        </div>
+
+                        <h3>
+                            لا توجد تقييمات حتى الآن
+                        </h3>
+
+                        <p>
+                            ستظهر تقييمات المرضى هنا عند إضافتها.
+                        </p>
+
+                    </div>
+
+                @endforelse
+
+            </div>
+
+        </section>
+        ```
+
+    </div>
+
+    {{-- =============================================================
+    DASHBOARD CSS
+    ============================================================= --}}
+
+    <style>      /* =============================================================        THEME VARIABLES     ============================================================= */      :root {          --dashboard-bg: #f4f8f7;         --dashboard-bg-secondary: #ffffff;          --dashboard-surface: #ffffff;         --dashboard-surface-2: #f8fbfa;          --dashboard-border: #e5ecea;         --dashboard-border-hover: #c9dad6;          --dashboard-text: #172321;         --dashboard-text-secondary: #536460;         --dashboard-muted: #7c8b87;          --dashboard-teal: #0B8FAC;         --dashboard-teal-light: #7BC1B7;         --dashboard-teal-dark: #00657A;          --dashboard-green: #16a875;         --dashboard-red: #e14f4f;         --dashboard-amber: #e8a000;          --dashboard-shadow:             0 12px 35px rgba(28, 62, 56, .08);          --dashboard-shadow-hover:             0 20px 50px rgba(28, 62, 56, .14);      }       /* =============================================================        DARK MODE     ============================================================= */      html.dark-dashboard {          --dashboard-bg: #0b1210;         --dashboard-bg-secondary: #101816;          --dashboard-surface: #18201d;         --dashboard-surface-2: #1d2724;          --dashboard-border: rgba(255,255,255,.08);         --dashboard-border-hover: rgba(255,255,255,.16);          --dashboard-text: #f1f6f4;         --dashboard-text-secondary: #b8c5c1;         --dashboard-muted: #7e8d88;          --dashboard-shadow:             0 12px 35px rgba(0,0,0,.22);          --dashboard-shadow-hover:             0 20px 50px rgba(0,0,0,.32);      }       /* =============================================================        GLOBAL     ============================================================= */      html,     body {          margin: 0 !important;         padding: 0 !important;          background:             var(--dashboard-bg) !important;          transition:             background .35s ease,             color .35s ease;      }       body {          color:             var(--dashboard-text) !important;      }       body > *,     main,     main > *,     .content,     .content-wrapper,     .page-content,     .container-fluid {          background-color:             var(--dashboard-bg);          transition:             background-color .35s ease;      }       /* =============================================================        DASHBOARD     ============================================================= */      .pharmacy-dashboard {          position:             relative;          width:             100% !important;          min-height:             calc(100vh - 60px);          margin:             0 !important;          padding:             28px 3vw 45px !important;          overflow-x:             hidden;          color:             var(--dashboard-text);          font-family:             "Cairo",             "Tajawal",             Arial,             sans-serif;          background:              radial-gradient(                 circle at 85% 0%,                 rgba(11,143,172,.10),                 transparent 25%             ),              radial-gradient(                 circle at 5% 70%,                 rgba(11,143,172,.055),                 transparent 22%             ),              var(--dashboard-bg);          transition:             background .35s ease,             color .35s ease;      }       .pharmacy-dashboard *,     .pharmacy-dashboard *::before,     .pharmacy-dashboard *::after {          box-sizing:             border-box;      }       /* =============================================================        ANIMATIONS     ============================================================= */      @keyframes dashboardFadeUp {          0% {              opacity:                 0;              transform:                 translateY(28px)                 scale(.98);          }          100% {              opacity:                 1;              transform:                 translateY(0)                 scale(1);          }      }       @keyframes iconFloat {          0%,         100% {              transform:                 translateY(0)                 rotate(0deg);          }          50% {              transform:                 translateY(-6px)                 rotate(2deg);          }      }       @keyframes iconPulse {          0%,         100% {              box-shadow:                 0 0 0 0                 rgba(11,143,172,.18);          }          50% {              box-shadow:                 0 0 0 10px                 rgba(11,143,172,0);          }      }       @keyframes pulseLive {          0%,         100% {              box-shadow:                 0 0 0 0                 rgba(11,143,172,.35);          }          50% {              box-shadow:                 0 0 0 7px                 rgba(11,143,172,0);          }      }       @keyframes floatingGlow {          0%,         100% {              transform:                 translate(0,0)                 scale(1);          }          50% {              transform:                 translate(-12px,8px)                 scale(1.08);          }      }       @keyframes particleFloat {          0%,         100% {              transform:                 translateY(0)                 translateX(0);              opacity:                 .35;          }          50% {              transform:                 translateY(-15px)                 translateX(7px);              opacity:                 .8;          }      }       @keyframes shine {          0% {              left:                 -100%;          }          100% {              left:                 130%;          }      }       @keyframes starBounce {          0%,         100% {              transform:                 scale(1)                 rotate(0);          }          50% {              transform:                 scale(1.18)                 rotate(8deg);          }      }       @keyframes rowAppear {          from {              opacity:                 0;              transform:                 translateX(12px);          }          to {              opacity:                 1;              transform:                 translateX(0);          }      }       .dashboard-animate {          opacity:             0;          animation:             dashboardFadeUp             .75s             cubic-bezier(.2,.7,.2,1)             forwards;      }       .delay-1 {         animation-delay: .08s;     }      .delay-2 {         animation-delay: .16s;     }      .delay-3 {         animation-delay: .24s;     }      .delay-4 {         animation-delay: .32s;     }      .delay-5 {         animation-delay: .40s;     }      .delay-6 {         animation-delay: .48s;     }       /* =============================================================        HEADER     ============================================================= */      .dashboard-header {          margin-bottom:             28px;          padding:             0 0 22px;          border-bottom:             1px solid             var(--dashboard-border);      }       .header-content {          width:             100%;          display:             flex;          align-items:             center;          justify-content:             space-between;          gap:             30px;      }       .header-info {          display:             flex;          align-items:             center;          gap:             20px;          min-width:             0;      }       /* =============================================================        LARGE PHARMACY ICON     ============================================================= */      .header-icon {          position:             relative;          width:             82px;          height:             82px;          flex-shrink:             0;          display:             flex;          align-items:             center;          justify-content:             center;          overflow:             hidden;          border:             1px solid             rgba(11,143,172,.22);          border-radius:             24px;          background:             linear-gradient(                 145deg,                 rgba(11,143,172,.14),                 rgba(11,143,172,.04)             );          color:             var(--dashboard-teal);          font-size:             32px;          box-shadow:             0 15px 35px             rgba(11,143,172,.10);          animation:             iconFloat             4s             ease-in-out             infinite;      }       .header-icon::before {          content:             "";          position:             absolute;          inset:             10px;          border:             1px solid             rgba(11,143,172,.16);          border-radius:             18px;          animation:             iconPulse             2.5s             infinite;      }       .header-icon::after {          content:             "";          position:             absolute;          width:             8px;          height:             8px;          top:             13px;          left:             13px;          border-radius:             50%;          background:             var(--dashboard-teal);          box-shadow:             0 0 16px             var(--dashboard-teal);          animation:             pulseLive             2s             infinite;      }       .icon-ring {          position:             absolute;          width:             125%;          height:             125%;          border:             1px dashed             rgba(11,143,172,.18);          border-radius:             50%;          animation:             spinRing             14s             linear             infinite;      }       @keyframes spinRing {          to {             transform:                 rotate(360deg);         }      }       .header-text h1 {          margin:             0 0 8px;          color:             var(--dashboard-text);          font-size:             clamp(25px, 2.4vw, 34px);          line-height:             1.3;          font-weight:             800;          letter-spacing:             -.4px;      }       .header-text p {          margin:             0;          color:             var(--dashboard-text-secondary);          font-size:             14px;          line-height:             1.8;      }       /* =============================================================        HEADER ACTIONS     ============================================================= */      .header-actions {          display:             flex;          align-items:             center;          gap:             12px;          flex-shrink:             0;      }       /* =============================================================        THEME TOGGLE     ============================================================= */      .theme-toggle {          position:             relative;          display:             inline-flex;          align-items:             center;          gap:             9px;          min-height:             46px;          padding:             8px 14px;          border:             1px solid             var(--dashboard-border);          border-radius:             12px;          background:             var(--dashboard-surface);          color:             var(--dashboard-text-secondary);          font-family:             inherit;          font-size:             12px;          font-weight:             600;          cursor:             pointer;          overflow:             hidden;          transition:             all .3s ease;      }       .theme-toggle::before {          content:             "";          position:             absolute;          top:             0;          left:             -100%;          width:             55%;          height:             100%;          background:             linear-gradient(                 90deg,                 transparent,                 rgba(11,143,172,.12),                 transparent             );          transform:             skewX(-20deg);          transition:             left .6s ease;      }       .theme-toggle:hover::before {          left:             130%;      }       .theme-toggle:hover {          border-color:             rgba(11,143,172,.35);          color:             var(--dashboard-teal);          transform:             translateY(-2px);          box-shadow:             0 8px 25px             rgba(11,143,172,.10);      }       .theme-toggle-icon {          width:             28px;          height:             28px;          display:             flex;          align-items:             center;          justify-content:             center;          border-radius:             8px;          background:             rgba(11,143,172,.09);          color:             var(--dashboard-teal);          transition:             transform .5s ease;      }       .theme-toggle:hover .theme-toggle-icon {          transform:             rotate(20deg)             scale(1.1);      }       /* =============================================================        BUTTON     ============================================================= */      .manage-btn {          position:             relative;          display:             inline-flex;          align-items:             center;          justify-content:             center;          gap:             9px;          min-height:             46px;          padding:             9px 18px;          border:             1px solid             var(--dashboard-teal);          border-radius:             12px;          background:             linear-gradient(                 135deg,                 var(--dashboard-teal),                 var(--dashboard-teal-dark)             );          color:             #ffffff !important;          text-decoration:             none !important;          font-size:             12px;          font-weight:             700;          white-space:             nowrap;          overflow:             hidden;          box-shadow:             0 8px 25px             rgba(11,143,172,.18);          transition:             all .3s ease;      }       .manage-btn::before {          content:             "";          position:             absolute;          top:             0;          left:             -100%;          width:             55%;          height:             100%;          background:             linear-gradient(                 90deg,                 transparent,                 rgba(255,255,255,.22),                 transparent             );          transform:             skewX(-20deg);          transition:             left .6s ease;      }       .manage-btn:hover::before {          left:             130%;      }       .manage-btn:hover {          color:             #fff !important;          transform:             translateY(-3px);          box-shadow:             0 14px 35px             rgba(11,143,172,.28);      }       .btn-arrow {          font-size:             9px;          opacity:             .75;          transition:             transform .3s ease;      }       .manage-btn:hover .btn-arrow {          opacity:             1;          transform:             translateX(-5px);      }       /* =============================================================        STATISTICS     ============================================================= */      .stats-grid {          display:             grid;          grid-template-columns:             repeat(3, minmax(0, 1fr));          gap:             20px;          width:             100%;          margin-bottom:             24px;      }       .stat-card {          position:             relative;          min-height:             205px;          padding:             24px;          overflow:             hidden;          border:             1px solid             var(--dashboard-border);          border-right:             4px solid             var(--dashboard-teal);          border-radius:             18px;          background:             var(--dashboard-surface);          box-shadow:             var(--dashboard-shadow);          transition:             transform .35s ease,             box-shadow .35s ease,             border-color .35s ease;      }       .stat-card::after {          content:             "";          position:             absolute;          top:             0;          left:             -100%;          width:             60%;          height:             2px;          background:             linear-gradient(                 90deg,                 transparent,                 var(--dashboard-teal),                 transparent             );          animation:             shine             4s             ease-in-out             infinite;      }       .stat-card:hover {          transform:             translateY(-7px);          box-shadow:             var(--dashboard-shadow-hover);          border-color:             var(--dashboard-border-hover);      }       .stat-card::before {          content:             "";          position:             absolute;          top:             -70px;          left:             -50px;          width:             150px;          height:             150px;          border-radius:             50%;          background:             rgba(11,143,172,.07);          filter:             blur(18px);      }       .card-glow {          position:             absolute;          left:             -55px;          bottom:             -55px;          width:             125px;          height:             125px;          border-radius:             50%;          background:             rgba(11,143,172,.055);          filter:             blur(22px);          animation:             floatingGlow             6s             ease-in-out             infinite;      }       .rating-card {          border-right-color:             var(--dashboard-amber);      }       .rating-card .card-glow {          background:             rgba(232,160,0,.07);      }       .status-card.is-open {          border-right-color:             var(--dashboard-green);      }       .status-card.is-closed {          border-right-color:             var(--dashboard-red);      }       .stat-top {          position:             relative;          z-index:             2;          display:             flex;          align-items:             flex-start;          justify-content:             space-between;          gap:             18px;      }       .stat-content {          min-width:             0;      }       .stat-title {          display:             block;          margin-bottom:             15px;          color:             var(--dashboard-text-secondary);          font-size:             14px;          font-weight:             700;      }       .stat-icon {          width:             58px;          height:             58px;          flex-shrink:             0;          display:             flex;          align-items:             center;          justify-content:             center;          border-radius:             16px;          font-size:             22px;          transition:             transform .4s ease;      }       .stat-card:hover .stat-icon {          transform:             rotate(-8deg)             scale(1.08);      }       .rating-icon {          color:             var(--dashboard-amber);          background:             rgba(232,160,0,.11);          animation:             iconFloat             4s             ease-in-out             infinite;      }       .status-icon {          color:             var(--dashboard-green);          background:             rgba(22,168,117,.10);      }       .stock-icon {          color:             var(--dashboard-teal);          background:             rgba(11,143,172,.10);          animation:             iconFloat             4.5s             ease-in-out             infinite;      }       /* =============================================================        RATING     ============================================================= */      .rating-value {          display:             flex;          align-items:             center;          gap:             14px;      }       .rating-value strong {          color:             var(--dashboard-text);          font-size:             42px;          line-height:             1;          font-weight:             800;      }       .rating-stars {          display:             flex;          align-items:             center;          gap:             4px;          direction:             ltr;          color:             var(--dashboard-amber);          font-size:             14px;      }       .rating-stars i {          animation:             starBounce             2.5s             ease-in-out             infinite;      }       .rating-stars i:nth-child(2) {         animation-delay: .1s;     }      .rating-stars i:nth-child(3) {         animation-delay: .2s;     }      .rating-stars i:nth-child(4) {         animation-delay: .3s;     }      .rating-stars i:nth-child(5) {         animation-delay: .4s;     }       .rating-label,     .stock-label,     .status-label {          margin-top:             9px;          color:             var(--dashboard-muted);          font-size:             12px;      }       /* =============================================================        STATUS     ============================================================= */      .pharmacy-status {          display:             inline-flex;          align-items:             center;          gap:             9px;          max-width:             100%;          padding:             10px 14px;          border:             1px solid             rgba(22,168,117,.18);          border-radius:             30px;          background:             rgba(22,168,117,.08);          color:             var(--dashboard-green);          font-size:             13px;          font-weight:             700;      }       .is-closed .pharmacy-status {          color:             var(--dashboard-red);          background:             rgba(225,79,79,.08);          border-color:             rgba(225,79,79,.18);      }       .status-dot {          width:             8px;          height:             8px;          flex-shrink:             0;          border-radius:             50%;          background:             currentColor;          box-shadow:             0 0 12px             currentColor;          animation:             pulseLive             2s             infinite;      }       /* =============================================================        STOCK     ============================================================= */      .stock-value {          color:             var(--dashboard-text);          font-size:             42px;          line-height:             1;          font-weight:             800;      }       .stock-value span {          color:             var(--dashboard-text-secondary);          font-size:             15px;          font-weight:             500;      }       /* =============================================================        STAT FOOTER     ============================================================= */      .stat-footer {          position:             absolute;          right:             24px;          left:             24px;          bottom:             18px;          padding-top:             12px;          border-top:             1px solid             var(--dashboard-border);          color:             var(--dashboard-muted);          font-size:             11px;      }       .stat-footer i {          margin-left:             6px;          color:             var(--dashboard-teal);      }       .rating-card .stat-footer i {          color:             var(--dashboard-amber);      }       /* =============================================================        PARTICLES     ============================================================= */      .floating-particle {          position:             absolute;          width:             5px;          height:             5px;          border-radius:             50%;          background:             var(--dashboard-teal);          opacity:             .35;          animation:             particleFloat             4s             ease-in-out             infinite;      }       .particle-1 {         top: 35px;         left: 35%;     }      .particle-2 {         top: 75px;         left: 48%;         animation-delay: 1s;     }      .particle-3 {         top: 50px;         left: 42%;         animation-delay: .7s;     }      .particle-4 {         bottom: 65px;         left: 30%;         animation-delay: 1.5s;     }      .particle-5 {         top: 40px;         left: 40%;         animation-delay: .5s;     }      .particle-6 {         bottom: 60px;         left: 25%;         animation-delay: 1.8s;     }       /* =============================================================        MAIN CARDS     ============================================================= */      .dashboard-card {          width:             100%;          margin-bottom:             24px;          overflow:             hidden;          border:             1px solid             var(--dashboard-border);          border-radius:             18px;          background:             var(--dashboard-surface);          box-shadow:             var(--dashboard-shadow);          transition:             background .35s ease,             border-color .35s ease,             box-shadow .35s ease;      }       .dashboard-card:hover {          border-color:             var(--dashboard-border-hover);      }       /* =============================================================        CARD HEADER     ============================================================= */      .card-header {          min-height:             76px;          display:             flex;          align-items:             center;          justify-content:             space-between;          gap:             20px;          padding:             16px 24px;          border-bottom:             1px solid             var(--dashboard-border);      }       .section-title {          display:             flex;          align-items:             center;          gap:             14px;          min-width:             0;      }       .section-icon {          width:             46px;          height:             46px;          flex-shrink:             0;          display:             flex;          align-items:             center;          justify-content:             center;          border-radius:             13px;          background:             rgba(11,143,172,.09);          color:             var(--dashboard-teal);          font-size:             18px;      }       .animated-icon {          animation:             iconFloat             4s             ease-in-out             infinite;      }       .section-title h2 {          margin:             0;          color:             var(--dashboard-text);          font-size:             17px;          font-weight:             800;      }       .section-title p {          margin:             4px 0 0;          color:             var(--dashboard-muted);          font-size:             11px;      }       /* =============================================================        LIVE     ============================================================= */      .live-badge {          display:             inline-flex;          align-items:             center;          gap:             8px;          padding:             8px 12px;          border:             1px solid             rgba(11,143,172,.18);          border-radius:             20px;          background:             rgba(11,143,172,.06);          color:             var(--dashboard-teal);          font-size:             11px;          font-weight:             700;          white-space:             nowrap;      }       .live-dot {          width:             7px;          height:             7px;          border-radius:             50%;          background:             var(--dashboard-teal);          box-shadow:             0 0 9px             var(--dashboard-teal);          animation:             pulseLive             1.8s             infinite;      }       /* =============================================================        CHART     ============================================================= */      .chart-container {          position:             relative;          width:             100%;          height:             300px;          padding:             18px 24px 24px;      }       .chart-container canvas {          width:             100% !important;          height:             100% !important;      }       .chart-legend-mobile {          display:             none;      }       /* =============================================================        VIEW ALL     ============================================================= */      .view-all-btn {          display:             inline-flex;          align-items:             center;          gap:             8px;          padding:             9px 14px;          border:             1px solid             var(--dashboard-border);          border-radius:             10px;          background:             var(--dashboard-surface-2);          color:             var(--dashboard-text) !important;          text-decoration:             none !important;          font-size:             11px;          font-weight:             600;          transition:             all .3s ease;          white-space:             nowrap;      }       .view-all-btn i {          color:             var(--dashboard-teal);          font-size:             9px;          transition:             transform .3s ease;      }       .view-all-btn:hover {          color:             var(--dashboard-teal) !important;          background:             rgba(11,143,172,.06);          border-color:             rgba(11,143,172,.35);          transform:             translateY(-2px);      }       .view-all-btn:hover i {          transform:             translateX(-5px);      }       /* =============================================================        TABLE     ============================================================= */      .table-wrapper {          width:             100%;          overflow-x:             auto;      }       .medicine-table {          width:             100%;          border-collapse:             collapse;          color:             var(--dashboard-text);      }       .medicine-table th {          padding:             16px 24px;          background:             var(--dashboard-surface-2);          border-bottom:             1px solid             var(--dashboard-border);          color:             var(--dashboard-muted);          font-size:             12px;          font-weight:             700;          text-align:             right;          white-space:             nowrap;      }       .medicine-table td {          padding:             15px 24px;          border-bottom:             1px solid             var(--dashboard-border);          color:             var(--dashboard-text-secondary);          font-size:             13px;          vertical-align:             middle;      }       .medicine-table tbody tr {          transition:             all .25s ease;          animation:             rowAppear             .5s             ease             both;      }       .medicine-table tbody tr:nth-child(2) {         animation-delay: .05s;     }      .medicine-table tbody tr:nth-child(3) {         animation-delay: .10s;     }      .medicine-table tbody tr:nth-child(4) {         animation-delay: .15s;     }      .medicine-table tbody tr:nth-child(5) {         animation-delay: .20s;     }       .medicine-table tbody tr:hover {          background:             rgba(11,143,172,.035);          transform:             translateX(-3px);      }       .medicine-table tbody tr:last-child td {          border-bottom:             0;      }       /* =============================================================        MEDICINE     ============================================================= */      .medicine-name {          display:             flex;          align-items:             center;          gap:             12px;          min-width:             230px;      }       .medicine-icon {          width:             42px;          height:             42px;          flex-shrink:             0;          display:             flex;          align-items:             center;          justify-content:             center;          border:             1px solid             rgba(11,143,172,.14);          border-radius:             11px;          background:             rgba(11,143,172,.07);          color:             var(--dashboard-teal);          font-size:             16px;          transition:             all .35s ease;      }       .medicine-table tr:hover .medicine-icon {          background:             rgba(11,143,172,.13);          transform:             scale(1.1)             rotate(-5deg);      }       .medicine-name strong {          display:             block;          color:             var(--dashboard-text);          font-size:             13px;          font-weight:             700;      }       .medicine-name small {          display:             block;          margin-top:             3px;          color:             var(--dashboard-muted);          font-size:             10px;      }       /* =============================================================        PRICE     ============================================================= */      .price-wrapper {          display:             flex;          align-items:             baseline;          gap:             5px;      }       .price-wrapper strong {          color:             var(--dashboard-teal);          font-size:             14px;          font-weight:             800;      }       .price-wrapper small {          color:             var(--dashboard-muted);          font-size:             10px;      }       /* =============================================================        STOCK NUMBER     ============================================================= */      .stock-number {          display:             inline-flex;          align-items:             baseline;          gap:             5px;          padding:             7px 11px;          border:             1px solid             var(--dashboard-border);          border-radius:             9px;          background:             var(--dashboard-surface-2);      }       .stock-number span {          color:             var(--dashboard-text);          font-size:             14px;          font-weight:             800;      }       .stock-number small {          color:             var(--dashboard-muted);          font-size:             9px;      }       .stock-number.low-stock {          border-color:             rgba(232,160,0,.22);          background:             rgba(232,160,0,.06);      }       .stock-number.low-stock span {          color:             var(--dashboard-amber);      }       /* =============================================================        AVAILABILITY     ============================================================= */      .availability {          display:             inline-flex;          align-items:             center;          gap:             7px;          padding:             7px 11px;          border-radius:             20px;          font-size:             10px;          font-weight:             700;      }       .availability-dot {          width:             6px;          height:             6px;          border-radius:             50%;          background:             currentColor;      }       .available {          color:             var(--dashboard-green);          background:             rgba(22,168,117,.08);      }       .unavailable {          color:             var(--dashboard-red);          background:             rgba(225,79,79,.08);      }       /* =============================================================        EDIT BUTTON     ============================================================= */      .edit-btn {          display:             inline-flex;          align-items:             center;          gap:             7px;          padding:             8px 12px;          border:             1px solid             var(--dashboard-border);          border-radius:             9px;          background:             var(--dashboard-surface-2);          color:             var(--dashboard-text-secondary) !important;          text-decoration:             none !important;          font-size:             10px;          font-weight:             600;          transition:             all .25s ease;      }       .edit-btn i {          color:             var(--dashboard-teal);          font-size:             9px;      }       .edit-btn:hover {          color:             var(--dashboard-teal) !important;          background:             rgba(11,143,172,.07);          border-color:             rgba(11,143,172,.35);          transform:             translateY(-2px);          box-shadow:             0 6px 15px             rgba(11,143,172,.08);      }       /* =============================================================        EMPTY     ============================================================= */      .empty-state,     .empty-ratings {          padding:             65px 25px;          text-align:             center;      }       .empty-icon {          width:             65px;          height:             65px;          margin:             0 auto 16px;          display:             flex;          align-items:             center;          justify-content:             center;          border:             1px solid             var(--dashboard-border);          border-radius:             18px;          background:             var(--dashboard-surface-2);          color:             var(--dashboard-muted);          font-size:             25px;          animation:             iconFloat             4s             ease-in-out             infinite;      }       .empty-state h3,     .empty-ratings h3 {          margin:             0 0 7px;          color:             var(--dashboard-text);          font-size:             16px;      }       .empty-state p,     .empty-ratings p {          margin:             0 0 18px;          color:             var(--dashboard-muted);          font-size:             12px;      }       /* =============================================================        RATINGS     ============================================================= */      .ratings-grid {          display:             grid;          grid-template-columns:             repeat(2, minmax(0, 1fr));          gap:             18px;          padding:             20px;      }       .rating-item {          position:             relative;          padding:             20px;          overflow:             hidden;          border:             1px solid             var(--dashboard-border);          border-radius:             15px;          background:             var(--dashboard-surface-2);          transition:             all .3s ease;      }       .rating-item::before {          content:             "";          position:             absolute;          top:             -55px;          right:             -40px;          width:             110px;          height:             110px;          border-radius:             50%;          background:             rgba(11,143,172,.05);          filter:             blur(15px);          transition:             transform .4s ease;      }       .rating-item:hover {          transform:             translateY(-5px);          border-color:             rgba(11,143,172,.25);          box-shadow:             var(--dashboard-shadow);      }       .rating-item:hover::before {          transform:             scale(1.35);      }       .rating-header {          position:             relative;          z-index:             1;          display:             flex;          align-items:             center;          justify-content:             space-between;          gap:             12px;          margin-bottom:             12px;      }       .user-info {          display:             flex;          align-items:             center;          gap:             11px;      }       .avatar {          width:             42px;          height:             42px;          flex-shrink:             0;          display:             flex;          align-items:             center;          justify-content:             center;          border-radius:             50%;          background:             linear-gradient(                 145deg,                 var(--dashboard-teal),                 var(--dashboard-teal-dark)             );          color:             white;          font-size:             14px;          font-weight:             800;          box-shadow:             0 7px 18px             rgba(11,143,172,.15);          animation:             iconFloat             4s             ease-in-out             infinite;      }       .user-details strong {          display:             block;          color:             var(--dashboard-text);          font-size:             13px;          font-weight:             700;      }       .user-details span {          display:             block;          margin-top:             3px;          color:             var(--dashboard-muted);          font-size:             9px;      }       .rating-date {          color:             var(--dashboard-muted);          font-size:             9px;      }       .rating-item .rating-stars {          margin-bottom:             12px;          font-size:             12px;      }       .empty-star {          color:             #cbd4d1;      }       html.dark-dashboard .empty-star {          color:             #414b48;      }       .rating-comment {          display:             flex;          align-items:             flex-start;          gap:             9px;      }       .rating-comment > i {          margin-top:             4px;          color:             rgba(11,143,172,.55);          font-size:             12px;      }       .rating-comment p {          margin:             0;          color:             var(--dashboard-text-secondary);          font-size:             11px;          line-height:             1.9;      }       /* =============================================================        PAGINATION     ============================================================= */      .pagination-wrapper {          padding:             15px 20px;          border-top:             1px solid             var(--dashboard-border);      }       .pagination-wrapper nav {          display:             flex;          justify-content:             center;      }       .pagination-wrapper a,     .pagination-wrapper span {          background:             var(--dashboard-surface-2) !important;          border-color:             var(--dashboard-border) !important;          color:             var(--dashboard-text-secondary) !important;      }       .pagination-wrapper .active span {          background:             var(--dashboard-teal) !important;          color:             #fff !important;          border-color:             var(--dashboard-teal) !important;      }       /* =============================================================        SCROLLBAR     ============================================================= */      .pharmacy-dashboard ::-webkit-scrollbar {          width:             7px;          height:             7px;      }       .pharmacy-dashboard ::-webkit-scrollbar-track {          background:             var(--dashboard-surface-2);      }       .pharmacy-dashboard ::-webkit-scrollbar-thumb {          border-radius:             10px;          background:             rgba(11,143,172,.35);      }       .pharmacy-dashboard ::-webkit-scrollbar-thumb:hover {          background:             rgba(11,143,172,.60);      }       /* =============================================================        LARGE DESKTOP     ============================================================= */      @media (min-width: 1400px) {          .pharmacy-dashboard {              padding-left:                 4vw !important;              padding-right:                 4vw !important;          }          .stats-grid {              gap:                 24px;          }          .stat-card {              min-height:                 215px;              padding:                 27px;          }          .chart-container {              height:                 330px;          }      }       /* =============================================================        LAPTOP     ============================================================= */      @media (max-width: 1150px) {          .pharmacy-dashboard {              padding:                 24px 2vw 40px !important;          }          .stats-grid {              grid-template-columns:                 repeat(2, minmax(0, 1fr));          }          .stock-card {              grid-column:                 1 / -1;          }      }       /* =============================================================        TABLET     ============================================================= */      @media (max-width: 900px) {          .pharmacy-dashboard {              padding:                 22px 18px 35px !important;          }          .header-content {              align-items:                 flex-start;          }          .header-actions {              flex-direction:                 column;              align-items:                 stretch;          }          .theme-toggle,         .manage-btn {              justify-content:                 center;          }          .header-text h1 {              font-size:                 26px;          }          .header-text p {              font-size:                 12px;          }          .ratings-grid {              grid-template-columns:                 1fr;          }      }       /* =============================================================        MOBILE     ============================================================= */      @media (max-width: 700px) {          .pharmacy-dashboard {              padding:                 16px 12px 28px !important;          }          .dashboard-header {              margin-bottom:                 20px;              padding-bottom:                 18px;          }          .header-content {              flex-direction:                 column;              align-items:                 stretch;          }          .header-info {              align-items:                 center;          }          .header-icon {              width:                 64px;              height:                 64px;              border-radius:                 18px;              font-size:                 25px;          }          .header-text h1 {              font-size:                 23px;          }          .header-text p {              font-size:                 11px;              line-height:                 1.7;          }          .header-actions {              width:                 100%;              flex-direction:                 row;          }          .theme-toggle,         .manage-btn {              flex:                 1;          }          .stats-grid {              grid-template-columns:                 1fr;              gap:                 14px;          }          .stock-card {              grid-column:                 auto;          }          .stat-card {              min-height:                 195px;              padding:                 20px;          }          .stat-title {              font-size:                 13px;          }          .rating-value strong,         .stock-value {              font-size:                 36px;          }          .card-header {              align-items:                 flex-start;              flex-direction:                 column;              padding:                 16px;          }          .section-title h2 {              font-size:                 15px;          }          .section-title p {              font-size:                 10px;          }          .view-all-btn {              align-self:                 flex-start;          }          .live-badge {              display:                 none;          }          .chart-legend-mobile {              display:                 flex;              align-items:                 center;              gap:                 20px;              padding:                 12px 16px 0;              color:                 var(--dashboard-muted);              font-size:                 10px;          }          .chart-legend-mobile span {              display:                 flex;              align-items:                 center;              gap:                 7px;          }          .legend-line {              display:                 inline-block;              width:                 20px;              height:                 3px;              border-radius:                 5px;          }          .legend-line.orders {              background:                 var(--dashboard-teal);          }          .legend-line.ratings {              background:                 var(--dashboard-amber);          }          .chart-container {              height:                 250px;              padding:                 12px 7px 18px;          }          .ratings-grid {              padding:                 14px;          }          .rating-item {              padding:                 16px;          }      }       /* =============================================================        SMALL MOBILE     ============================================================= */      @media (max-width: 500px) {          .pharmacy-dashboard {              padding:                 12px 9px 22px !important;          }          .header-info {              gap:                 12px;          }          .header-icon {              width:                 56px;              height:                 56px;              font-size:                 22px;          }          .header-text h1 {              font-size:                 20px;          }          .header-text p {              font-size:                 9px;          }          .header-actions {              gap:                 8px;          }          .theme-toggle,         .manage-btn {              min-height:                 42px;              padding:                 7px 10px;              font-size:                 10px;          }          .theme-toggle-icon {              width:                 24px;              height:                 24px;          }          .stat-card {              min-height:                 180px;              padding:                 17px;              border-radius:                 15px;          }          .stat-icon {              width:                 48px;              height:                 48px;              border-radius:                 13px;              font-size:                 18px;          }          .rating-value strong,         .stock-value {              font-size:                 32px;          }          .stat-footer {              right:                 17px;              left:                 17px;              bottom:                 14px;              font-size:                 9px;          }          .dashboard-card {              border-radius:                 15px;          }          .section-icon {              width:                 40px;              height:                 40px;              font-size:                 15px;          }          .medicine-table th {              padding:                 13px 15px;              font-size:                 10px;          }          .medicine-table td {              padding:                 12px 15px;              font-size:                 11px;          }          .medicine-name {              min-width:                 190px;          }          .medicine-icon {              width:                 36px;              height:                 36px;          }          .rating-header {              align-items:                 flex-start;          }          .rating-date {              display:                 none;          }      }       /* =============================================================        REDUCED MOTION     ============================================================= */      @media (prefers-reduced-motion: reduce) {          .pharmacy-dashboard *,         .pharmacy-dashboard *::before,         .pharmacy-dashboard *::after {              animation:                 none !important;              transition:                 none !important;          }      }  </style>
+
+    {{-- =============================================================
+    CHART.JS
+    ============================================================= --}}
+
+    @push('scripts')
+
+        ```
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <script>
+
+            document.addEventListener('DOMContentLoaded', function () {
+
+                /* =====================================================
+                   THEME
+                ===================================================== */
+
+                const themeToggle =
+                    document.getElementById('themeToggle');
+
+                const themeIcon =
+                    themeToggle?.querySelector('.theme-toggle-icon i');
+
+                const themeText =
+                    themeToggle?.querySelector('.theme-toggle-text');
+
+
+                const savedTheme =
+                    localStorage.getItem('pharmacy-dashboard-theme');
+
+
+                if (savedTheme === 'dark') {
+
+                    document.documentElement.classList.add(
+                        'dark-dashboard'
+                    );
+
+                    if (themeIcon) {
+
+                        themeIcon.className =
+                            'fas fa-sun';
+
+                    }
+
+                    if (themeText) {
+
+                        themeText.textContent =
+                            'الوضع النهاري';
+
+                    }
+
+                }
+
+
+                themeToggle?.addEventListener(
+                    'click',
+                    function () {
+
+                        const isDark =
+                            document.documentElement.classList.toggle(
+                                'dark-dashboard'
+                            );
+
+
+                        localStorage.setItem(
+                            'pharmacy-dashboard-theme',
+                            isDark ? 'dark' : 'light'
+                        );
+
+
+                        if (themeIcon) {
+
+                            themeIcon.className =
+                                isDark
+                                    ? 'fas fa-sun'
+                                    : 'fas fa-moon';
+
+                        }
+
+
+                        if (themeText) {
+
+                            themeText.textContent =
+                                isDark
+                                    ? 'الوضع النهاري'
+                                    : 'الوضع الليلي';
+
+                        }
+
+
+                        updateChartTheme();
+
+                    }
+                );
+
+
+                /* =====================================================
+                   CHART
+                ===================================================== */
+
+                const canvas =
+                    document.getElementById(
+                        'pharmacyActivityChart'
+                    );
+
+
+                if (!canvas) {
+                    return;
+                }
+
+
+                const ctx =
+                    canvas.getContext('2d');
+
+
+                let tealGradient =
+                    ctx.createLinearGradient(
+                        0,
+                        0,
+                        0,
+                        320
+                    );
+
+
+                tealGradient.addColorStop(
+                    0,
+                    'rgba(11,143,172,.22)'
+                );
+
+
+                tealGradient.addColorStop(
+                    1,
+                    'rgba(11,143,172,0)'
+                );
+
+
+                const isDarkMode = () =>
+                    document.documentElement.classList.contains(
+                        'dark-dashboard'
+                    );
+
+
+                const chart =
+                    new Chart(ctx, {
+
+                        type:
+                            'line',
+
+                        data: {
+
+                            labels: [
+
+                                'السبت',
+                                'الأحد',
+                                'الإثنين',
+                                'الثلاثاء',
+                                'الأربعاء',
+                                'الخميس',
+                                'الجمعة'
+
+                            ],
+
+                            datasets: [
+
+                                {
+
+                                    label:
+                                        'الطلبات',
+
+                                    data: [
+
+                                        14,
+                                        22,
+                                        18,
+                                        29,
+                                        25,
+                                        34,
+                                        40
+
+                                    ],
+
+                                    borderColor:
+                                        '#0B8FAC',
+
+                                    backgroundColor:
+                                    tealGradient,
+
+                                    borderWidth:
+                                        3,
+
+                                    fill:
+                                        true,
+
+                                    tension:
+                                        .42,
+
+                                    pointRadius:
+                                        4,
+
+                                    pointHoverRadius:
+                                        7,
+
+                                    pointBackgroundColor:
+                                        isDarkMode()
+                                            ? '#18201d'
+                                            : '#ffffff',
+
+                                    pointBorderColor:
+                                        '#0B8FAC',
+
+                                    pointBorderWidth:
+                                        2
+
+                                },
+
+                                {
+
+                                    label:
+                                        'التقييمات',
+
+                                    data: [
+
+                                        7,
+                                        8,
+                                        7,
+                                        9,
+                                        8,
+                                        10,
+                                        11
+
+                                    ],
+
+                                    borderColor:
+                                        '#e8a000',
+
+                                    backgroundColor:
+                                        'transparent',
+
+                                    borderWidth:
+                                        2.5,
+
+                                    borderDash: [
+
+                                        7,
+                                        5
+
+                                    ],
+
+                                    fill:
+                                        false,
+
+                                    tension:
+                                        .42,
+
+                                    pointRadius:
+                                        3.5,
+
+                                    pointHoverRadius:
+                                        7,
+
+                                    pointBackgroundColor:
+                                        isDarkMode()
+                                            ? '#18201d'
+                                            : '#ffffff',
+
+                                    pointBorderColor:
+                                        '#e8a000',
+
+                                    pointBorderWidth:
+                                        2
+
+                                }
+
+                            ]
+
+                        },
+
+
+                        options: {
+
+                            responsive:
+                                true,
+
+                            maintainAspectRatio:
+                                false,
+
+
+                            interaction: {
+
+                                mode:
+                                    'index',
+
+                                intersect:
+                                    false
+
+                            },
+
+
+                            animation: {
+
+                                duration:
+                                    1300,
+
+                                easing:
+                                    'easeOutQuart'
+
+                            },
+
+
+                            plugins: {
+
+                                legend: {
+
+                                    position:
+                                        'top',
+
+                                    align:
+                                        'start',
+
+                                    labels: {
+
+                                        color:
+                                            isDarkMode()
+                                                ? '#aebbb7'
+                                                : '#667773',
+
+                                        usePointStyle:
+                                            true,
+
+                                        pointStyle:
+                                            'circle',
+
+                                        padding:
+                                            18,
+
+                                        font: {
+
+                                            family:
+                                                'Cairo, sans-serif',
+
+                                            size:
+                                                11,
+
+                                            weight:
+                                                '600'
+
+                                        }
+
+                                    }
+
+                                },
+
+
+                                tooltip: {
+
+                                    rtl:
+                                        true,
+
+                                    textDirection:
+                                        'rtl',
+
+                                    backgroundColor:
+                                        isDarkMode()
+                                            ? '#101816'
+                                            : '#ffffff',
+
+                                    borderColor:
+                                        isDarkMode()
+                                            ? 'rgba(255,255,255,.10)'
+                                            : '#dce7e4',
+
+                                    borderWidth:
+                                        1,
+
+                                    titleColor:
+                                        isDarkMode()
+                                            ? '#ffffff'
+                                            : '#172321',
+
+                                    bodyColor:
+                                        isDarkMode()
+                                            ? '#bfc9c5'
+                                            : '#536460',
+
+                                    padding:
+                                        12,
+
+                                    cornerRadius:
+                                        10,
+
+                                    displayColors:
+                                        true,
+
+                                    titleFont: {
+
+                                        family:
+                                            'Cairo, sans-serif',
+
+                                        size:
+                                            11,
+
+                                        weight:
+                                            '700'
+
+                                    },
+
+                                    bodyFont: {
+
+                                        family:
+                                            'Cairo, sans-serif',
+
+                                        size:
+                                            10
+
+                                    }
+
+                                }
+
+                            },
+
+
+                            scales: {
+
+                                x: {
+
+                                    border: {
+
+                                        display:
+                                            false
+
+                                    },
+
+                                    grid: {
+
+                                        color:
+                                            () =>
+                                                isDarkMode()
+                                                    ? 'rgba(255,255,255,.045)'
+                                                    : 'rgba(50,80,75,.07)',
+
+                                        drawTicks:
+                                            false
+
+                                    },
+
+                                    ticks: {
+
+                                        color:
+                                            () =>
+                                                isDarkMode()
+                                                    ? '#778581'
+                                                    : '#788985',
+
+                                        padding:
+                                            8,
+
+                                        font: {
+
+                                            family:
+                                                'Cairo, sans-serif',
+
+                                            size:
+                                                10
+
+                                        }
+
+                                    }
+
+                                },
+
+
+                                y: {
+
+                                    position:
+                                        'right',
+
+                                    beginAtZero:
+                                        true,
+
+                                    border: {
+
+                                        display:
+                                            false
+
+                                    },
+
+                                    grid: {
+
+                                        color:
+                                            () =>
+                                                isDarkMode()
+                                                    ? 'rgba(255,255,255,.045)'
+                                                    : 'rgba(50,80,75,.07)',
+
+                                        drawTicks:
+                                            false
+
+                                    },
+
+                                    ticks: {
+
+                                        color:
+                                            () =>
+                                                isDarkMode()
+                                                    ? '#778581'
+                                                    : '#788985',
+
+                                        padding:
+                                            8,
+
+                                        font: {
+
+                                            family:
+                                                'Cairo, sans-serif',
+
+                                            size:
+                                                10
+
+                                        }
+
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    });
+
+
+                /* =====================================================
+                   UPDATE CHART THEME
+                ===================================================== */
+
+                function updateChartTheme() {
+
+                    if (!chart) {
+                        return;
+                    }
+
+
+                    const dark =
+                        isDarkMode();
+
+
+                    chart.data.datasets.forEach(
+                        function (dataset) {
+
+                            dataset.pointBackgroundColor =
+                                dark
+                                    ? '#18201d'
+                                    : '#ffffff';
+
+                        }
+                    );
+
+
+                    chart.options.plugins.legend.labels.color =
+                        dark
+                            ? '#aebbb7'
+                            : '#667773';
+
+
+                    chart.options.plugins.tooltip.backgroundColor =
+                        dark
+                            ? '#101816'
+                            : '#ffffff';
+
+
+                    chart.options.plugins.tooltip.titleColor =
+                        dark
+                            ? '#ffffff'
+                            : '#172321';
+
+
+                    chart.options.plugins.tooltip.bodyColor =
+                        dark
+                            ? '#bfc9c5'
+                            : '#536460';
+
+
+                    chart.update();
+
+                }
+
+            });
+
+        </script>
+
+
+    @endpush
+
+@endsection

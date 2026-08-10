@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'title' => 'سجل العمليات والأنشطة',
+    'main_heading' => '📜 سجل العمليات والأنشطة (Audit Logs)',
+    'main_description' => 'متابعة كافة التحركات والأحداث الحاصلة داخل منصة :site_name',
+    'export_excel_button' => '📊 تصدير تقرير إكسل',
+    'search_placeholder' => '🔍 بحث في السجلات (اسم، حدث، IP...)',
+    'all_activities_option' => 'جميع الأنشطة',
+    'create_option' => 'إضافة (Create)',
+    'update_option' => 'تحديث (Update)',
+    'delete_option' => 'حذف (Delete)',
+    'auth_option' => 'تسجيل دخول (Auth)',
+    'col_hash' => '#',
+    'col_user' => 'المستخدم',
+    'col_event_operation' => 'الحدث / العملية',
+    'col_details' => 'التفاصيل',
+    'col_ip_address' => 'عنوان IP',
+    'col_date_time' => 'التاريخ والوقت',
+    'example_add_medicine' => 'تمت إضافة 12 عبوة جديدة من "باراسيتامول 500"',
+    'example_update_settings' => 'تحديث البريد الإلكتروني للدعم الفني',
+    'example_login_success' => 'تسجيل دخول ناجح إلى لوحة الصيدلية',
+    'example_delete_account' => 'طلب حذف الحساب الشخصي من التطبيق',
+    'time_ago_minutes' => 'قبل 18 دقيقة',
+    'time_ago_hour' => 'قبل ساعة',
+    'time_ago_hours' => 'قبل ساعتين',
+    'time_ago_days' => 'قبل يومين',
+];
