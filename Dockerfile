@@ -33,7 +33,8 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Expose port and start Laravel
+# Expose port
 EXPOSE 10000
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+# Run migrations then start Laravel
+CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
