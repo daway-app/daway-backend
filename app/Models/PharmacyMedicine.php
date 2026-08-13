@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+/**
+ * هاد الموديل بيمثل جدول pharmacy_medicines.
+ * تقنياً هو جدول "ربط" (pivot) بين pharmacies و medicines،
+ * بس بما إنه فيه أعمدة زيادة عن مجرد pharmacy_id و medicine_id
+ * (زي price و quantity و is_available) — منعاملو كموديل Eloquent
+ * كامل ومستقل، مش نستخدم دالة belongsToMany() العادية.
+ * هيك منقدر نتعامل مع كل سطر لحاله (نعدل السعر، نحدث الكمية...الخ)
+ * بشكل أوضح وأسهل.
+ */
+class PharmacyMedicine extends Model
+{
+    use HasFactory;
+
+    protected $table = 'pharmacy_medicines';
+
+    protected $fillable = [
+        'pharmacy_id',    // الصيدلية
+        'medicine_id',     // الدواء
+        'price',            // سعر الدواء بهاي الصيدلية بالتحديد
+        'quantity',         // الكمية المتوفرة
+        'is_available',     // هل متوفر حالياً أو لأ
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'price' => 'decimal:2',
+            'is_available' => 'boolean',
+        ];
+    }
+
+    /**
+     * علاقة عكسية: هاد السطر تبع صيدلية وحدة بالضبط.
+     */
+    public function pharmacy(): BelongsTo
+    {
+        return $this->belongsTo(Pharmacy::class);
+    }
+
+    /**
+     * علاقة عكسية: هاد السطر تبع دواء وحدة بالضبط.
+     */
+    public function medicine(): BelongsTo
+    {
+        return $this->belongsTo(Medicine::class);
+    }
+}

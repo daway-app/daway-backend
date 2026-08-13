@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'title' => 'المرضى',
+    'main_heading' => 'إدارة المرضى',
+    'main_description' => 'عرض وإدارة جميع المرضى المسجلين في النظام.',
+    'add_patient_button' => 'إضافة مريض',
+    'breadcrumb_main' => 'الرئيسية',
+    'breadcrumb_current' => 'المرضى',
+    'total_patients' => 'إجمالي المرضى',
+    'active_patients_this_month' => 'المرضى النشطون هذا الشهر',
+    'registered_patients_list' => 'قائمة المرضى المسجلين',
+    'search_placeholder' => 'البحث بالاسم، البريد الإلكتروني، أو الهاتف...',
+    'col_patient' => 'المريض',
+    'col_email' => 'البريد الإلكتروني',
+    'col_phone' => 'رقم الهاتف',
+    'col_registration_date' => 'تاريخ التسجيل',
+    'col_actions' => 'الإجراءات',
+    'edit_patient_tooltip' => 'تعديل المريض',
+    'delete_confirm' => 'هل أنت متأكد من رغبتك في حذف هذا المريض؟',
+    'delete_patient_tooltip' => 'حذف المريض',
+    'no_patients_found' => 'لا يوجد مرضى مسجلون حالياً.',
+    'empty_state_description' => 'عند إضافة مرضى جدد، سيظهرون هنا.',
+    'no_search_results' => 'لا توجد نتائج مطابقة لبحثك',
+];
