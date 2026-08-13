@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'login',
         ]);
 
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             SetAppLocale::class,
         ]);
