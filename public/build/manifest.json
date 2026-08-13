@@ -1,0 +1,240 @@
+{
+  "_fonts-C9MNnjVw.css": {
+    "file": "assets/fonts-C9MNnjVw.css",
+    "src": "_fonts-C9MNnjVw.css"
+  },
+  "_instrument-sans-400-normal-D1W7dsQl.woff": {
+    "file": "assets/instrument-sans-400-normal-D1W7dsQl.woff",
+    "src": "_instrument-sans-400-normal-D1W7dsQl.woff"
+  },
+  "_instrument-sans-400-normal-DRC__1Mx.woff2": {
+    "file": "assets/instrument-sans-400-normal-DRC__1Mx.woff2",
+    "src": "_instrument-sans-400-normal-DRC__1Mx.woff2"
+  },
+  "_instrument-sans-500-normal-Dk9ku72i.woff2": {
+    "file": "assets/instrument-sans-500-normal-Dk9ku72i.woff2",
+    "src": "_instrument-sans-500-normal-Dk9ku72i.woff2"
+  },
+  "_instrument-sans-500-normal-Z6ESRlEs.woff": {
+    "file": "assets/instrument-sans-500-normal-Z6ESRlEs.woff",
+    "src": "_instrument-sans-500-normal-Z6ESRlEs.woff"
+  },
+  "_instrument-sans-600-normal-B7fBEWYG.woff2": {
+    "file": "assets/instrument-sans-600-normal-B7fBEWYG.woff2",
+    "src": "_instrument-sans-600-normal-B7fBEWYG.woff2"
+  },
+  "_instrument-sans-600-normal-B9e8oLYv.woff": {
+    "file": "assets/instrument-sans-600-normal-B9e8oLYv.woff",
+    "src": "_instrument-sans-600-normal-B9e8oLYv.woff"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-ByhT78Mz.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/auth/auth.css": {
+    "file": "assets/auth-Ddi574O5.css",
+    "name": "auth",
+    "names": [
+      "auth.css"
+    ],
+    "src": "resources/css/auth/auth.css",
+    "isEntry": true
+  },
+  "resources/css/auth/auth_login.css": {
+    "file": "assets/auth_login-fBS09LB4.css",
+    "name": "auth_login",
+    "names": [
+      "auth_login.css"
+    ],
+    "src": "resources/css/auth/auth_login.css",
+    "isEntry": true
+  },
+  "resources/css/auth/forms.css": {
+    "file": "assets/forms-BPYf302N.css",
+    "name": "forms",
+    "names": [
+      "forms.css"
+    ],
+    "src": "resources/css/auth/forms.css",
+    "isEntry": true
+  },
+  "resources/css/layout/app_layout.css": {
+    "file": "assets/app_layout-DQW-0Lm-.css",
+    "name": "app_layout",
+    "names": [
+      "app_layout.css"
+    ],
+    "src": "resources/css/layout/app_layout.css",
+    "isEntry": true
+  },
+  "resources/css/layout/sidebar.css": {
+    "file": "assets/sidebar-vpqkyw7T.css",
+    "name": "sidebar",
+    "names": [
+      "sidebar.css"
+    ],
+    "src": "resources/css/layout/sidebar.css",
+    "isEntry": true
+  },
+  "resources/css/layout/topbar.css": {
+    "file": "assets/topbar-CHvdtADe.css",
+    "name": "topbar",
+    "names": [
+      "topbar.css"
+    ],
+    "src": "resources/css/layout/topbar.css",
+    "isEntry": true
+  },
+  "resources/css/pages/dashboard.css": {
+    "file": "assets/dashboard-BRI_A5c8.css",
+    "name": "dashboard",
+    "names": [
+      "dashboard.css"
+    ],
+    "src": "resources/css/pages/dashboard.css",
+    "isEntry": true
+  },
+  "resources/css/pages/inventory.css": {
+    "file": "assets/inventory-D0uUVADb.css",
+    "name": "inventory",
+    "names": [
+      "inventory.css"
+    ],
+    "src": "resources/css/pages/inventory.css",
+    "isEntry": true
+  },
+  "resources/css/pages/logs.css": {
+    "file": "assets/logs-DNxCHVif.css",
+    "name": "logs",
+    "names": [
+      "logs.css"
+    ],
+    "src": "resources/css/pages/logs.css",
+    "isEntry": true
+  },
+  "resources/css/pages/medicines.css": {
+    "file": "assets/medicines-DJq4q5s4.css",
+    "name": "medicines",
+    "names": [
+      "medicines.css"
+    ],
+    "src": "resources/css/pages/medicines.css",
+    "isEntry": true
+  },
+  "resources/css/pages/medicines_create.css": {
+    "file": "assets/medicines_create-CfvoRVKZ.css",
+    "name": "medicines_create",
+    "names": [
+      "medicines_create.css"
+    ],
+    "src": "resources/css/pages/medicines_create.css",
+    "isEntry": true
+  },
+  "resources/css/pages/medicines_edit.css": {
+    "file": "assets/medicines_edit-3eVoV7u_.css",
+    "name": "medicines_edit",
+    "names": [
+      "medicines_edit.css"
+    ],
+    "src": "resources/css/pages/medicines_edit.css",
+    "isEntry": true
+  },
+  "resources/css/pages/patients.css": {
+    "file": "assets/patients-BXjMbjaR.css",
+    "name": "patients",
+    "names": [
+      "patients.css"
+    ],
+    "src": "resources/css/pages/patients.css",
+    "isEntry": true
+  },
+  "resources/css/pages/pharmacies.css": {
+    "file": "assets/pharmacies-B5bMpLiT.css",
+    "name": "pharmacies",
+    "names": [
+      "pharmacies.css"
+    ],
+    "src": "resources/css/pages/pharmacies.css",
+    "isEntry": true
+  },
+  "resources/css/pages/pharmacies_create.css": {
+    "file": "assets/pharmacies_create-U4xG0hEK.css",
+    "name": "pharmacies_create",
+    "names": [
+      "pharmacies_create.css"
+    ],
+    "src": "resources/css/pages/pharmacies_create.css",
+    "isEntry": true
+  },
+  "resources/css/pages/pharmacy_dashboard.css": {
+    "file": "assets/pharmacy_dashboard-B7zcSJbt.css",
+    "name": "pharmacy_dashboard",
+    "names": [
+      "pharmacy_dashboard.css"
+    ],
+    "src": "resources/css/pages/pharmacy_dashboard.css",
+    "isEntry": true
+  },
+  "resources/css/pages/pharmacy_medicine_create.css": {
+    "file": "assets/pharmacy_medicine_create-DMkzAoXg.css",
+    "name": "pharmacy_medicine_create",
+    "names": [
+      "pharmacy_medicine_create.css"
+    ],
+    "src": "resources/css/pages/pharmacy_medicine_create.css",
+    "isEntry": true
+  },
+  "resources/css/pages/settings.css": {
+    "file": "assets/settings-DYX27CzM.css",
+    "name": "settings",
+    "names": [
+      "settings.css"
+    ],
+    "src": "resources/css/pages/settings.css",
+    "isEntry": true
+  },
+  "resources/css/pages/statistics.css": {
+    "file": "assets/statistics-CJtA6ikA.css",
+    "name": "statistics",
+    "names": [
+      "statistics.css"
+    ],
+    "src": "resources/css/pages/statistics.css",
+    "isEntry": true
+  },
+  "resources/css/pages/users.css": {
+    "file": "assets/users-CHAM1e9C.css",
+    "name": "users",
+    "names": [
+      "users.css"
+    ],
+    "src": "resources/css/pages/users.css",
+    "isEntry": true
+  },
+  "resources/css/pages/users_create.css": {
+    "file": "assets/users_create-CXZ7g2Fx.css",
+    "name": "users_create",
+    "names": [
+      "users_create.css"
+    ],
+    "src": "resources/css/pages/users_create.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-BvRk9kiK.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/pharmacy_dashboard.js": {
+    "file": "assets/pharmacy_dashboard-DPzG9kdr.js",
+    "name": "pharmacy_dashboard",
+    "src": "resources/js/pharmacy_dashboard.js",
+    "isEntry": true
+  }
+}

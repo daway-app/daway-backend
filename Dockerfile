@@ -1,3 +1,14 @@
+# ---- Frontend build stage ----
+FROM node:22 AS frontend
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY public ./public
+COPY resources ./resources
+COPY vite.config.js ./
+RUN npm run build
+
+# ---- Runtime stage ----
 # Use the official PHP image
 FROM php:8.4-cli
 
@@ -24,6 +35,9 @@ WORKDIR /app
 
 # Copy project files
 COPY . .
+
+# Copy the pre-built frontend assets from the frontend stage
+COPY --from=frontend /app/public/build ./public/build
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- \
