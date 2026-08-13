@@ -3,7 +3,7 @@
 @section('title', __('settings.title'))
 
 @section('content')
-    @vite(['resources/css/settings.css'])
+    @vite(['resources/css/pages/settings.css'])
 
     <div class="settings-wrapper">
         @if(session('success'))
@@ -17,7 +17,6 @@
                 <h2>@lang('settings.main_heading')</h2>
                 <p>@lang('settings.main_description', ['site_name' => $settings['site_name'] ?? 'Daway'])</p>
             </div>
-            <button type="submit" form="settingsForm" class="btn-primary">@lang('settings.save_changes')</button>
         </div>
 
         <div class="tabs-nav">

@@ -33,10 +33,10 @@
         }
 
         body.dark-mode {
-            --bg-body: #0f172a;
-            --border-color: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg-body: #18181B;
+            --border-color: #333338;
+            --text-main: #E4E4E7;
+            --text-muted: #A1A1AA;
 
             --icon-edit-bg: rgba(74, 222, 128, 0.1);
             --icon-view-bg: rgba(59, 130, 246, 0.1);
@@ -84,9 +84,9 @@
         }
 
         body.dark-mode .glass-panel {
-            background: rgba(30, 41, 59, 0.75) !important;
-            border: 1px solid rgba(51, 65, 85, 0.8) !important;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), inset 0 1px 1px 0 rgba(51, 65, 85, 0.9) !important;
+            background: rgba(35, 35, 39, 0.75) !important;
+            border: 1px solid rgba(51, 51, 56, 0.8) !important;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), inset 0 1px 1px 0 rgba(51, 51, 56, 0.9) !important;
         }
 
         .animate-fade-down { animation: fadeInDown 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -112,7 +112,7 @@
             -webkit-text-fill-color: transparent;
         }
         body.dark-mode .gradient-text {
-            background: linear-gradient(135deg, #f8fafc, #5eead4);
+            background: linear-gradient(135deg, #E4E4E7, #A1A1AA);
             -webkit-background-clip: text;
         }
 
@@ -215,7 +215,7 @@
         .search-input-group .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--primary); }
 
         .pills-group { display: flex; gap: 4px; background: rgba(241, 245, 249, 0.8); padding: 4px; border-radius: 20px; }
-        body.dark-mode .pills-group { background: rgba(30, 41, 59, 0.8); }
+        body.dark-mode .pills-group { background: rgba(35, 35, 39, 0.8); }
         .pill-item { border: none; background: transparent; padding: 6px 16px; border-radius: 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 6px; }
         .pill-item.active { background: var(--primary); color: #ffffff; box-shadow: 0 4px 12px var(--primary-glow); }
         .pill-badge { background: rgba(0, 0, 0, 0.08); padding: 2px 7px; border-radius: 10px; font-size: 11px; }
@@ -227,7 +227,7 @@
         .grid-meta-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .grid-meta-header h3 { font-size: 16px; font-weight: 700; margin: 0; color: var(--text-main); }
         .grid-count-tag { font-size: 12px; color: var(--text-muted); background: #e2e8f0; padding: 2px 8px; border-radius: 10px; }
-        body.dark-mode .grid-count-tag { background: #334155; color: var(--text-muted); }
+        body.dark-mode .grid-count-tag { background: #333338; color: var(--text-muted); }
 
         .pharmacies-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 20px; }
 
@@ -267,18 +267,18 @@
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .id-copy-strip { display: flex; align-items: center; justify-content: space-between; background: rgba(241, 245, 249, 0.6); padding: 8px 12px; border-radius: 12px; margin: 14px 0; border: 1px solid var(--border-color); }
-        body.dark-mode .id-copy-strip { background: rgba(30, 41, 59, 0.5); }
+        body.dark-mode .id-copy-strip { background: rgba(35, 35, 39, 0.5); }
         .strip-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
         .strip-code-group { display: flex; align-items: center; gap: 8px; }
         .code-text { font-family: monospace; font-size: 12px; font-weight: 700; color: #0B8FAC; background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #cbd5e1; }
-        body.dark-mode .code-text { background: #1e293b; border-color: #334155; color: #5eead4; }
+        body.dark-mode .code-text { background: #232327; border-color: #333338; color: #A1A1AA; }
         .btn-copy-chip { background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 6px; border-radius: 6px; cursor: pointer; color: #64748b; transition: all 0.2s ease; }
-        body.dark-mode .btn-copy-chip { background: #1e293b; border-color: #334155; color: #94a3b8; }
+        body.dark-mode .btn-copy-chip { background: #232327; border-color: #333338; color: #A1A1AA; }
         .btn-copy-chip:hover { background: var(--primary); color: #ffffff; }
 
         .card-info-grid { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 10px; margin-bottom: 14px; }
         .info-tile { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(241, 245, 249, 0.8); border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-        body.dark-mode .info-tile { background: rgba(30, 41, 59, 0.8); border-color: #334155; }
+        body.dark-mode .info-tile { background: rgba(35, 35, 39, 0.8); border-color: #333338; }
         .tile-content { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
         .tile-header { display: flex; align-items: center; gap: 4px; }
         .tile-icon { font-size: 13px; color: var(--text-muted); }
@@ -288,7 +288,7 @@
         .accent-teal { color: #0B8FAC; }
 
         .btn-show-map { background: #f0fdf4; color: #0B8FAC; border: 1px solid rgba(11, 143, 172, 0.25); padding: 5px 8px; border-radius: 8px; font-size: 10.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all 0.25s ease; flex-shrink: 0; }
-        body.dark-mode .btn-show-map { background: rgba(11, 143, 172, 0.15); color: #5eead4; border-color: rgba(11, 143, 172, 0.3); }
+        body.dark-mode .btn-show-map { background: rgba(161, 161, 170, 0.15); color: #E4E4E7; border-color: rgba(161, 161, 170, 0.3); }
         .btn-show-map:hover { background: #0B8FAC; color: #ffffff; transform: scale(1.05); }
 
         .card-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border-color); }
@@ -302,28 +302,28 @@
         .act-pause { background: var(--icon-pause-bg); color: var(--icon-pause); }
         .act-play { background: var(--icon-play-bg); color: var(--icon-play); }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;     background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
         .modal-overlay.active { display: flex; opacity: 1; }
         .modal-animate { transform: scale(0.8) translateY(30px); transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
         .modal-overlay.active .modal-animate { transform: scale(1) translateY(0); }
 
         .map-modal-container { width: 90%; max-width: 650px; padding: 20px; }
-        body.dark-mode .map-modal-container { background: #1e293b !important; color: #f8fafc !important; }
+        body.dark-mode .map-modal-container { background: #232327 !important; color: #E4E4E7 !important; }
         .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .modal-title-group h3 { font-size: 16px; font-weight: 700; margin: 0; color: var(--text-main); }
         .close-modal-btn { background: transparent; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; }
         .modal-map-view { height: 320px; width: 100%; border-radius: 14px; border: 1px solid var(--border-color); }
         .modal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
         .btn-external-gmaps { background: #f1f5f9; color: #334155; padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-        body.dark-mode .btn-external-gmaps { background: #334155; color: #f8fafc; }
+        body.dark-mode .btn-external-gmaps { background: #333338; color: #E4E4E7; }
         .close-btn-secondary { background: #e2e8f0; color: #334155; border: 0; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 600; }
-        body.dark-mode .close-btn-secondary { background: #475569; color: #f8fafc; }
+        body.dark-mode .close-btn-secondary { background: #3F3F46; color: #E4E4E7; }
         .pagination-wrapper { margin-top: 20px; }
 
         body.dark-mode div[class*="card"] {
-            background-color: rgba(30, 41, 59, 0.85) !important;
-            color: #f8fafc !important;
-            border-color: #334155 !important;
+            background-color: rgba(35, 35, 39, 0.85) !important;
+            color: #E4E4E7 !important;
+            border-color: #333338 !important;
         }
     </style>
 
@@ -366,48 +366,48 @@
             <div class="stats-grid">
                 <div class="stat-card glass-panel">
                     <div class="card-header-flex">
-                        <span class="stat-label">Total Pharmacies</span>
+                        <span class="stat-label">@lang('pharmacies.stat_total_pharmacies')</span>
                         <div class="stat-icon icon-teal"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
                     </div>
                     <h2 class="stat-value counter" data-target="{{ $pharmacies->total() }}">0</h2>
                     <div class="card-footer-flex">
-                        <span class="trend-up">▲ 100%</span>
-                        <span>registered in the system</span>
+                        <span class="trend-up">100%</span>
+                        <span>@lang('pharmacies.stat_registered_in_system')</span>
                     </div>
                 </div>
 
                 <div class="stat-card glass-panel">
                     <div class="card-header-flex">
-                        <span class="stat-label">Active Pharmacies</span>
+                        <span class="stat-label">@lang('pharmacies.stat_active_pharmacies')</span>
                         <div class="stat-icon icon-green"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
                     </div>
                     <h2 class="stat-value counter" data-target="{{ $pharmacies->where('is_active', true)->count() }}">0</h2>
                     <div class="card-footer-flex">
-                        <span class="trend-up">active</span>
-                        <span>working efficiently</span>
+                        <span class="trend-up">@lang('pharmacies.status_active')</span>
+                        <span>@lang('pharmacies.stat_working_efficiently')</span>
                     </div>
                 </div>
 
                 <div class="stat-card glass-panel">
                     <div class="card-header-flex">
-                        <span class="stat-label">Inactive Pharmacies</span>
+                        <span class="stat-label">@lang('pharmacies.stat_inactive_pharmacies')</span>
                         <div class="stat-icon icon-amber"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg></div>
                     </div>
                     <h2 class="stat-value counter" data-target="{{ $pharmacies->where('is_active', false)->count() }}">0</h2>
                     <div class="card-footer-flex">
-                        <span class="trend-up" style="color: #ef4444;">paused</span>
-                        <span>temporarily inactive</span>
+                        <span class="trend-up" style="color: #ef4444;">@lang('pharmacies.stat_paused')</span>
+                        <span>@lang('pharmacies.stat_temporarily_inactive')</span>
                     </div>
                 </div>
 
                 <div class="stat-card glass-panel">
                     <div class="card-header-flex">
-                        <span class="stat-label">Total Items</span>
+                        <span class="stat-label">@lang('pharmacies.stat_total_items')</span>
                         <div class="stat-icon icon-blue"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg></div>
                     </div>
                     <h2 class="stat-value counter" data-target="{{ $pharmacies->sum('pharmacy_medicines_count') }}">0</h2>
                     <div class="card-footer-flex">
-                        <span>Available Medicines</span>
+                        <span>@lang('pharmacies.stat_available_medicines')</span>
                     </div>
                 </div>
             </div>
@@ -415,7 +415,7 @@
             <div class="charts-grid" style="margin-top: 20px;">
                 <div class="chart-card glass-panel">
                     <div class="chart-header">
-                        <h4>Pharmacy Status Distribution</h4>
+                        <h4>@lang('pharmacies.chart_status_distribution')</h4>
                     </div>
                     <div class="chart-body">
                         <canvas id="pharmacyStatusChart"></canvas>
@@ -424,7 +424,7 @@
 
                 <div class="chart-card glass-panel">
                     <div class="chart-header">
-                        <h4>Top Pharmacies by Item Count</h4>
+                        <h4>@lang('pharmacies.chart_top_pharmacies')</h4>
                     </div>
                     <div class="chart-body">
                         <canvas id="topPharmaciesChart"></canvas>
@@ -492,7 +492,7 @@
                                     <h4 class="pharmacy-title">{{ $pharmacy->pharmacy_name }}</h4>
                                     <span class="pharmacy-phone-tag">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                                        {{ $pharmacy->phone_number ?? '—' }}
+                                        {{ $pharmacy->phone_number ?? 'أ¢â‚¬â€‌' }}
                                     </span>
                                 </div>
                             </div>
@@ -521,7 +521,7 @@
                                         <span class="tile-label">@lang('pharmacies.col_location')</span>
                                     </div>
                                     <div class="tile-address bidi-text" title="{{ $pharmacy->address }}">
-                                        {{ $pharmacy->address ?? 'Not specified' }}
+                                        {{ $pharmacy->address ?? __('pharmacies.address_not_specified') }}
                                     </div>
                                 </div>
 
@@ -549,7 +549,7 @@
                         <div class="card-foot">
                             <span class="time-meta">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                {{ $pharmacy->created_at ? $pharmacy->created_at->diffForHumans() : '—' }}
+                                {{ $pharmacy->created_at ? $pharmacy->created_at->diffForHumans() : 'أ¢â‚¬â€‌' }}
                             </span>
                             <div class="actions-flex">
                                 <a href="{{ route('pharmacies.edit', $pharmacy->id) }}" class="act-btn act-edit" title="@lang('pharmacies.tooltip_edit')">
@@ -558,7 +558,7 @@
                                 <a href="{{ route('pharmacies.show', $pharmacy->id) }}" class="act-btn act-view" title="@lang('pharmacies.tooltip_show')">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 </a>
-                                <form action="{{ route('pharmacies.toggleStatus', $pharmacy->id) }}" method="POST" style="display:inline;">
+                                <form action="{{ route('pharmacies.toggleStatus', $pharmacy->id) }}" method="POST" style="display:inline;" data-pharmacy-name="{{ $pharmacy->pharmacy_name }}" data-will-disable="{{ $pharmacy->is_active ? '1' : '0' }}">
                                     @csrf
                                     @method('PATCH')
                                     <button type="submit" class="act-btn {{ $pharmacy->is_active ? 'act-pause' : 'act-play' }}" title="{{ $pharmacy->is_active ? __('pharmacies.tooltip_disable') : __('pharmacies.tooltip_enable') }}">
@@ -605,7 +605,50 @@
         </div>
     </div>
 
+    <div class="confirm-modal-overlay" id="pharmacyConfirmModal">
+        <div class="confirm-modal-card">
+            <div class="confirm-modal-icon">!</div>
+            <h3>@lang('pharmacies.confirm_title')</h3>
+            <p id="pharmacyConfirmMessage"></p>
+            <div class="confirm-modal-actions">
+                <button type="button" class="modal-btn" onclick="closePharmacyConfirm()">@lang('pharmacies.confirm_cancel')</button>
+                <button type="button" class="modal-btn primary" onclick="confirmPharmacyToggle()">@lang('pharmacies.confirm_ok')</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let pendingPharmacyToggleForm = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form[action*="toggle-status"]').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    pendingPharmacyToggleForm = form;
+                    const willDisable = form.dataset.willDisable === '1';
+                    const pharmacyName = form.dataset.pharmacyName;
+                    const actionText = willDisable
+                        ? "{{ __('pharmacies.confirm_disable') }}"
+                        : "{{ __('pharmacies.confirm_enable') }}";
+                    document.getElementById('pharmacyConfirmMessage').textContent = actionText + ' «' + pharmacyName + '»؟';
+                    document.getElementById('pharmacyConfirmModal').style.display = 'flex';
+                });
+            });
+        });
+
+        function closePharmacyConfirm() {
+            document.getElementById('pharmacyConfirmModal').style.display = 'none';
+            pendingPharmacyToggleForm = null;
+        }
+
+        function confirmPharmacyToggle() {
+            const form = pendingPharmacyToggleForm;
+            closePharmacyConfirm();
+            if (form) {
+                form.submit();
+            }
+        }
+
         function copyId(btn, text) {
             navigator.clipboard.writeText(text).then(() => {
                 let originalHTML = btn.innerHTML;
@@ -700,7 +743,7 @@
             new Chart(ctxStatus, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Active', 'Disabled'],
+                    labels: ['@lang('pharmacies.chart_active')', '@lang('pharmacies.chart_disabled')'],
                     datasets: [{
                         data: [
                             {{ $pharmacies->where('is_active', true)->count() }},
@@ -723,7 +766,7 @@
                 data: {
                     labels: {!! json_encode($pharmacies->sortByDesc('pharmacy_medicines_count')->take(5)->pluck('pharmacy_name')) !!},
                     datasets: [{
-                        label: 'Item Count',
+                        label: '@lang('pharmacies.chart_item_count')',
                         data: {!! json_encode($pharmacies->sortByDesc('pharmacy_medicines_count')->take(5)->pluck('pharmacy_medicines_count')) !!},
                         backgroundColor: '#0B8FAC',
                         borderRadius: 8

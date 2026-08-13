@@ -3,7 +3,7 @@
 @section('title', __('dashboard.title'))
 
 @section('content')
-    @vite(['resources/css/dashboard.css'])
+    @vite(['resources/css/pages/dashboard.css'])
 
     <div>
         <!-- 1. Top Stats Cards -->
@@ -15,7 +15,7 @@
                 </div>
                 <h2 class="stat-value counter" data-target="{{ $totalPatients ?? 0 }}">0</h2>
                 <div class="card-footer-flex">
-                    <span class="trend-up">▲ 12%</span>
+                    <span class="trend-up {{ ($trendPatients ?? 0) < 0 ? 'trend-down' : '' }}">{{ ($trendPatients ?? 0) >= 0 ? '▲' : '▼' }} {{ abs($trendPatients ?? 0) }}%</span>
                     <span class="trend-label">@lang('dashboard.vs_last_month')</span>
                 </div>
             </div>
@@ -27,7 +27,7 @@
                 </div>
                 <h2 class="stat-value counter" data-target="{{ $activePharmacies ?? 0 }}">0</h2>
                 <div class="card-footer-flex">
-                    <span class="trend-up">▲ 8</span>
+                    <span class="trend-up">▲ {{ $newPharmaciesThisWeek ?? 0 }}</span>
                     <span class="trend-label">@lang('dashboard.new_pharmacies_this_week')</span>
                 </div>
             </div>
@@ -39,7 +39,7 @@
                 </div>
                 <h2 class="stat-value counter" data-target="{{ $totalMedicines ?? 0 }}">0</h2>
                 <div class="card-footer-flex">
-                    <span class="trend-up">▲ 230</span>
+                    <span class="trend-up">▲ {{ $medicinesAddedRecently ?? 0 }}</span>
                     <span class="trend-label">@lang('dashboard.medicines_added_recently')</span>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                         </div>
                         <div class="chart-subtitle">
                             <span>@lang('dashboard.track_searches')</span>
-                            <span class="sub-trend-badge" id="trendBadge">▲ +18.4% @lang('dashboard.growth')</span>
+                            <span class="sub-trend-badge" id="trendBadge">{{ $chartDatasets['all']['trend'] }}</span>
                         </div>
                     </div>
 
@@ -84,14 +84,9 @@
                 </div>
 
                 <div class="chart-container-pro" id="chartContainer">
-                    <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: 75%;" data-value="75%"></div></div>
-                    <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: 50%;" data-value="50%"></div></div>
-                    <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: 65%;" data-value="65%"></div></div>
-                    <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: 35%;" data-value="35%"></div></div>
-                    <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: 92%;" data-value="92% (Peak)"></div></div>
-                    <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: 55%;" data-value="55%"></div></div>
-                    <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: 80%;" data-value="80%"></div></div>
-                    <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: 42%;" data-value="42%"></div></div>
+                    @foreach($chartDatasets['all']['values'] as $weekValue)
+                        <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: {{ $chartDatasets['all']['heights'][$loop->index] }}%;" data-value="{{ $weekValue }}"></div></div>
+                    @endforeach
                 </div>
 
                 <div class="chart-footer-labels">
@@ -101,17 +96,26 @@
 
             <!-- Daily Activities Card -->
             <div class="pro-card">
-                <h3 class="card-pro-title">@lang('dashboard.latest_activities')</h3>
-                <button type="button" class="btn-view-all-logs" id="openLogModalBtn">View All</button>
+                <div class="card-header-between">
+                    <h3 class="card-pro-title">@lang('dashboard.latest_activities')</h3>
+                    <button type="button" class="btn-view-all-logs" id="openLogModalBtn">@lang('dashboard.view_all')</button>
+                </div>
                 <div class="activity-feed">
                     @forelse($recentActivities as $activity)
+                        @php
+                            if (is_array($activity)) {
+                                $activity = (object) ['description' => $activity['description'] ?? '', 'time' => $activity['time'] ?? '', 'color' => $activity['color'] ?? '#0B8FAC'];
+                            } elseif (!is_object($activity)) {
+                                $activity = (object) ['description' => $activity, 'time' => '', 'color' => '#0B8FAC'];
+                            }
+                        @endphp
                         <div class="activity-card">
                             <span class="dot-indicator" style="background: {{ $activity->color ?? '#0B8FAC' }};"></span>
-                            <div class="activity-desc">{!! $activity->description !!}</div>
-                            <small class="activity-time">{{ $activity->time }}</small>
+                            <div class="activity-desc">{!! $activity->description ?? '' !!}</div>
+                            <small class="activity-time">{{ $activity->time ?? '' }}</small>
                         </div>
                     @empty
-                        <div class="empty-state">No recent activities recorded.</div>
+                        <div class="empty-state">@lang('dashboard.no_recent_activities')</div>
                     @endforelse
                 </div>
             </div>
@@ -155,7 +159,7 @@
                                     <a href="{{ route('users.edit', $patient->id) }}" class="action-btn btn-edit" title="@lang('dashboard.edit_tooltip')">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                     </a>
-                                    <a href="{{ route('users.show', $patient->id) }}" class="action-btn btn-view" title="View Details">
+                                    <a href="{{ route('users.show', $patient->id) }}" class="action-btn btn-view" title="@lang('dashboard.view_details')">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                     </a>
                                 </div>
@@ -163,7 +167,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="empty-table-state">No patients registered yet.</td>
+                            <td colspan="4" class="empty-table-state">@lang('dashboard.no_patients')</td>
                         </tr>
                     @endforelse
                     </tbody>
@@ -177,15 +181,15 @@
         <div class="modal-container">
             <div class="modal-header">
                 <div class="modal-title-group">
-                    <h3>Full Activity Log</h3>
-                    <p>Review and analyze all system operations and activities.</p>
+                    <h3>@lang('dashboard.full_activity_log')</h3>
+                    <p>@lang('dashboard.activity_log_description')</p>
                 </div>
-                <button type="button" class="close-modal-btn" id="closeLogModalBtn" title="Close">&times;</button>
+                <button type="button" class="close-modal-btn" id="closeLogModalBtn" title="@lang('dashboard.close')">&times;</button>
             </div>
 
             <div class="modal-controls">
                 <div class="search-input-wrapper">
-                    <input type="text" id="modalSearchInput" placeholder="Search log by title or details...">
+                    <input type="text" id="modalSearchInput" placeholder="@lang('dashboard.search_activity_log')">
                 </div>
             </div>
 
@@ -193,9 +197,9 @@
                 <table class="modal-log-table">
                     <thead>
                     <tr>
-                        <th>Type</th>
-                        <th>Details</th>
-                        <th>Time</th>
+                        <th>@lang('dashboard.type')</th>
+                        <th>@lang('dashboard.details')</th>
+                        <th>@lang('dashboard.time')</th>
                     </tr>
                     </thead>
                     <tbody id="modalLogTableBody">
@@ -207,7 +211,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" style="text-align: center; padding: 20px;">No logs available at the moment.</td>
+                            <td colspan="3" style="text-align: center; padding: 20px;">@lang('dashboard.no_logs')</td>
                         </tr>
                     @endforelse
                     </tbody>
@@ -215,8 +219,8 @@
             </div>
 
             <div class="modal-footer">
-                <span>Total activities displayed: <strong id="modalLogCount">{{ count($recentActivities) }}</strong></span>
-                <button type="button" class="page-btn" id="modalCloseFooterBtn">Close</button>
+                <span>@lang('dashboard.activities_displayed') <strong id="modalLogCount">{{ count($recentActivities) }}</strong></span>
+                <button type="button" class="page-btn" id="modalCloseFooterBtn">@lang('dashboard.close')</button>
             </div>
         </div>
     </div>
@@ -240,16 +244,12 @@
                 requestAnimationFrame(step);
             });
 
-            // 2. Chart Filtering
+            // 2. Chart Filtering (real data from server)
             const filterButtons = document.querySelectorAll('#filterPills .pill-btn');
             const bars = document.querySelectorAll('#chartContainer .chart-bar-pro');
             const trendBadge = document.getElementById('trendBadge');
 
-            const filterDatasets = {
-                all: { heights: ['75%', '50%', '65%', '35%', '92%', '55%', '80%', '42%'], trend: '▲ +18.4% General Growth' },
-                medicines: { heights: ['40%', '65%', '80%', '50%', '95%', '70%', '85%', '60%'], trend: '▲ +24.1% Medicine Searches' },
-                users: { heights: ['60%', '30%', '45%', '20%', '70%', '40%', '55%', '30%'], trend: '▲ +8.2% User Interactions' }
-            };
+            const chartDatasets = @json($chartDatasets);
 
             filterButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -257,14 +257,14 @@
                     btn.classList.add('active');
 
                     const filterType = btn.dataset.filter;
-                    const dataset = filterDatasets[filterType] || filterDatasets.all;
+                    const dataset = chartDatasets[filterType] || chartDatasets.all;
 
                     if (trendBadge) trendBadge.textContent = dataset.trend;
 
                     bars.forEach((bar, index) => {
-                        const newHeight = dataset.heights[index] || '50%';
+                        const newHeight = (dataset.heights[index] ?? 0) + '%';
                         bar.style.height = newHeight;
-                        bar.setAttribute('data-value', newHeight);
+                        bar.setAttribute('data-value', dataset.values[index] ?? 0);
                     });
                 });
             });
@@ -311,5 +311,26 @@
                 });
             }
         });
+
+        // ===== التحميل المسبق: بعد الدخول تُحمَّل الصفحات مرة واحدة وتُخزَّن (متصفح + خادم) =====
+        (function () {
+            const prefetchUrls = [
+                '/users',
+                '/medicines',
+                '/pharmacies',
+                '/patients',
+                '/inventory',
+                '/logs',
+                '/api/notifications/count'
+            ];
+            if (typeof fetch !== 'function') return;
+            prefetchUrls.forEach(function (url, i) {
+                setTimeout(function () {
+                    try {
+                        fetch(url, { credentials: 'same-origin', cache: 'force-cache' });
+                    } catch (e) { /* ignore */ }
+                }, i * 400);
+            });
+        })();
     </script>
 @endsection

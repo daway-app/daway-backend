@@ -3,7 +3,7 @@
 @section('title', __('patients.title'))
 
 @section('content')
-    @vite(['resources/css/patients.css'])
+    @vite(['resources/css/pages/patients.css'])
 
     <div class="patients-page-wrapper">
         <!-- 1. Header -->

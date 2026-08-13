@@ -18,9 +18,6 @@ class LocaleController extends Controller
         App::setLocale($locale);
         Session::put('locale', $locale);
 
-        // DEBUG: Check what's in the session immediately after putting it
-        dd(Session::get('locale'));
-
         return redirect()->back();
     }
 }

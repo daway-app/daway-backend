@@ -11,7 +11,7 @@
 @endsection
 
 @section('content')
-    @vite(['resources/css/statistics.css'])
+    @vite(['resources/css/pages/statistics.css'])
 
     <!-- رأس الصفحة ومعلومات الصيدلية -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">

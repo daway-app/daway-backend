@@ -1,0 +1,203 @@
+/* ==========================================
+   Responsive layout - جميع الصفحات
+   ========================================== */
+
+/* أجهزة متوسطة: شريط جانبي مضغوط (أيقونات فقط) */
+@media (max-width: 1024px) {
+    .main-content {
+        padding: 20px;
+    }
+
+    .sidebar-pro {
+        width: 76px;
+        padding: 20px 10px;
+    }
+
+    .sidebar-logo-header {
+        justify-content: center;
+        padding: 0;
+        margin-bottom: 24px;
+        gap: 0;
+    }
+
+    .logo-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+    }
+
+    .logo-title,
+    .logo-subtitle,
+    .section-label,
+    .nav-text,
+    .nav-badge,
+    .user-info-group {
+        display: none;
+    }
+
+    .nav-item {
+        justify-content: center;
+        padding: 12px;
+        font-size: 20px;
+    }
+
+    .nav-section {
+        margin-bottom: 18px;
+    }
+
+    .user-profile-footer {
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px 0;
+    }
+
+    .more-options-btn {
+        padding: 5px;
+        font-size: 18px;
+    }
+
+    .avatar-box {
+        width: 36px;
+        height: 36px;
+    }
+
+    html[dir="rtl"] .main-wrapper {
+        margin-right: 76px;
+    }
+
+    html[dir="ltr"] .main-wrapper {
+        margin-left: 76px;
+    }
+
+    .topbar {
+        padding: 14px 20px;
+    }
+}
+
+/* أجهزة صغيرة: شريط سفلي ثابت للتنقل + محتوى كامل العرض */
+@media (max-width: 768px) {
+    .sidebar-pro {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 6px 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-left: none;
+        border-right: none;
+        border-top: 1px solid var(--sidebar-border);
+        z-index: 1001;
+    }
+
+    .sidebar-content-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 4px;
+        width: 100%;
+    }
+
+    .sidebar-logo-header {
+        display: none;
+    }
+
+    .nav-section {
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        margin: 0;
+        animation: none;
+    }
+
+    .nav-item {
+        margin: 0;
+        padding: 10px 14px;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .nav-item::before {
+        display: none;
+    }
+
+    .user-profile-footer {
+        border: none;
+        padding: 0;
+        margin: 0;
+        flex-direction: row;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .user-info-group {
+        display: flex;
+        gap: 6px;
+    }
+
+    .user-name,
+    .user-role {
+        display: none;
+    }
+
+    .avatar-box {
+        width: 34px;
+        height: 34px;
+        font-size: 13px;
+    }
+
+    html[dir="rtl"] .main-wrapper,
+    html[dir="ltr"] .main-wrapper {
+        margin-right: 0;
+        margin-left: 0;
+        width: 100%;
+        padding-bottom: 58px;
+    }
+
+    .topbar {
+        padding: 12px 16px;
+    }
+
+    .main-content {
+        padding: 16px;
+    }
+
+    .table-container,
+    .table-card,
+    [class*="table-"] {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        min-width: 620px;
+    }
+}
+
+/* شاشات صغيرة جداً */
+@media (max-width: 640px) {
+    .main-content {
+        padding: 12px;
+    }
+
+    .topbar-title-group h1 {
+        font-size: 16px;
+    }
+
+    .topbar-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .nav-item {
+        padding: 9px 12px;
+        font-size: 17px;
+    }
+}

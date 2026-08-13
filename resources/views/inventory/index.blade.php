@@ -3,7 +3,7 @@
 @section('title', __('inventory.title'))
 
 @section('content')
-    @vite(['resources/css/inventory.css'])
+    @vite(['resources/css/pages/inventory.css'])
 
     <div>
         <!-- 1. كروت الإحصائيات -->

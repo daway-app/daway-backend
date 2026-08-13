@@ -8,13 +8,52 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash; // Import Hash facade
 use Illuminate\Validation\Rule; // Import Rule for validation
+use Illuminate\Support\Facades\Cache;
 
 class PharmacyController extends Controller
 {
     public function index()
     {
-        $pharmacies = Pharmacy::withCount('pharmacyMedicines')->latest()->paginate(10);
+        $perPage = 10;
+        $page = (int) request()->get('page', 1);
+
+        $data = Cache::remember('pharmacies_list_cache', 30, function () {
+            $rows = Pharmacy::withCount('pharmacyMedicines')->latest()->get()->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'pharmacy_name' => $p->pharmacy_name,
+                    'pharmacy_custom_id' => $p->pharmacy_custom_id,
+                    'address' => $p->address,
+                    'phone_number' => $p->phone_number,
+                    'latitude' => $p->latitude,
+                    'longitude' => $p->longitude,
+                    'is_active' => $p->is_active,
+                    'pharmacy_medicines_count' => $p->pharmacy_medicines_count ?? 0,
+                    'created_at' => $p->created_at ? $p->created_at->format('Y-m-d H:i:s') : null,
+                ];
+            })->values()->all();
+            return ['rows' => $rows, 'total' => count($rows)];
+        });
+
+        $items = array_map(function ($row) {
+            $obj = (object) $row;
+            if (!empty($obj->created_at)) {
+                $obj->created_at = \Illuminate\Support\Carbon::parse($obj->created_at);
+            }
+            return $obj;
+        }, array_slice($data['rows'], ($page - 1) * $perPage, $perPage));
+
+        $pharmacies = new \Illuminate\Pagination\LengthAwarePaginator($items, $data['total'], $perPage, $page, [
+            'path' => request()->url(),
+            'query' => request()->query(),
+        ]);
+
         return view('pharmacies.index', compact('pharmacies'));
+    }
+
+    private function clearPharmaciesIndexCache()
+    {
+        Cache::forget('pharmacies_list_cache');
     }
 
     public function create()
@@ -56,6 +95,7 @@ class PharmacyController extends Controller
             'is_active' => true, // Default to active
         ]);
 
+        $this->clearPharmaciesIndexCache();
         return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_added_success'));
     }
 
@@ -114,6 +154,7 @@ class PharmacyController extends Controller
             'phone_number' => $request->phone_number,
         ]);
 
+        $this->clearPharmaciesIndexCache();
         return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_updated_success'));
     }
 
@@ -128,6 +169,7 @@ class PharmacyController extends Controller
 
         $pharmacy->delete();
 
+        $this->clearPharmaciesIndexCache();
         return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_deleted_success'));
     }
 
@@ -137,6 +179,14 @@ class PharmacyController extends Controller
         $pharmacy->is_active = !$pharmacy->is_active;
         $pharmacy->save();
 
+        // ربط حالة مستخدم صاحب الصيدلية بحالة الصيدلية
+        if ($pharmacy->user) {
+            $pharmacy->user->is_active = $pharmacy->is_active;
+            $pharmacy->user->save();
+            Cache::forget('users_list_cache');
+        }
+
+        $this->clearPharmaciesIndexCache();
         return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_status_updated_success'));
     }
 }

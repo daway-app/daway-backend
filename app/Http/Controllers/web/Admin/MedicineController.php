@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Medicine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Cache;
 
 class MedicineController extends Controller
 {
@@ -13,8 +14,71 @@ class MedicineController extends Controller
      */
     public function index()
     {
-        $medicines = Medicine::latest()->paginate(10);
-        return view('medicines.index', compact('medicines'));
+        $perPage = 10;
+        $page = (int) request()->get('page', 1);
+
+        $data = Cache::remember('medicines_list_cache_v3', 30, function () {
+            $medicines = Medicine::with('pharmacyMedicines')->latest()->get();
+
+            $rows = $medicines->map(function ($m) {
+                $pms = $m->pharmacyMedicines;
+                $totalStock = (int) $pms->sum('quantity');
+                $prices = $pms->pluck('price')->filter(fn ($p) => (float) $p > 0);
+
+                return [
+                    'id' => $m->id,
+                    'trade_name' => $m->trade_name,
+                    'active_ingredient' => $m->active_ingredient,
+                    'stock' => $totalStock,
+                    'is_available' => (bool) $m->is_available,
+                    'pharmacy_count' => $pms->count(),
+                    'min_price' => $prices->min() !== null ? (float) $prices->min() : null,
+                ];
+            })->values()->all();
+
+            return ['rows' => $rows, 'total' => count($rows)];
+        });
+
+        $rows = $data['rows'];
+        $total = $data['total'];
+
+        $out = count(array_filter($rows, fn ($r) => $r['stock'] <= 0));
+        $low = count(array_filter($rows, fn ($r) => $r['stock'] > 0 && $r['stock'] <= 10));
+        $available = max(0, $total - $out - $low);
+
+        $pct = fn ($count) => $total > 0 ? round(($count / $total) * 100) : 0;
+
+        $inPharmacy = count(array_filter($rows, fn ($r) => $r['pharmacy_count'] > 0));
+
+        $stats = [
+            'total' => $total,
+            'available' => $available,
+            'low' => $low,
+            'out' => $out,
+            'available_pct' => $pct($available),
+            'low_pct' => $pct($low),
+            'out_pct' => $pct($out),
+            'in_pharmacy_pct' => $pct($inPharmacy),
+            'not_in_pharmacy_pct' => $pct($total - $inPharmacy),
+        ];
+
+        $items = array_map(function ($row) {
+            return (object) $row;
+        }, array_slice($rows, ($page - 1) * $perPage, $perPage));
+
+        $medicines = new \Illuminate\Pagination\LengthAwarePaginator($items, $data['total'], $perPage, $page, [
+            'path' => request()->url(),
+            'query' => request()->query(),
+        ]);
+
+        return view('medicines.index', compact('medicines', 'stats'));
+    }
+
+    private function clearMedicinesIndexCache()
+    {
+        Cache::forget('medicines_list_cache');
+        Cache::forget('medicines_list_cache_v2');
+        Cache::forget('medicines_list_cache_v3');
     }
 
     /**
@@ -49,6 +113,7 @@ class MedicineController extends Controller
             $medicine->alternatives()->sync($request->alternatives);
         }
 
+        $this->clearMedicinesIndexCache();
         return Redirect::route('medicines.index')->with('success', 'تم إضافة الدواء بنجاح!');
     }
 
@@ -96,6 +161,7 @@ class MedicineController extends Controller
             $medicine->alternatives()->detach();
         }
 
+        $this->clearMedicinesIndexCache();
         return Redirect::route('medicines.index')->with('success', 'تم تحديث الدواء بنجاح!');
     }
 
@@ -105,6 +171,7 @@ class MedicineController extends Controller
     public function destroy(string $id)
     {
         Medicine::destroy($id);
+        $this->clearMedicinesIndexCache();
         return Redirect::route('medicines.index')->with('success', 'تم حذف الدواء بنجاح!');
     }
 }

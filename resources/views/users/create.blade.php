@@ -3,7 +3,7 @@
 @section('title', 'إضافة حساب جديد')
 
 @section('content')
-    @vite(['resources/css/users_create.css'])
+    @vite(['resources/css/pages/users_create.css'])
 
     <div class="page-wrapper">
         <div class="main-card">
@@ -40,7 +40,7 @@
 
                         <div class="form-group">
                             <label>رقم الجوال <span>*</span></label>
-                            <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" placeholder="+970-59-XXX-XXXX" pattern="\+970-[0-9]{2}-[0-9]{3}-[0-9]{4}" title="النمط المطلوب: +970-59-XXX-XXXX" required style="direction: ltr; text-align: right;">
+                            <input type="text" name="phone" id="phoneInput" class="form-control" value="{{ old('phone') }}" placeholder="059-XXX-XXXX" pattern="05[0-9]{8}" title="النمط المطلوب: 059XXXXXXXX — 10 أرقام تبدأ بـ 05" required style="direction: ltr; text-align: right;">
                         </div>
 
                         <div class="form-group">
@@ -116,6 +116,20 @@
                 `;
             }
         });
+
+        // تحويل تلقائي: أي رقم يُلصق بصيغة +970 يتحول إلى 059 مباشرة
+        const phoneInput = document.getElementById('phoneInput');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function () {
+                let v = this.value.replace(/[^\d+]/g, '');
+                if (v.startsWith('+970')) {
+                    v = v.replace('+970', '0');
+                } else if (v.startsWith('970') && v.length >= 12) {
+                    v = v.replace('970', '0');
+                }
+                this.value = v;
+            });
+        }
 
         // فحص قوة كلمة المرور وتحديث الأنيميشن
         passwordInput.addEventListener('input', function () {

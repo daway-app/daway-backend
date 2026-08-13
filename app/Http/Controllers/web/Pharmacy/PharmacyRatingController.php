@@ -18,7 +18,7 @@ class PharmacyRatingController extends Controller
                 return $next($request);
             }
 
-            return redirect('/')->with('error', 'ليس لديك صلاحية الوصول لهذه الصفحة.');
+            return redirect('/')->with('error', __('pharmacy.access_denied'));
         });
     }
 

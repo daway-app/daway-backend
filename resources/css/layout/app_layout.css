@@ -1,0 +1,415 @@
+:root {
+    --teal-900: #0f4c4a;
+    --teal-800: #125e60;
+    --teal-700: #17787a;
+    --teal-500: #10b981;
+    --gray-50:  #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-400: #94a3b8;
+    --gray-600: #475569;
+    --gray-800: #1e293b;
+    --white:    #ffffff;
+    --r-sm:     8px;
+    --r-md:     12px;
+    --sidebar-width: 260px;
+    --accent-teal: #0B8FAC; /* Added for consistency with topbar.css */
+    --accent-teal-dark: #00657A; /* Added for consistency with topbar.css */
+    --unread-notification-bg: #f0f9ff; /* Light blue for unread */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+html.dark-mode {
+    background-color: #18181B;
+}
+
+/* ==========================================================
+   عناصر الخلفية المتحركة التفاعلية (خلف محتوى التطبيق)
+   ========================================================== */
+.bg-anim-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.bg-mover {
+    position: absolute;
+    bottom: -90px;
+    will-change: transform;
+}
+
+.bg-shape {
+    display: block;
+    opacity: var(--op, .55);
+    animation: bgFloatUp var(--dur, 22s) linear infinite;
+    animation-delay: var(--delay, 0s);
+}
+
+.bg-shape--capsule {
+    width: 26px;
+    height: 54px;
+    border-radius: 999px;
+    background: linear-gradient(170deg, #7BC1B7 0%, #0B8FAC 55%, #00657A 100%);
+    position: relative;
+    box-shadow: inset 0 -4px 8px rgba(0, 68, 82, .35), 0 4px 12px rgba(0, 101, 122, .22);
+}
+.bg-shape--capsule::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    inset-inline-start: 50%;
+    width: 4px;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, .6);
+    border-radius: 999px;
+}
+
+.bg-shape--pill {
+    width: 38px;
+    height: 17px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0B8FAC 0%, #0B8FAC 50%, #7BC1B7 50%, #7BC1B7 100%);
+    box-shadow: inset 0 -3px 6px rgba(0, 68, 82, .35), 0 3px 9px rgba(0, 101, 122, .25);
+}
+
+.bg-shape--cross {
+    width: 30px;
+    height: 30px;
+    position: relative;
+    filter: drop-shadow(0 3px 6px rgba(0, 101, 122, .28));
+}
+.bg-shape--cross::before,
+.bg-shape--cross::after {
+    content: '';
+    position: absolute;
+    background: #0B8FAC;
+    border-radius: 6px;
+}
+.bg-shape--cross::before { width: 10px; height: 100%; left: 50%; transform: translateX(-50%); }
+.bg-shape--cross::after { width: 100%; height: 10px; top: 50%; transform: translateY(-50%); }
+
+.bg-shape--ring {
+    width: 32px;
+    height: 32px;
+    border: 4px solid rgba(0, 101, 122, .8);
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 3px 9px rgba(0, 101, 122, .22);
+}
+.bg-shape--ring::after {
+    content: '';
+    position: absolute;
+    inset: 7px;
+    border: 3px solid rgba(11, 143, 172, .85);
+    border-radius: 50%;
+}
+
+.bg-mover:nth-child(1)  { inset-inline-start: 4%;  --dur: 27s; --delay: -3s;  --sway: 20px; --op: .5;  }
+.bg-mover:nth-child(2)  { inset-inline-start: 15%; --dur: 20s; --delay: -9s;  --sway: 14px; --op: .6;  }
+.bg-mover:nth-child(3)  { inset-inline-start: 26%; --dur: 25s; --delay: -15s; --sway: 24px; --op: .45; }
+.bg-mover:nth-child(4)  { inset-inline-start: 37%; --dur: 18s; --delay: -6s;  --sway: 17px; --op: .55; }
+.bg-mover:nth-child(5)  { inset-inline-start: 49%; --dur: 28s; --delay: -20s; --sway: 19px; --op: .42; }
+.bg-mover:nth-child(6)  { inset-inline-start: 61%; --dur: 21s; --delay: -12s; --sway: 23px; --op: .58; }
+.bg-mover:nth-child(7)  { inset-inline-start: 73%; --dur: 26s; --delay: -5s;  --sway: 15px; --op: .48; }
+.bg-mover:nth-child(8)  { inset-inline-start: 85%; --dur: 19s; --delay: -17s; --sway: 21px; --op: .56; }
+.bg-mover:nth-child(9)  { inset-inline-start: 9%;  --dur: 22s; --delay: -2s;  --sway: 18px; --op: .52; }
+.bg-mover:nth-child(10) { inset-inline-start: 42%; --dur: 24s; --delay: -13s; --sway: 26px; --op: .46; }
+.bg-mover:nth-child(11) { inset-inline-start: 57%; --dur: 17s; --delay: -7s;  --sway: 14px; --op: .6;  }
+.bg-mover:nth-child(12) { inset-inline-start: 95%; --dur: 26s; --delay: -22s; --sway: 20px; --op: .5;  }
+
+@keyframes bgFloatUp {
+    0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+    25%  { transform: translate3d(var(--sway, 18px), -26vh, 0) rotate(12deg); }
+    50%  { transform: translate3d(calc(var(--sway, 18px) * -1), -52vh, 0) rotate(-10deg); }
+    75%  { transform: translate3d(var(--sway, 18px), -78vh, 0) rotate(14deg); }
+    100% { transform: translate3d(0, -104vh, 0) rotate(0deg); }
+}
+
+/* الوضع الداكن: إضاءة أوضح للعناصر */
+body.dark-mode .bg-shape {
+    opacity: var(--op-dark, .7);
+}
+body.dark-mode .bg-shape--cross::before,
+body.dark-mode .bg-shape--cross::after {
+    background: #4fd1c5;
+}
+body.dark-mode .bg-shape--ring {
+    border-color: rgba(79, 209, 197, .85);
+}
+body.dark-mode .bg-shape--ring::after {
+    border-color: rgba(11, 143, 172, .9);
+}
+body.dark-mode .bg-shape--capsule {
+    box-shadow: inset 0 -4px 8px rgba(0, 68, 82, .5), 0 0 14px rgba(79, 209, 197, .25);
+}
+
+@media (max-width: 900px) {
+    .bg-mover:nth-child(n+6) { display: none; }
+}
+
+/* عند تقليل الحركة: توزيع ثابت واضح للعناصر بدل الاختفاء */
+@media (prefers-reduced-motion: reduce) {
+    .bg-mover { animation: none; bottom: auto; }
+    .bg-shape { animation: none; }
+    .bg-mover:nth-child(1) { top: 6%; }
+    .bg-mover:nth-child(2) { top: 22%; }
+    .bg-mover:nth-child(3) { top: 38%; }
+    .bg-mover:nth-child(4) { top: 54%; }
+    .bg-mover:nth-child(5) { top: 70%; }
+    .bg-mover:nth-child(6) { top: 14%; }
+    .bg-mover:nth-child(7) { top: 46%; }
+    .bg-mover:nth-child(8) { top: 78%; }
+}
+
+body {
+    background-color: var(--gray-50);
+    color: var(--gray-800);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    --gray-50:  #18181B;
+    --gray-100: #232327;
+    --gray-200: #333338;
+    --gray-400: #71717A;
+    --gray-600: #A1A1AA;
+    --gray-800: #E4E4E7;
+    --white:    #232327;
+    background-color: #18181B;
+    color: #E4E4E7;
+    --unread-notification-bg: #3F3F46; /* Darker blue for unread in dark mode */
+}
+
+/* Main layout container */
+.app-layout {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Main content wrapper adjustments */
+.main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: calc(100% - var(--sidebar-width));
+    transition: background-color 0.3s;
+}
+
+/* Apply margin based on page direction */
+html[dir="rtl"] .main-wrapper {
+    margin-right: var(--sidebar-width);
+}
+
+html[dir="ltr"] .main-wrapper {
+    margin-left: var(--sidebar-width);
+}
+
+.main-content {
+    padding: 28px;
+    flex: 1;
+}
+
+/* Table styles */
+.table-container {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--r-md);
+    overflow-x: auto;
+    margin-top: 20px;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
+}
+
+th, td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 14px;
+    white-space: nowrap;
+    transition: border-color 0.3s;
+}
+
+th {
+    background-color: var(--gray-50);
+    color: var(--gray-600);
+    font-weight: 600;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--r-md);
+    padding: 20px;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Styles for the full notifications page */
+.notifications-page-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: var(--white); /* Using --white for consistency */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--gray-200); /* Using --gray-200 for consistency */
+}
+.notifications-page-container h1 {
+    color: var(--gray-800); /* Using --gray-800 for consistency */
+    font-size: 24px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.notifications-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+.notifications-actions .btn {
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: var(--accent-teal);
+    color: white;
+    border: none;
+    transition: background-color 0.2s ease;
+}
+.notifications-actions .btn:hover {
+    background-color: var(--accent-teal-dark);
+}
+.notifications-list-full {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.notification-item-full {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: var(--gray-50); /* Using --gray-50 for consistency */
+    border: 1px solid var(--gray-200); /* Using --gray-200 for consistency */
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    position: relative;
+    opacity: 0.75; /* مظلل للمقروء */
+}
+.notification-item-full:hover {
+    background-color: var(--gray-100); /* Using --gray-100 for consistency */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    opacity: 1;
+}
+.notification-item-full.unread {
+    background-color: var(--unread-notification-bg);
+    border-color: var(--accent-teal);
+    opacity: 1;
+}
+.notification-item-full.unread:hover {
+    background-color: var(--unread-notification-bg);
+}
+.notification-icon-full {
+    flex-shrink: 0;
+    margin-inline-end: 15px;
+}
+.notification-icon-full .icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+.notification-icon-full .icon-wrapper.bg-red { background-color: #ef4444; }
+.notification-icon-full .icon-wrapper.bg-blue { background-color: #3b82f6; }
+.notification-icon-full .icon-wrapper.bg-gray { background-color: #64748b; }
+
+.notification-content-full {
+    flex-grow: 1;
+}
+.notification-message-full {
+    margin: 0;
+    font-size: 16px;
+    color: var(--gray-800); /* Using --gray-800 for consistency */
+    line-height: 1.4;
+}
+.notification-item-full.unread .notification-message-full {
+    font-weight: 600;
+}
+.notification-time-full {
+    font-size: 12px;
+    color: var(--gray-600); /* Using --gray-600 for consistency */
+    margin-top: 5px;
+    display: block;
+}
+.notification-status-full {
+    position: absolute;
+    top: 10px;
+    background-color: var(--accent-teal);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+html[dir="rtl"] .notification-status-full {
+    left: 10px;
+    right: auto;
+}
+html[dir="ltr"] .notification-status-full {
+    right: 10px;
+    left: auto;
+}
+.no-notifications-full {
+    text-align: center;
+    padding: 30px;
+    color: var(--gray-600); /* Using --gray-600 for consistency */
+    font-size: 16px;
+}
+
+/* Dark mode adjustments for the full notifications page */
+body.dark-mode .notifications-page-container {
+    background-color: var(--white);
+    border-color: var(--gray-200);
+}
+body.dark-mode .notifications-actions .btn {
+    background-color: var(--accent-teal);
+}
+body.dark-mode .notifications-actions .btn:hover {
+    background-color: var(--accent-teal-dark);
+}
+body.dark-mode .notification-item-full {
+    background-color: var(--gray-50);
+    border-color: var(--gray-200);
+}
+body.dark-mode .notification-item-full:hover {
+    background-color: var(--gray-100);
+}
+body.dark-mode .notification-item-full.unread {
+    background-color: var(--unread-notification-bg);
+    border-color: var(--accent-teal);
+}
+body.dark-mode .notification-icon-full .icon-wrapper.bg-red { background-color: #dc2626; }
+body.dark-mode .notification-icon-full .icon-wrapper.bg-blue { background-color: #2563eb; }
+body.dark-mode .notification-icon-full .icon-wrapper.bg-gray { background-color: #4b5563; }

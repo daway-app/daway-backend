@@ -19,7 +19,7 @@ class PharmacyProfileController extends Controller
             if (Auth::check() && Auth::user()->role === 'pharmacy') {
                 return $next($request);
             }
-            return redirect('/')->with('error', 'ليس لديك صلاحية الوصول لهذه الصفحة.');
+            return redirect('/')->with('error', __('pharmacy.access_denied'));
         });
     }
 
@@ -35,13 +35,13 @@ class PharmacyProfileController extends Controller
 
         // Prepare data for working hours
         $daysOfWeek = [
-            'Sunday' => 'الأحد',
-            'Monday' => 'الاثنين',
-            'Tuesday' => 'الثلاثاء',
-            'Wednesday' => 'الأربعاء',
-            'Thursday' => 'الخميس',
-            'Friday' => 'الجمعة',
-            'Saturday' => 'السبت',
+            'Sunday' => __('pharmacy.profile.days.Sunday'),
+            'Monday' => __('pharmacy.profile.days.Monday'),
+            'Tuesday' => __('pharmacy.profile.days.Tuesday'),
+            'Wednesday' => __('pharmacy.profile.days.Wednesday'),
+            'Thursday' => __('pharmacy.profile.days.Thursday'),
+            'Friday' => __('pharmacy.profile.days.Friday'),
+            'Saturday' => __('pharmacy.profile.days.Saturday'),
         ];
 
         // Map existing hours to a more accessible format
@@ -105,6 +105,6 @@ class PharmacyProfileController extends Controller
             $pharmacyHour->save();
         }
 
-        return redirect()->route('pharmacy.profile.edit')->with('success', 'تم تحديث ملف الصيدلية بنجاح.');
+        return redirect()->route('pharmacy.profile.edit')->with('success', __('pharmacy.profile.success'));
     }
 }

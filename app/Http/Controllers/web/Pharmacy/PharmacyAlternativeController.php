@@ -19,7 +19,7 @@ class PharmacyAlternativeController extends Controller
             if (Auth::check() && Auth::user()->role === 'pharmacy') {
                 return $next($request);
             }
-            return redirect('/')->with('error', 'ليس لديك صلاحية الوصول لهذه الصفحة.');
+            return redirect('/')->with('error', __('pharmacy.access_denied'));
         });
     }
 
@@ -97,9 +97,9 @@ class PharmacyAlternativeController extends Controller
         // Check if the alternative is already attached to prevent duplicates
         if (!$baseMedicine->alternatives()->where('alternative_id', $request->alternative_medicine_id)->exists()) {
             $baseMedicine->alternatives()->attach($request->alternative_medicine_id);
-            return redirect()->route('pharmacy.alternatives.index')->with('success', 'تم إضافة البديل بنجاح.');
+            return redirect()->route('pharmacy.alternatives.index')->with('success', __('pharmacy.alternatives.create.success'));
         } else {
-            return redirect()->route('pharmacy.alternatives.index')->with('error', 'هذا البديل موجود بالفعل لهذا الدواء.');
+            return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.create.already_exists'));
         }
     }
 
@@ -116,7 +116,7 @@ class PharmacyAlternativeController extends Controller
         // For example, if you have a MedicineAlternative model, you'd find it here.
         // $alternative = MedicineAlternative::findOrFail($id);
         // return view('pharmacy.alternatives.edit', compact('alternative'));
-        return redirect()->route('pharmacy.alternatives.index')->with('error', 'وظيفة التعديل غير متاحة حالياً.');
+        return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.edit_unavailable'));
     }
 
     /**
@@ -129,7 +129,7 @@ class PharmacyAlternativeController extends Controller
     public function update(Request $request, $id)
     {
         // This method needs to be implemented based on your alternative storage structure.
-        return redirect()->route('pharmacy.alternatives.index')->with('error', 'وظيفة التعديل غير متاحة حالياً.');
+        return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.edit_unavailable'));
     }
 
     /**
@@ -158,6 +158,6 @@ class PharmacyAlternativeController extends Controller
         // Route::delete('pharmacy/alternatives/{base_medicine_id}/{alternative_id}', ...)
         // public function destroy($base_medicine_id, $alternative_id) { ... }
 
-        return redirect()->route('pharmacy.alternatives.index')->with('success', 'تم حذف البديل بنجاح.');
+        return redirect()->route('pharmacy.alternatives.index')->with('success', __('pharmacy.alternatives.deleted'));
     }
 }

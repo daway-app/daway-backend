@@ -1,4 +1,4 @@
-@vite(['resources/css/topbar.css'])
+@vite(['resources/css/layout/topbar.css'])
 
 <div class="topbar">
     <div class="topbar-title-group">
@@ -7,6 +7,12 @@
     </div>
 
     <div class="topbar-actions">
+        <a href="{{ route('locale.change', app()->getLocale() === 'ar' ? 'en' : 'ar') }}"
+           class="icon-btn lang-switch-btn"
+           title="@lang('layout.switch_language_tooltip')">
+            <span class="lang-label">{{ app()->getLocale() === 'ar' ? 'EN' : 'ع' }}</span>
+        </a>
+
         <div class="notifications-wrapper">
             <button class="icon-btn" id="notificationBtn" title="@lang('layout.notifications_tooltip')" onclick="toggleNotificationsDropdown()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -48,13 +54,6 @@
                 <span class="user-role" id="displayUserRole">{{ auth()->user()->role ?? 'User' }}</span>
             </div>
         </div>
-
-        <form method="POST" action="{{ route('logout') }}" style="display: flex; align-items: center;">
-            @csrf
-            <button type="submit" class="icon-btn logout-btn" title="@lang('layout.logout_tooltip')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            </button>
-        </form>
     </div>
 </div>
 
@@ -82,12 +81,35 @@
             </div>
             <div class="form-group">
                 <label>@lang('layout.job_title_label')</label>
-                <input type="text" id="inputRole" value="{{ auth()->user()->role ?? 'User' }}">
+                <input type="text" id="inputRole" value="{{ auth()->user()->role ?? 'User' }}" readonly style="background: #f1f5f9; color: #64748b; cursor: not-allowed;">
             </div>
         </div>
         <div class="profile-modal-footer">
             <button class="modal-btn" onclick="closeProfileModal()">@lang('layout.cancel_button')</button>
             <button class="modal-btn primary" onclick="saveProfileChanges()">@lang('layout.save_changes_button')</button>
+        </div>
+    </div>
+</div>
+
+<div class="avatar-preview-overlay" id="avatarPreviewModal">
+    <div class="avatar-preview-card">
+        <div class="avatar-preview-head">
+            <h3>@lang('layout.picture_preview_title')</h3>
+        </div>
+        <div class="crop-area">
+            <div class="crop-circle" id="cropCircle">
+                <img id="cropImage" alt="Crop">
+            </div>
+            <div class="crop-zoom">
+                <button class="modal-btn" onclick="zoomCrop(-0.15)">−</button>
+                <span id="cropZoomLabel">100%</span>
+                <button class="modal-btn" onclick="zoomCrop(0.15)">+</button>
+            </div>
+            <p class="crop-hint">@lang('layout.crop_hint')</p>
+        </div>
+        <div class="avatar-preview-actions">
+            <button class="modal-btn" onclick="cancelAvatarPreview()">@lang('layout.cancel_button')</button>
+            <button class="modal-btn primary" onclick="confirmAvatarPreview()">@lang('layout.confirm_picture_button')</button>
         </div>
     </div>
 </div>
@@ -101,6 +123,8 @@
 
 <script>
     let temporaryAvatarUrl = "";
+    let selectedAvatarFile = null;
+    let pendingAvatarUrl = "";
 
     // تعريف كائن الترجمات الخاصة بالوقت لتعمل داخل الـ JS
     const timeTrans = {
@@ -113,12 +137,10 @@
     };
 
     function toggleDarkMode() {
-        document.body.classList.toggle('dark-mode');
-        if (document.body.classList.contains('dark-mode')) {
-            localStorage.setItem('theme', 'dark');
-        } else {
-            localStorage.setItem('theme', 'light');
-        }
+        const dark = document.body.classList.toggle('dark-mode');
+        document.documentElement.classList.toggle('dark-mode', dark);
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        localStorage.setItem('theme', dark ? 'dark' : 'light');
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -138,6 +160,7 @@
 
     function openProfileModal() {
         temporaryAvatarUrl = ""; // Clear temporary URL at the start
+        selectedAvatarFile = null; // Clear selected file at the start
 
         const currentName = document.getElementById('displayUserName').innerText;
         const currentRole = document.getElementById('displayUserRole').innerText;
@@ -153,11 +176,13 @@
 
         // 1. Check if it has a background image (set by JS or initial Blade for image avatars)
         const currentAvatarBg = currentAvatarElement.style.backgroundImage;
-        if (currentAvatarBg && currentAvatarBg !== 'none' && currentAvatarBg.startsWith('url("')) {
-            const imageUrl = currentAvatarBg.slice(5, -2).replace(/"/g, ''); // Extract URL and remove quotes
-            modalPreviewAvatar.innerHTML = `<img src="${imageUrl}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-            temporaryAvatarUrl = imageUrl; // Store the current image URL
-            avatarFound = true;
+        if (currentAvatarBg && currentAvatarBg !== 'none' && currentAvatarBg.startsWith('url(')) {
+            const imageUrl = currentAvatarBg.slice(5, -2).replace(/['"]/g, ''); // Extract URL and remove quotes
+            if (imageUrl) {
+                modalPreviewAvatar.innerHTML = `<img src="${imageUrl}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                temporaryAvatarUrl = imageUrl; // Store the current image URL
+                avatarFound = true;
+            }
         }
 
         // 2. If no background image, check if it has inner text (set by JS or initial Blade for text avatars)
@@ -181,59 +206,183 @@
     function closeProfileModal() {
         document.getElementById('profileModal').classList.remove('active');
         temporaryAvatarUrl = ""; // Clear temporary avatar URL on close
+        selectedAvatarFile = null;
+        pendingAvatarUrl = "";
+        document.getElementById('avatarInputFile').value = '';
+    }
+
+    const crop = { scale: 1, ox: 0, oy: 0, imgW: 0, imgH: 0, base: 1, viewport: 220, dragging: false };
+
+    function applyCropTransform() {
+        const img = document.getElementById('cropImage');
+        const dispW = crop.imgW * crop.base * crop.scale;
+        const dispH = crop.imgH * crop.base * crop.scale;
+        img.style.width = dispW + 'px';
+        img.style.height = dispH + 'px';
+        img.style.left = (crop.viewport / 2 - dispW / 2 + crop.ox) + 'px';
+        img.style.top = (crop.viewport / 2 - dispH / 2 + crop.oy) + 'px';
+        document.getElementById('cropZoomLabel').innerText = Math.round(crop.scale * 100) + '%';
+    }
+
+    function clampCrop() {
+        const dispW = crop.imgW * crop.base * crop.scale;
+        const dispH = crop.imgH * crop.base * crop.scale;
+        const maxX = Math.max(0, (dispW - crop.viewport) / 2);
+        const maxY = Math.max(0, (dispH - crop.viewport) / 2);
+        crop.ox = Math.min(maxX, Math.max(-maxX, crop.ox));
+        crop.oy = Math.min(maxY, Math.max(-maxY, crop.oy));
+    }
+
+    function zoomCrop(delta) {
+        crop.scale = Math.min(4, Math.max(1, crop.scale + delta));
+        clampCrop();
+        applyCropTransform();
+    }
+
+    function initCrop(src) {
+        const img = document.getElementById('cropImage');
+        img.onload = function () {
+            crop.imgW = img.naturalWidth;
+            crop.imgH = img.naturalHeight;
+            crop.base = crop.viewport / Math.min(crop.imgW, crop.imgH);
+            crop.scale = 1;
+            crop.ox = 0;
+            crop.oy = 0;
+            applyCropTransform();
+            document.getElementById('avatarPreviewModal').classList.add('active');
+        };
+        img.src = src;
     }
 
     function previewAvatarImage(input) {
         if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                temporaryAvatarUrl = e.target.result;
-                const modalAvatar = document.getElementById('modalPreviewAvatar');
-                modalAvatar.innerHTML = `<img src="${temporaryAvatarUrl}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-            }
-            reader.readAsDataURL(input.files[0]);
+            initCrop(URL.createObjectURL(input.files[0]));
         }
     }
 
+    function closeAvatarPreview() {
+        document.getElementById('avatarPreviewModal').classList.remove('active');
+        URL.revokeObjectURL(document.getElementById('cropImage').src);
+    }
+
+    function confirmAvatarPreview() {
+        const img = document.getElementById('cropImage');
+        if (!crop.imgW) return;
+        const OUT = 512;
+        const canvas = document.createElement('canvas');
+        canvas.width = OUT;
+        canvas.height = OUT;
+        const ctx = canvas.getContext('2d');
+        const dispW = crop.imgW * crop.base * crop.scale;
+        const dispH = crop.imgH * crop.base * crop.scale;
+        const ratio = OUT / crop.viewport;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(OUT / 2, OUT / 2, OUT / 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(img, (crop.viewport / 2 - dispW / 2 + crop.ox) * ratio, (crop.viewport / 2 - dispH / 2 + crop.oy) * ratio, dispW * ratio, dispH * ratio);
+        ctx.restore();
+        canvas.toBlob(function (blob) {
+            selectedAvatarFile = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+            temporaryAvatarUrl = canvas.toDataURL('image/jpeg', 0.92);
+            const modalAvatar = document.getElementById('modalPreviewAvatar');
+            modalAvatar.innerHTML = `<img src="${temporaryAvatarUrl}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+            closeAvatarPreview();
+        }, 'image/jpeg', 0.92);
+    }
+
+    function cancelAvatarPreview() {
+        document.getElementById('avatarInputFile').value = '';
+        pendingAvatarUrl = "";
+        closeAvatarPreview();
+    }
+
+    (function () {
+        const circle = document.getElementById('cropCircle');
+        circle.addEventListener('pointerdown', function (e) {
+            crop.dragging = true;
+            crop.startX = e.clientX - crop.ox;
+            crop.startY = e.clientY - crop.oy;
+            circle.setPointerCapture(e.pointerId);
+        });
+        circle.addEventListener('pointermove', function (e) {
+            if (!crop.dragging) return;
+            crop.ox = e.clientX - crop.startX;
+            crop.oy = e.clientY - crop.startY;
+            clampCrop();
+            applyCropTransform();
+        });
+        circle.addEventListener('pointerup', function () { crop.dragging = false; });
+        circle.addEventListener('pointercancel', function () { crop.dragging = false; });
+        circle.addEventListener('wheel', function (e) {
+            e.preventDefault();
+            zoomCrop(e.deltaY < 0 ? 0.1 : -0.1);
+        }, { passive: false });
+    })();
+
     function saveProfileChanges() {
-        const newName = document.getElementById('inputName').value;
-        const newRole = document.getElementById('inputRole').value;
-
-        // Update Topbar
-        document.getElementById('displayUserName').innerText = newName;
-        document.getElementById('displayUserRole').innerText = newRole;
-
-        const displayAvatar = document.getElementById('displayUserAvatar');
-        if (temporaryAvatarUrl !== "") {
-            displayAvatar.style.backgroundImage = `url('${temporaryAvatarUrl}')`;
-            displayAvatar.innerText = ""; // Clear text if image is set
-        } else {
-            displayAvatar.style.backgroundImage = ""; // Clear background image
-            displayAvatar.innerText = newName.charAt(0); // Set text initial
+        const newName = document.getElementById('inputName').value.trim();
+        if (!newName) {
+            alert("@lang('layout.full_name_label')");
+            return;
         }
 
-        // Update Sidebar
-        const sidebarDisplayUserName = document.getElementById('sidebarDisplayUserName');
-        const sidebarDisplayUserRole = document.getElementById('sidebarDisplayUserRole');
-        const sidebarDisplayUserAvatar = document.getElementById('sidebarDisplayUserAvatar');
+        const formData = new FormData();
+        formData.append('name', newName);
+        if (selectedAvatarFile) {
+            formData.append('avatar', selectedAvatarFile);
+        }
 
-        if (sidebarDisplayUserName) {
-            sidebarDisplayUserName.innerText = newName;
-        }
-        if (sidebarDisplayUserRole) {
-            sidebarDisplayUserRole.innerText = newRole;
-        }
-        if (sidebarDisplayUserAvatar) {
-            if (temporaryAvatarUrl !== "") {
-                sidebarDisplayUserAvatar.innerHTML = `<img src="${temporaryAvatarUrl}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        fetch('{{ route('profile.update.ajax') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(async res => {
+            if (!res.ok) throw new Error('save failed');
+            return res.json();
+        })
+        .then(data => {
+            if (!data.success) throw new Error('save failed');
+
+            const displayAvatar = document.getElementById('displayUserAvatar');
+            if (data.avatar) {
+                displayAvatar.style.backgroundImage = `url('${data.avatar}')`;
+                displayAvatar.innerText = "";
             } else {
-                sidebarDisplayUserAvatar.innerText = newName.charAt(0); // Fallback to initial if no avatar
+                displayAvatar.style.backgroundImage = "";
+                displayAvatar.innerText = data.name.charAt(0);
             }
-        }
 
-        closeProfileModal();
-        // In a real application, you would send an AJAX request here to save changes to the backend.
-        // For now, this only updates the frontend display.
+            document.getElementById('displayUserName').innerText = data.name;
+
+            const sidebarDisplayUserName = document.getElementById('sidebarDisplayUserName');
+            const sidebarDisplayUserRole = document.getElementById('sidebarDisplayUserRole');
+            const sidebarDisplayUserAvatar = document.getElementById('sidebarDisplayUserAvatar');
+
+            if (sidebarDisplayUserName) {
+                sidebarDisplayUserName.innerText = data.name;
+            }
+            if (sidebarDisplayUserRole) {
+                sidebarDisplayUserRole.innerText = data.name ? document.getElementById('displayUserRole').innerText : '';
+            }
+            if (sidebarDisplayUserAvatar) {
+                if (data.avatar) {
+                    sidebarDisplayUserAvatar.innerHTML = `<img src="${data.avatar}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                } else {
+                    sidebarDisplayUserAvatar.innerText = data.name.charAt(0);
+                }
+            }
+
+            alert("@lang('layout.profile_saved')");
+            closeProfileModal();
+        })
+        .catch(() => {
+            alert("@lang('layout.profile_save_error')");
+        });
     }
 
     // Notification functions
@@ -241,7 +390,16 @@
         const dropdown = document.getElementById('notificationsDropdown');
         dropdown.classList.toggle('active');
         if (dropdown.classList.contains('active')) {
+            const r = dropdown.getBoundingClientRect();
+            const vw = window.innerWidth;
+            if (r.right > vw - 8 && r.left > 8) {
+                dropdown.style.width = Math.max(180, Math.min(380, vw - 8 - r.left)) + 'px';
+            } else {
+                dropdown.style.width = '';
+            }
             fetchNotifications(); // Fetch notifications when dropdown is opened
+        } else {
+            dropdown.style.width = '';
         }
     }
 

@@ -12,6 +12,7 @@ use App\Http\Controllers\web\Admin\SettingController;
 use App\Http\Controllers\web\Admin\UserController;
 use App\Http\Controllers\web\Auth\LoginController;
 use App\Http\Controllers\web\General\LocaleController;
+use App\Http\Controllers\web\General\ProfileController;
 use App\Http\Controllers\web\Patient\PatientController;
 // Patient Controllers
 use App\Http\Controllers\web\Pharmacy\PharmacyAlternativeController;
@@ -86,6 +87,11 @@ Route::middleware('auth')->group(function () {
     ])->name('pharmacy.dashboard.index');
 
     // Pharmacy Medicines
+    Route::get('/pharmacy/medicines/search', [
+        PharmacyMedicineController::class,
+        'search',
+    ])->name('pharmacy.medicines.search');
+
     Route::resource(
         'pharmacy/medicines',
         PharmacyMedicineController::class
@@ -138,6 +144,11 @@ Route::middleware('auth')->group(function () {
 
     // ==================== USERS ====================
 
+    Route::patch('/users/{user}/toggle-status', [
+        UserController::class,
+        'toggleStatus',
+    ])->name('users.toggleStatus');
+
     Route::resource(
         'users',
         UserController::class
@@ -156,6 +167,23 @@ Route::middleware('auth')->group(function () {
         InventoryController::class,
         'index',
     ])->name('inventory.index');
+
+    // ==================== PROFILE ====================
+
+    Route::get('/profile', [
+        ProfileController::class,
+        'edit',
+    ])->name('profile.edit');
+
+    Route::put('/profile', [
+        ProfileController::class,
+        'update',
+    ])->name('profile.update');
+
+    Route::post('/profile/update-ajax', [
+        ProfileController::class,
+        'updateAjax',
+    ])->name('profile.update.ajax');
 
     // ==================== SETTINGS ====================
 

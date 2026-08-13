@@ -26,7 +26,7 @@ class PharmacyDashboardController extends Controller
         // Ensure the logged-in user is a pharmacy user
         if ($user->role !== 'pharmacy') {
             // Redirect or show an error if not a pharmacy user
-            return redirect()->route('dashboard.index')->with('error', 'ليس لديك صلاحية الوصول لهذه الصفحة.');
+            return redirect()->route('dashboard.index')->with('error', __('pharmacy.access_denied'));
         }
 
         // Load opening hours for the availability check; the rating average is

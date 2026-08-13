@@ -1,0 +1,143 @@
+.fl-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--gray-600);
+}
+
+.error-text {
+    display: block;
+    margin-top: 8px;
+    color: #dc2626;
+    font-size: 13px;
+}
+
+.fl-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-800);
+    cursor: pointer;
+}
+
+.fl-check input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-teal);
+    cursor: pointer;
+}
+
+/* نتائج البحث الفوري */
+.moh-search-results {
+    position: relative;
+    margin-top: 8px;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--r-sm);
+    max-height: 320px;
+    overflow-y: auto;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    z-index: 20;
+}
+
+.moh-search-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--gray-100);
+    transition: background-color 0.15s;
+}
+
+.moh-search-item:last-child {
+    border-bottom: none;
+}
+
+.moh-search-item:hover {
+    background-color: var(--gray-50);
+}
+
+.moh-search-item strong {
+    display: block;
+    font-size: 14px;
+    color: var(--gray-800);
+}
+
+.moh-search-item small {
+    display: block;
+    font-size: 12px;
+    color: var(--gray-600);
+    margin-top: 2px;
+}
+
+.moh-result-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.moh-result-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background-color: var(--accent-teal);
+    padding: 3px 8px;
+    border-radius: 999px;
+}
+
+.moh-result-badge-local {
+    background-color: #7c3aed;
+}
+
+.moh-result-price {
+    font-size: 12px;
+    color: #059669;
+    font-weight: 600;
+}
+
+.moh-search-empty {
+    padding: 14px;
+    text-align: center;
+    color: var(--gray-600);
+    font-size: 14px;
+}
+
+/* صندوق الدواء المختار */
+.moh-selected {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--r-sm);
+}
+
+.moh-selected-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.moh-selected-info strong {
+    font-size: 15px;
+    color: var(--gray-800);
+}
+
+.moh-selected-info span {
+    font-size: 13px;
+    color: var(--gray-600);
+}
+
+.moh-official-price {
+    color: #059669;
+    font-weight: 600;
+}

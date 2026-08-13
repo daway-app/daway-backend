@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\web\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class SettingController extends Controller
 {
@@ -35,6 +36,12 @@ class SettingController extends Controller
                 ['key' => $key],
                 ['value' => $value, 'updated_at' => now()]
             );
+        }
+
+        // Apply the selected language immediately for the current user
+        if ($request->has('default_language') && in_array($request->default_language, ['ar', 'en'])) {
+            App::setLocale($request->default_language);
+            Session::put('locale', $request->default_language);
         }
 
         return redirect()->back()->with('success', 'تم حفظ التغيرات والتعديلات بنجاح! 🎉');

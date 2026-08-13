@@ -14,8 +14,12 @@ class AdminSeeder extends Seeder
             ['email' => 'admin@daway.com'],
             [
                 'name' => 'Admin',
-                'email' => 'admin@daway.com',
                 'password' => Hash::make('Admin@12345'),
+                'role' => 'admin',
+                'phone' => '+970599999999',
+                'phone_verified_at' => now(),
+                'email_verified_at' => now(),
+                'is_active' => true,
             ]
         );
     }

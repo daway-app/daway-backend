@@ -1,61 +1,70 @@
 @extends('layouts.app')
 
-@section('title', 'تعديل دواء في الصيدلية')
+@section('title', __('pharmacy.medicines.edit.title'))
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">تعديل دواء: {{ $pharmacyMedicine->medicine->trade_name }} في صيدلية {{ $pharmacy->pharmacy_name }}</h1>
-    </div>
+    @vite(['resources/css/pages/medicines_edit.css'])
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">بيانات الدواء</h6>
+    <div class="edit-medicine-page-wrapper">
+        <div class="page-heading">
+            <div class="page-heading-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+            <div>
+                <h1>@lang('pharmacy.medicines.edit.heading', ['medicine' => $pharmacyMedicine->medicine->trade_name])</h1>
+                <p>@lang('pharmacy.medicines.edit.subtitle', ['pharmacy' => $pharmacy->pharmacy_name])</p>
+            </div>
         </div>
-        <div class="card-body">
-            <form action="{{ route('pharmacy.medicines.update', $pharmacyMedicine->id) }}" method="POST">
-                @csrf
-                @method('PUT')
 
-                <div class="form-group">
-                    <label for="medicine_name">اسم الدواء:</label>
-                    <input type="text" id="medicine_name" class="form-control" value="{{ $pharmacyMedicine->medicine->trade_name }} ({{ $pharmacyMedicine->medicine->scientific_name }})" disabled>
+        <form action="{{ route('pharmacy.medicines.update', $pharmacyMedicine->id) }}" method="POST">
+            @csrf
+            @method('PUT')
+
+            <div class="premium-card">
+                <div class="card-head">
+                    <div class="card-head-content">
+                        <div class="card-icon teal">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                        </div>
+                        <div>
+                            <h2>@lang('pharmacy.medicines.edit.info_section')</h2>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="price">السعر:</label>
-                    <input type="number" name="price" id="price" class="form-control @error('price') is-invalid @enderror" step="0.01" min="0" value="{{ old('price', $pharmacyMedicine->price) }}" required>
-                    @error('price')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
+                <div class="card-body">
+                    <div class="fg">
+                        <label class="fl">@lang('pharmacy.medicines.edit.medicine_name')</label>
+                        <input class="fc" type="text" value="{{ $pharmacyMedicine->medicine->trade_name }} ({{ $pharmacyMedicine->medicine->active_ingredient }})" disabled>
+                    </div>
+                    <div class="form-row" style="margin-top:16px;">
+                        <div class="fg">
+                            <label class="fl" for="price">@lang('pharmacy.medicines.edit.price_label') <span class="req">*</span></label>
+                            <input class="fc" type="number" id="price" name="price" step="0.01" min="0" value="{{ old('price', $pharmacyMedicine->price) }}" required>
+                            @error('price')
+                                <span class="error-text" role="alert"><strong>{{ $message }}</strong></span>
+                            @enderror
+                        </div>
+                        <div class="fg">
+                            <label class="fl" for="quantity">@lang('pharmacy.medicines.edit.quantity_label') <span class="req">*</span></label>
+                            <input class="fc" type="number" id="quantity" name="quantity" min="0" value="{{ old('quantity', $pharmacyMedicine->quantity) }}" required>
+                            @error('quantity')
+                                <span class="error-text" role="alert"><strong>{{ $message }}</strong></span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="fg" style="margin-top:16px;">
+                        <label class="fl-check">
+                            <input type="checkbox" name="is_available" id="is_available" value="1" {{ old('is_available', $pharmacyMedicine->is_available) ? 'checked' : '' }}>
+                            @lang('pharmacy.medicines.edit.available_now')
+                        </label>
+                    </div>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label for="quantity">المخزون:</label> {{-- Changed from 'stock' to 'quantity' --}}
-                    <input type="number" name="quantity" id="quantity" class="form-control @error('quantity') is-invalid @enderror" min="0" value="{{ old('quantity', $pharmacyMedicine->quantity) }}" required> {{-- Changed from 'stock' to 'quantity' --}}
-                    @error('quantity') {{-- Changed from 'stock' to 'quantity' --}}
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
-
-                <div class="form-group form-check">
-                    <input type="checkbox" name="is_available" id="is_available" class="form-check-input" value="1" {{ old('is_available', $pharmacyMedicine->is_available) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="is_available">متوفر حالياً</label>
-                    @error('is_available')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
-
-                <button type="submit" class="btn btn-primary">تحديث الدواء</button>
-                <a href="{{ route('pharmacy.medicines.index') }}" class="btn btn-secondary">إلغاء</a>
-            </form>
-        </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">@lang('pharmacy.medicines.edit.update_button')</button>
+                <a href="{{ route('pharmacy.medicines.index') }}" class="btn-cancel">@lang('pharmacy.medicines.edit.cancel_button')</a>
+            </div>
+        </form>
     </div>
-</div>
 @endsection

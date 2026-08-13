@@ -12,7 +12,7 @@
 @section('content')
     <!-- Leaflet.js for map selection -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    @vite(['resources/css/pharmacies_create.css'])
+    @vite(['resources/css/pages/pharmacies_create.css'])
 
     <div class="pharmacy-create-container">
 

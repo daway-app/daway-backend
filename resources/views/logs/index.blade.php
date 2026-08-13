@@ -3,7 +3,7 @@
 @section('title', __('logs.title'))
 
 @section('content')
-    @vite(['resources/css/logs.css'])
+    @vite(['resources/css/pages/logs.css'])
 
     <div class="logs-wrapper">
         <div class="logs-header">

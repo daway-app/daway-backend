@@ -16,6 +16,13 @@ return [
     'system_settings' => 'System Settings',
     'activity_log' => 'Activity Log',
     'edit_profile_modal_title' => 'Edit Profile',
+    'my_profile' => 'My Profile',
+    'profile_title' => 'My Profile',
+    'profile_subtitle' => 'Update your picture and name — changes appear everywhere instantly',
+    'profile_saved' => 'Changes saved successfully',
+    'email_label' => 'Email Address',
+    'phone_label' => 'Phone Number',
+    'profile_save_error' => 'Could not save changes, please try again',
 
     // Topbar
     'search_placeholder' => 'Search for medicines, pharmacies, etc...',
@@ -27,8 +34,14 @@ return [
     'full_name_label' => 'Full Name',
     'job_title_label' => 'Job Title',
     'cancel_button' => 'Cancel',
+    'confirm_picture_button' => 'Use this photo',
+    'picture_preview_title' => 'Photo Preview',
+    'crop_hint' => 'Drag the image to position your face, use the wheel or buttons to zoom',
     'save_changes_button' => 'Save Changes',
     'logging_out_message' => 'Logging out...',
+    'logout_confirm_title' => 'Log Out',
+    'logout_confirm_message' => 'Are you sure you want to log out of your account?',
+    'logout_confirm_yes' => 'Log Out',
     'notifications_title' => 'Notifications',
     'mark_all_as_read' => 'Mark all as read', // Updated from clear_all_notifications
     'view_all_notifications' => 'View all notifications',
@@ -41,4 +54,9 @@ return [
     'no_notifications_yet' => 'No notifications yet',
     'error_marking_all_as_read' => 'Error marking all notifications as read:',
     'error_marking_as_read' => 'Error marking notification as read:',
+    'no_new_notifications' => 'No new notifications',
+
+    // Generated notifications
+    'notif_low_stock' => 'Low stock alert: :name — remaining quantity: :count',
+    'notif_low_stock_pharmacy' => 'Low stock alert: :name in your pharmacy — remaining quantity: :count',
 ];

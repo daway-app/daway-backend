@@ -3,7 +3,7 @@
 @section('title', __('medicines.title'))
 
 @section('content')
-    @vite(['resources/css/medicines.css'])
+    @vite(['resources/css/pages/medicines.css'])
 
     <div class="animated-page">
         <!-- 1. Top Header -->
@@ -13,9 +13,12 @@
                 <p>@lang('medicines.main_description')</p>
             </div>
             <div class="header-actions">
-                <div class="notification-btn" title="@lang('topbar.notifications_tooltip')"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></div>
-                <a href="{{ route('medicines.create') }}" class="btn-add-medicine">
-                    <span>+</span> @lang('medicines.add_medicine_button')
+                <a href="{{ route('medicines.create') }}" class="btn-add-pharmacy hover-shimmer">
+                    <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>@lang('medicines.add_medicine_button')</span>
                 </a>
             </div>
         </div>
@@ -31,19 +34,19 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <span class="stat-title">@lang('medicines.total_medicines')</span>
-                <span class="stat-value total counter" data-target="{{ $medicines->total() }}">{{ $medicines->total() }}</span>
+                <span class="stat-value total counter" data-target="{{ $stats['total'] }}">{{ $stats['total'] }}</span>
             </div>
             <div class="stat-card">
                 <span class="stat-title">@lang('medicines.available_now')</span>
-                <span class="stat-value available counter" data-target="0">0</span>
+                <span class="stat-value available counter" data-target="{{ $stats['available'] }}">{{ $stats['available'] }}</span>
             </div>
             <div class="stat-card">
                 <span class="stat-title">@lang('medicines.low_stock')</span>
-                <span class="stat-value low counter" data-target="0">0</span>
+                <span class="stat-value low counter" data-target="{{ $stats['low'] }}">{{ $stats['low'] }}</span>
             </div>
             <div class="stat-card">
                 <span class="stat-title">@lang('medicines.out_of_stock')</span>
-                <span class="stat-value out counter" data-target="0">0</span>
+                <span class="stat-value out counter" data-target="{{ $stats['out'] }}">{{ $stats['out'] }}</span>
             </div>
         </div>
 
@@ -53,16 +56,16 @@
                 <div class="chart-card-header">
                     <div class="header-icon icon-teal"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg></div>
                     <div>
-                        <h3>@lang('medicines.category_distribution_title')</h3>
-                        <p class="chart-subtext">@lang('medicines.category_distribution_desc')</p>
+                        <h3>@lang('medicines.coverage_title')</h3>
+                        <p class="chart-subtext">@lang('medicines.coverage_desc')</p>
                     </div>
                 </div>
 
                 <div class="chart-donut-layout">
                     <div class="donut-container-lg">
-                        <div class="donut-chart-animated">
+                        <div class="donut-chart-animated" style="--seg1: {{ $stats['in_pharmacy_pct'] * 3.6 }}deg;">
                             <div class="donut-inner-hole">
-                                <span class="donut-number">{{ $medicines->total() }}</span>
+                                <span class="donut-number">{{ $stats['total'] }}</span>
                                 <span class="donut-caption">@lang('medicines.total_medicines_label')</span>
                             </div>
                         </div>
@@ -71,23 +74,13 @@
                     <div class="chart-legend-vertical">
                         <div class="legend-row">
                             <span class="dot-indicator" style="--dot-color: #0B8FAC;"></span>
-                            <span class="legend-text">@lang('medicines.painkillers_category')</span>
-                            <span class="badge-percent badge-teal">45%</span>
-                        </div>
-                        <div class="legend-row">
-                            <span class="dot-indicator" style="--dot-color: #0284c7;"></span>
-                            <span class="legend-text">@lang('medicines.antibiotics_category')</span>
-                            <span class="badge-percent badge-sky">30%</span>
-                        </div>
-                        <div class="legend-row">
-                            <span class="dot-indicator" style="--dot-color: #d97706;"></span>
-                            <span class="legend-text">@lang('medicines.chronic_category')</span>
-                            <span class="badge-percent badge-amber">15%</span>
+                            <span class="legend-text">@lang('medicines.coverage_in')</span>
+                            <span class="badge-percent badge-teal">{{ $stats['in_pharmacy_pct'] }}%</span>
                         </div>
                         <div class="legend-row">
                             <span class="dot-indicator" style="--dot-color: #e11d48;"></span>
-                            <span class="legend-text">@lang('medicines.other_category')</span>
-                            <span class="badge-percent badge-rose">10%</span>
+                            <span class="legend-text">@lang('medicines.coverage_out')</span>
+                            <span class="badge-percent badge-rose">{{ $stats['not_in_pharmacy_pct'] }}%</span>
                         </div>
                     </div>
                 </div>
@@ -106,30 +99,30 @@
                     <div class="bar-progress-group">
                         <div class="bar-info-row">
                             <span class="bar-title">● @lang('medicines.available_status')</span>
-                            <span class="bar-percentage text-emerald">70%</span>
+                            <span class="bar-percentage text-emerald">{{ $stats['available_pct'] }}%</span>
                         </div>
                         <div class="bar-track">
-                            <div class="bar-fill fill-emerald" style="--fill-w: 70%;"></div>
+                            <div class="bar-fill fill-emerald" style="--fill-w: {{ $stats['available_pct'] }}%;"></div>
                         </div>
                     </div>
 
                     <div class="bar-progress-group">
                         <div class="bar-info-row">
                             <span class="bar-title">● @lang('medicines.low_stock_status')</span>
-                            <span class="bar-percentage text-amber">20%</span>
+                            <span class="bar-percentage text-amber">{{ $stats['low_pct'] }}%</span>
                         </div>
                         <div class="bar-track">
-                            <div class="bar-fill fill-amber" style="--fill-w: 20%;"></div>
+                            <div class="bar-fill fill-amber" style="--fill-w: {{ $stats['low_pct'] }}%;"></div>
                         </div>
                     </div>
 
                     <div class="bar-progress-group">
                         <div class="bar-info-row">
                             <span class="bar-title">● @lang('medicines.out_of_stock_status')</span>
-                            <span class="bar-percentage text-rose">10%</span>
+                            <span class="bar-percentage text-rose">{{ $stats['out_pct'] }}%</span>
                         </div>
                         <div class="bar-track">
-                            <div class="bar-fill fill-rose" style="--fill-w: 10%;"></div>
+                            <div class="bar-fill fill-rose" style="--fill-w: {{ $stats['out_pct'] }}%;"></div>
                         </div>
                     </div>
                 </div>
@@ -141,11 +134,6 @@
         <div class="filter-card">
             <div class="filter-row">
                 <input type="text" id="searchInput" placeholder="@lang('medicines.search_placeholder')" class="filter-input">
-                <select id="categoryFilter" class="filter-select">
-                    <option value="">@lang('medicines.all_categories_filter')</option>
-                    <option value="painkillers">@lang('medicines.painkillers_category')</option>
-                    <option value="antibiotics">@lang('medicines.antibiotics_category')</option>
-                </select>
                 <select id="statusFilter" class="filter-select">
                     <option value="">@lang('medicines.all_statuses_filter')</option>
                     <option value="available">@lang('medicines.available_status')</option>
@@ -167,7 +155,7 @@
                 <tr>
                     <th>@lang('medicines.col_medicine')</th>
                     <th>@lang('medicines.col_active_ingredient')</th>
-                    <th>@lang('medicines.col_category')</th>
+                    <th>@lang('medicines.col_stock')</th>
                     <th>@lang('medicines.col_available_in')</th>
                     <th>@lang('medicines.col_lowest_price')</th>
                     <th>@lang('medicines.col_status')</th>
@@ -177,21 +165,24 @@
                 </thead>
                 <tbody id="tableBody">
                 @forelse($medicines as $medicine)
-                    <tr data-status="available" data-category="@lang('medicines.painkillers_category')">
+                    @php
+                        $rowStatus = $medicine->stock <= 0 ? 'out' : ($medicine->stock <= 10 ? 'low' : 'available');
+                    @endphp
+                    <tr data-status="{{ $rowStatus }}">
                         <td>
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div class="pill-icon-wrapper icon-cyan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></div>
                                 <div>
                                     <strong>{{ $medicine->trade_name }}</strong><br>
-                                    <small style="color: #94a3b8; font-size: 11px;">{{ $medicine->scientific_name }}</small>
+                                    <small style="color: #94a3b8; font-size: 11px;">{{ $medicine->active_ingredient }}</small>
                                 </div>
                             </div>
                         </td>
-                        <td>{{ $medicine->scientific_name }}</td>
-                        <td><span class="pill-badge badge-category">● @lang('medicines.painkillers_category')</span></td>
-                        <td><strong style="color: #0B8FAC;">0</strong> @lang('medicines.pharmacies_count', ['count' => 0])</td>
-                        <td><strong>₪ {{ number_format($medicine->price ?? 0, 2) }}</strong></td>
-                        <td><span class="pill-badge status-badge available">● @lang('medicines.available_status')</span></td>
+                        <td>{{ $medicine->active_ingredient }}</td>
+                        <td><span class="pill-badge status-badge {{ $rowStatus }}">{{ $medicine->stock }}</span></td>
+                        <td><strong style="color: #0B8FAC;">{{ $medicine->pharmacy_count }}</strong> {{ $medicine->pharmacy_count === 1 ? __('medicines.pharmacy_one') : __('medicines.pharmacy_many') }}</td>
+                        <td><strong>₪ {{ $medicine->min_price !== null ? number_format($medicine->min_price, 2) : '—' }}</strong></td>
+                        <td><span class="pill-badge status-badge {{ $rowStatus }}">● {{ $rowStatus === 'out' ? __('medicines.out_of_stock_status') : ($rowStatus === 'low' ? __('medicines.low_stock_status') : __('medicines.available_status')) }}</span></td>
                         <td><span class="pill-badge badge-none">• —</span></td>
                         <td>
                             <div class="action-btn-group">
@@ -239,7 +230,6 @@
             });
 
             const search = document.getElementById('searchInput');
-            const category = document.getElementById('categoryFilter');
             const status = document.getElementById('statusFilter');
             const rows = [...document.querySelectorAll('#tableBody tr[data-status]')];
             const count = document.getElementById('registeredCount');
@@ -248,21 +238,18 @@
 
             const filterRows = () => {
                 const q = normalize(search?.value);
-                const selectedCategory = normalize(category?.value);
                 const selectedStatus = normalize(status?.value);
 
                 let visible = 0;
 
                 rows.forEach(row => {
                     const text = normalize(row.textContent);
-                    const rowCategory = normalize(row.dataset.category);
                     const rowStatus = normalize(row.dataset.status);
 
                     const matchesSearch = !q || text.includes(q);
-                    const matchesCategory = !selectedCategory || rowCategory.includes(selectedCategory);
                     const matchesStatus = !selectedStatus || rowStatus === selectedStatus;
 
-                    const show = matchesSearch && matchesCategory && matchesStatus;
+                    const show = matchesSearch && matchesStatus;
                     row.style.display = show ? '' : 'none';
                     if (show) visible++;
                 });
@@ -272,7 +259,7 @@
                 }
             };
 
-            [search, category, status].forEach(el => {
+            [search, status].forEach(el => {
                 if (el) {
                     el.addEventListener('input', filterRows);
                     el.addEventListener('change', filterRows);

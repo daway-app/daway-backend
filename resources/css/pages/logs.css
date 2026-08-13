@@ -1,0 +1,79 @@
+:root {
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --card-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
+    --teal-primary: #0B8FAC;
+}
+
+body.dark-mode {
+    --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.logs-wrapper { animation: fadeInUp 0.5s var(--ease-out-expo) both; }
+.logs-header {
+    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px;
+    padding: 24px 28px; margin-bottom: 24px; box-shadow: var(--card-shadow);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+}
+
+body.dark-mode .logs-header {
+    background: #232327;
+    border-color: #333338;
+}
+
+.logs-title-group h2 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; display: flex; align-items: center; gap: 10px; }
+body.dark-mode .logs-title-group h2 { color: #E4E4E7; }
+
+.logs-title-group p { font-size: 13.5px; color: #64748b; margin: 0; }
+body.dark-mode .logs-title-group p { color: #A1A1AA; }
+
+.badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 700;
+}
+.badge-info { background: #e0f2fe; color: #0369a1; }
+.badge-success { background: #d1fae5; color: #047857; }
+.badge-warning { background: #fef3c7; color: #b45309; }
+.badge-danger { background: #fee2e2; color: #b91c1c; }
+
+.search-bar {
+    display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;
+}
+.form-control {
+    padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 13.5px;
+    background: #fff; color: #0f172a;
+}
+
+body.dark-mode .form-control {
+    background: #232327;
+    border-color: #333338;
+    color: #E4E4E7;
+}
+
+.form-control:focus { outline: none; border-color: var(--teal-primary); }
+
+/* ط·آ²ط·آ± ط·ع¾ط·آµط·آ¯ط¸ظ¹ط·آ± ط·آ§ط¸â€‍ط·آ¥ط¸ئ’ط·آ³ط¸â€‍ */
+.btn-export-excel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #107c41; /* ط¸â€‍ط¸ث†ط¸â€  ط·آ¥ط¸ئ’ط·آ³ط¸â€‍ ط·آ§ط¸â€‍ط·آ£ط·آ®ط·آ¶ط·آ± ط·آ§ط¸â€‍ط·آ´ط¸â€،ط¸ظ¹ط·آ± */
+    color: #ffffff;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 4px 12px rgba(16, 124, 65, 0.25);
+}
+
+.btn-export-excel:hover {
+    background-color: #0b5c30;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
