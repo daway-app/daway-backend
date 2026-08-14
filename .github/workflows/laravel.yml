@@ -36,12 +36,6 @@ jobs:
           mkdir -p database
           touch database/database.sqlite
 
-      - name: Run Migrations
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ${{ github.workspace }}/database/database.sqlite
-        run: php artisan migrate --force
-
       - name: Execute tests
         env:
           DB_CONNECTION: sqlite
