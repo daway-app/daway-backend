@@ -12,37 +12,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. سحب الكود أولاً
+      # 1. Checkout repository first
       - uses: actions/checkout@v4
 
-      # 2. إعداد بيئة PHP (استخدم 8.3 إلا إذا كنت متأكداً أن مشروعك يدعم 8.4)
+      # 2. Setup PHP 8.4 to match your composer.lock dependencies
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: mbstring, xml, dom, gd, zip, bcmath, ctype, curl, fileinfo, json, pdo, pdo_sqlite, sqlite3, tokenizer, openssl, iconv, intl
 
-      # 3. نسخ ملف البيئة
+      # 3. Copy environment file
       - name: Copy .env
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      # 4. تثبيت المكتبيات
+      # 4. Install dependencies
       - name: Install Dependencies
         run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
-      # 5. توليد المفتاح وصلاحيات المجلدات
+      # 5. Generate application key
       - name: Generate key
         run: php artisan key:generate
 
+      # 6. Set directory permissions
       - name: Directory Permissions
         run: chmod -R 777 storage bootstrap/cache
 
-      # 6. إنشاء قاعدة بيانات SQLite
+      # 7. Setup SQLite Database
       - name: Create Database
         run: |
           mkdir -p database
           touch database/database.sqlite
 
-      # 7. تشغيل الاختبارات بمسار مطلق للقاعدة
+      # 8. Run PHPUnit / Pest Tests
       - name: Execute tests
         env:
           DB_CONNECTION: sqlite
