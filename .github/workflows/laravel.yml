@@ -15,19 +15,20 @@ jobs:
       # 1. Checkout repository first
       - uses: actions/checkout@v4
 
-      # 2. Setup PHP 8.4 to match your composer.lock dependencies
+      # 2. Setup PHP 8.4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
           extensions: mbstring, xml, dom, gd, zip, bcmath, ctype, curl, fileinfo, json, pdo, pdo_sqlite, sqlite3, tokenizer, openssl, iconv, intl
+          tools: composer:v2
 
       # 3. Copy environment file
       - name: Copy .env
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      # 4. Install dependencies
+      # 4. Install dependencies (With --ignore-platform-reqs)
       - name: Install Dependencies
-        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist --ignore-platform-reqs
 
       # 5. Generate application key
       - name: Generate key
