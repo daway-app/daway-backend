@@ -32,6 +32,7 @@ class UserController extends Controller
                     'email' => $u->email,
                     'phone' => $u->phone,
                     'role' => $u->role,
+                    'avatar' => $u->avatar,
                     'is_active' => $u->is_active,
                     'updated_at' => $u->updated_at ? $u->updated_at->format('Y-m-d H:i:s') : null,
                 ];

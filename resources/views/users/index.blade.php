@@ -81,7 +81,13 @@
                                 <tr data-role="{{ $user->role }}" data-search="{{ $user->name }} {{ $user->phone }} {{ $user->email }}" data-user-id="{{ $user->id }}">
                                     <td>
                                         <div class="user-profile-cell">
-                                            <div class="user-avatar avatar-blue">{{ mb_substr($user->name, 0, 2) }}</div>
+                                            <div class="user-avatar avatar-blue">
+                                                @if($user->avatar)
+                                                    <img src="{{ asset('uploads/' . $user->avatar) }}" alt="{{ $user->name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                                @else
+                                                    {{ mb_substr($user->name, 0, 2) }}
+                                                @endif
+                                            </div>
                                             <div class="user-info">
                                                 <strong>{{ $user->name }}</strong>
                                                 <small>{{ $user->phone }}</small>
