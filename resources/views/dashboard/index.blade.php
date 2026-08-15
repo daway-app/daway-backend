@@ -90,7 +90,7 @@
                 </div>
 
                 <div class="chart-footer-labels">
-                    <span>@lang('dashboard.week_8')</span><span>@lang('dashboard.week_7')</span><span>@lang('dashboard.week_6')</span><span>@lang('dashboard.week_5')</span><span>@lang('dashboard.week_4')</span><span>@lang('dashboard.week_3')</span><span>@lang('dashboard.week_2')</span><span>@lang('dashboard.week_1')</span>
+                    <span>@lang('dashboard.week_1')</span><span>@lang('dashboard.week_2')</span><span>@lang('dashboard.week_3')</span><span>@lang('dashboard.week_4')</span><span>@lang('dashboard.week_5')</span><span>@lang('dashboard.week_6')</span><span>@lang('dashboard.week_7')</span><span>@lang('dashboard.week_8')</span>
                 </div>
             </div>
 
