@@ -106,6 +106,11 @@ Route::middleware('auth')->group(function () {
     )->only(['index', 'create', 'store'])
         ->names('pharmacy.alternatives');
 
+    Route::delete('pharmacy/alternatives/{pharmacyMedicine}/{alternative}', [
+        PharmacyAlternativeController::class,
+        'destroy',
+    ])->name('pharmacy.alternatives.destroy');
+
     // Pharmacy Profile
     Route::get('/pharmacy/profile', [
         PharmacyProfileController::class,

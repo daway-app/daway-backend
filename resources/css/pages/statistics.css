@@ -246,3 +246,115 @@
     color: #ffffff;
     border-color: #ef4444;
 }
+
+/* ==========================================
+   10. تنسيقات صفحة تفاصيل الصيدلية (العناصر الملوّنة)
+   ========================================== */
+.pharmacy-page-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+}
+
+.info-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.info-value {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.table-card-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+.med-name {
+    color: #0f172a;
+    font-size: 14px;
+    display: block;
+}
+
+.med-ing {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.qty-text {
+    font-weight: 600;
+    color: #334155;
+}
+
+.bdg-err { background: #fee2e2; color: #991b1b; }
+
+/* ==========================================
+   11. Dark Mode Styles — صفحة تفاصيل الصيدلية
+   ========================================== */
+body.dark-mode .form-card,
+body.dark-mode .table-card {
+    background-color: #232327;
+    border-color: #333338;
+}
+
+body.dark-mode .form-card-header {
+    background-color: #18181B;
+    border-color: #333338;
+}
+
+body.dark-mode .form-card-header h2,
+body.dark-mode .pharmacy-page-title,
+body.dark-mode .table-card-title,
+body.dark-mode .info-value,
+body.dark-mode .med-name,
+body.dark-mode .qty-text,
+body.dark-mode .breadcrumb-nav .cur {
+    color: #E4E4E7;
+}
+
+body.dark-mode .info-label,
+body.dark-mode .med-ing {
+    color: #A1A1AA;
+}
+
+body.dark-mode .table-card-header {
+    border-bottom-color: #333338;
+}
+
+body.dark-mode .table-card table th {
+    background-color: #18181B;
+    color: #A1A1AA;
+    border-color: #333338;
+}
+
+body.dark-mode .table-card table td {
+    border-color: #333338;
+}
+
+body.dark-mode .table-card table tbody tr:hover {
+    background-color: #18181B;
+}
+
+body.dark-mode .form-card hr {
+    border-top-color: #333338;
+}
+
+body.dark-mode .pid {
+    background-color: #333338;
+    color: #E4E4E7;
+    border-color: #3F3F46;
+}
+
+body.dark-mode .t-av.ph {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+body.dark-mode .bdg-ok { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+body.dark-mode .bdg-warn { background: rgba(250, 204, 21, 0.12); color: #facc15; }
+body.dark-mode .bdg-err { background: rgba(239, 68, 68, 0.12); color: #f87171; }

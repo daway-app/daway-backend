@@ -42,7 +42,16 @@
                             <td>{{ $pharmacyMedicine->medicine->active_ingredient }}</td>
                             <td>
                                 @forelse ($pharmacyMedicine->medicine->alternatives as $alternative)
-                                    <span class="badge badge-info">{{ $alternative->trade_name }}</span>
+                                    <span class="badge badge-info">
+                                        {{ $alternative->trade_name }}
+                                        <form action="{{ route('pharmacy.alternatives.destroy', ['pharmacyMedicine' => $pharmacyMedicine->id, 'alternative' => $alternative->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('@lang('pharmacy.alternatives.index.confirm_delete')');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-link btn-sm p-0 ml-1 text-danger" title="@lang('pharmacy.alternatives.index.delete_tooltip')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    </span>
                                 @empty
                                     @lang('pharmacy.alternatives.index.no_alternatives')
                                 @endforelse

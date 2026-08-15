@@ -64,17 +64,22 @@ class DashboardController extends Controller
             $chartSearches = [];
             $chartUsers = [];
             $chartMedicines = [];
+            $chartPharmacies = [];
             $chartAll = [];
+            $weekLabels = [];
             for ($i = 7; $i >= 0; $i--) {
                 $start = $now->copy()->subWeeks($i)->startOfWeek();
                 $end = $now->copy()->subWeeks($i - 1)->startOfWeek();
-                $weekUsers = User::whereBetween('created_at', [$start, $end])->count();
+                $weekUsers = User::where('role', 'patient')->whereBetween('created_at', [$start, $end])->count();
                 $weekMedicines = Medicine::whereBetween('created_at', [$start, $end])->count();
                 $weekSearches = SearchLog::whereBetween('created_at', [$start, $end])->count();
+                $weekPharmacies = User::where('role', 'pharmacy')->whereBetween('created_at', [$start, $end])->count();
                 $chartUsers[] = $weekUsers;
                 $chartMedicines[] = $weekMedicines;
                 $chartSearches[] = $weekSearches;
-                $chartAll[] = $weekSearches + $weekUsers + $weekMedicines;
+                $chartPharmacies[] = $weekPharmacies;
+                $chartAll[] = $weekSearches + $weekUsers + $weekMedicines + $weekPharmacies;
+                $weekLabels[] = $start->format('M j') . ' – ' . $end->copy()->subDay()->format('M j');
             }
 
             // نسبة النمو: null عندما لا توجد قيمة سابقة للمقارنة (لا +100% مضللة)
@@ -96,27 +101,29 @@ class DashboardController extends Controller
                 return ($pct >= 0 ? '▲ +' : '▼ ') . abs($pct) . '%';
             };
 
-            $toHeights = function (array $series) {
-                $max = max($series) ?: 1;
-                return array_map(fn ($v) => (int) round($v / $max * 100), $series);
+            $toChartDataset = function (array $series, string $label, string $color) use ($pctChange, $fmtTrend) {
+                $total = array_sum($series);
+                return [
+                    'label' => $label,
+                    'values' => $series,
+                    'total' => $total,
+                    'change' => $pctChange($series),
+                    'average' => round($total / 8),
+                    'color' => $color,
+                    'trend' => $fmtTrend($series),
+                ];
             };
 
             $chartDatasets = [
-                'all' => [
-                    'heights' => $toHeights($chartAll),
-                    'values' => $chartAll,
-                    'trend' => $fmtTrend($chartAll),
-                ],
-                'medicines' => [
-                    'heights' => $toHeights($chartSearches),
-                    'values' => $chartSearches,
-                    'trend' => $fmtTrend($chartSearches) . ' ' . __('dashboard.medicines_search_filter'),
-                ],
-                'users' => [
-                    'heights' => $toHeights($chartUsers),
-                    'values' => $chartUsers,
-                    'trend' => $fmtTrend($chartUsers) . ' ' . __('dashboard.users_filter'),
-                ],
+                'all' => $toChartDataset($chartAll, __('dashboard.all_filter'), '#0B8FAC'),
+                'searches' => $toChartDataset($chartSearches, __('dashboard.medicines_search_filter'), '#3b82f6'),
+                'patients' => $toChartDataset($chartUsers, __('dashboard.users_filter'), '#10b981'),
+                'pharmacies' => $toChartDataset($chartPharmacies, __('dashboard.pharmacies_filter'), '#f59e0b'),
+            ];
+
+            $chartData = [
+                'labels' => $weekLabels,
+                'datasets' => $chartDatasets,
             ];
 
             return [
@@ -133,7 +140,7 @@ class DashboardController extends Controller
                 'trendPatients' => $trendPatients,
                 'newPharmaciesThisWeek' => $newPharmaciesThisWeek,
                 'medicinesAddedRecently' => $medicinesAddedRecently,
-                'chartDatasets' => $chartDatasets,
+                'chartData' => $chartData,
             ];
         });
 

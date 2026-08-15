@@ -133,31 +133,31 @@ class PharmacyAlternativeController extends Controller
     }
 
     /**
-     * Remove a specific alternative from storage.
+     * Remove a specific alternative from a pharmacy's medicine.
      *
-     * @param  int  $id  ID of the alternative relationship
+     * @param  \App\Models\PharmacyMedicine  $pharmacyMedicine  The medicine in the pharmacy's inventory
+     * @param  \App\Models\Medicine  $alternative  The alternative medicine to detach
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(PharmacyMedicine $pharmacyMedicine, Medicine $alternative)
     {
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
 
-        // Assuming $id here is the ID of the base PharmacyMedicine entry,
-        // and we need to detach an alternative from its associated Medicine.
-        // This method needs to be more specific about which alternative to delete.
-        // For now, this is a placeholder.
+        // Ensure the pharmacy owns this inventory item
+        if ($pharmacyMedicine->pharmacy_id !== $pharmacy->id) {
+            return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.index.no_access'));
+        }
 
-        // To properly implement destroy, you'd need to pass both base_medicine_id and alternative_id
-        // or have a specific model for the pivot table 'alternative_medicine'.
+        $baseMedicine = $pharmacyMedicine->medicine;
 
-        // For demonstration, let's assume $id is the alternative_id to detach from a base medicine.
-        // This requires knowing the base medicine.
+        // Ensure the alternative link actually exists before detaching
+        if (!$baseMedicine->alternatives()->where('alternative_id', $alternative->id)->exists()) {
+            return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.destroy.not_found'));
+        }
 
-        // A more robust approach for destroy would be:
-        // Route::delete('pharmacy/alternatives/{base_medicine_id}/{alternative_id}', ...)
-        // public function destroy($base_medicine_id, $alternative_id) { ... }
+        $baseMedicine->alternatives()->detach($alternative->id);
 
-        return redirect()->route('pharmacy.alternatives.index')->with('success', __('pharmacy.alternatives.deleted'));
+        return redirect()->route('pharmacy.alternatives.index')->with('success', __('pharmacy.alternatives.destroy.success'));
     }
 }

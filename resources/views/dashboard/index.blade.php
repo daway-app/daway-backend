@@ -71,26 +71,22 @@
                         </div>
                         <div class="chart-subtitle">
                             <span>@lang('dashboard.track_searches')</span>
-                            <span class="sub-trend-badge" id="trendBadge">{{ $chartDatasets['all']['trend'] }}</span>
+                            <span class="sub-trend-badge" id="trendBadge">{{ $chartData['datasets']['all']['trend'] }}</span>
                         </div>
                     </div>
 
                     <!-- Interactive Filter Buttons -->
                     <div class="filter-pills-group" id="filterPills">
                         <button class="pill-btn active" data-filter="all">@lang('dashboard.all_filter')</button>
-                        <button class="pill-btn" data-filter="medicines">@lang('dashboard.medicines_search_filter')</button>
-                        <button class="pill-btn" data-filter="users">@lang('dashboard.users_filter')</button>
+                        <button class="pill-btn" data-filter="searches">💊 @lang('dashboard.medicines_search_filter')</button>
+                        <button class="pill-btn" data-filter="patients">👤 @lang('dashboard.users_filter')</button>
+                        <button class="pill-btn" data-filter="pharmacies">🏪 @lang('dashboard.pharmacies_filter')</button>
                     </div>
                 </div>
 
                 <div class="chart-container-pro" id="chartContainer">
-                    @foreach($chartDatasets['all']['values'] as $weekValue)
-                        <div class="chart-bar-wrapper"><div class="chart-bar-pro" style="height: {{ $chartDatasets['all']['heights'][$loop->index] }}%;" data-value="{{ $weekValue }}"></div></div>
-                    @endforeach
-                </div>
-
-                <div class="chart-footer-labels">
-                    <span>@lang('dashboard.week_1')</span><span>@lang('dashboard.week_2')</span><span>@lang('dashboard.week_3')</span><span>@lang('dashboard.week_4')</span><span>@lang('dashboard.week_5')</span><span>@lang('dashboard.week_6')</span><span>@lang('dashboard.week_7')</span><span>@lang('dashboard.week_8')</span>
+                    <canvas id="activityChart"></canvas>
+                    <div class="chart-empty-state" id="chartEmptyState" style="display:none;">@lang('dashboard.chart_empty')</div>
                 </div>
             </div>
 
@@ -225,6 +221,8 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // 1. Interactive Number Counters
@@ -244,30 +242,117 @@
                 requestAnimationFrame(step);
             });
 
-            // 2. Chart Filtering (real data from server)
-            const filterButtons = document.querySelectorAll('#filterPills .pill-btn');
-            const bars = document.querySelectorAll('#chartContainer .chart-bar-pro');
+            // 2. Platform Activity Chart (Chart.js, real data from server)
+            const chartData = @json($chartData);
+            const chartContainer = document.getElementById('chartContainer');
+            const chartCanvas = document.getElementById('activityChart');
+            const chartEmptyState = document.getElementById('chartEmptyState');
             const trendBadge = document.getElementById('trendBadge');
+            const filterButtons = document.querySelectorAll('#filterPills .pill-btn');
 
-            const chartDatasets = @json($chartDatasets);
+            const isDarkMode = () => document.body.classList.contains('dark-mode');
+            const chartGridColor = () => isDarkMode() ? '#333338' : '#e2e8f0';
+            const chartTickColor = () => isDarkMode() ? '#A1A1AA' : '#64748b';
+
+            let activityChart = null;
+            let currentFilter = 'all';
+
+            const renderChart = () => {
+                const dataset = chartData.datasets[currentFilter] || chartData.datasets.all;
+                const total = dataset.values.reduce((a, b) => a + b, 0);
+                const isEmpty = total === 0;
+
+                if (chartEmptyState) chartEmptyState.style.display = isEmpty ? 'flex' : 'none';
+                if (chartCanvas) chartCanvas.style.display = isEmpty ? 'none' : 'block';
+                if (trendBadge && dataset.trend) trendBadge.textContent = dataset.trend;
+
+                // إعادة إنشاء الرسم بالكامل عند كل تبديل: يضمن أن التلميح يقرأ أحدث البيانات
+                // (Chart.js يخزّن التلميح، فتدمير الرسم يلغي أي قيمة قديمة مخزنة)
+                if (activityChart) {
+                    activityChart.destroy();
+                    activityChart = null;
+                }
+
+                if (isEmpty) return;
+
+                activityChart = new Chart(chartCanvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: dataset.label,
+                            data: dataset.values,
+                            backgroundColor: dataset.color + 'cc',
+                            borderColor: dataset.color,
+                            borderWidth: 1,
+                            borderRadius: 6,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 500 },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: isDarkMode() ? '#232327' : '#0f172a',
+                                titleColor: '#E4E4E7',
+                                bodyColor: '#E4E4E7',
+                                padding: 12,
+                                cornerRadius: 10,
+                                callbacks: {
+                                    title: (items) => {
+                                        if (!items.length) return '';
+                                        return chartData.labels[items[0].dataIndex];
+                                    },
+                                    label: (item) => {
+                                        const d = chartData.datasets[currentFilter] || chartData.datasets.all;
+                                        return ' ' + d.label + ': ' + item.parsed.y;
+                                    },
+                                    footer: () => {
+                                        const d = chartData.datasets[currentFilter] || chartData.datasets.all;
+                                        return [
+                                            '{{ __('dashboard.summary_total') }}: ' + d.total,
+                                            '{{ __('dashboard.summary_change') }}: ' + (d.change === null ? '—' : (d.change >= 0 ? '+' : '') + d.change + '%'),
+                                            '{{ __('dashboard.summary_average') }}: ' + d.average,
+                                        ];
+                                    },
+                                },
+                                footerFont: { size: 12 },
+                                footerSpacing: 2,
+                                footerMarginTop: 8,
+                                footerColor: '#94a3b8',
+                            },
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: chartTickColor(), font: { size: 11 } },
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: chartGridColor() },
+                                ticks: { color: chartTickColor(), precision: 0 },
+                            },
+                        },
+                    },
+                });
+            };
 
             filterButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     filterButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-
-                    const filterType = btn.dataset.filter;
-                    const dataset = chartDatasets[filterType] || chartDatasets.all;
-
-                    if (trendBadge) trendBadge.textContent = dataset.trend;
-
-                    bars.forEach((bar, index) => {
-                        const newHeight = (dataset.heights[index] ?? 0) + '%';
-                        bar.style.height = newHeight;
-                        bar.setAttribute('data-value', dataset.values[index] ?? 0);
-                    });
+                    currentFilter = btn.dataset.filter;
+                    renderChart();
                 });
             });
+
+            document.addEventListener('theme-changed', () => {
+                renderChart();
+            });
+
+            renderChart();
 
             // 3. Modal Log
             const activityModal = document.getElementById('activityModal');

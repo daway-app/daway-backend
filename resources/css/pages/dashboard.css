@@ -278,13 +278,30 @@ body.dark-mode {
 }
 
 .chart-container-pro {
-    height: 190px;
+    height: 240px;
     display: flex;
     align-items: flex-end;
     gap: 16px;
     padding-top: 36px;
     border-bottom: 1px dashed #e2e8f0;
     position: relative;
+}
+
+.chart-container-pro canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.chart-empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 1;
 }
 
 .chart-bar-wrapper {
@@ -934,6 +951,10 @@ body.dark-mode .pill-btn.active {
 
 body.dark-mode .chart-container-pro {
     border-color: #333338;
+}
+
+body.dark-mode .chart-empty-state {
+    color: #A1A1AA;
 }
 
 body.dark-mode .activity-card:hover {

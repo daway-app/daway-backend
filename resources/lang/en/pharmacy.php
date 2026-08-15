@@ -158,6 +158,8 @@ return [
             'add_alternative' => 'Add Alternative',
             'empty' => 'No medicines in your pharmacy to manage their alternatives.',
             'no_access' => 'You do not have permission to access this page.',
+            'confirm_delete' => 'Are you sure you want to delete this alternative?',
+            'delete_tooltip' => 'Delete alternative',
         ],
         'create' => [
             'title' => 'Add Medicine Alternative',
@@ -176,6 +178,10 @@ return [
             'no_pharmacy' => 'No pharmacy is linked to your account.',
             'deleted' => 'The base medicine was deleted.',
             'edit_unavailable' => 'Edit functionality is not available yet.',
+        ],
+        'destroy' => [
+            'success' => 'Alternative deleted successfully.',
+            'not_found' => 'This alternative is not linked to this medicine.',
         ],
     ],
 
