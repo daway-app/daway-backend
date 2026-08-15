@@ -65,7 +65,7 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'name' => $user->name,
-            'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+            'avatar' => $user->avatar ? asset('uploads/' . $user->avatar) : null,
         ]);
     }
 }

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', __('layout.profile_title'))
 
@@ -39,7 +39,7 @@
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 24px;">
                         <div style="width: 92px; height: 92px; border-radius: 50%; background: #36a5a5; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 700; color: #fff; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.18);">
                             @if($user->avatar)
-                                <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" id="avatarPreview" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                <img src="{{ asset('uploads/' . $user->avatar) }}" alt="Avatar" id="avatarPreview" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                             @else
                                 <span id="avatarInitial">{{ mb_substr($user->name, 0, 1) }}</span>
                             @endif

@@ -1,4 +1,4 @@
-<aside class="sidebar-pro">
+﻿<aside class="sidebar-pro">
     @vite(['resources/css/layout/sidebar.css'])
 
     <div class="sidebar-content-wrapper">
@@ -135,7 +135,7 @@
         <div class="user-info-group" onclick="openProfileModal()" title="@lang('layout.edit_profile_modal_title')">
             <div class="avatar-box" id="sidebarDisplayUserAvatar">
                 @if(auth()->user()->avatar)
-                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    <img src="{{ asset('uploads/' . auth()->user()->avatar) }}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                 @else
                     {{ mb_substr(auth()->user()->name, 0, 1) }}
                 @endif
