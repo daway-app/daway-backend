@@ -207,6 +207,12 @@ body.dark-mode {
     min-width: 0;
     width: calc(100% - var(--sidebar-width));
     transition: background-color 0.3s;
+    /* يلغي الفراغ الذي تتركه عُقد النصوص البيضاء (أسطر فارغة) أعلى الشريط العلوي */
+    font-size: 0;
+}
+
+.main-wrapper > * {
+    font-size: 16px;
 }
 
 /* Apply margin based on page direction */

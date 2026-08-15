@@ -282,8 +282,8 @@ html[dir="ltr"] .notification-badge {
     display: flex;
     align-items: center;
     gap: 12px;
-    height: 40px;
-    border-radius: 12px;
+    height: 48px;
+    border-radius: 14px;
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid var(--border-color);
@@ -291,40 +291,54 @@ html[dir="ltr"] .notification-badge {
 }
 
 [dir="rtl"] .user-profile-btn {
-    padding: 4px 12px 4px 6px;
+    padding: 4px 14px 4px 6px;
 }
 
 [dir="ltr"] .user-profile-btn {
-    padding: 4px 6px 4px 12px;
+    padding: 4px 6px 4px 14px;
 }
 
 .user-profile-btn:hover {
     background: var(--btn-hover);
     border-color: var(--accent-teal);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 14px rgba(11, 143, 172, 0.15);
 }
 
 .avatar {
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     background: linear-gradient(135deg, var(--accent-teal), var(--accent-teal-dark));
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 700;
     box-shadow: 0 2px 6px rgba(11, 143, 172, 0.25);
     background-size: cover;
     background-position: center;
     flex-shrink: 0;
+    position: relative;
+}
+
+.avatar::after {
+    content: '';
+    position: absolute;
+    bottom: 1px;
+    inset-inline-end: 1px;
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border: 2px solid var(--topbar-bg);
+    border-radius: 50%;
 }
 
 .user-details {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    min-width: 0;
 }
 
 [dir="rtl"] .user-details {
@@ -336,17 +350,31 @@ html[dir="ltr"] .notification-badge {
 }
 
 .user-name {
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
 }
 
 .user-role {
-    font-size: 11px;
-    color: var(--text-secondary);
-    line-height: 1.2;
-    margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--accent-teal);
+    background: rgba(11, 143, 172, 0.1);
+    border: 1px solid rgba(11, 143, 172, 0.2);
+    border-radius: 999px;
+    padding: 1px 8px;
+    margin-top: 3px;
+    line-height: 1.4;
+    text-transform: capitalize;
 }
 
 .logout-btn {

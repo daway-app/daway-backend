@@ -16,7 +16,7 @@
     </script>
     <title>دوائي - @yield('title', 'لوحة الإحصائيات')</title>
 
-    @vite(['resources/css/layout/app_layout.css'])
+    @vite(['resources/css/layout/app_layout.css', 'resources/css/layout/topbar.css'])
 </head>
 <body>
 <script>

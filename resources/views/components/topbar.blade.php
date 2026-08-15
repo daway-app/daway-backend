@@ -1,6 +1,4 @@
-﻿@vite(['resources/css/layout/topbar.css'])
-
-<div class="topbar">
+﻿<div class="topbar">
     <div class="topbar-title-group">
         <h1>@lang('topbar.dashboard_title')</h1>
         <p>@lang('topbar.dashboard_subtitle')</p>
@@ -51,7 +49,7 @@
             </div>
             <div class="user-details">
                 <span class="user-name" id="displayUserName">{{ auth()->user()->name }}</span>
-                <span class="user-role" id="displayUserRole">{{ auth()->user()->role ?? 'User' }}</span>
+                <span class="user-role" id="displayUserRole">@lang('users.role_' . auth()->user()->role)</span>
             </div>
         </div>
     </div>
