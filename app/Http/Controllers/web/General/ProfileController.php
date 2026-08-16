@@ -5,6 +5,7 @@ namespace App\Http\Controllers\web\General;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
@@ -40,6 +41,25 @@ class ProfileController extends Controller
         $user->save();
 
         return redirect()->route('profile.edit')->with('success', __('layout.profile_saved'));
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if (! Hash::check($request->input('current_password'), $user->password)) {
+            return back()->withErrors(['current_password' => __('layout.password_current_wrong')]);
+        }
+
+        $user->password = Hash::make($request->input('password'));
+        $user->save();
+
+        return back()->with('password_success', __('layout.password_updated'));
     }
 
     public function updateAjax(Request $request)

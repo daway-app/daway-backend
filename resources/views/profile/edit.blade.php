@@ -76,14 +76,67 @@
                     </div>
 
                 </div>
-
-                <div class="card-footer-modern">
+<div class="card-footer-modern">
                     <a href="{{ route('dashboard') }}" class="btn-cancel">@lang('layout.cancel_button')</a>
                     <button type="submit" class="btn-submit">@lang('layout.save_changes_button')</button>
                 </div>
             </form>
 
         </div>
+
+        <div class="main-card" style="margin-top: 24px;">
+            <div class="card-header-modern">
+                <div class="header-title-area">
+                    <h2>@lang('layout.password_section_title')</h2>
+                    <p>@lang('layout.password_section_subtitle')</p>
+                </div>
+                <div class="header-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+            </div>
+
+            @if (session('password_success'))
+                <div class="success-alert-modern" style="margin: 16px 24px 0;">{{ session('password_success') }}</div>
+            @endif
+
+            <form action="{{ route('profile.password.update') }}" method="POST">
+                @csrf
+                @method('PUT')
+
+                <div class="card-body-modern">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label>@lang('layout.current_password_label') <span>*</span></label>
+                            <input type="password" name="current_password" class="form-control" required autocomplete="current-password">
+                            @error('current_password')
+                                <span style="color: #dc2626; font-size: 12px;">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>@lang('layout.new_password_label') <span>*</span></label>
+                            <input type="password" name="password" class="form-control" required minlength="8" autocomplete="new-password">
+                            <small style="color: #94a3b8;">@lang('layout.password_min_hint')</small>
+                            @error('password')
+                                <span style="color: #dc2626; font-size: 12px;">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>@lang('layout.confirm_password_label') <span>*</span></label>
+                            <input type="password" name="password_confirmation" class="form-control" required autocomplete="new-password">
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card-footer-modern">
+                    <button type="submit" class="btn-submit">@lang('layout.password_update_button')</button>
+                </div>
+            </form>
+        </div>
+
     </div>
 
     <style>

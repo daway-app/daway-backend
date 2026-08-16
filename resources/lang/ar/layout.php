@@ -59,4 +59,15 @@ return [
     // Generated notifications
     'notif_low_stock' => 'تنبيه نقص مخزون دواء :name — الكمية المتبقية: :count',
     'notif_low_stock_pharmacy' => 'تنبيه نقص مخزون دواء :name في صيدليتك — الكمية المتبقية: :count',
+
+    // Change password
+    'password_section_title' => 'تغيير كلمة السر',
+    'password_section_subtitle' => 'قم بتغيير كلمة السر بانتظام للحفاظ على أمان حسابك',
+    'current_password_label' => 'كلمة السر الحالية',
+    'new_password_label' => 'كلمة السر الجديدة',
+    'confirm_password_label' => 'تأكيد كلمة السر الجديدة',
+    'password_update_button' => 'تحديث كلمة السر',
+    'password_updated' => 'تم تحديث كلمة السر بنجاح',
+    'password_current_wrong' => 'كلمة السر الحالية غير صحيحة',
+    'password_min_hint' => '8 أحرف على الأقل',
 ];

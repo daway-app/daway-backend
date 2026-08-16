@@ -59,4 +59,15 @@ return [
     // Generated notifications
     'notif_low_stock' => 'Low stock alert: :name — remaining quantity: :count',
     'notif_low_stock_pharmacy' => 'Low stock alert: :name in your pharmacy — remaining quantity: :count',
+
+    // Change password
+    'password_section_title' => 'Change Password',
+    'password_section_subtitle' => 'Change your password regularly to keep your account secure',
+    'current_password_label' => 'Current Password',
+    'new_password_label' => 'New Password',
+    'confirm_password_label' => 'Confirm New Password',
+    'password_update_button' => 'Update Password',
+    'password_updated' => 'Password updated successfully',
+    'password_current_wrong' => 'The current password is incorrect',
+    'password_min_hint' => 'At least 8 characters',
 ];

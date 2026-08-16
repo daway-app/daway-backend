@@ -221,6 +221,11 @@ Route::middleware('auth')->group(function () {
         'updateAjax',
     ])->name('profile.update.ajax');
 
+    Route::put('/profile/password', [
+        ProfileController::class,
+        'updatePassword',
+    ])->name('profile.password.update');
+
     // ==================== NOTIFICATIONS ====================
 
     Route::get('/notifications', [
