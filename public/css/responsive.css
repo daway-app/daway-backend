@@ -191,17 +191,57 @@
 
 /* شاشات صغيرة جداً */
 @media (max-width: 640px) {
-    .main-content {
-        padding: 12px;
+    .topbar {
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+
+    .topbar-title-group {
+        flex: 1 1 auto;
+        min-width: 0;
     }
 
     .topbar-title-group h1 {
-        font-size: 16px;
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .topbar-title-group p {
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .topbar-actions {
-        width: 100%;
+        width: auto;
+        flex: 0 0 auto;
         justify-content: flex-end;
+        gap: 6px;
+        flex-wrap: nowrap;
+    }
+
+    .topbar-actions .icon-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    .user-profile-btn {
+        height: 38px;
+        gap: 6px;
+        padding: 2px 6px !important;
+    }
+
+    .user-profile-btn .avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+
+    .main-content {
+        padding: 12px;
     }
 
     .nav-item {
