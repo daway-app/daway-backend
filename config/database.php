@@ -59,6 +59,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            'pool' => env('DB_POOL', 10),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::ATTR_TIMEOUT => 10,
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
