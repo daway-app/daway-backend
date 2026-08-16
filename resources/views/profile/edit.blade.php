@@ -135,7 +135,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('layout.new_password_label') <span>*</span></label>
+                            <label>@lang('layout.new_password_label') <span>*</span> <small class="hint-inline">@lang('layout.password_min_hint')</small></label>
                             <div class="input-with-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                 <input type="password" name="password" id="newPass" class="form-control" required minlength="8" autocomplete="new-password">
@@ -143,7 +143,6 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 </button>
                             </div>
-                            <small style="color: #94a3b8;">@lang('layout.password_min_hint')</small>
                             @error('password')
                                 <span style="color: #dc2626; font-size: 12px;">{{ $message }}</span>
                             @enderror
@@ -204,8 +203,8 @@
             display: flex;
             align-items: center;
             gap: 16px;
+            height: 88px;
             margin-bottom: 22px;
-            padding-bottom: 18px;
             border-bottom: 1px solid #E2E8F0;
         }
         body.dark-mode .profile-hero { border-color: #3f3f46; }
@@ -263,7 +262,9 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 12px;
+            height: 43px;
+            box-sizing: border-box;
+            padding: 0 12px;
             background: #f1f5f9;
             border: 1px dashed #cbd5e1;
             border-radius: 10px;
@@ -318,7 +319,15 @@
         }
         body.dark-mode .btn-ghost { border-color: #3f3f46; color: #e4e4e7; }
         .btn-ghost:hover { background: #f1f5f9 !important; }
-        .security-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .security-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: 88px;
+            margin-bottom: 22px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        body.dark-mode .security-head { border-color: #3f3f46; }
         .security-head .lock-ic {
             width: 42px;
             height: 42px;
@@ -334,6 +343,7 @@
         body.dark-mode .security-head h3 { color: #f4f4f5; }
         .security-head p { margin: 2px 0 0; font-size: 12.5px; color: #64748b; }
         body.dark-mode .security-head p { color: #a1a1aa; }
+        .hint-inline { font-weight: 500; font-size: 11px; color: #94a3b8; margin-inline-start: 6px; }
         .avatar-preview-page-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px);
