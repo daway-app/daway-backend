@@ -50,13 +50,12 @@ html[dir="rtl"] .nav-section {
     padding: 24px 16px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     box-sizing: border-box;
     user-select: none;
     position: fixed;
     top: 0;
     z-index: 1000;
-    overflow-y: auto;
+    overflow: hidden;
     transition: background-color 0.3s;
 }
 
@@ -70,10 +69,10 @@ html[dir="ltr"] .sidebar-pro {
     border-right: 1px solid var(--sidebar-border);
 }
 
-.sidebar-pro::-webkit-scrollbar {
+.sidebar-content-wrapper::-webkit-scrollbar {
     width: 4px;
 }
-.sidebar-pro::-webkit-scrollbar-thumb {
+.sidebar-content-wrapper::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 4px;
 }
@@ -83,6 +82,8 @@ html[dir="ltr"] .sidebar-pro {
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 /* ==========================================
@@ -243,6 +244,7 @@ html[dir="ltr"] .nav-item::before {
     margin-top: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     padding-top: 16px;
+    flex-shrink: 0;
     animation: sidebarSlideIn 0.7s var(--ease-smooth) both;
     cursor: pointer;
 }
