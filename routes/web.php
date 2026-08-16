@@ -30,6 +30,12 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// ==================== HEALTH CHECK ====================
+
+Route::get('/healthz', function () {
+    return response()->json(['status' => 'ok']);
+});
+
 // ==================== LOCALE ====================
 
 Route::get('locale/{locale}', [
