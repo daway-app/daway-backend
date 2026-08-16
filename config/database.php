@@ -60,8 +60,10 @@ return [
             'strict' => true,
             'engine' => null,
             'pool' => env('DB_POOL', 10),
+            'persistent' => env('DB_PERSISTENT', false),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::ATTR_TIMEOUT => 10,
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false),
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],

@@ -32,9 +32,7 @@ use Illuminate\Support\Facades\Route;
 
 // ==================== HEALTH CHECK ====================
 
-Route::get('/healthz', function () {
-    return response()->json(['status' => 'ok']);
-});
+Route::get('/healthz', [\App\Http\Controllers\HealthController::class, 'index']);
 
 // ==================== LOCALE ====================
 
