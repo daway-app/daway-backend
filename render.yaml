@@ -5,11 +5,15 @@ services:
     plan: free
     buildCommand: composer install --no-dev
     startCommand: php artisan serve --host=0.0.0.0 --port=10000
+    healthCheckPath: /up
     envVars:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
+      # مطلوب: استبدل هذه القيمة بـ APP_KEY الفعلية من `php artisan key:generate` قبل النشر
+      - key: APP_KEY
+        value: change-me-generate-via-php-artisan-key-generate
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST

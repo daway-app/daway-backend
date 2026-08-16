@@ -30,7 +30,7 @@ class NotificationController extends Controller
 
             $this->syncNotifications($user);
 
-            $count = Cache::remember('notifications_count_' . Auth::id(), 15, function () use ($user) {
+            $count = Cache::remember('notifications_count_'.Auth::id(), 15, function () use ($user) {
                 return $user->notifications()
                     ->where('is_read', false)
                     ->count();
@@ -66,7 +66,7 @@ class NotificationController extends Controller
 
             $this->syncNotifications($user);
 
-            $notifications = Cache::remember('notifications_feed_' . Auth::id(), 15, function () use ($user) {
+            $notifications = Cache::remember('notifications_feed_'.Auth::id(), 15, function () use ($user) {
                 return $user->notifications()
                     ->latest('created_at')
                     ->limit(20)
@@ -114,7 +114,8 @@ class NotificationController extends Controller
 
             $notifications = $user->notifications()
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->each(fn ($n) => $n->link = $this->notificationLink($n));
 
             return view('notifications.index', compact('notifications'));
 
@@ -150,8 +151,8 @@ class NotificationController extends Controller
             $notification->is_read = true;
             $notification->save();
 
-            Cache::forget('notifications_count_' . Auth::id());
-            Cache::forget('notifications_feed_' . Auth::id());
+            Cache::forget('notifications_count_'.Auth::id());
+            Cache::forget('notifications_feed_'.Auth::id());
 
             return response()->json([
                 'message' => 'Notification marked as read',
@@ -187,8 +188,8 @@ class NotificationController extends Controller
                 ->where('is_read', false)
                 ->update(['is_read' => true]);
 
-            Cache::forget('notifications_count_' . Auth::id());
-            Cache::forget('notifications_feed_' . Auth::id());
+            Cache::forget('notifications_count_'.Auth::id());
+            Cache::forget('notifications_feed_'.Auth::id());
 
             return response()->json([
                 'message' => 'All notifications marked as read',
@@ -212,8 +213,8 @@ class NotificationController extends Controller
     {
         try {
             if (NotificationGenerator::syncForUser($user)) {
-                Cache::forget('notifications_count_' . Auth::id());
-                Cache::forget('notifications_feed_' . Auth::id());
+                Cache::forget('notifications_count_'.Auth::id());
+                Cache::forget('notifications_feed_'.Auth::id());
             }
         } catch (\Exception $e) {
             Log::error('Error syncing notifications: '.$e->getMessage());

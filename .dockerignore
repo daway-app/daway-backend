@@ -1,0 +1,28 @@
+# بيئة وإعدادات حساسة
+.env
+.env.*
+.git
+.gitignore
+.github
+
+# اعتماديات (تُثبَّت داخل الصورة)
+node_modules
+vendor
+
+# كاش وملفات مؤقتة
+storage/logs
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+
+# اختبارات وأدوات تطوير
+tests
+.phpunit.result.cache
+
+# بيانات ونسخ احتياطية
+*.sql
+daway_backup.sql
+notif-test.js
+oracle_vm_setup.sh
+public/uploads
+.vscode

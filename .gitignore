@@ -24,3 +24,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# حساس — لا ترفع
+daway_backup.sql
+notif-test.js
+oracle_vm_setup.sh
+*.sql

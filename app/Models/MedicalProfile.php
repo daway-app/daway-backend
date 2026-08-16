@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 class MedicalProfile extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     protected $table = 'medical_profiles';
 

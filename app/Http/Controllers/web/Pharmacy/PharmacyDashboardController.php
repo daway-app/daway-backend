@@ -5,11 +5,12 @@ namespace App\Http\Controllers\web\Pharmacy;
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
+use App\Models\Rating;
 use Carbon\Carbon; // To get pharmacy's own medicines
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
- // For handling time and dates
+// For handling time and dates
 
 class PharmacyDashboardController extends Controller
 {
@@ -53,6 +54,32 @@ class PharmacyDashboardController extends Controller
         // 5. آخر التقييمات الواردة لصيدليته
         $latestRatings = $pharmacy->ratings()->with('user')->latest()->take(5)->get();
 
+        // 6. بيانات مخطط النشاط الأسبوعي (آخر 7 أيام):
+        //    - orders: الأدوية المضافة إلى المخزون في ذلك اليوم
+        //    - ratings: التقييمات الواردة في ذلك اليوم
+        $arabicDays = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        $chartLabels = [];
+        $ordersChart = [];
+        $ratingsChart = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $day = now()->subDays($i)->toDateString();
+
+            $chartLabels[] = $arabicDays[date('w', strtotime($day))];
+            $ordersChart[] = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+                ->whereDate('created_at', $day)
+                ->count();
+            $ratingsChart[] = Rating::where('pharmacy_id', $pharmacy->id)
+                ->whereDate('created_at', $day)
+                ->count();
+        }
+
+        $chartData = [
+            'labels' => $chartLabels,
+            'orders' => $ordersChart,
+            'ratings' => $ratingsChart,
+        ];
+
         return view('pharmacy.dashboard.index', compact(
             'user',
             'pharmacy',
@@ -60,7 +87,8 @@ class PharmacyDashboardController extends Controller
             'averageRating',
             'isPharmacyOpen',
             'pharmacyMedicines',
-            'latestRatings'
+            'latestRatings',
+            'chartData'
         ));
     }
 

@@ -4,13 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany; // Import BelongsToMany
+use Illuminate\Database\Eloquent\Relations\MorphMany; // Import BelongsToMany
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 class Medicine extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     protected $table = 'medicines';
 
@@ -64,7 +66,7 @@ class Medicine extends Model
     }
 
     public function availabilityNotifications(): HasMany
-{
-    return $this->hasMany(AvailabilityNotification::class);
-}
+    {
+        return $this->hasMany(AvailabilityNotification::class);
+    }
 }

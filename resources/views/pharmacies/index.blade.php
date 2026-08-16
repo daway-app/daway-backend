@@ -223,6 +223,7 @@
 
         .export-link { color: var(--icon-export); background-color: var(--icon-export-bg); text-decoration: none; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(79, 70, 229, 0.15); transition: transform 0.2s ease; }
         .export-link:hover { transform: translateY(-2px); }
+        .export-link:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
         .grid-meta-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .grid-meta-header h3 { font-size: 16px; font-weight: 700; margin: 0; color: var(--text-main); }
@@ -458,14 +459,14 @@
             </div>
 
             <div class="filter-left-side">
-                <a href="#" id="exportBtn" class="export-link hover-shimmer">
+                <button type="button" id="exportBtn" class="export-link hover-shimmer" disabled title="قريباً">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
                     <span>@lang('pharmacies.export_button')</span>
-                </a>
+                </button>
             </div>
         </div>
 
@@ -764,10 +765,10 @@
             new Chart(ctxTop, {
                 type: 'bar',
                 data: {
-                    labels: {!! json_encode($pharmacies->sortByDesc('pharmacy_medicines_count')->take(5)->pluck('pharmacy_name')) !!},
+                    labels: @json($pharmacies->sortByDesc('pharmacy_medicines_count')->take(5)->pluck('pharmacy_name')),
                     datasets: [{
                         label: '@lang('pharmacies.chart_item_count')',
-                        data: {!! json_encode($pharmacies->sortByDesc('pharmacy_medicines_count')->take(5)->pluck('pharmacy_medicines_count')) !!},
+                        data: @json($pharmacies->sortByDesc('pharmacy_medicines_count')->take(5)->pluck('pharmacy_medicines_count')),
                         backgroundColor: '#0B8FAC',
                         borderRadius: 8
                     }]

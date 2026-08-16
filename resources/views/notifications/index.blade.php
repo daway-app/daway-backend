@@ -12,7 +12,11 @@
 
     <div class="notifications-list-full">
         @forelse($notifications as $notification)
-            <a href="{{ $notification->link ?? '#' }}" class="notification-item-full {{ $notification->is_read ? '' : 'unread' }}" data-notification-id="{{ $notification->id }}">
+            @if ($notification->link)
+                <a href="{{ $notification->link }}" class="notification-item-full {{ $notification->is_read ? '' : 'unread' }}" data-notification-id="{{ $notification->id }}">
+            @else
+                <div class="notification-item-full {{ $notification->is_read ? '' : 'unread' }}" data-notification-id="{{ $notification->id }}">
+            @endif
                 <div class="notification-icon-full">
                     {{-- Dynamic icon based on notification type --}}
                     @php
@@ -43,7 +47,11 @@
                 @if (!$notification->is_read)
                     <span class="notification-status-full">@lang('layout.unread')</span>
                 @endif
-            </a>
+            @if ($notification->link)
+                </a>
+            @else
+                </div>
+            @endif
         @empty
             <p class="no-notifications-full">@lang('layout.no_notifications_yet')</p>
         @endforelse

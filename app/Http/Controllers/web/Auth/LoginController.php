@@ -1,19 +1,23 @@
 <?php
 
 namespace App\Http\Controllers\web\Auth;
+
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Pharmacy; // Added this import
+use App\Models\Pharmacy;
+use App\Models\User; // Added this import
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\View\View;
 
 class LoginController extends Controller
 {
     /**
      * Display the login form.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function loginForm()
     {
@@ -23,11 +27,17 @@ class LoginController extends Controller
     /**
      * Handle an authentication attempt.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function login(Request $request)
     {
+        if (RateLimiter::tooManyAttempts('login:'.$request->ip(), 5)) {
+            return back()->withErrors([
+                'identity' => 'محاولات كثيرة، انتظر قليلاً.',
+            ])->onlyInput('identity');
+        }
+        RateLimiter::hit('login:'.$request->ip(), 60);
+
         $credentials = $request->validate([
             'identity' => ['required', 'string'],
             'password' => ['required', 'string'],
@@ -44,31 +54,39 @@ class LoginController extends Controller
             // 1. البحث عن الصيدلية باستخدام الـ Pharmacy ID (مثل PH-QGWV) في جدول pharmacies
             $pharmacy = Pharmacy::where('pharmacy_custom_id', $identity)->first();
 
-            if (!$pharmacy) {
+            if (! $pharmacy) {
                 return back()->withErrors([
-                    'identity' => 'معرف الصيدلية غير موجود.',
+                    'identity' => 'بيانات الاعتماد غير صحيحة.',
                 ])->onlyInput('identity');
             }
 
             // 2. جلب المستخدم المرتبط بهذه الصيدلية عبر العلاقة user()
             $user = $pharmacy->user;
 
-            if (!$user) {
+            if (! $user) {
                 return back()->withErrors([
-                    'identity' => 'لا يوجد مستخدم مرتبط بهذا الصيدلية.',
+                    'identity' => 'بيانات الاعتماد غير صحيحة.',
                 ])->onlyInput('identity');
             }
 
-            // 3. التحقق من تطابق كلمة المرور وتسجيل الدخول
-            if (!Hash::check($password, $user->password)) {
+            // 3. التحقق من تفعيل الحساب
+            if (! $pharmacy->is_active || ! $user->is_active) {
                 return back()->withErrors([
-                    'password' => 'كلمة المرور غير صحيحة.',
+                    'identity' => 'الحساب معطل.',
+                ])->onlyInput('identity');
+            }
+
+            // 4. التحقق من تطابق كلمة المرور وتسجيل الدخول
+            if (! Hash::check($password, $user->password)) {
+                return back()->withErrors([
+                    'identity' => 'بيانات الاعتماد غير صحيحة.',
                 ])->onlyInput('identity'); // Keep identity input for convenience
             }
 
             // If all checks pass
             Auth::login($user, $remember);
             $request->session()->regenerate();
+
             // Redirect pharmacy users to their specific dashboard
             return redirect()->route('pharmacy.dashboard.index');
 
@@ -82,6 +100,15 @@ class LoginController extends Controller
 
             if (Auth::attempt($authCredentials, $remember)) {
                 $request->session()->regenerate();
+
+                if (! Auth::user()->is_active) {
+                    Auth::logout();
+
+                    return back()->withErrors([
+                        'identity' => 'الحساب معطل.',
+                    ])->onlyInput('identity');
+                }
+
                 // Redirect admin/other users to the general dashboard
                 return redirect()->route('dashboard.index');
             }
@@ -89,15 +116,14 @@ class LoginController extends Controller
 
         // Generic fallback error for admin/other if Auth::attempt fails
         return back()->withErrors([
-            'identity' => 'بيانات الاعتماد المقدمة غير مطابقة لسجلاتنا.',
+            'identity' => 'بيانات الاعتماد غير صحيحة.',
         ])->onlyInput('identity');
     }
 
     /**
      * Log the user out of the application.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function logout(Request $request)
     {
@@ -106,39 +132,5 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login.show');
-    }
-
-    /**
-     * Display the OTP verification form.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function otpForm()
-    {
-        return view('auth.otp');
-    }
-
-    /**
-     * Handle OTP verification.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function verifyOtp(Request $request)
-    {
-        $request->validate([
-            'otp' => 'required|array|size:6',
-            'otp.*' => 'required|numeric|digits:1',
-        ]);
-
-        $otpCode = implode('', $request->otp);
-
-        if ($otpCode === '123456') {
-             return redirect()->intended('/dashboard');
-        }
-
-        return back()->withErrors([
-            'otp' => 'The provided OTP is invalid.',
-        ])->onlyInput('otp');
     }
 }

@@ -4,15 +4,16 @@ namespace App\Exports;
 
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Spatie\Activitylog\Models\Activity;
 
-class LogsExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithTitle
+class LogsExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected $logs;
 
@@ -22,32 +23,41 @@ class LogsExport implements FromCollection, WithHeadings, WithMapping, ShouldAut
     }
 
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return Collection
+     */
     public function collection()
     {
         return $this->logs;
     }
 
     /**
-     * @param Activity $log
-     * @return array
+     * @param  Activity  $log
      */
     public function map($log): array
     {
         return [
             $log->id,
-            $log->causer->name ?? 'System',
-            $log->description,
-            $log->subject ? class_basename($log->subject_type) . ' #' . $log->subject_id : '',
-            $log->properties->get('ip') ?? 'N/A',
+            $this->safeCell($log->causer->name ?? 'System'),
+            $this->safeCell($log->description),
+            $this->safeCell($log->subject ? class_basename($log->subject_type).' #'.$log->subject_id : ''),
+            $this->safeCell($log->properties->get('ip') ?? 'N/A'),
             $log->created_at->toDateTimeString(),
         ];
     }
 
     /**
-     * @return array
+     * Protect against CSV/formula injection: prefix cells starting with
+     * =, +, - or @ with a single quote so they are treated as text.
      */
+    private function safeCell($value)
+    {
+        if (is_string($value) && $value !== '' && in_array($value[0], ['=', '+', '-', '@'], true)) {
+            return "'".$value;
+        }
+
+        return $value;
+    }
+
     public function headings(): array
     {
         return [
@@ -60,22 +70,16 @@ class LogsExport implements FromCollection, WithHeadings, WithMapping, ShouldAut
         ];
     }
 
-    /**
-     * @return string
-     */
     public function title(): string
     {
         return 'Audit Logs Report';
     }
 
-    /**
-     * @param Worksheet $sheet
-     */
     public function styles(Worksheet $sheet)
     {
         return [
             // Style the first row (header)
-            1    => ['font' => ['bold' => true, 'size' => 12], 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFA0A0A0']]],
+            1 => ['font' => ['bold' => true, 'size' => 12], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFA0A0A0']]],
         ];
     }
 }

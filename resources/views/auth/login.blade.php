@@ -101,7 +101,7 @@
             </form>
 
             <div class="auth-footer">
-                ليس لديك حساب؟ <a href="#">تواصل مع الأدمن لإنشاء حساب</a>
+                ليس لديك حساب؟ <span style="color:#0B8FAC; font-weight:700">تواصل مع الأدمن لإنشاء حساب</span>
             </div>
         </div>
 

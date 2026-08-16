@@ -3,30 +3,37 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, LogsActivity, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
         'phone',
         'password',
-        'role',
-        'is_active',
         'address',
         'birth_date',
         'avatar',
         'emergency_contact',
         'pharmacy_id', //
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'role', 'is_active', 'phone']);
+    }
 
     protected $hidden = [
         'password', 'remember_token',
@@ -44,7 +51,6 @@ class User extends Authenticatable
     {
         return $this->hasOne(Pharmacy::class);
     }
-
 
     public function pharmacyByCustomId(): BelongsTo
     {
@@ -70,8 +76,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Favorite::class);
     }
+
     public function availabilityNotifications(): HasMany
-{
-    return $this->hasMany(AvailabilityNotification::class);
-}
+    {
+        return $this->hasMany(AvailabilityNotification::class);
+    }
 }

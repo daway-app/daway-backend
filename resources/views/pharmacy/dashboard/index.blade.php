@@ -5,6 +5,10 @@
 @section('content')
     @vite(['resources/css/pages/pharmacy_dashboard.css', 'resources/js/pharmacy_dashboard.js'])
 
+    <script>
+        window.pharmacyDashboardChart = @json($chartData);
+    </script>
+
     <div class="pharmacy-dashboard" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
         {{-- =========================================================
              HEADER
@@ -604,7 +608,7 @@
                             @for ($i = 1; $i <= 5; $i++)
 
                                 <i
-                                    class="{{ $i <= $rating->rating
+                                    class="{{ $i <= $rating->stars_rating
                                 ? 'fas fa-star'
                                 : 'far fa-star empty-star'
                             }}"

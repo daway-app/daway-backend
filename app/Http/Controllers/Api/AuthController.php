@@ -8,12 +8,12 @@ use App\Models\Pharmacy;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-
     public function patientLogin(Request $request)
     {
         return $this->verifyOtp($request);
@@ -38,16 +38,16 @@ class AuthController extends Controller
             ->first();
         $user = $pharmacy?->user;
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid login credentials'], 401);
         }
 
-        if (!$user->is_active || !$pharmacy->is_active) {
+        if (! $user->is_active || ! $pharmacy->is_active) {
             return response()->json(['message' => 'Account is inactive'], 403);
         }
 
         // ✅ تحقق اختياري من البريد الإلكتروني
-        if (!$user->email_verified_at) {
+        if (! $user->email_verified_at) {
             return response()->json(['message' => 'Email not verified'], 403);
         }
 
@@ -68,7 +68,6 @@ class AuthController extends Controller
         ]);
     }
 
-
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()?->delete();
@@ -78,7 +77,6 @@ class AuthController extends Controller
             'message' => 'Logged out successfully',
         ]);
     }
-
 
     public function sendOtp(Request $request)
     {
@@ -90,7 +88,11 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid phone number'], 400);
         }
 
-        $otp = (string) rand(100000, 999999);
+        OtpCode::where('phone', $request->phone)
+            ->where('expires_at', '<', now())
+            ->delete();
+
+        $otp = (string) random_int(100000, 999999);
 
         OtpCode::updateOrCreate(
             ['phone' => $request->phone],
@@ -118,38 +120,49 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid OTP format'], 400);
         }
 
+        $limiterKey = $request->ip().'|'.$request->phone;
+        if (RateLimiter::tooManyAttempts($limiterKey, 5)) {
+            return response()->json(['message' => 'Too many attempts. Please try again later.'], 429);
+        }
+
         $otpRecord = OtpCode::where('phone', $request->phone)
             ->where('otp', $request->otp)
             ->where('expires_at', '>', now())
             ->first();
 
-        if (!$otpRecord) {
+        if (! $otpRecord) {
+            RateLimiter::hit($limiterKey, 15 * 60);
+
             return response()->json(['message' => 'Invalid or expired OTP'], 400);
         }
 
         $user = User::where('phone', $request->phone)->first();
 
-        if (!$user) {
+        if (! $user) {
 
             $user = User::create([
                 'name' => 'New User',
                 'email' => null,
                 'phone' => $request->phone,
                 'password' => Hash::make(Str::random(32)),
-                'role' => 'patient',
-                'is_active' => true,
-                'phone_verified_at' => now(),
             ]);
+            $user->role = 'patient';
+            $user->is_active = true;
+            $user->phone_verified_at = now();
+            $user->save();
+            $user->syncRoles(['patient']);
         } else {
-            if (!$user->is_active) {
+            if (! $user->is_active) {
                 return response()->json(['message' => 'Account is inactive'], 403);
             }
 
             // ✅ تحديث وقت التحقق
-            $user->update(['phone_verified_at' => now()]);
+            $user->phone_verified_at = now();
+            $user->save();
         }
 
         $otpRecord->delete();
+        RateLimiter::clear($limiterKey);
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -168,11 +181,10 @@ class AuthController extends Controller
         ]);
     }
 
-
     public function refreshToken(Request $request)
     {
         $user = $request->user();
-        $user->tokens()->delete();
+        $user->currentAccessToken()?->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

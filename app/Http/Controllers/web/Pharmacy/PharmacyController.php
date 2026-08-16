@@ -1,15 +1,18 @@
 <?php
 
 namespace App\Http\Controllers\web\Pharmacy;
+
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
 use App\Models\SearchLog;
 use App\Models\User; // Import the User model
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon; // Import Hash facade
+use Illuminate\Support\Facades\Cache; // Import Rule for validation
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash; // Import Hash facade
-use Illuminate\Validation\Rule; // Import Rule for validation
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
 
 class PharmacyController extends Controller
 {
@@ -33,18 +36,20 @@ class PharmacyController extends Controller
                     'created_at' => $p->created_at ? $p->created_at->format('Y-m-d H:i:s') : null,
                 ];
             })->values()->all();
+
             return ['rows' => $rows, 'total' => count($rows)];
         });
 
         $items = array_map(function ($row) {
             $obj = (object) $row;
-            if (!empty($obj->created_at)) {
-                $obj->created_at = \Illuminate\Support\Carbon::parse($obj->created_at);
+            if (! empty($obj->created_at)) {
+                $obj->created_at = Carbon::parse($obj->created_at);
             }
+
             return $obj;
         }, array_slice($data['rows'], ($page - 1) * $perPage, $perPage));
 
-        $pharmacies = new \Illuminate\Pagination\LengthAwarePaginator($items, $data['total'], $perPage, $page, [
+        $pharmacies = new LengthAwarePaginator($items, $data['total'], $perPage, $page, [
             'path' => request()->url(),
             'query' => request()->query(),
         ]);
@@ -81,15 +86,18 @@ class PharmacyController extends Controller
             'name' => $request->pharmacy_name, // Use pharmacy name as user name
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'pharmacy', // Assign 'pharmacy' role
         ]);
+        $user->role = 'pharmacy'; // Assign 'pharmacy' role
+        $user->is_active = true;
+        $user->save();
+        $user->syncRoles(['pharmacy']);
 
         // 2. Create the Pharmacy record
         $pharmacy = Pharmacy::create([
             'user_id' => $user->id,
-            'pharmacy_custom_id' => 'PH-' . Str::upper(Str::random(4)),
+            'pharmacy_custom_id' => 'PH-'.Str::upper(Str::random(4)),
             'pharmacy_name' => $request->pharmacy_name,
-            'address' => $request->address_line . ', ' . $request->city . ($request->area ? ', ' . $request->area : ''),
+            'address' => $request->address_line.', '.$request->city.($request->area ? ', '.$request->area : ''),
             'latitude' => $request->latitude ?? 0,
             'longitude' => $request->longitude ?? 0,
             'phone_number' => $request->phone_number,
@@ -97,6 +105,7 @@ class PharmacyController extends Controller
         ]);
 
         $this->clearPharmaciesIndexCache();
+
         return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_added_success'));
     }
 
@@ -160,13 +169,14 @@ class PharmacyController extends Controller
         // 2. Update the Pharmacy record
         $pharmacy->update([
             'pharmacy_name' => $request->pharmacy_name,
-            'address' => $request->address_line . ', ' . $request->city . ($request->area ? ', ' . $request->area : ''),
+            'address' => $request->address_line.', '.$request->city.($request->area ? ', '.$request->area : ''),
             'latitude' => $request->latitude ?? 0,
             'longitude' => $request->longitude ?? 0,
             'phone_number' => $request->phone_number,
         ]);
 
         $this->clearPharmaciesIndexCache();
+
         return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_updated_success'));
     }
 
@@ -182,13 +192,14 @@ class PharmacyController extends Controller
         $pharmacy->delete();
 
         $this->clearPharmaciesIndexCache();
+
         return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_deleted_success'));
     }
 
     public function toggleStatus(string $id)
     {
         $pharmacy = Pharmacy::findOrFail($id);
-        $pharmacy->is_active = !$pharmacy->is_active;
+        $pharmacy->is_active = ! $pharmacy->is_active;
         $pharmacy->save();
 
         // ربط حالة مستخدم صاحب الصيدلية بحالة الصيدلية
@@ -199,6 +210,7 @@ class PharmacyController extends Controller
         }
 
         $this->clearPharmaciesIndexCache();
+
         return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_status_updated_success'));
     }
 }

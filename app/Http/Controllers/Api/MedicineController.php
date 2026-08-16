@@ -31,7 +31,10 @@ class MedicineController extends Controller
             });
         }
 
-        $items = $query->orderBy('trade_name')->paginate($request->get('per_page', 20));
+        $validated = $request->validate(['per_page' => 'nullable|integer|min:1|max:100']);
+        $perPage = (int) ($validated['per_page'] ?? 20);
+
+        $items = $query->orderBy('trade_name')->paginate($perPage);
 
         return response()->json([
             'data' => collect($items->items())->map(fn (MohMedicine $m) => $this->mohPayload($m)),

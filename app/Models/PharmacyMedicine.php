@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 /**
  * هاد الموديل بيمثل جدول pharmacy_medicines.
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PharmacyMedicine extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     protected $table = 'pharmacy_medicines';
 

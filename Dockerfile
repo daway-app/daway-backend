@@ -47,6 +47,11 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
+# Run as non-root user
+RUN useradd -m -u 1000 appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
 # Expose port
 EXPOSE 10000
 

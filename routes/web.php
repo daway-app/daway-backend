@@ -49,22 +49,12 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [
         LoginController::class,
         'login',
-    ])->name('login');
-
-    Route::get('/otp', [
-        LoginController::class,
-        'otpForm',
-    ])->name('otp.verify');
-
-    Route::post('/otp', [
-        LoginController::class,
-        'verifyOtp',
-    ])->name('otp.verify.post');
+    ])->middleware('throttle:login')->name('login');
 });
 
-// ==================== AUTHENTICATED ROUTES ====================
+// ==================== ADMIN ONLY ====================
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // ==================== DASHBOARD ====================
 
@@ -77,56 +67,6 @@ Route::middleware('auth')->group(function () {
         DashboardController::class,
         'index',
     ])->name('dashboard.index');
-
-    // ==================== PHARMACY ====================
-
-    // Pharmacy Dashboard
-    Route::get('/pharmacy/dashboard', [
-        PharmacyDashboardController::class,
-        'index',
-    ])->name('pharmacy.dashboard.index');
-
-    // Pharmacy Medicines
-    Route::get('/pharmacy/medicines/search', [
-        PharmacyMedicineController::class,
-        'search',
-    ])->name('pharmacy.medicines.search');
-
-    Route::resource(
-        'pharmacy/medicines',
-        PharmacyMedicineController::class
-    )->except(['show'])
-        ->parameters(['medicines' => 'pharmacyMedicine'])
-        ->names('pharmacy.medicines');
-
-    // Pharmacy Alternatives
-    Route::resource(
-        'pharmacy/alternatives',
-        PharmacyAlternativeController::class
-    )->only(['index', 'create', 'store'])
-        ->names('pharmacy.alternatives');
-
-    Route::delete('pharmacy/alternatives/{pharmacyMedicine}/{alternative}', [
-        PharmacyAlternativeController::class,
-        'destroy',
-    ])->name('pharmacy.alternatives.destroy');
-
-    // Pharmacy Profile
-    Route::get('/pharmacy/profile', [
-        PharmacyProfileController::class,
-        'edit',
-    ])->name('pharmacy.profile.edit');
-
-    Route::put('/pharmacy/profile', [
-        PharmacyProfileController::class,
-        'update',
-    ])->name('pharmacy.profile.update');
-
-    // Pharmacy Ratings
-    Route::get('/pharmacy/ratings', [
-        PharmacyRatingController::class,
-        'index',
-    ])->name('pharmacy.ratings.index');
 
     // ==================== PHARMACIES ====================
 
@@ -173,23 +113,6 @@ Route::middleware('auth')->group(function () {
         'index',
     ])->name('inventory.index');
 
-    // ==================== PROFILE ====================
-
-    Route::get('/profile', [
-        ProfileController::class,
-        'edit',
-    ])->name('profile.edit');
-
-    Route::put('/profile', [
-        ProfileController::class,
-        'update',
-    ])->name('profile.update');
-
-    Route::post('/profile/update-ajax', [
-        ProfileController::class,
-        'updateAjax',
-    ])->name('profile.update.ajax');
-
     // ==================== SETTINGS ====================
 
     Route::get('/settings', [
@@ -213,6 +136,86 @@ Route::middleware('auth')->group(function () {
         LogController::class,
         'exportExcel',
     ])->name('logs.export.excel');
+});
+
+// ==================== PHARMACY ONLY ====================
+
+Route::middleware(['auth', 'role:pharmacy'])->group(function () {
+
+    // ==================== PHARMACY DASHBOARD ====================
+
+    Route::get('/pharmacy/dashboard', [
+        PharmacyDashboardController::class,
+        'index',
+    ])->name('pharmacy.dashboard.index');
+
+    // ==================== PHARMACY MEDICINES ====================
+
+    Route::get('/pharmacy/medicines/search', [
+        PharmacyMedicineController::class,
+        'search',
+    ])->name('pharmacy.medicines.search');
+
+    Route::resource(
+        'pharmacy/medicines',
+        PharmacyMedicineController::class
+    )->except(['show'])
+        ->parameters(['medicines' => 'pharmacyMedicine'])
+        ->names('pharmacy.medicines');
+
+    // ==================== PHARMACY ALTERNATIVES ====================
+
+    Route::resource(
+        'pharmacy/alternatives',
+        PharmacyAlternativeController::class
+    )->only(['index', 'create', 'store'])
+        ->names('pharmacy.alternatives');
+
+    Route::delete('pharmacy/alternatives/{pharmacyMedicine}/{alternative}', [
+        PharmacyAlternativeController::class,
+        'destroy',
+    ])->name('pharmacy.alternatives.destroy');
+
+    // ==================== PHARMACY PROFILE ====================
+
+    Route::get('/pharmacy/profile', [
+        PharmacyProfileController::class,
+        'edit',
+    ])->name('pharmacy.profile.edit');
+
+    Route::put('/pharmacy/profile', [
+        PharmacyProfileController::class,
+        'update',
+    ])->name('pharmacy.profile.update');
+
+    // ==================== PHARMACY RATINGS ====================
+
+    Route::get('/pharmacy/ratings', [
+        PharmacyRatingController::class,
+        'index',
+    ])->name('pharmacy.ratings.index');
+});
+
+// ==================== ANY AUTHENTICATED USER ====================
+
+Route::middleware('auth')->group(function () {
+
+    // ==================== PROFILE ====================
+
+    Route::get('/profile', [
+        ProfileController::class,
+        'edit',
+    ])->name('profile.edit');
+
+    Route::put('/profile', [
+        ProfileController::class,
+        'update',
+    ])->name('profile.update');
+
+    Route::post('/profile/update-ajax', [
+        ProfileController::class,
+        'updateAjax',
+    ])->name('profile.update.ajax');
 
     // ==================== NOTIFICATIONS ====================
 

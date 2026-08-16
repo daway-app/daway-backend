@@ -1,20 +1,20 @@
 <?php
 
 namespace App\Http\Controllers\web\Admin;
+
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Medicine;
 use App\Models\SearchLog;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         // مفتاح الكاش يشمل اللغة لأن البيانات تحتوي نصوصاً مترجمة (تسميات الرسوم البيانية)
-        $stats = Cache::remember('dashboard_stats_' . app()->getLocale(), 60, function () {
+        $stats = Cache::remember('dashboard_stats_'.app()->getLocale(), 60, function () {
             $now = now();
 
             // Single query: per-role totals + active counts (replaces 3 queries)
@@ -79,7 +79,7 @@ class DashboardController extends Controller
                 $chartSearches[] = $weekSearches;
                 $chartPharmacies[] = $weekPharmacies;
                 $chartAll[] = $weekSearches + $weekUsers + $weekMedicines + $weekPharmacies;
-                $weekLabels[] = $start->format('M j') . ' – ' . $end->copy()->subDay()->format('M j');
+                $weekLabels[] = $start->format('M j').' – '.$end->copy()->subDay()->format('M j');
             }
 
             // نسبة النمو: null عندما لا توجد قيمة سابقة للمقارنة (لا +100% مضللة)
@@ -89,6 +89,7 @@ class DashboardController extends Controller
                 if ($prev <= 0) {
                     return null;
                 }
+
                 return round((($last - $prev) / $prev) * 100);
             };
 
@@ -96,13 +97,15 @@ class DashboardController extends Controller
                 $last = count($series) > 0 ? $series[count($series) - 1] : 0;
                 $pct = $pctChange($series);
                 if ($pct === null) {
-                    return $last > 0 ? '▲ +' . $last . ' ' . __('dashboard.new_this_week') : '0%';
+                    return $last > 0 ? '▲ +'.$last.' '.__('dashboard.new_this_week') : '0%';
                 }
-                return ($pct >= 0 ? '▲ +' : '▼ ') . abs($pct) . '%';
+
+                return ($pct >= 0 ? '▲ +' : '▼ ').abs($pct).'%';
             };
 
             $toChartDataset = function (array $series, string $label, string $color) use ($pctChange, $fmtTrend) {
                 $total = array_sum($series);
+
                 return [
                     'label' => $label,
                     'values' => $series,
@@ -131,7 +134,7 @@ class DashboardController extends Controller
                 'totalOtherUsers' => $totalOtherUsers,
                 'activePharmacies' => $activePharmacies,
                 'totalMedicines' => $medicineStats->total ?? 0,
-                'stockStatus' => (object)[
+                'stockStatus' => (object) [
                     'available' => $medicineStats->available ?? 0,
                     'low_stock' => $medicineStats->low_stock ?? 0,
                     'out_of_stock' => $medicineStats->out_of_stock ?? 0,
@@ -146,7 +149,7 @@ class DashboardController extends Controller
 
         // Single UNION query: latest pharmacies + latest patients (replaces 2 queries)
         // مفتاح الكاش يشمل اللغة حتى لا تعرض الأنشطة مترجمة بلغة خاطئة عند تبديل اللغة
-        $recentActivities = Cache::remember('dashboard_recent_activities_' . app()->getLocale(), 30, function () {
+        $recentActivities = Cache::remember('dashboard_recent_activities_'.app()->getLocale(), 30, function () {
             $recentPharmacies = User::select('name', 'role', 'created_at')
                 ->where('role', 'pharmacy')
                 ->latest()
@@ -162,17 +165,18 @@ class DashboardController extends Controller
                     $role = is_object($item) ? ($item->role ?? null) : null;
                     if ($role === 'pharmacy') {
                         return [
-                            'description' => __('dashboard.pharmacy_joined', ['name' => $item->name ?? '']),
+                            'description' => __('dashboard.pharmacy_joined', ['name' => e($item->name ?? '')]),
                             'time' => $item->created_at ? $item->created_at->diffForHumans() : '',
                             'created_at' => $item->created_at ? $item->created_at->toIso8601String() : '',
-                            'color' => '#10b981'
+                            'color' => '#10b981',
                         ];
                     }
+
                     return [
-                        'description' => __('dashboard.patient_registered', ['name' => $item->name ?? '']),
+                        'description' => __('dashboard.patient_registered', ['name' => e($item->name ?? '')]),
                         'time' => $item->created_at ? $item->created_at->diffForHumans() : '',
                         'created_at' => $item->created_at ? $item->created_at->toIso8601String() : '',
-                        'color' => '#3b82f6'
+                        'color' => '#3b82f6',
                     ];
                 })
                 ->sortByDesc('created_at')
@@ -204,6 +208,7 @@ class DashboardController extends Controller
                     'color' => (string) ($a->color ?? '#0B8FAC'),
                 ];
             }
+
             return (object) ['description' => (string) $a, 'time' => '', 'color' => '#0B8FAC'];
         })->values();
 
@@ -213,7 +218,7 @@ class DashboardController extends Controller
         return view('dashboard.index', array_merge($stats, [
             'recentActivities' => $recentActivities,
             'topPharmacies' => $topPharmacies,
-            'patients' => $patients
+            'patients' => $patients,
         ]));
     }
 }

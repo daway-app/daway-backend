@@ -4,9 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Pharmacy;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 
 class PharmacySeeder extends Seeder
@@ -17,15 +15,18 @@ class PharmacySeeder extends Seeder
         $pharmacyUser = User::updateOrCreate(
             ['email' => 'pharmacy@daway.com'],
             [
-                'name' => 'Pharmacy User',
+                'name' => 'صيدلية الأمل',
                 'password' => Hash::make('password'),
-                'role' => 'pharmacy',
                 'phone' => '+970591234567',
                 'phone_verified_at' => now(),
                 'email_verified_at' => now(),
-                'is_active' => true,
             ]
         );
+
+        $pharmacyUser->is_active = true;
+        $pharmacyUser->role = 'pharmacy';
+        $pharmacyUser->save();
+        $pharmacyUser->syncRoles(['pharmacy']);
 
         // ✅ استخدام updateOrCreate للصيدلية
         Pharmacy::updateOrCreate(
@@ -47,15 +48,18 @@ class PharmacySeeder extends Seeder
         $pharmacyUser2 = User::updateOrCreate(
             ['email' => 'pharmacy2@daway.com'],
             [
-                'name' => 'Pharmacy User 2',
+                'name' => 'صيدلية الشفاء',
                 'password' => Hash::make('password'),
-                'role' => 'pharmacy',
                 'phone' => '+970598765432',
                 'phone_verified_at' => now(),
                 'email_verified_at' => now(),
-                'is_active' => true,
             ]
         );
+
+        $pharmacyUser2->is_active = true;
+        $pharmacyUser2->role = 'pharmacy';
+        $pharmacyUser2->save();
+        $pharmacyUser2->syncRoles(['pharmacy']);
 
         Pharmacy::updateOrCreate(
             ['pharmacy_custom_id' => 'PH-5678'],

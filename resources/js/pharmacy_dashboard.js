@@ -129,15 +129,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     );
 
 
-                const chart =
-                    new Chart(ctx, {
+                const chartData =
+                    window.pharmacyDashboardChart || {};
 
-                        type:
-                            'line',
-
-                        data: {
-
-                            labels: [
+                const chartLabels =
+                    Array.isArray(chartData.labels)
+                        ? chartData.labels
+                        : [
 
                                 'السبت',
                                 'الأحد',
@@ -147,7 +145,47 @@ document.addEventListener('DOMContentLoaded', function () {
                                 'الخميس',
                                 'الجمعة'
 
-                            ],
+                            ];
+
+                const chartOrders =
+                    Array.isArray(chartData.orders)
+                        ? chartData.orders
+                        : [
+
+                                14,
+                                22,
+                                18,
+                                29,
+                                25,
+                                34,
+                                40
+
+                            ];
+
+                const chartRatings =
+                    Array.isArray(chartData.ratings)
+                        ? chartData.ratings
+                        : [
+
+                                7,
+                                8,
+                                7,
+                                9,
+                                8,
+                                10,
+                                11
+
+                            ];
+
+                const chart =
+                    new Chart(ctx, {
+
+                        type:
+                            'line',
+
+                        data: {
+
+                            labels: chartLabels,
 
                             datasets: [
 
@@ -156,17 +194,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     label:
                                         'الطلبات',
 
-                                    data: [
-
-                                        14,
-                                        22,
-                                        18,
-                                        29,
-                                        25,
-                                        34,
-                                        40
-
-                                    ],
+                                    data: chartOrders,
 
                                     borderColor:
                                         '#0B8FAC',
@@ -207,17 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     label:
                                         'التقييمات',
 
-                                    data: [
-
-                                        7,
-                                        8,
-                                        7,
-                                        9,
-                                        8,
-                                        10,
-                                        11
-
-                                    ],
+                                    data: chartRatings,
 
                                     borderColor:
                                         '#e8a000',

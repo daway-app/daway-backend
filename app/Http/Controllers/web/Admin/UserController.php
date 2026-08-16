@@ -1,12 +1,15 @@
 <?php
 
 namespace App\Http\Controllers\web\Admin;
+
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
@@ -37,6 +40,7 @@ class UserController extends Controller
                     'updated_at' => $u->updated_at ? $u->updated_at->format('Y-m-d H:i:s') : null,
                 ];
             })->values()->all();
+
             return ['rows' => $rows, 'total' => count($rows)];
         });
 
@@ -48,7 +52,8 @@ class UserController extends Controller
 
         if ($q !== '') {
             $rows = array_values(array_filter($rows, function ($r) use ($q) {
-                $hay = mb_strtolower($r['name'] . ' ' . $r['phone'] . ' ' . ($r['email'] ?? ''));
+                $hay = mb_strtolower($r['name'].' '.$r['phone'].' '.($r['email'] ?? ''));
+
                 return str_contains($hay, $q);
             }));
         }
@@ -69,13 +74,14 @@ class UserController extends Controller
     {
         $items = array_map(function ($row) {
             $obj = (object) $row;
-            if (!empty($obj->updated_at)) {
-                $obj->updated_at = \Illuminate\Support\Carbon::parse($obj->updated_at);
+            if (! empty($obj->updated_at)) {
+                $obj->updated_at = Carbon::parse($obj->updated_at);
             }
+
             return $obj;
         }, array_slice($rows, ($page - 1) * $perPage, $perPage));
 
-        return new \Illuminate\Pagination\LengthAwarePaginator($items, $total, $perPage, $page, [
+        return new LengthAwarePaginator($items, $total, $perPage, $page, [
             'path' => request()->url(),
             'query' => request()->query(),
         ]);
@@ -85,7 +91,6 @@ class UserController extends Controller
     {
         Cache::forget('users_list_cache');
     }
-
 
     /**
      * Show the form for creating a new resource.
@@ -108,15 +113,16 @@ class UserController extends Controller
             'password' => 'required|string|min:8',
         ]);
 
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-        ]);
+        $user = new User;
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+        $user->password = Hash::make($request->password);
+        $user->role = $request->role;
+        $user->save();
 
         $this->clearUsersIndexCache();
+
         return Redirect::route('users.index')->with('success', 'تم إضافة المستخدم بنجاح!');
     }
 
@@ -126,6 +132,7 @@ class UserController extends Controller
     public function show(string $id)
     {
         $user = User::findOrFail($id);
+
         // Assuming you have a users.show view, otherwise it will throw an error.
         // Based on the previous file listing, there was no users.show.blade.php.
         // If you need one, please create it. For now, this method will not be directly used by the existing views.
@@ -138,6 +145,7 @@ class UserController extends Controller
     public function edit(string $id)
     {
         $user = User::findOrFail($id);
+
         return view('users.edit', compact('user'));
     }
 
@@ -150,21 +158,28 @@ class UserController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'required|string|max:255|unique:users,phone,' . $user->id,
+            'email' => 'nullable|email|max:255|unique:users,email,'.$user->id,
+            'phone' => 'required|string|max:255|unique:users,phone,'.$user->id,
             'role' => 'required|string|in:admin,pharmacy,patient',
             'status' => 'required|boolean',
         ]);
 
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'role' => $request->role,
-            'is_active' => $request->status,
-        ]);
+        // منع المستخدم من تغيير دوره هو بنفسه
+        if ((int) $user->id === (int) auth()->id() && $user->role !== $request->role) {
+            return back()->withErrors([
+                'role' => 'لا يمكنك تغيير دورك لنفسك!',
+            ])->withInput();
+        }
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+        $user->role = $request->role;
+        $user->is_active = (bool) $request->status;
+        $user->save();
 
         $this->clearUsersIndexCache();
+
         return Redirect::route('users.index')->with('success', 'تم تحديث بيانات المستخدم بنجاح!');
     }
 
@@ -175,6 +190,7 @@ class UserController extends Controller
     {
         User::destroy($id);
         $this->clearUsersIndexCache();
+
         return Redirect::route('users.index')->with('success', 'تم حذف المستخدم بنجاح!');
     }
 

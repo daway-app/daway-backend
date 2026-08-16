@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\SetAppLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\SetAppLocale;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,15 +14,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->validateCsrfTokens(except: [
-            'login',
-        ]);
+        $proxies = env('TRUSTED_PROXIES');
+        $middleware->trustProxies(at: $proxies ? explode(',', $proxies) : []);
 
-        $middleware->trustProxies(at: '*');
+        $middleware->throttleApi();
+
+        $middleware->alias([
+            'role' => EnsureRole::class,
+        ]);
 
         $middleware->web(append: [
             SetAppLocale::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions) {
-    })->create();
+    ->withExceptions(function (Exceptions $exceptions) {})->create();
