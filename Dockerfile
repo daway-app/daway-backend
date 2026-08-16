@@ -28,7 +28,17 @@ RUN apt-get update && apt-get install -y \
     pdo_mysql \
     zip \
     gd \
+    opcache \
     && rm -rf /var/lib/apt/lists/*
+
+# Enable opcache for the CLI server (artisan serve)
+RUN { \
+        echo 'opcache.enable_cli=1'; \
+        echo 'opcache.memory_consumption=128'; \
+        echo 'opcache.interned_strings_buffer=16'; \
+        echo 'opcache.max_accelerated_files=20000'; \
+        echo 'opcache.validate_timestamps=0'; \
+    } > /usr/local/etc/php/conf.d/opcache.ini
 
 # Set working directory
 WORKDIR /app
@@ -60,5 +70,5 @@ USER appuser
 # Expose port
 EXPOSE 10000
 
-# Run migrations then start Laravel
-CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+# Run migrations, keep the app warm (free tier sleep prevention) and start Laravel
+CMD ["sh", "-c", "php artisan migrate --force && (while true; do curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/api/medicines; sleep 240; done) & php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
