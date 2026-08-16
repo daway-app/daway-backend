@@ -643,25 +643,25 @@ body.dark-mode .role-dist-count {
     flex: 1;
     height: 10px;
     border-radius: 20px;
+    background-color: #e2e8f0;
     position: relative;
     overflow: visible;
 }
 
 .role-dist-bar-fill {
     position: absolute;
-    left: 0;
+    inset-inline-start: 0;
     top: 0;
     bottom: 0;
-    background-color: #e2e8f0;
-    border-top-left-radius: 20px;
-    border-bottom-left-radius: 20px;
+    border-start-start-radius: 20px;
+    border-start-end-radius: 20px;
     transition: width 0.8s ease;
 }
 
 .role-dist-bar-fill::after {
     content: '';
     position: absolute;
-    right: -5px;
+    inset-inline-end: -5px;
     top: 50%;
     transform: translateY(-50%);
     width: 10px;

@@ -151,24 +151,24 @@
 
                         <div class="role-dist-item">
                             <span class="role-dist-count">{{ $roleCounts['admin'] }}</span>
-                            <div class="role-dist-bar-bg" style="background-color: #3b82f6;">
-                                <div class="role-dist-bar-fill" style="width: {{ $roleTotal ? ($roleCounts['admin'] / $roleTotal) * 100 : 0 }}%; color: #3b82f6;"></div>
+                            <div class="role-dist-bar-bg">
+                                <div class="role-dist-bar-fill" style="width: {{ $roleTotal ? ($roleCounts['admin'] / $roleTotal) * 100 : 0 }}%; background-color: #3b82f6;"></div>
                             </div>
                             <span class="role-dist-label">@lang('users.filter_admins')</span>
                         </div>
 
                         <div class="role-dist-item">
                             <span class="role-dist-count">{{ $roleCounts['pharmacy'] }}</span>
-                            <div class="role-dist-bar-bg" style="background-color: #06b6d4;">
-                                <div class="role-dist-bar-fill" style="width: {{ $roleTotal ? ($roleCounts['pharmacy'] / $roleTotal) * 100 : 0 }}%; color: #06b6d4;"></div>
+                            <div class="role-dist-bar-bg">
+                                <div class="role-dist-bar-fill" style="width: {{ $roleTotal ? ($roleCounts['pharmacy'] / $roleTotal) * 100 : 0 }}%; background-color: #06b6d4;"></div>
                             </div>
                             <span class="role-dist-label">@lang('users.filter_pharmacies')</span>
                         </div>
 
                         <div class="role-dist-item">
                             <span class="role-dist-count">{{ $roleCounts['patient'] }}</span>
-                            <div class="role-dist-bar-bg" style="background-color: #a855f7;">
-                                <div class="role-dist-bar-fill" style="width: {{ $roleTotal ? ($roleCounts['patient'] / $roleTotal) * 100 : 0 }}%; color: #a855f7;"></div>
+                            <div class="role-dist-bar-bg">
+                                <div class="role-dist-bar-fill" style="width: {{ $roleTotal ? ($roleCounts['patient'] / $roleTotal) * 100 : 0 }}%; background-color: #a855f7;"></div>
                             </div>
                             <span class="role-dist-label">@lang('users.filter_patients')</span>
                         </div>
