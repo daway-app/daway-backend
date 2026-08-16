@@ -49,7 +49,12 @@ RUN composer install --no-dev --optimize-autoloader
 
 # Run as non-root user
 RUN useradd -m -u 1000 appuser \
-    && chown -R appuser:appuser /app
+    && chown -R appuser:appuser /app \
+    && mkdir -p /app/storage/framework/views \
+    && mkdir -p /app/storage/framework/sessions \
+    && mkdir -p /app/storage/framework/cache/data \
+    && mkdir -p /app/storage/logs \
+    && chown -R appuser:appuser /app/storage
 USER appuser
 
 # Expose port
