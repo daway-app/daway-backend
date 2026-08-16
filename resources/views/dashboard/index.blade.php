@@ -312,6 +312,10 @@
                                     footer: (items) => {
                                         if (!items.length) return [];
                                         const idx = items[0].dataIndex;
+                                        if (currentFilter !== 'all') {
+                                            const d = chartData.datasets[currentFilter] || chartData.datasets.all;
+                                            return [d.label + ': ' + d.values[idx]];
+                                        }
                                         const v = (f) => (chartData.datasets[f]?.values[idx] ?? 0);
                                         const searches = v('searches');
                                         const patients = v('patients');
