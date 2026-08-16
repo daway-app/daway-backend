@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
+use App\Support\Image;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -118,7 +119,7 @@ class PharmacyController extends Controller
             'latitude' => (float) $pharmacy->latitude,
             'longitude' => (float) $pharmacy->longitude,
             'phone_number' => $pharmacy->phone_number,
-            'logo' => $pharmacy->logo ? asset($pharmacy->logo) : null,
+            'logo' => Image::url($pharmacy->logo),
             'avg_rating' => $pharmacy->avg_rating !== null ? (float) $pharmacy->avg_rating : null,
             'ratings_count' => $pharmacy->ratings_count ?? null,
             'ratings_avg' => $pharmacy->ratings_avg_stars_rating !== null ? round((float) $pharmacy->ratings_avg_stars_rating, 2) : null,

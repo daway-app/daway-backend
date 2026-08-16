@@ -25,6 +25,8 @@ class User extends Authenticatable
         'address',
         'birth_date',
         'avatar',
+        'latitude',
+        'longitude',
         'emergency_contact',
         'pharmacy_id', //
     ];

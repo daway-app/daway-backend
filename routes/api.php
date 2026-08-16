@@ -2,8 +2,9 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MedicineController;
+use App\Http\Controllers\Api\PatientProfileController;
 use App\Http\Controllers\Api\PharmacyController;
-use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\PharmacyProfileController;
 use App\Http\Controllers\Api\ReminderController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,8 +30,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh-token', [AuthController::class, 'refreshToken']);
 
-    Route::get('/profile', [ProfileController::class, 'show']);
-    Route::post('/profile/update', [ProfileController::class, 'update']);
+    Route::get('/profile/patient', [PatientProfileController::class, 'show']);
+    Route::post('/profile/patient', [PatientProfileController::class, 'update']);
+    Route::get('/profile/pharmacy', [PharmacyProfileController::class, 'show']);
+    Route::post('/profile/pharmacy', [PharmacyProfileController::class, 'update']);
 
     Route::apiResource('reminders', ReminderController::class);
     Route::post('/reminders/{reminder}/taken', [ReminderController::class, 'markTaken']);
