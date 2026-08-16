@@ -70,4 +70,5 @@ return [
     'password_updated' => 'Password updated successfully',
     'password_current_wrong' => 'The current password is incorrect',
     'password_min_hint' => 'At least 8 characters',
+    'email_verified' => 'Verified',
 ];

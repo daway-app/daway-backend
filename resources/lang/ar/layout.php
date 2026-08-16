@@ -70,4 +70,5 @@ return [
     'password_updated' => 'تم تحديث كلمة السر بنجاح',
     'password_current_wrong' => 'كلمة السر الحالية غير صحيحة',
     'password_min_hint' => '8 أحرف على الأقل',
+    'email_verified' => 'موثّق',
 ];
