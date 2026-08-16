@@ -82,22 +82,18 @@
                 </div>
             </form>
 
-        </div>
-
-        <div class="main-card" style="margin-top: 24px;">
-            <div class="card-header-modern">
-                <div class="header-title-area">
-                    <h2>@lang('layout.password_section_title')</h2>
-                    <p>@lang('layout.password_section_subtitle')</p>
+            <div class="password-section-divider">
+                <div class="password-section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <h3>@lang('layout.password_section_title')</h3>
                 </div>
-                <div class="header-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
-            </div>
+                <p class="password-section-subtitle">@lang('layout.password_section_subtitle')</p>
 
-            @if (session('password_success'))
-                <div class="success-alert-modern" style="margin: 16px 24px 0;">{{ session('password_success') }}</div>
-            @endif
+                @if (session('password_success'))
+                    <div class="success-alert-modern" style="margin: 0 0 16px;">{{ session('password_success') }}</div>
+                @endif
 
-            <form action="{{ route('profile.password.update') }}" method="POST">
+                <form action="{{ route('profile.password.update') }}" method="POST">
                 @csrf
                 @method('PUT')
 
@@ -135,11 +131,29 @@
                     <button type="submit" class="btn-submit">@lang('layout.password_update_button')</button>
                 </div>
             </form>
+            </div>
+
         </div>
 
     </div>
 
     <style>
+        .password-section-divider {
+            border-top: 1px solid #DEE8E7;
+            margin: 8px 24px 0;
+            padding-top: 20px;
+        }
+        body.dark-mode .password-section-divider { border-top-color: #333338; }
+        .password-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #0f172a;
+        }
+        body.dark-mode .password-section-title { color: #f4f4f5; }
+        .password-section-title h3 { margin: 0; font-size: 16px; font-weight: 700; }
+        .password-section-subtitle { margin: 4px 0 18px; font-size: 13px; color: #64748b; }
+        body.dark-mode .password-section-subtitle { color: #a1a1aa; }
         .avatar-preview-page-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px);
