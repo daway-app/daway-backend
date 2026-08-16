@@ -81,6 +81,8 @@ html[dir="ltr"] .sidebar-pro {
 .sidebar-content-wrapper {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 /* ==========================================

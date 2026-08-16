@@ -309,12 +309,18 @@
                                         const d = chartData.datasets[currentFilter] || chartData.datasets.all;
                                         return ' ' + d.label + ': ' + item.parsed.y;
                                     },
-                                    footer: () => {
-                                        const d = chartData.datasets[currentFilter] || chartData.datasets.all;
+                                    footer: (items) => {
+                                        if (!items.length) return [];
+                                        const idx = items[0].dataIndex;
+                                        const v = (f) => (chartData.datasets[f]?.values[idx] ?? 0);
+                                        const searches = v('searches');
+                                        const patients = v('patients');
+                                        const pharmacies = v('pharmacies');
                                         return [
-                                            '{{ __('dashboard.summary_total') }}: ' + d.total,
-                                            '{{ __('dashboard.summary_change') }}: ' + (d.change === null ? '—' : (d.change >= 0 ? '+' : '') + d.change + '%'),
-                                            '{{ __('dashboard.summary_average') }}: ' + d.average,
+                                            '{{ __('dashboard.summary_total') }}: ' + v('all'),
+                                            '{{ __('dashboard.medicines_search_filter') }}: ' + searches + '  •  ' +
+                                            '{{ __('dashboard.users_filter') }}: ' + patients + '  •  ' +
+                                            '{{ __('dashboard.pharmacies_filter') }}: ' + pharmacies,
                                         ];
                                     },
                                 },
