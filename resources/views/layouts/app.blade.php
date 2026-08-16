@@ -14,7 +14,7 @@
             } catch (e) {}
         })();
     </script>
-    <title>دوائي - @yield('title', 'لوحة الإحصائيات')</title>
+    <title>{{ __('layout.app_title') }} - @yield('title', __('dashboard.title'))</title>
 
     @vite(['resources/css/layout/app_layout.css', 'resources/css/layout/topbar.css'])
 </head>

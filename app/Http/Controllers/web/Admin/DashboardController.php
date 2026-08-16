@@ -61,6 +61,9 @@ class DashboardController extends Controller
             $medicinesAddedRecently = Medicine::where('created_at', '>=', $now->copy()->subDays(30))->count();
 
             // Weekly series (oldest → newest, 8 weeks) for the activity chart
+            // Week start follows the locale: Saturday for Arabic, Sunday for English
+            \Carbon\Carbon::setLocale(app()->getLocale());
+            $weekStart = app()->getLocale() === 'ar' ? \Carbon\Carbon::SATURDAY : \Carbon\Carbon::SUNDAY;
             $chartSearches = [];
             $chartUsers = [];
             $chartMedicines = [];
@@ -68,8 +71,8 @@ class DashboardController extends Controller
             $chartAll = [];
             $weekLabels = [];
             for ($i = 7; $i >= 0; $i--) {
-                $start = $now->copy()->subWeeks($i)->startOfWeek();
-                $end = $now->copy()->subWeeks($i - 1)->startOfWeek();
+                $start = $now->copy()->subWeeks($i)->startOfWeek($weekStart);
+                $end = $now->copy()->subWeeks($i - 1)->startOfWeek($weekStart);
                 $weekUsers = User::where('role', 'patient')->whereBetween('created_at', [$start, $end])->count();
                 $weekMedicines = Medicine::whereBetween('created_at', [$start, $end])->count();
                 $weekSearches = SearchLog::whereBetween('created_at', [$start, $end])->count();
@@ -79,7 +82,7 @@ class DashboardController extends Controller
                 $chartSearches[] = $weekSearches;
                 $chartPharmacies[] = $weekPharmacies;
                 $chartAll[] = $weekSearches + $weekUsers + $weekMedicines + $weekPharmacies;
-                $weekLabels[] = $start->format('M j').' – '.$end->copy()->subDay()->format('M j');
+                $weekLabels[] = $start->translatedFormat('M j').' – '.$end->copy()->subDay()->translatedFormat('M j');
             }
 
             // نسبة النمو: null عندما لا توجد قيمة سابقة للمقارنة (لا +100% مضللة)
