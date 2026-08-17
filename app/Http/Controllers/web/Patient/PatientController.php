@@ -20,6 +20,7 @@ class PatientController extends Controller
                     'name' => $u->name,
                     'email' => $u->email,
                     'phone' => $u->phone,
+                    'avatar' => $u->avatar,
                     'is_active' => $u->is_active,
                     'created_at' => $u->created_at ? $u->created_at->format('Y-m-d H:i:s') : null,
                 ];

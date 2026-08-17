@@ -25,7 +25,7 @@
                         <div class="profile-avatar-ring">
                             <div class="profile-avatar">
                                 @if($user->avatar)
-                                    <img src="{{ asset('uploads/' . $user->avatar) }}" alt="Avatar" id="avatarPreview">
+                                    <img src="{{ \App\Support\Image::url($user->avatar) }}" alt="Avatar" id="avatarPreview">
                                 @else
                                     <span id="avatarInitial">{{ mb_substr($user->name, 0, 1) }}</span>
                                 @endif

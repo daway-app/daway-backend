@@ -85,7 +85,7 @@
                         <label class="fl" for="logo">@lang('pharmacy.profile.logo_label')</label>
                         <input type="file" name="logo" id="logo" class="fc @error('logo') is-invalid @enderror" style="height:auto; padding: 10px 14px;">
                         @if ($pharmacy->logo)
-                            <img src="{{ Storage::url($pharmacy->logo) }}" alt="@lang('pharmacy.profile.logo_alt')" style="max-width: 150px; margin-top: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                            <img src="{{ \App\Support\Image::url($pharmacy->logo) }}" alt="@lang('pharmacy.profile.logo_alt')" style="max-width: 150px; margin-top: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
                         @endif
                         @error('logo')
                             <span class="error-text" role="alert"><strong>{{ $message }}</strong></span>

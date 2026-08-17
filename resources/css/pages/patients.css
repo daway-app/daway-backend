@@ -249,6 +249,12 @@
     font-weight: 700;
     font-size: 13px;
 }
+.user-avatar-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
 .user-name-text {
     font-weight: 600;
     color: #1e293b;

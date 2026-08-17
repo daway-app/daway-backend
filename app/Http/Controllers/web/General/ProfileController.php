@@ -90,7 +90,7 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'name' => $user->name,
-            // الصور الجديدة تُخزن على قرص public (storage/app/public/avatars) — نبني الرابط منها،
+            // الصور الجديدة تُخزن على قرص public (public/uploads/avatars) — نبني الرابط منها،
             // وإلا نرجع لرابط uploads القديم للملفات السابقة
             'avatar' => $user->avatar
                 ? (Storage::disk('public')->exists($user->avatar)

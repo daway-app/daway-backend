@@ -75,9 +75,13 @@
                         <tr data-search-term="{{ strtolower($patient->name . ' ' . $patient->email . ' ' . $patient->phone) }}">
                             <td>
                                 <div class="user-info-cell">
-                                    <div class="user-avatar-initials">
-                                        {{ mb_substr($patient->name, 0, 2) }}
-                                    </div>
+                                    @if($patient->avatar)
+                                        <img src="{{ \App\Support\Image::url($patient->avatar) }}" alt="{{ $patient->name }}" class="user-avatar-img">
+                                    @else
+                                        <div class="user-avatar-initials">
+                                            {{ mb_substr($patient->name, 0, 2) }}
+                                        </div>
+                                    @endif
                                     <span class="user-name-text">{{ $patient->name }}</span>
                                 </div>
                             </td>

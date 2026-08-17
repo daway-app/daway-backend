@@ -135,7 +135,7 @@
         <div class="user-info-group" onclick="openProfileModal()" title="@lang('layout.edit_profile_modal_title')">
             <div class="avatar-box" id="sidebarDisplayUserAvatar">
                 @if(auth()->user()->avatar)
-                    <img src="{{ asset('uploads/' . auth()->user()->avatar) }}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    <img src="{{ \App\Support\Image::url(auth()->user()->avatar) }}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                 @else
                     {{ mb_substr(auth()->user()->name, 0, 1) }}
                 @endif

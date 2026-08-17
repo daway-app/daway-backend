@@ -11,7 +11,12 @@
                 @method('PUT')
 
                 <!-- الهيدر -->
-                <div style="padding: 20px 25px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                <div style="padding: 20px 25px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 14px;">
+                    @if($user->avatar)
+                        <img src="{{ \App\Support\Image::url($user->avatar) }}" alt="{{ $user->name }}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;">
+                    @else
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: #f3e8ff; color: #7e22ce; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;">{{ mb_substr($user->name, 0, 2) }}</div>
+                    @endif
                     <h2 style="margin: 0; font-size: 18px; color: #1e293b; font-weight: 700;">⚙️ تعديل بيانات المستخدم</h2>
                 </div>
 

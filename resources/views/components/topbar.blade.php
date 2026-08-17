@@ -40,7 +40,7 @@
         <div class="user-profile-btn" onclick="openProfileModal()" title="@lang('layout.edit_profile_modal_title')">
             <div class="avatar" id="displayUserAvatar"
                 @if(auth()->user()->avatar)
-                    style="background-image: url('{{ asset('uploads/' . auth()->user()->avatar) }}'); background-size: cover; background-position: center;"
+                    style="background-image: url('{{ \App\Support\Image::url(auth()->user()->avatar) }}'); background-size: cover; background-position: center;"
                 @endif
             >
                 @if(!auth()->user()->avatar)
@@ -65,7 +65,7 @@
             <div style="text-align: center; margin-bottom: 16px;">
                 <div class="avatar" id="modalPreviewAvatar" style="width: 64px; height: 64px; margin: 0 auto 8px; font-size: 20px;">
                     @if(auth()->user()->avatar)
-                        <img src="{{ asset('uploads/' . auth()->user()->avatar) }}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                        <img src="{{ \App\Support\Image::url(auth()->user()->avatar) }}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                     @else
                         {{ mb_substr(auth()->user()->name, 0, 1) }}
                     @endif
