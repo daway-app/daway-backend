@@ -9,6 +9,9 @@
 node_modules
 vendor
 
+# نسخة البناء المخزنة في المستودع قديمة — تُبنى داخل المرحلة الأمامية وتُنسخ لاحقاً
+public/build
+
 # كاش وملفات مؤقتة
 storage/logs
 storage/framework/cache

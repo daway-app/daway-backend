@@ -18,6 +18,7 @@ class ReminderController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'تم جلب التذكيرات بنجاح',
             'data' => $reminders,
         ]);
     }
@@ -31,7 +32,7 @@ class ReminderController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Reminder created successfully',
+            'message' => 'تم إنشاء التذكير بنجاح',
             'data' => $reminder,
         ], 201);
     }
@@ -42,6 +43,7 @@ class ReminderController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'تم جلب التذكير بنجاح',
             'data' => $reminder,
         ]);
     }
@@ -54,7 +56,7 @@ class ReminderController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Reminder updated successfully',
+            'message' => 'تم تحديث التذكير بنجاح',
             'data' => $reminder->fresh(),
         ]);
     }
@@ -67,7 +69,7 @@ class ReminderController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Reminder deleted successfully',
+            'message' => 'تم حذف التذكير بنجاح',
         ]);
     }
 
@@ -83,7 +85,7 @@ class ReminderController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Dose marked as taken',
+            'message' => 'تم تسجيل الجرعة كتذكير مأخوذ',
             'data' => $reminder->fresh(),
         ]);
     }
@@ -104,7 +106,7 @@ class ReminderController extends Controller
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
-        if (!$partial) {
+        if (! $partial) {
             $data['frequency'] = $data['frequency'] ?? 'once';
             $data['is_active'] = $data['is_active'] ?? true;
         }
@@ -115,7 +117,7 @@ class ReminderController extends Controller
     private function normalizeRemainingDoses(Request $request): void
     {
         if (
-            !$request->has('quantity_remaining')
+            ! $request->has('quantity_remaining')
             && ($request->has('remaining_doses') || $request->has('dose_count'))
         ) {
             $request->merge([

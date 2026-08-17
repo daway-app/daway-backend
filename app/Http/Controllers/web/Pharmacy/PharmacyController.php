@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon; // Import Hash facade
 use Illuminate\Support\Facades\Cache; // Import Rule for validation
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -81,28 +82,34 @@ class PharmacyController extends Controller
             'password' => 'required|string|min:8|confirmed', // Password for the user
         ]);
 
-        // 1. Create the User account for the pharmacy
-        $user = User::create([
-            'name' => $request->pharmacy_name, // Use pharmacy name as user name
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-        $user->role = 'pharmacy'; // Assign 'pharmacy' role
-        $user->is_active = true;
-        $user->save();
-        $user->syncRoles(['pharmacy']);
+        // إنشاء حساب المستخدم + سجل الصيدلية في معاملة واحدة (فشل أحدهما يلغي الآخر)
+        DB::transaction(function () use ($request) {
+            // 1. Create the User account for the pharmacy
+            $user = User::create([
+                'name' => $request->pharmacy_name, // Use pharmacy name as user name
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                // تفعيل البريد فوراً: حساب يُنشأ من لوحة التحكم موثوق،
+                // وبدونه لا يستطيع صاحبه تسجيل الدخول عبر الـ API (فحص email_verified_at)
+                'email_verified_at' => now(),
+            ]);
+            $user->role = 'pharmacy'; // Assign 'pharmacy' role
+            $user->is_active = true;
+            $user->save();
+            $user->syncRoles(['pharmacy']);
 
-        // 2. Create the Pharmacy record
-        $pharmacy = Pharmacy::create([
-            'user_id' => $user->id,
-            'pharmacy_custom_id' => 'PH-'.Str::upper(Str::random(4)),
-            'pharmacy_name' => $request->pharmacy_name,
-            'address' => $request->address_line.', '.$request->city.($request->area ? ', '.$request->area : ''),
-            'latitude' => $request->latitude ?? 0,
-            'longitude' => $request->longitude ?? 0,
-            'phone_number' => $request->phone_number,
-            'is_active' => true, // Default to active
-        ]);
+            // 2. Create the Pharmacy record
+            Pharmacy::create([
+                'user_id' => $user->id,
+                'pharmacy_custom_id' => 'PH-'.Str::upper(Str::random(4)),
+                'pharmacy_name' => $request->pharmacy_name,
+                'address' => $request->address_line.', '.$request->city.($request->area ? ', '.$request->area : ''),
+                'latitude' => $request->latitude ?? 0,
+                'longitude' => $request->longitude ?? 0,
+                'phone_number' => $request->phone_number,
+                'is_active' => true, // Default to active
+            ]);
+        });
 
         $this->clearPharmaciesIndexCache();
 
@@ -184,12 +191,15 @@ class PharmacyController extends Controller
     {
         $pharmacy = Pharmacy::with('user')->findOrFail($id);
 
-        // Delete associated user first
-        if ($pharmacy->user) {
-            $pharmacy->user->delete();
-        }
+        // حذف المستخدم + الصيدلية في معاملة واحدة
+        DB::transaction(function () use ($pharmacy) {
+            // Delete associated user first
+            if ($pharmacy->user) {
+                $pharmacy->user->delete();
+            }
 
-        $pharmacy->delete();
+            $pharmacy->delete();
+        });
 
         $this->clearPharmaciesIndexCache();
 

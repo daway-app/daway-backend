@@ -122,4 +122,16 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function copyId(button, id) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(id).then(function () {
+                    const original = button.innerHTML;
+                    button.innerHTML = '✓';
+                    setTimeout(function () { button.innerHTML = original; }, 1000);
+                }).catch(function () {});
+            }
+        }
+    </script>
 @endsection

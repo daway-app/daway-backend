@@ -25,7 +25,7 @@ class EnsureRole
 
         // Admin tries to access a pharmacy route → send to the admin dashboard
         if ($user->role === 'admin') {
-            return redirect()->route('dashboard.index')->with('error', __('pharmacy.access_denied'));
+            return redirect()->route('dashboard')->with('error', __('pharmacy.access_denied'));
         }
 
         // Pharmacy tries to access an admin route → send to the pharmacy dashboard

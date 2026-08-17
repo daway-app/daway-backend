@@ -1,19 +1,21 @@
 <?php
 
 namespace App\Http\Controllers\web\Admin;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
+
 use App\Exports\LogsExport;
-use Spatie\Activitylog\Models\Activity;
+use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Activitylog\Models\Activity;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LogController extends Controller
 {
     /**
      * Display a listing of the logs.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function index()
     {
@@ -26,7 +28,7 @@ class LogController extends Controller
     /**
      * Export logs to an Excel file.
      *
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     * @return BinaryFileResponse
      */
     public function exportExcel()
     {

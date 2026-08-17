@@ -1,13 +1,16 @@
 <?php
 
 namespace App\Http\Controllers\web\Pharmacy;
+
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine; // Assuming this model exists for pivot table
 use App\Models\SearchLog;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
 class PharmacyMedicineController extends Controller
@@ -20,6 +23,7 @@ class PharmacyMedicineController extends Controller
             if (Auth::check() && Auth::user()->role === 'pharmacy') {
                 return $next($request);
             }
+
             return redirect('/')->with('error', __('pharmacy.access_denied'));
         })->except(['index', 'show']); // Apply to all methods except index and show for now
     }
@@ -27,7 +31,7 @@ class PharmacyMedicineController extends Controller
     /**
      * Display a listing of the pharmacy's medicines.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function index()
     {
@@ -36,8 +40,8 @@ class PharmacyMedicineController extends Controller
 
         // Get medicines associated with this pharmacy through the pivot table
         $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-                                            ->with('medicine') // Eager load the Medicine details
-                                            ->paginate(10);
+            ->with('medicine') // Eager load the Medicine details
+            ->paginate(10);
 
         $availableCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->where('is_available', true)
@@ -57,7 +61,7 @@ class PharmacyMedicineController extends Controller
     /**
      * Show the form for creating a new medicine for the pharmacy.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function create()
     {
@@ -70,7 +74,7 @@ class PharmacyMedicineController extends Controller
     /**
      * بحث فوري عن دواء في الكتالوج العام وفي كتالوج وزارة الصحة.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function search(Request $request)
     {
@@ -111,8 +115,7 @@ class PharmacyMedicineController extends Controller
     /**
      * Store a newly created medicine in storage for the pharmacy.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function store(Request $request)
     {
@@ -181,8 +184,7 @@ class PharmacyMedicineController extends Controller
     /**
      * Show the form for editing the specified medicine for the pharmacy.
      *
-     * @param  \App\Models\PharmacyMedicine  $pharmacyMedicine
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function edit(PharmacyMedicine $pharmacyMedicine)
     {
@@ -200,9 +202,7 @@ class PharmacyMedicineController extends Controller
     /**
      * Update the specified medicine in storage for the pharmacy.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\PharmacyMedicine  $pharmacyMedicine
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function update(Request $request, PharmacyMedicine $pharmacyMedicine)
     {
@@ -232,8 +232,7 @@ class PharmacyMedicineController extends Controller
     /**
      * Remove the specified medicine from storage for the pharmacy.
      *
-     * @param  \App\Models\PharmacyMedicine  $pharmacyMedicine
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function destroy(PharmacyMedicine $pharmacyMedicine)
     {

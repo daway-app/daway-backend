@@ -4,8 +4,10 @@ namespace App\Http\Controllers\web\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
+use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -40,13 +42,22 @@ class DashboardController extends Controller
                 }
             }
 
-            // Single query: medicine counts + stock status (replaces 2 queries)
-            $medicineStats = Medicine::select(
-                DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN is_available = 1 THEN 1 ELSE 0 END) as available'),
-                DB::raw('SUM(CASE WHEN is_available = 0 AND stock > 0 THEN 1 ELSE 0 END) as low_stock'),
-                DB::raw('SUM(CASE WHEN is_available = 0 AND stock = 0 THEN 1 ELSE 0 END) as out_of_stock')
-            )->first();
+            // Single query: medicine counts + stock status based on real pharmacy_medicines.quantity
+            // (medicines.stock/is_available are dead columns never written by app code)
+            $stockTotals = PharmacyMedicine::query()
+                ->select('medicine_id')
+                ->selectRaw('SUM(quantity) as total_quantity')
+                ->groupBy('medicine_id');
+
+            $medicineStats = Medicine::query()
+                ->leftJoinSub($stockTotals, 'stock_totals', function ($join) {
+                    $join->on('stock_totals.medicine_id', '=', 'medicines.id');
+                })
+                ->selectRaw('COUNT(medicines.id) as total')
+                ->selectRaw('SUM(CASE WHEN COALESCE(stock_totals.total_quantity, 0) > 10 THEN 1 ELSE 0 END) as available')
+                ->selectRaw('SUM(CASE WHEN COALESCE(stock_totals.total_quantity, 0) BETWEEN 1 AND 10 THEN 1 ELSE 0 END) as low_stock')
+                ->selectRaw('SUM(CASE WHEN COALESCE(stock_totals.total_quantity, 0) = 0 THEN 1 ELSE 0 END) as out_of_stock')
+                ->first();
 
             // Real trends for the stat cards
             $patientsThisMonth = User::where('role', 'patient')->where('created_at', '>=', $now->copy()->startOfMonth())->count();
@@ -62,8 +73,8 @@ class DashboardController extends Controller
 
             // Weekly series (oldest → newest, 8 weeks) for the activity chart
             // Week start follows the locale: Saturday for Arabic, Sunday for English
-            \Carbon\Carbon::setLocale(app()->getLocale());
-            $weekStart = app()->getLocale() === 'ar' ? \Carbon\Carbon::SATURDAY : \Carbon\Carbon::SUNDAY;
+            Carbon::setLocale(app()->getLocale());
+            $weekStart = app()->getLocale() === 'ar' ? Carbon::SATURDAY : Carbon::SUNDAY;
             $chartSearches = [];
             $chartUsers = [];
             $chartMedicines = [];

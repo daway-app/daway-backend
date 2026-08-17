@@ -1,11 +1,12 @@
 <?php
 
-use App\Http\Controllers\web\Admin\DashboardController;
+use App\Http\Controllers\HealthController;
 // General Controllers
-use App\Http\Controllers\web\Admin\InventoryController;
+use App\Http\Controllers\web\Admin\DashboardController;
 // Auth Controllers
-use App\Http\Controllers\web\Admin\LogController;
+use App\Http\Controllers\web\Admin\InventoryController;
 // Admin Controllers
+use App\Http\Controllers\web\Admin\LogController;
 use App\Http\Controllers\web\Admin\MedicineController;
 use App\Http\Controllers\web\Admin\NotificationController;
 use App\Http\Controllers\web\Admin\SettingController;
@@ -13,10 +14,10 @@ use App\Http\Controllers\web\Admin\UserController;
 use App\Http\Controllers\web\Auth\LoginController;
 use App\Http\Controllers\web\General\LocaleController;
 use App\Http\Controllers\web\General\ProfileController;
-use App\Http\Controllers\web\Patient\PatientController;
 // Patient Controllers
-use App\Http\Controllers\web\Pharmacy\PharmacyAlternativeController;
+use App\Http\Controllers\web\Patient\PatientController;
 // Pharmacy Controllers
+use App\Http\Controllers\web\Pharmacy\PharmacyAlternativeController;
 use App\Http\Controllers\web\Pharmacy\PharmacyController;
 use App\Http\Controllers\web\Pharmacy\PharmacyDashboardController;
 use App\Http\Controllers\web\Pharmacy\PharmacyMedicineController;
@@ -32,7 +33,7 @@ use Illuminate\Support\Facades\Route;
 
 // ==================== HEALTH CHECK ====================
 
-Route::get('/healthz', [\App\Http\Controllers\HealthController::class, 'index']);
+Route::get('/healthz', [HealthController::class, 'index']);
 
 // ==================== LOCALE ====================
 
@@ -66,11 +67,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         DashboardController::class,
         'index',
     ])->name('dashboard');
-
-    Route::get('/dashboard', [
-        DashboardController::class,
-        'index',
-    ])->name('dashboard.index');
 
     // ==================== PHARMACIES ====================
 

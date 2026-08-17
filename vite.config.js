@@ -29,13 +29,12 @@ export default defineConfig({
                 'resources/css/pages/statistics.css',
                 'resources/css/pages/users.css',
                 'resources/css/pages/users_create.css',
-                'resources/js/app.js',
                 'resources/js/pharmacy_dashboard.js',
             ],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
+                bunny('Cairo', {
+                    weights: [400, 500, 600, 700],
                 }),
             ],
         }),

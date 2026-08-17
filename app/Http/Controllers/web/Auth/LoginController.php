@@ -110,7 +110,7 @@ class LoginController extends Controller
                 }
 
                 // Redirect admin/other users to the general dashboard
-                return redirect()->route('dashboard.index');
+                return redirect()->route('dashboard');
             }
         }
 

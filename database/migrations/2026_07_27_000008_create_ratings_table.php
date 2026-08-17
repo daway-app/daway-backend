@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -18,8 +18,10 @@ return new class extends Migration
             $table->timestamp('created_at')->nullable();
         });
 
-        // CHECK constraint - يحصر القيمة بين 1 و5
-        DB::statement('ALTER TABLE ratings ADD CONSTRAINT chk_stars_rating_range CHECK (stars_rating BETWEEN 1 AND 5)');
+        // CHECK constraint - يحصر القيمة بين 1 و5 (MySQL only; SQLite does not support ADD CONSTRAINT)
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE ratings ADD CONSTRAINT chk_stars_rating_range CHECK (stars_rating BETWEEN 1 AND 5)');
+        }
     }
 
     public function down(): void

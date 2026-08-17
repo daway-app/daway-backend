@@ -182,7 +182,7 @@
 
     </div>
 
-    <div class="confirm-modal-overlay" id="statusConfirmModal">
+    <div class="confirm-modal-overlay" id="statusConfirmModal" role="dialog" aria-modal="true" aria-label="@lang('users.confirm_title')">
         <div class="confirm-modal-card">
             <div class="confirm-modal-icon">!</div>
             <h3>@lang('users.confirm_title')</h3>

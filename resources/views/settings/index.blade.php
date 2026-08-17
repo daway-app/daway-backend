@@ -37,27 +37,27 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">@lang('settings.platform_name')</label>
-                            <input type="text" name="site_name" class="form-control" value="{{ $settings['site_name'] ?? __('settings.platform_name_default') }}">
+                            <label class="form-label" for="site_name">@lang('settings.platform_name')</label>
+                            <input type="text" name="site_name" id="site_name" class="form-control" value="{{ $settings['site_name'] ?? __('settings.platform_name_default') }}">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">@lang('settings.support_email')</label>
-                            <input type="email" name="support_email" class="form-control" value="{{ $settings['support_email'] ?? 'support@daway.com' }}">
+                            <label class="form-label" for="support_email">@lang('settings.support_email')</label>
+                            <input type="email" name="support_email" id="support_email" class="form-control" value="{{ $settings['support_email'] ?? 'support@daway.com' }}">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">@lang('settings.contact_whatsapp')</label>
-                            <input type="text" name="support_phone" class="form-control" value="{{ $settings['support_phone'] ?? '+970 599 000 000' }}">
+                            <label class="form-label" for="support_phone">@lang('settings.contact_whatsapp')</label>
+                            <input type="text" name="support_phone" id="support_phone" class="form-control" value="{{ $settings['support_phone'] ?? '+970 599 000 000' }}">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">@lang('settings.default_language')</label>
-                            <select name="default_language" class="form-control">
+                            <label class="form-label" for="default_language">@lang('settings.default_language')</label>
+                            <select name="default_language" id="default_language" class="form-control">
                                 <option value="ar" {{ ($settings['default_language'] ?? 'ar') == 'ar' ? 'selected' : '' }}>@lang('settings.lang_ar')</option>
                                 <option value="en" {{ ($settings['default_language'] ?? '') == 'en' ? 'selected' : '' }}>@lang('settings.lang_en')</option>
                             </select>
                         </div>
                         <div class="form-group full-width">
-                            <label class="form-label">@lang('settings.short_description')</label>
-                            <textarea name="site_description" class="form-control" rows="3">{{ $settings['site_description'] ?? __('settings.short_description_default') }}</textarea>
+                            <label class="form-label" for="site_description">@lang('settings.short_description')</label>
+                            <textarea name="site_description" id="site_description" class="form-control" rows="3">{{ $settings['site_description'] ?? __('settings.short_description_default') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -71,12 +71,12 @@
 
                     <div class="form-grid" style="margin-bottom: 20px;">
                         <div class="form-group">
-                            <label class="form-label">@lang('settings.max_search_radius')</label>
-                            <input type="number" name="max_search_radius" class="form-control" value="{{ $settings['max_search_radius'] ?? 15 }}">
+                            <label class="form-label" for="max_search_radius">@lang('settings.max_search_radius')</label>
+                            <input type="number" name="max_search_radius" id="max_search_radius" class="form-control" value="{{ $settings['max_search_radius'] ?? 15 }}">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">@lang('settings.max_medicine_results')</label>
-                            <input type="number" name="search_limit" class="form-control" value="{{ $settings['search_limit'] ?? 50 }}">
+                            <label class="form-label" for="search_limit">@lang('settings.max_medicine_results')</label>
+                            <input type="number" name="search_limit" id="search_limit" class="form-control" value="{{ $settings['search_limit'] ?? 50 }}">
                         </div>
                     </div>
 
@@ -159,8 +159,8 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">@lang('settings.session_timeout')</label>
-                            <input type="number" name="session_timeout" class="form-control" value="{{ $settings['session_timeout'] ?? 120 }}">
+                            <label class="form-label" for="session_timeout">@lang('settings.session_timeout')</label>
+                            <input type="number" name="session_timeout" id="session_timeout" class="form-control" value="{{ $settings['session_timeout'] ?? 120 }}">
                         </div>
                         <div class="form-group">
                             <label class="form-label">@lang('settings.next_backup')</label>

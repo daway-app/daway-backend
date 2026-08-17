@@ -55,7 +55,7 @@
     </div>
 </div>
 
-<div class="profile-modal-overlay" id="profileModal">
+<div class="profile-modal-overlay" id="profileModal" role="dialog" aria-modal="true" aria-label="@lang('layout.edit_profile_modal_title')">
     <div class="profile-modal-card">
         <div class="profile-modal-header">
             <h3>@lang('layout.edit_profile_modal_title')</h3>
@@ -89,7 +89,7 @@
     </div>
 </div>
 
-<div class="avatar-preview-overlay" id="avatarPreviewModal">
+<div class="avatar-preview-overlay" id="avatarPreviewModal" role="dialog" aria-modal="true" aria-label="@lang('layout.picture_preview_title')">
     <div class="avatar-preview-card">
         <div class="avatar-preview-head">
             <h3>@lang('layout.picture_preview_title')</h3>
@@ -467,13 +467,25 @@
             }
 
 
-            notificationItem.innerHTML = `
-                <div class="notification-icon ${iconClass}">${iconSvg}</div>
-                <div class="notification-content">
-                    <p class="notification-title">${notification.message}</p>
-                    <p class="notification-time">${formatTimeAgo(notification.created_at)}</p>
-                </div>
-            `;
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'notification-icon ' + iconClass;
+            iconDiv.innerHTML = iconSvg;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'notification-content';
+
+            const titleP = document.createElement('p');
+            titleP.className = 'notification-title';
+            titleP.textContent = notification.message;
+
+            const timeP = document.createElement('p');
+            timeP.className = 'notification-time';
+            timeP.textContent = formatTimeAgo(notification.created_at);
+
+            contentDiv.appendChild(titleP);
+            contentDiv.appendChild(timeP);
+            notificationItem.appendChild(iconDiv);
+            notificationItem.appendChild(contentDiv);
             // Mark as read when clicked, then redirect
             notificationItem.addEventListener('click', async (e) => {
                 e.preventDefault(); // Prevent default link behavior for now

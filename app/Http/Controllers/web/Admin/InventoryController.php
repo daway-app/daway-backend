@@ -5,6 +5,7 @@ namespace App\Http\Controllers\web\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
 use App\Models\PharmacyMedicine;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 
 class InventoryController extends Controller
@@ -62,7 +63,7 @@ class InventoryController extends Controller
             return (object) $row;
         }, array_slice($data['rows'], ($page - 1) * $perPage, $perPage));
 
-        $medicines = new \Illuminate\Pagination\LengthAwarePaginator($items, $data['total'], $perPage, $page, [
+        $medicines = new LengthAwarePaginator($items, $data['total'], $perPage, $page, [
             'path' => request()->url(),
             'query' => request()->query(),
         ]);

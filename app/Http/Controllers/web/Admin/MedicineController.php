@@ -1,11 +1,13 @@
 <?php
 
 namespace App\Http\Controllers\web\Admin;
+
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redirect;
 
 class MedicineController extends Controller
 {
@@ -66,7 +68,7 @@ class MedicineController extends Controller
             return (object) $row;
         }, array_slice($rows, ($page - 1) * $perPage, $perPage));
 
-        $medicines = new \Illuminate\Pagination\LengthAwarePaginator($items, $data['total'], $perPage, $page, [
+        $medicines = new LengthAwarePaginator($items, $data['total'], $perPage, $page, [
             'path' => request()->url(),
             'query' => request()->query(),
         ]);
@@ -87,6 +89,7 @@ class MedicineController extends Controller
     public function create()
     {
         $allMedicines = Medicine::all();
+
         return view('medicines.create', compact('allMedicines'));
     }
 
@@ -114,6 +117,7 @@ class MedicineController extends Controller
         }
 
         $this->clearMedicinesIndexCache();
+
         return Redirect::route('medicines.index')->with('success', 'تم إضافة الدواء بنجاح!');
     }
 
@@ -123,6 +127,7 @@ class MedicineController extends Controller
     public function show(string $id)
     {
         $medicine = Medicine::with(['alternatives', 'pharmacyMedicines.pharmacy'])->findOrFail($id);
+
         return view('medicines.show', compact('medicine'));
     }
 
@@ -133,6 +138,7 @@ class MedicineController extends Controller
     {
         $medicine = Medicine::with('alternatives')->findOrFail($id);
         $allMedicines = Medicine::where('id', '!=', $id)->get();
+
         return view('medicines.edit', compact('medicine', 'allMedicines'));
     }
 
@@ -146,6 +152,7 @@ class MedicineController extends Controller
         $request->validate([
             'name_ar' => 'required|string|max:255',
             'active_ingredient' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'alternatives' => 'nullable|array',
             'alternatives.*' => 'exists:medicines,id',
         ]);
@@ -153,6 +160,7 @@ class MedicineController extends Controller
         $medicine->update([
             'trade_name' => $request->name_ar,
             'active_ingredient' => $request->active_ingredient,
+            'description' => $request->description,
         ]);
 
         if ($request->has('alternatives')) {
@@ -162,6 +170,7 @@ class MedicineController extends Controller
         }
 
         $this->clearMedicinesIndexCache();
+
         return Redirect::route('medicines.index')->with('success', 'تم تحديث الدواء بنجاح!');
     }
 
@@ -172,6 +181,7 @@ class MedicineController extends Controller
     {
         Medicine::destroy($id);
         $this->clearMedicinesIndexCache();
+
         return Redirect::route('medicines.index')->with('success', 'تم حذف الدواء بنجاح!');
     }
 }

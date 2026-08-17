@@ -90,7 +90,13 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'name' => $user->name,
-            'avatar' => $user->avatar ? asset('uploads/' . $user->avatar) : null,
+            // الصور الجديدة تُخزن على قرص public (storage/app/public/avatars) — نبني الرابط منها،
+            // وإلا نرجع لرابط uploads القديم للملفات السابقة
+            'avatar' => $user->avatar
+                ? (Storage::disk('public')->exists($user->avatar)
+                    ? Storage::disk('public')->url($user->avatar)
+                    : asset('uploads/'.$user->avatar))
+                : null,
         ]);
     }
 }

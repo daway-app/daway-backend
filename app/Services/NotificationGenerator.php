@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Medicine;
 use App\Models\Notification;
+use App\Models\PharmacyMedicine;
 use App\Models\User;
 
 /**
@@ -18,7 +18,7 @@ class NotificationGenerator
      * ينشئ إشعارات نقص المخزون للمستخدم المحدد.
      *
      * - أصحاب الصيدليات: أدوية صيدليتهم (pharmacy_medicines.quantity)
-     * - باقي المستخدمين (الأدمن وغيره): كل الأدوية (medicines.stock)
+     * - باقي المستخدمين (الأدمن وغيره): كل الأدوية ذات الكميات المنخفضة عبر الصيدليات (pharmacy_medicines.quantity)
      *
      * لا يكرر الإشعار لنفس المستخدم + الدواء + النوع.
      *
@@ -55,16 +55,29 @@ class NotificationGenerator
             }
         }
 
-        $lowStockMedicines = Medicine::where('stock', '<=', self::LOW_STOCK_THRESHOLD)->get();
+        // الأدوية ذات الكميات المنخفضة إجمالاً عبر الصيدليات (بدل medicines.stock الميت)
+        // نأخذ أعلى كمية متبقية لكل دواء كرقم عرض، ونمرر كل دواء مرة واحدة فقط
+        $lowStockMedicines = PharmacyMedicine::query()
+            ->select('medicine_id')
+            ->selectRaw('MAX(quantity) as max_quantity')
+            ->with('medicine')
+            ->where('quantity', '<=', self::LOW_STOCK_THRESHOLD)
+            ->groupBy('medicine_id')
+            ->get();
 
-        foreach ($lowStockMedicines as $medicine) {
+        foreach ($lowStockMedicines as $row) {
+            $medicine = $row->medicine;
+            if (! $medicine) {
+                continue;
+            }
+
             if (self::existsFor($user, $medicine->id)) {
                 continue;
             }
 
             self::create($user, $medicine->id, __('layout.notif_low_stock', [
                 'name' => $medicine->trade_name,
-                'count' => $medicine->stock,
+                'count' => $row->max_quantity,
             ]));
 
             $created = true;

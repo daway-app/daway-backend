@@ -9,6 +9,7 @@ use App\Models\PharmacyHour;
 use App\Support\Image;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PharmacyProfileController extends Controller
 {
@@ -60,35 +61,40 @@ class PharmacyProfileController extends Controller
 
         $data = $request->validated();
 
-        if (array_key_exists('logo_url', $data)) {
-            $data['logo'] = $data['logo_url'];
-            unset($data['logo_url']);
-        }
+        // تحديث المستخدم + الصيدلية + ساعات العمل في معاملة واحدة
+        DB::transaction(function () use ($data, $user, $pharmacy) {
+            if (array_key_exists('logo_url', $data)) {
+                $data['logo'] = $data['logo_url'];
+                unset($data['logo_url']);
+            }
 
-        if (array_key_exists('name', $data)) {
-            $data['pharmacy_name'] = $data['name'];
-            unset($data['name']);
-            $user->name = $data['pharmacy_name'];
-        }
+            if (array_key_exists('name', $data)) {
+                $data['pharmacy_name'] = $data['name'];
+                unset($data['name']);
+                $user->name = $data['pharmacy_name'];
+            }
 
-        if (array_key_exists('phone', $data)) {
-            $user->phone = $data['phone'];
-        }
+            if (array_key_exists('phone', $data)) {
+                $user->phone = $data['phone'];
+                // مزامنة الرقم مع سطر الصيدلية لأن الرد الرسمي يقرأ pharmacies.phone_number
+                $pharmacy->phone_number = $data['phone'];
+            }
 
-        if ($user->isDirty(['name', 'phone'])) {
-            $user->save();
-        }
+            if ($user->isDirty(['name', 'phone'])) {
+                $user->save();
+            }
 
-        $workingHours = $data['working_hours'] ?? null;
-        unset($data['working_hours']);
+            $workingHours = $data['working_hours'] ?? null;
+            unset($data['working_hours']);
 
-        if (! empty($data)) {
-            $pharmacy->update($data);
-        }
+            if (! empty($data)) {
+                $pharmacy->update($data);
+            }
 
-        if (is_array($workingHours)) {
-            $this->replaceWorkingHours($pharmacy, $workingHours);
-        }
+            if (is_array($workingHours)) {
+                $this->replaceWorkingHours($pharmacy, $workingHours);
+            }
+        });
 
         return response()->json([
             'success' => true,

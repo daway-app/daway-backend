@@ -148,7 +148,7 @@
     </div>
 </aside>
 
-<div class="confirm-modal-overlay" id="logoutConfirmModal">
+<div class="confirm-modal-overlay" id="logoutConfirmModal" role="dialog" aria-modal="true" aria-label="@lang('layout.logout_confirm_title')">
     <div class="confirm-modal-card">
         <div class="confirm-modal-icon">!</div>
         <h3>@lang('layout.logout_confirm_title')</h3>

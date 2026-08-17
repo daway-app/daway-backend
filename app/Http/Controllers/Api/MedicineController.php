@@ -37,6 +37,8 @@ class MedicineController extends Controller
         $items = $query->orderBy('trade_name')->paginate($perPage);
 
         return response()->json([
+            'success' => true,
+            'message' => 'تم جلب الأدوية بنجاح',
             'data' => collect($items->items())->map(fn (MohMedicine $m) => $this->mohPayload($m)),
             'pagination' => [
                 'total' => $items->total(),
@@ -54,7 +56,11 @@ class MedicineController extends Controller
     {
         $q = trim((string) $request->get('q', ''));
         if (mb_strlen($q) < 2) {
-            return response()->json(['data' => []]);
+            return response()->json([
+                'success' => true,
+                'message' => 'تم البحث بنجاح',
+                'data' => [],
+            ]);
         }
 
         SearchLog::track($q, 'api');
@@ -70,6 +76,8 @@ class MedicineController extends Controller
             ->get();
 
         return response()->json([
+            'success' => true,
+            'message' => 'تم البحث بنجاح',
             'data' => [
                 'medicines' => $medicines->map(fn (Medicine $m) => $this->medicinePayload($m)),
                 'moh_catalog' => $mohMedicines->map(fn (MohMedicine $m) => $this->mohPayload($m)),
@@ -85,6 +93,8 @@ class MedicineController extends Controller
         $medicine = Medicine::with('pharmacyMedicines.pharmacy')->findOrFail($id);
 
         return response()->json([
+            'success' => true,
+            'message' => 'تم جلب الدواء بنجاح',
             'data' => $this->medicinePayload($medicine, true),
         ]);
     }
@@ -100,6 +110,8 @@ class MedicineController extends Controller
             ->get();
 
         return response()->json([
+            'success' => true,
+            'message' => 'تم جلب الأدوية بنجاح',
             'data' => $medicines->map(fn (Medicine $m) => $this->medicinePayload($m)),
         ]);
     }
@@ -123,7 +135,11 @@ class MedicineController extends Controller
                 'quantity' => $pm->quantity,
             ]);
 
-        return response()->json(['data' => $available]);
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب الصيدليات المتوفرة بنجاح',
+            'data' => $available,
+        ]);
     }
 
     private function mohPayload(MohMedicine $m): array

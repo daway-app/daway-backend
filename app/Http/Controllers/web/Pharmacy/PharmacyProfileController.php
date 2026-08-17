@@ -1,13 +1,14 @@
 <?php
 
 namespace App\Http\Controllers\web\Pharmacy;
+
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
 use App\Models\PharmacyHour;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class PharmacyProfileController extends Controller
 {
@@ -19,6 +20,7 @@ class PharmacyProfileController extends Controller
             if (Auth::check() && Auth::user()->role === 'pharmacy') {
                 return $next($request);
             }
+
             return redirect('/')->with('error', __('pharmacy.access_denied'));
         });
     }
@@ -26,7 +28,7 @@ class PharmacyProfileController extends Controller
     /**
      * Show the form for editing the authenticated pharmacy's profile.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function edit()
     {
@@ -53,8 +55,7 @@ class PharmacyProfileController extends Controller
     /**
      * Update the authenticated pharmacy's profile in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function update(Request $request)
     {

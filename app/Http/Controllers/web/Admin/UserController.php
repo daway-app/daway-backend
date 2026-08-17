@@ -120,6 +120,7 @@ class UserController extends Controller
         $user->password = Hash::make($request->password);
         $user->role = $request->role;
         $user->save();
+        $user->syncRoles([$user->role]);
 
         $this->clearUsersIndexCache();
 
@@ -177,6 +178,7 @@ class UserController extends Controller
         $user->role = $request->role;
         $user->is_active = (bool) $request->status;
         $user->save();
+        $user->syncRoles([$user->role]);
 
         $this->clearUsersIndexCache();
 
@@ -188,7 +190,14 @@ class UserController extends Controller
      */
     public function destroy(string $id)
     {
-        User::destroy($id);
+        $user = User::findOrFail($id);
+
+        // منع الأدمن من حذف حساب نفسه
+        if ((int) $user->id === (int) auth()->id()) {
+            return redirect()->back()->with('error', 'لا يمكنك حذف حسابك الخاص!');
+        }
+
+        $user->delete();
         $this->clearUsersIndexCache();
 
         return Redirect::route('users.index')->with('success', 'تم حذف المستخدم بنجاح!');

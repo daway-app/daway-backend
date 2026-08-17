@@ -1,11 +1,13 @@
 <?php
 
 namespace App\Http\Controllers\web\Pharmacy;
+
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine; // To get pharmacy's own medicines
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -19,6 +21,7 @@ class PharmacyAlternativeController extends Controller
             if (Auth::check() && Auth::user()->role === 'pharmacy') {
                 return $next($request);
             }
+
             return redirect('/')->with('error', __('pharmacy.access_denied'));
         });
     }
@@ -26,7 +29,7 @@ class PharmacyAlternativeController extends Controller
     /**
      * Display a listing of the pharmacy's medicines with their alternatives.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function index()
     {
@@ -35,8 +38,8 @@ class PharmacyAlternativeController extends Controller
 
         // Get all medicines that this pharmacy offers
         $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-                                            ->with(['medicine', 'medicine.alternatives']) // Eager load Medicine and its alternatives
-                                            ->paginate(10);
+            ->with(['medicine', 'medicine.alternatives']) // Eager load Medicine and its alternatives
+            ->paginate(10);
 
         return view('pharmacy.alternatives.index', compact('pharmacyMedicines', 'pharmacy'));
     }
@@ -44,18 +47,18 @@ class PharmacyAlternativeController extends Controller
     /**
      * Show the form for adding an alternative to a specific medicine.
      *
-     * @param  \App\Models\PharmacyMedicine  $pharmacyMedicine  The medicine in the pharmacy's inventory
-     * @return \Illuminate\Http\Response
+     * @param  PharmacyMedicine  $pharmacyMedicine  The medicine in the pharmacy's inventory
+     * @return Response
      */
-    public function create(PharmacyMedicine $pharmacyMedicine = null)
+    public function create(?PharmacyMedicine $pharmacyMedicine = null)
     {
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
 
         // Get all medicines in the pharmacy's inventory
         $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-                                            ->with('medicine')
-                                            ->get();
+            ->with('medicine')
+            ->get();
 
         // Get all general medicines (potential alternatives)
         $allMedicines = Medicine::all();
@@ -66,14 +69,14 @@ class PharmacyAlternativeController extends Controller
     /**
      * Store a newly created alternative in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function store(Request $request)
     {
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
 
+        // التحقق من الدواء الأساسي أولاً (يجب أن يكون من مخزون هذه الصيدلية)
         $request->validate([
             'base_medicine_id' => [
                 'required',
@@ -82,21 +85,26 @@ class PharmacyAlternativeController extends Controller
                     return $query->where('pharmacy_id', $pharmacy->id);
                 }),
             ],
-            'alternative_medicine_id' => [
-                'required',
-                'exists:medicines,id',
-                // Ensure alternative is not the same as the base medicine
-                Rule::notIn([$request->base_medicine_id]), // This checks against pharmacy_medicine_id, not medicine_id
-            ],
         ]);
 
         $basePharmacyMedicine = PharmacyMedicine::findOrFail($request->base_medicine_id);
         $baseMedicine = $basePharmacyMedicine->medicine; // Get the actual Medicine model
 
+        // التحقق من البديل: يجب أن يكون دواءً فعلياً وليس الدواء الأساسي نفسه
+        // (المقارنة تتم مع medicines.id وليس pharmacy_medicines.id لأن المسافتين مختلفتان)
+        $request->validate([
+            'alternative_medicine_id' => [
+                'required',
+                'exists:medicines,id',
+                Rule::notIn([$baseMedicine->id]),
+            ],
+        ]);
+
         // Attach the alternative using the many-to-many relationship
         // Check if the alternative is already attached to prevent duplicates
-        if (!$baseMedicine->alternatives()->where('alternative_id', $request->alternative_medicine_id)->exists()) {
+        if (! $baseMedicine->alternatives()->where('alternative_id', $request->alternative_medicine_id)->exists()) {
             $baseMedicine->alternatives()->attach($request->alternative_medicine_id);
+
             return redirect()->route('pharmacy.alternatives.index')->with('success', __('pharmacy.alternatives.create.success'));
         } else {
             return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.create.already_exists'));
@@ -104,40 +112,11 @@ class PharmacyAlternativeController extends Controller
     }
 
     /**
-     * Show the form for editing a specific alternative.
-     * This might be complex depending on how alternatives are stored.
-     *
-     * @param  int  $id  ID of the alternative relationship (e.g., pivot table ID)
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        // This method needs to be implemented based on your alternative storage structure.
-        // For example, if you have a MedicineAlternative model, you'd find it here.
-        // $alternative = MedicineAlternative::findOrFail($id);
-        // return view('pharmacy.alternatives.edit', compact('alternative'));
-        return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.edit_unavailable'));
-    }
-
-    /**
-     * Update the specified alternative in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id  ID of the alternative relationship
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        // This method needs to be implemented based on your alternative storage structure.
-        return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.edit_unavailable'));
-    }
-
-    /**
      * Remove a specific alternative from a pharmacy's medicine.
      *
-     * @param  \App\Models\PharmacyMedicine  $pharmacyMedicine  The medicine in the pharmacy's inventory
-     * @param  \App\Models\Medicine  $alternative  The alternative medicine to detach
-     * @return \Illuminate\Http\Response
+     * @param  PharmacyMedicine  $pharmacyMedicine  The medicine in the pharmacy's inventory
+     * @param  Medicine  $alternative  The alternative medicine to detach
+     * @return Response
      */
     public function destroy(PharmacyMedicine $pharmacyMedicine, Medicine $alternative)
     {
@@ -152,7 +131,7 @@ class PharmacyAlternativeController extends Controller
         $baseMedicine = $pharmacyMedicine->medicine;
 
         // Ensure the alternative link actually exists before detaching
-        if (!$baseMedicine->alternatives()->where('alternative_id', $alternative->id)->exists()) {
+        if (! $baseMedicine->alternatives()->where('alternative_id', $alternative->id)->exists()) {
             return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.destroy.not_found'));
         }
 

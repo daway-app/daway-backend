@@ -34,23 +34,23 @@
                     <div class="form-grid">
 
                         <div class="form-group">
-                            <label>الاسم الكامل <span>*</span></label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name') }}" placeholder="أدخل الاسم الكامل" required>
+                            <label for="name">الاسم الكامل <span>*</span></label>
+                            <input type="text" name="name" id="name" class="form-control" value="{{ old('name') }}" placeholder="أدخل الاسم الكامل" required>
                         </div>
 
                         <div class="form-group">
-                            <label>رقم الجوال <span>*</span></label>
+                            <label for="phoneInput">رقم الجوال <span>*</span></label>
                             <input type="text" name="phone" id="phoneInput" class="form-control" value="{{ old('phone') }}" placeholder="059-XXX-XXXX" pattern="05[0-9]{8}" title="النمط المطلوب: 059XXXXXXXX — 10 أرقام تبدأ بـ 05" required style="direction: ltr; text-align: right;">
                         </div>
 
                         <div class="form-group">
-                            <label>البريد الإلكتروني</label>
-                            <input type="email" name="email" class="form-control" value="{{ old('email') }}" placeholder="name@example.com">
+                            <label for="email">البريد الإلكتروني</label>
+                            <input type="email" name="email" id="email" class="form-control" value="{{ old('email') }}" placeholder="name@example.com">
                         </div>
 
                         <div class="form-group">
-                            <label>الدور / الصلاحية <span>*</span></label>
-                            <select name="role" class="form-control" required>
+                            <label for="role">الدور / الصلاحية <span>*</span></label>
+                            <select name="role" id="role" class="form-control" required>
                                 <option value="" disabled {{ old('role') ? '' : 'selected' }}>اختر الصلاحية</option>
                                 <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>مسؤول نظام (أدمن)</option>
                                 <option value="pharmacy" {{ old('role') == 'pharmacy' ? 'selected' : '' }}>صيدلية</option>
@@ -59,7 +59,7 @@
                         </div>
 
                         <div class="form-group full-width">
-                            <label>كلمة المرور <span>*</span></label>
+                            <label for="password">كلمة المرور <span>*</span></label>
                             <div class="password-container">
                                 <input type="password" name="password" id="password" class="form-control" placeholder="••••••••" required>
                                 <button type="button" class="toggle-password" id="togglePasswordBtn" title="إظهار/إخفاء كلمة المرور">

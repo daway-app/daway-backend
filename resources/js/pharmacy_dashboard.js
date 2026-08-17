@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
 
                 /* =====================================================
-                   THEME
+                   THEME (unified with the app: localStorage 'theme',
+                   html/body .dark-mode + html[data-theme] + .dark-dashboard
+                   for the dashboard-specific CSS variables)
                 ===================================================== */
 
                 const themeToggle =
@@ -13,74 +15,45 @@ document.addEventListener('DOMContentLoaded', function () {
                 const themeText =
                     themeToggle?.querySelector('.theme-toggle-text');
 
-
-                const savedTheme =
-                    localStorage.getItem('pharmacy-dashboard-theme');
-
-
-                if (savedTheme === 'dark') {
-
-                    document.documentElement.classList.add(
-                        'dark-dashboard'
-                    );
-
-                    if (themeIcon) {
-
-                        themeIcon.className =
-                            'fas fa-sun';
-
-                    }
-
-                    if (themeText) {
-
-                        themeText.textContent =
-                            'الوضع النهاري';
-
-                    }
-
+                function isDarkMode() {
+                    return document.documentElement.classList.contains('dark-mode');
                 }
 
-
-                themeToggle?.addEventListener(
-                    'click',
-                    function () {
-
-                        const isDark =
-                            document.documentElement.classList.toggle(
-                                'dark-dashboard'
-                            );
-
-
-                        localStorage.setItem(
-                            'pharmacy-dashboard-theme',
-                            isDark ? 'dark' : 'light'
-                        );
-
-
-                        if (themeIcon) {
-
-                            themeIcon.className =
-                                isDark
-                                    ? 'fas fa-sun'
-                                    : 'fas fa-moon';
-
-                        }
-
-
-                        if (themeText) {
-
-                            themeText.textContent =
-                                isDark
-                                    ? 'الوضع النهاري'
-                                    : 'الوضع الليلي';
-
-                        }
-
-
-                        updateChartTheme();
-
+                function applyTheme(dark) {
+                    document.documentElement.classList.toggle('dark-mode', dark);
+                    document.body.classList.toggle('dark-mode', dark);
+                    document.documentElement.classList.toggle('dark-dashboard', dark);
+                    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+                    if (themeIcon) {
+                        themeIcon.className = dark ? 'fas fa-sun' : 'fas fa-moon';
                     }
-                );
+                    if (themeText) {
+                        themeText.textContent = dark ? 'الوضع النهاري' : 'الوضع الليلي';
+                    }
+                }
+
+                if (localStorage.getItem('theme') === 'dark') {
+                    applyTheme(true);
+                }
+
+                themeToggle?.addEventListener('click', function () {
+                    const dark = !isDarkMode();
+                    applyTheme(dark);
+                    localStorage.setItem('theme', dark ? 'dark' : 'light');
+                    updateChartTheme();
+                });
+
+                new MutationObserver(function () {
+                    const dark = isDarkMode();
+                    document.documentElement.classList.toggle('dark-dashboard', dark);
+                    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+                    if (document.getElementById('pharmacyActivityChart')) {
+                        updateChartTheme();
+                    }
+                }).observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['class'],
+                });
 
 
                 /* =====================================================
@@ -121,12 +94,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     1,
                     'rgba(11,143,172,0)'
                 );
-
-
-                const isDarkMode = () =>
-                    document.documentElement.classList.contains(
-                        'dark-dashboard'
-                    );
 
 
                 const chartData =

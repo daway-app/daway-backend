@@ -30,3 +30,7 @@ daway_backup.sql
 notif-test.js
 oracle_vm_setup.sh
 *.sql
+
+# Junk files
+langPath())
+postman/

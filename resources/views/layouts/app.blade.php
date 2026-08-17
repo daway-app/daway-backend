@@ -16,6 +16,8 @@
     </script>
     <title>{{ __('layout.app_title') }} - @yield('title', __('dashboard.title'))</title>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
     @vite(['resources/css/layout/app_layout.css', 'resources/css/layout/topbar.css'])
 </head>
 <body>
@@ -54,6 +56,12 @@
 
         {{-- المحتوى الرئيسي --}}
         <main class="main-content">
+            @hasSection('breadcrumb')
+                <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                    <a href="{{ route('dashboard') }}">{{ app()->getLocale() === 'ar' ? 'الرئيسية' : 'Dashboard' }}</a>
+                    @yield('breadcrumb')
+                </nav>
+            @endif
             @yield('content')
         </main>
     </div>
@@ -85,5 +93,6 @@
     })();
 </script>
 @yield('scripts')
+@stack('scripts')
 </body>
 </html>
