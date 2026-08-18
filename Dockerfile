@@ -71,5 +71,6 @@ USER appuser
 EXPOSE 10000
 
 # Cache config/routes at startup (env vars are already available at runtime),
-# run migrations, keep the app warm (free tier sleep prevention) and start Laravel
-CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan migrate --force && { while true; do curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/api/medicines; sleep 240; done & } && exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+# run migrations, keep the app AND the Aiven DB awake (free tiers sleep after inactivity)
+# and start Laravel
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan migrate --force && { while true; do curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/api/medicines; php artisan migrate:status > /dev/null 2>&1; sleep 240; done & } && exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]

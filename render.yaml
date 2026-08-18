@@ -5,7 +5,7 @@ services:
     plan: free
     buildCommand: composer install --no-dev
     startCommand: php artisan serve --host=0.0.0.0 --port=10000
-    healthCheckPath: /up
+    healthCheckPath: /healthz
     envVars:
       - key: APP_ENV
         value: production
@@ -23,6 +23,7 @@ services:
       - key: DB_USERNAME
         value: avnadmin
       # كلمة مرور القاعدة تُضاف من Render Dashboard (Environment) — لا تُرفع للمستودع
+      # مسار الشهادة لـ php runtime؛ في Docker runtime (Dockerfile) المسار هو /app/database/certs/ca.pem
       - key: MYSQL_ATTR_SSL_CA
         value: /opt/render/project/src/database/certs/ca.pem
       - key: DB_POOL

@@ -64,7 +64,8 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::ATTR_TIMEOUT => 10,
                 PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false),
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // شهادة SSL تُستخدم فقط إذا كان الملف موجوداً فعلاً — مسار خاطئ (Docker vs php runtime) لا يكسر الاتصال
+                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA') && is_file(env('MYSQL_ATTR_SSL_CA')) ? env('MYSQL_ATTR_SSL_CA') : null,
             ]) : [],
         ],
 
