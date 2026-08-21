@@ -118,6 +118,9 @@ class MedicineController extends Controller
 
         $this->clearMedicinesIndexCache();
 
+        Cache::add('med_medicines_version', 1, 3600 * 24 * 30);
+        Cache::increment('med_medicines_version');
+
         return Redirect::route('medicines.index')->with('success', 'تم إضافة الدواء بنجاح!');
     }
 
@@ -171,6 +174,9 @@ class MedicineController extends Controller
 
         $this->clearMedicinesIndexCache();
 
+        Cache::add('med_medicines_version', 1, 3600 * 24 * 30);
+        Cache::increment('med_medicines_version');
+
         return Redirect::route('medicines.index')->with('success', 'تم تحديث الدواء بنجاح!');
     }
 
@@ -181,6 +187,9 @@ class MedicineController extends Controller
     {
         Medicine::destroy($id);
         $this->clearMedicinesIndexCache();
+
+        Cache::add('med_medicines_version', 1, 3600 * 24 * 30);
+        Cache::increment('med_medicines_version');
 
         return Redirect::route('medicines.index')->with('success', 'تم حذف الدواء بنجاح!');
     }

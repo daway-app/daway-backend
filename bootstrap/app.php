@@ -69,7 +69,7 @@ $app->booted(function () {
         return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
     });
 
-    RateLimiter::for('otp', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+    RateLimiter::for('otp', fn (Request $request) => Limit::perMinute(5)->by($request->ip().'|'.$request->string('phone')));
 
     RateLimiter::for('otp-verify', fn (Request $request) => Limit::perMinutes(15, 5)->by($request->ip().'|'.$request->string('phone')));
 

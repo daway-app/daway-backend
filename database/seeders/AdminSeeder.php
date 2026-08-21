@@ -11,7 +11,7 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         $admin = User::unguarded(function () {
-            return User::updateOrCreate(
+            return User::firstOrCreate(
                 ['email' => 'admin@daway.com'],
                 [
                     'name' => 'Admin',

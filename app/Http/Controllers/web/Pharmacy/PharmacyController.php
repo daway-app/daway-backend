@@ -89,12 +89,12 @@ class PharmacyController extends Controller
                 'name' => $request->pharmacy_name, // Use pharmacy name as user name
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                // تفعيل البريد فوراً: حساب يُنشأ من لوحة التحكم موثوق،
-                // وبدونه لا يستطيع صاحبه تسجيل الدخول عبر الـ API (فحص email_verified_at)
-                'email_verified_at' => now(),
             ]);
             $user->role = 'pharmacy'; // Assign 'pharmacy' role
             $user->is_active = true;
+            // تفعيل البريد فوراً: حساب يُنشأ من لوحة التحكم موثوق،
+            // وبدونه لا يستطيع صاحبه تسجيل الدخول عبر الـ API (فحص email_verified_at)
+            $user->email_verified_at = now();
             $user->save();
             $user->syncRoles(['pharmacy']);
 

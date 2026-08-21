@@ -18,13 +18,13 @@ class PharmacySeeder extends Seeder
                 'name' => 'صيدلية الأمل',
                 'password' => Hash::make('password'),
                 'phone' => '+970591234567',
-                'phone_verified_at' => now(),
-                'email_verified_at' => now(),
             ]
         );
 
         $pharmacyUser->is_active = true;
         $pharmacyUser->role = 'pharmacy';
+        $pharmacyUser->email_verified_at = now();
+        $pharmacyUser->phone_verified_at = now();
         $pharmacyUser->save();
         $pharmacyUser->syncRoles(['pharmacy']);
 
@@ -51,13 +51,13 @@ class PharmacySeeder extends Seeder
                 'name' => 'صيدلية الشفاء',
                 'password' => Hash::make('password'),
                 'phone' => '+970598765432',
-                'phone_verified_at' => now(),
-                'email_verified_at' => now(),
             ]
         );
 
         $pharmacyUser2->is_active = true;
         $pharmacyUser2->role = 'pharmacy';
+        $pharmacyUser2->email_verified_at = now();
+        $pharmacyUser2->phone_verified_at = now();
         $pharmacyUser2->save();
         $pharmacyUser2->syncRoles(['pharmacy']);
 

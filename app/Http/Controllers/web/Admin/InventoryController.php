@@ -24,7 +24,7 @@ class InventoryController extends Controller
                     return [
                         'id' => $m->id,
                         'trade_name' => $m->trade_name,
-                        'scientific_name' => $m->scientific_name,
+                        'scientific_name' => $m->active_ingredient ?? null,
                         'pharmacy_medicines_sum_quantity' => $m->pharmacy_medicines_sum_quantity ?? 0,
                         'pharmacy_medicines_count' => $m->pharmacy_medicines_count ?? 0,
                     ];

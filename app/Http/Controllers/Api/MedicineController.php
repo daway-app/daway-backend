@@ -7,8 +7,11 @@ use App\Models\Medicine;
 use App\Models\MohMedicine;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class MedicineController extends Controller
 {
@@ -17,6 +20,8 @@ class MedicineController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $catVer = $this->catalogVersion();
+
         $query = MohMedicine::query();
 
         $q = trim((string) $request->get('q', ''));
@@ -24,17 +29,17 @@ class MedicineController extends Controller
             SearchLog::track($q, 'api');
 
             $query->where(function ($builder) use ($q) {
-                $builder->where('trade_name', 'like', "%{$q}%")
-                    ->orWhere('generic_name', 'like', "%{$q}%")
-                    ->orWhere('manufacturer', 'like', "%{$q}%")
-                    ->orWhere('company', 'like', "%{$q}%");
+                $this->fulltextOrLike($builder, ['trade_name', 'generic_name', 'manufacturer', 'company'], $q);
             });
         }
 
         $validated = $request->validate(['per_page' => 'nullable|integer|min:1|max:100']);
         $perPage = (int) ($validated['per_page'] ?? 20);
+        $page = (int) $request->get('page', 1);
 
-        $items = $query->orderBy('trade_name')->paginate($perPage);
+        $items = Cache::remember("api_meds_idx|v{$catVer}|{$q}|{$page}|{$perPage}", 900, function () use ($query, $perPage) {
+            return $query->orderBy('trade_name')->paginate($perPage);
+        });
 
         return response()->json([
             'success' => true,
@@ -65,22 +70,30 @@ class MedicineController extends Controller
 
         SearchLog::track($q, 'api');
 
-        $medicines = Medicine::where('trade_name', 'like', "%{$q}%")
-            ->orWhere('active_ingredient', 'like', "%{$q}%")
-            ->limit(10)
-            ->get();
+        $medVer = $this->medicinesVersion();
+        $catVer = $this->catalogVersion();
 
-        $mohMedicines = MohMedicine::where('trade_name', 'like', "%{$q}%")
-            ->orWhere('generic_name', 'like', "%{$q}%")
-            ->limit(20)
-            ->get();
+        $result = Cache::remember("api_meds_search|v{$medVer}|v{$catVer}|{$q}", 900, function () use ($q) {
+            $medicineQuery = Medicine::query();
+            $this->fulltextOrLike($medicineQuery, ['trade_name', 'active_ingredient'], $q);
+            $medicines = $medicineQuery->limit(10)->get();
+
+            $mohQuery = MohMedicine::query();
+            $this->fulltextOrLike($mohQuery, ['trade_name', 'generic_name'], $q);
+            $mohMedicines = $mohQuery->limit(20)->get();
+
+            return [
+                'medicines' => $medicines->map(fn (Medicine $m) => $this->medicinePayload($m))->all(),
+                'moh_catalog' => $mohMedicines->map(fn (MohMedicine $m) => $this->mohPayload($m))->all(),
+            ];
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'تم البحث بنجاح',
             'data' => [
-                'medicines' => $medicines->map(fn (Medicine $m) => $this->medicinePayload($m)),
-                'moh_catalog' => $mohMedicines->map(fn (MohMedicine $m) => $this->mohPayload($m)),
+                'medicines' => $result['medicines'],
+                'moh_catalog' => $result['moh_catalog'],
             ],
         ]);
     }
@@ -104,10 +117,16 @@ class MedicineController extends Controller
      */
     public function byActiveIngredient(string $ingredient): JsonResponse
     {
-        $medicines = Medicine::where('active_ingredient', 'like', "%{$ingredient}%")
-            ->orderBy('trade_name')
-            ->limit(20)
-            ->get();
+        $medVer = $this->medicinesVersion();
+
+        $medicines = Cache::remember("api_meds_active|v{$medVer}|{$ingredient}", 900, function () use ($ingredient) {
+            $query = Medicine::query();
+            $this->fulltextOrLike($query, ['active_ingredient'], $ingredient);
+
+            return $query->orderBy('trade_name')
+                ->limit(20)
+                ->get();
+        });
 
         return response()->json([
             'success' => true,
@@ -140,6 +159,33 @@ class MedicineController extends Controller
             'message' => 'تم جلب الصيدليات المتوفرة بنجاح',
             'data' => $available,
         ]);
+    }
+
+    private function catalogVersion(): int
+    {
+        return (int) Cache::get('med_catalog_version', 1);
+    }
+
+    private function medicinesVersion(): int
+    {
+        return (int) Cache::get('med_medicines_version', 1);
+    }
+
+    /**
+     * بحث FULLTEXT على MySQL (إن توفرت الفهارس) مع تراجع إلى LIKE على باقي الأنظمة.
+     */
+    private function fulltextOrLike(Builder $query, array $columns, string $value): void
+    {
+        if (DB::connection()->getDriverName() === 'mysql') {
+            $query->whereRaw('MATCH('.implode(',', $columns).') AGAINST (? IN BOOLEAN MODE)', [str_replace(' ', '* ', $value).'*']);
+
+            return;
+        }
+
+        $query->where($columns[0], 'like', "%{$value}%");
+        foreach (array_slice($columns, 1) as $column) {
+            $query->orWhere($column, 'like', "%{$value}%");
+        }
     }
 
     private function mohPayload(MohMedicine $m): array

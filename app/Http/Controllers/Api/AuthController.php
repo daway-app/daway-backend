@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\OtpCode;
 use App\Models\Pharmacy;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
@@ -97,7 +99,7 @@ class AuthController extends Controller
         OtpCode::updateOrCreate(
             ['phone' => $request->phone],
             [
-                'otp' => $otp,
+                'otp' => Hash::make($otp),
                 'expires_at' => now()->addMinutes(10),
             ]
         );
@@ -126,44 +128,61 @@ class AuthController extends Controller
         }
 
         $otpRecord = OtpCode::where('phone', $request->phone)
-            ->where('otp', $request->otp)
             ->where('expires_at', '>', now())
             ->first();
 
-        if (! $otpRecord) {
+        if (! $otpRecord || ! Hash::check($request->otp, $otpRecord->otp)) {
             RateLimiter::hit($limiterKey, 15 * 60);
 
             return response()->json(['message' => 'Invalid or expired OTP'], 400);
         }
 
-        $user = User::where('phone', $request->phone)->first();
+        $isNew = false;
 
-        if (! $user) {
+        $result = DB::transaction(function () use ($request, $otpRecord, &$isNew) {
+            $user = User::where('phone', $request->phone)->first();
 
-            $user = User::create([
-                'name' => 'New User',
-                'email' => null,
-                'phone' => $request->phone,
-                'password' => Hash::make(Str::random(32)),
-            ]);
-            $user->role = 'patient';
-            $user->is_active = true;
-            $user->phone_verified_at = now();
-            $user->save();
-            $user->syncRoles(['patient']);
-        } else {
-            if (! $user->is_active) {
-                return response()->json(['message' => 'Account is inactive'], 403);
+            if (! $user) {
+
+                $user = User::create([
+                    'name' => 'New User',
+                    'email' => null,
+                    'phone' => $request->phone,
+                    'password' => Hash::make(Str::random(32)),
+                ]);
+                $isNew = $user->wasRecentlyCreated;
+                $user->role = 'patient';
+                $user->is_active = true;
+                $user->phone_verified_at = now();
+                $user->save();
+                $user->syncRoles(['patient']);
+            } else {
+                if (! $user->is_active) {
+                    return response()->json(['message' => 'Account is inactive'], 403);
+                }
+
+                // ✅ تحديث وقت التحقق
+                $user->phone_verified_at = now();
+                $user->save();
             }
 
-            // ✅ تحديث وقت التحقق
-            $user->phone_verified_at = now();
-            $user->save();
+            if ($user->role !== 'patient') {
+                return response()->json(['message' => 'OTP login is not allowed for this account'], 403);
+            }
+
+            $otpRecord->delete();
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return [$user, $token];
+        });
+
+        if ($result instanceof JsonResponse) {
+            return $result;
         }
 
-        $otpRecord->delete();
         RateLimiter::clear($limiterKey);
-        $token = $user->createToken('auth_token')->plainTextToken;
+
+        [$user, $token] = $result;
 
         return response()->json([
             'success' => true,
@@ -174,7 +193,7 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'phone' => $user->phone,
                     'role' => $user->role,
-                    'is_new' => $user->wasRecentlyCreated,
+                    'is_new' => $isNew,
                 ],
                 'token' => $token,
             ],

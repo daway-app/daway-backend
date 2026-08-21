@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Medicine;
 use App\Models\Notification;
 use App\Models\PharmacyMedicine;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * يولّد إشعارات النظام تلقائياً حسب البيانات الفعلية.
@@ -18,7 +20,7 @@ class NotificationGenerator
      * ينشئ إشعارات نقص المخزون للمستخدم المحدد.
      *
      * - أصحاب الصيدليات: أدوية صيدليتهم (pharmacy_medicines.quantity)
-     * - باقي المستخدمين (الأدمن وغيره): كل الأدوية ذات الكميات المنخفضة عبر الصيدليات (pharmacy_medicines.quantity)
+     * - الأدمن فقط: كل الأدوية ذات الكميات المنخفضة عبر الصيدليات (pharmacy_medicines.quantity)
      *
      * لا يكرر الإشعار لنفس المستخدم + الدواء + النوع.
      *
@@ -36,13 +38,15 @@ class NotificationGenerator
                 ->where('quantity', '<=', self::LOW_STOCK_THRESHOLD)
                 ->get();
 
+            $existingIds = self::existingMedicineIds($user);
+
             foreach ($lowStockRows as $row) {
                 $medicine = $row->medicine;
                 if (! $medicine) {
                     continue;
                 }
 
-                if (self::existsFor($user, $medicine->id)) {
+                if (in_array($medicine->id, $existingIds, true)) {
                     continue;
                 }
 
@@ -55,44 +59,61 @@ class NotificationGenerator
             }
         }
 
-        // الأدوية ذات الكميات المنخفضة إجمالاً عبر الصيدليات (بدل medicines.stock الميت)
-        // نأخذ أعلى كمية متبقية لكل دواء كرقم عرض، ونمرر كل دواء مرة واحدة فقط
-        $lowStockMedicines = PharmacyMedicine::query()
-            ->select('medicine_id')
-            ->selectRaw('MAX(quantity) as max_quantity')
-            ->with('medicine')
-            ->where('quantity', '<=', self::LOW_STOCK_THRESHOLD)
-            ->groupBy('medicine_id')
-            ->get();
+        if ($user->role === 'admin') {
+            // الأدوية ذات الكميات المنخفضة إجمالاً عبر الصيدليات (بدل medicines.stock الميت)
+            // نأخذ أعلى كمية متبقية لكل دواء كرقم عرض، ونمرر كل دواء مرة واحدة فقط
+            $lowStockMedicines = Cache::remember('global_low_stock_medicines', 300, function () {
+                return PharmacyMedicine::query()
+                    ->select('medicine_id')
+                    ->selectRaw('MAX(quantity) as max_quantity')
+                    ->where('quantity', '<=', self::LOW_STOCK_THRESHOLD)
+                    ->groupBy('medicine_id')
+                    ->get()
+                    ->map(fn ($row) => [
+                        'medicine_id' => $row->medicine_id,
+                        'max_quantity' => (int) $row->max_quantity,
+                    ])
+                    ->all();
+            });
 
-        foreach ($lowStockMedicines as $row) {
-            $medicine = $row->medicine;
-            if (! $medicine) {
-                continue;
+            if ($lowStockMedicines !== []) {
+                $existingIds = self::existingMedicineIds($user);
+
+                $medicineIds = array_column($lowStockMedicines, 'medicine_id');
+                $medicines = Medicine::whereIn('id', $medicineIds)->get()->keyBy('id');
+
+                foreach ($lowStockMedicines as $row) {
+                    $medicine = $medicines->get($row['medicine_id']);
+                    if (! $medicine) {
+                        continue;
+                    }
+
+                    if (in_array($medicine->id, $existingIds, true)) {
+                        continue;
+                    }
+
+                    self::create($user, $medicine->id, __('layout.notif_low_stock', [
+                        'name' => $medicine->trade_name,
+                        'count' => $row['max_quantity'],
+                    ]));
+
+                    $created = true;
+                }
             }
-
-            if (self::existsFor($user, $medicine->id)) {
-                continue;
-            }
-
-            self::create($user, $medicine->id, __('layout.notif_low_stock', [
-                'name' => $medicine->trade_name,
-                'count' => $row->max_quantity,
-            ]));
-
-            $created = true;
         }
 
         return $created;
     }
 
-    private static function existsFor(User $user, int $medicineId): bool
+    private static function existingMedicineIds(User $user): array
     {
         return Notification::query()
             ->where('user_id', $user->id)
-            ->where('medicine_id', $medicineId)
             ->where('type', 'low_stock')
-            ->exists();
+            ->whereNotNull('medicine_id')
+            ->pluck('medicine_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     private static function create(User $user, int $medicineId, string $message): void

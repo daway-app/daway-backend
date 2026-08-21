@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\MohMedicine;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class MohSync extends Command
@@ -73,11 +75,19 @@ class MohSync extends Command
         }
         unset($priceRows);
 
-        MohMedicine::query()->delete();
-        foreach (array_chunk($map, 1000) as $chunk) {
-            MohMedicine::insert($chunk);
-        }
+        DB::transaction(function () use ($map) {
+            MohMedicine::query()->delete();
+            foreach (array_chunk($map, 1000) as $chunk) {
+                MohMedicine::insert($chunk);
+            }
+        });
         unset($map);
+
+        // إبطال الكاش المرتبط بكتالوج الوزارة بعد نجاح المزامنة
+        Cache::add('med_catalog_version', 1, 3600 * 24 * 30);
+        Cache::increment('med_catalog_version');
+        Cache::add('med_medicines_version', 1, 3600 * 24 * 30);
+        Cache::increment('med_medicines_version');
 
         $this->info("تم الحفظ بنجاح: ".MohMedicine::count().' دواء ('.$merged.' مدمج مع الأسعار).');
 
