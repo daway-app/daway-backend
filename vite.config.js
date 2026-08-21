@@ -30,6 +30,8 @@ export default defineConfig({
                 'resources/css/pages/users.css',
                 'resources/css/pages/users_create.css',
                 'resources/js/pharmacy_dashboard.js',
+                'resources/css/pages/pharmacy_hub.css',
+                'resources/js/pharmacy_hub.js',
             ],
             refresh: true,
             fonts: [

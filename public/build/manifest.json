@@ -153,7 +153,7 @@
     "isEntry": true
   },
   "resources/css/pages/patients.css": {
-    "file": "assets/patients-BXjMbjaR.css",
+    "file": "assets/patients-BqEB0A3-.css",
     "name": "patients",
     "names": [
       "patients.css"
@@ -186,6 +186,15 @@
       "pharmacy_dashboard.css"
     ],
     "src": "resources/css/pages/pharmacy_dashboard.css",
+    "isEntry": true
+  },
+  "resources/css/pages/pharmacy_hub.css": {
+    "file": "assets/pharmacy_hub-BX62ZW0W.css",
+    "name": "pharmacy_hub",
+    "names": [
+      "pharmacy_hub.css"
+    ],
+    "src": "resources/css/pages/pharmacy_hub.css",
     "isEntry": true
   },
   "resources/css/pages/pharmacy_medicine_create.css": {
@@ -237,6 +246,12 @@
     "file": "assets/pharmacy_dashboard-vDHEUI5G.js",
     "name": "pharmacy_dashboard",
     "src": "resources/js/pharmacy_dashboard.js",
+    "isEntry": true
+  },
+  "resources/js/pharmacy_hub.js": {
+    "file": "assets/pharmacy_hub-B-X8iEf2.js",
+    "name": "pharmacy_hub",
+    "src": "resources/js/pharmacy_hub.js",
     "isEntry": true
   }
 }

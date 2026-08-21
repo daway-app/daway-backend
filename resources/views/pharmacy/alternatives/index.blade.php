@@ -3,97 +3,80 @@
 @section('title', __('pharmacy.alternatives.index.title'))
 
 @section('content')
-    @vite(['resources/css/pages/medicines.css'])
+    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
 
-    <div class="animated-page">
-        <!-- 1. Top Header -->
-        <div class="top-header-bar">
-            <div class="header-title-section">
-                <h1>@lang('pharmacy.alternatives.index.heading', ['pharmacy' => $pharmacy->pharmacy_name])</h1>
-                <p>@lang('pharmacy.alternatives.index.card_title')</p>
+    <div class='ph-page'>
+        <div class='ph-head'>
+            <div class='ph-page-title'>
+                <h1>البدائل</h1>
+                <p>إدارة بدائل الأدوية لدى الصيدلية</p>
             </div>
-            <div class="header-actions">
-                <a href="{{ route('pharmacy.alternatives.create') }}" class="btn-add-pharmacy" style="text-decoration: none;">
-                    <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <span>@lang('pharmacy.alternatives.index.add_button')</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- 2. Breadcrumb Trail -->
-        <div class="breadcrumb-trail">
-            <a href="{{ route('pharmacy.dashboard.index') }}">@lang('pharmacy.medicines.index.breadcrumb_dashboard')</a>
-            <span>‹</span>
-            <span>@lang('pharmacy.alternatives.index.card_title')</span>
         </div>
 
         @if (session('success'))
-            <div class="alert-message success">{{ session('success') }}</div>
+            <div class='ph-card' style='margin-block-end:20px;background:var(--ph-green-bg);color:var(--ph-green);border-color:var(--ph-green-bg);padding:14px 18px;'>{{ session('success') }}</div>
         @endif
         @if (session('error'))
-            <div class="alert-message error">{{ session('error') }}</div>
+            <div class='ph-card' style='margin-block-end:20px;background:var(--ph-red-bg);color:var(--ph-red);border-color:var(--ph-red-bg);padding:14px 18px;'>{{ session('error') }}</div>
         @endif
 
-        <!-- 3. Table Card -->
-        <div class="main-card">
-            <div class="card-top-bar">
-                <h3>@lang('pharmacy.alternatives.index.card_title')</h3>
-            </div>
-
-            <table class="custom-table" id="dataTable">
-                <thead>
-                <tr>
-                    <th>@lang('pharmacy.alternatives.index.col_num')</th>
-                    <th>@lang('pharmacy.alternatives.index.col_medicine')</th>
-                    <th>@lang('pharmacy.alternatives.index.col_ingredient')</th>
-                    <th>@lang('pharmacy.alternatives.index.col_alternatives')</th>
-                    <th style="text-align: center;">@lang('pharmacy.alternatives.index.col_actions')</th>
-                </tr>
-                </thead>
-                <tbody>
-                @forelse ($pharmacyMedicines as $pharmacyMedicine)
-                    <tr>
-                        <td>{{ $loop->iteration }}</td>
-                        <td><strong>{{ $pharmacyMedicine->medicine->trade_name }}</strong></td>
-                        <td>{{ $pharmacyMedicine->medicine->active_ingredient }}</td>
-                        <td>
-                            @forelse ($pharmacyMedicine->medicine->alternatives as $alternative)
-                                <span class="pill-badge badge-category">
-                                    {{ $alternative->trade_name }}
-                                    <form action="{{ route('pharmacy.alternatives.destroy', ['pharmacyMedicine' => $pharmacyMedicine->id, 'alternative' => $alternative->id]) }}" method="POST" style="display: inline; margin: 0;" onsubmit="return confirm('@lang('pharmacy.alternatives.index.confirm_delete')');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" style="background: none; border: none; color: #dc2626; cursor: pointer; padding: 0 4px; font-size: 13px; line-height: 1;" title="@lang('pharmacy.alternatives.index.delete_tooltip')">✕</button>
-                                    </form>
-                                </span>
-                            @empty
-                                @lang('pharmacy.alternatives.index.no_alternatives')
-                            @endforelse
-                        </td>
-                        <td style="text-align: center;">
-                            <div class="action-btn-group">
-                                <a href="{{ route('pharmacy.alternatives.create', ['pharmacyMedicine' => $pharmacyMedicine->id]) }}" class="action-btn edit" title="@lang('pharmacy.alternatives.index.add_alternative')">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 24px; color: #94a3b8;">
-                            @lang('pharmacy.alternatives.index.empty')
-                        </td>
-                    </tr>
-                @endforelse
-                </tbody>
-            </table>
-
-            <div class="pagination-wrapper">
-                {{ $pharmacyMedicines->links() }}
-            </div>
+        <div class='ph-stats'>
+            <div class='ph-stat'><i class='fas fa-exchange-alt teal'></i><div><strong>{{ $totalAlternatives }}</strong><span>إجمالي البدائل</span></div></div>
+            <div class='ph-stat'><i class='fas fa-check green'></i><div><strong>{{ $availableAlternatives }}</strong><span>أدوية لها بدائل</span></div></div>
         </div>
+
+        <div class='ph-medicine-grid'>
+            @forelse($pharmacyMedicines as $pm)
+                <div class='ph-med'>
+                    <div class='ph-med-body'>
+                        <h3>{{ $pm->medicine->trade_name }}</h3>
+                        <p>{{ $pm->medicine->active_ingredient }}</p>
+
+                        <div style='margin-block:12px;'>
+                            <strong style='font-size:.85rem;color:var(--ph-ink-soft);display:block;margin-block-end:8px;'>البدائل الحالية:</strong>
+                            @if($pm->medicine->alternatives->count())
+                                <div style='display:flex;flex-wrap:wrap;gap:8px;'>
+                                    @foreach($pm->medicine->alternatives as $alt)
+                                        <span style='display:inline-flex;align-items:center;gap:6px;background:var(--ph-teal-mist);color:var(--ph-teal);padding:6px 12px;border-radius:var(--ph-r-full);font-size:.8rem;font-weight:600;'>
+                                            {{ $alt->trade_name }}
+                                            <form action='{{ route('pharmacy.alternatives.destroy', ['pharmacyMedicine' => $pm->id, 'alternative' => $alt->id]) }}' method='POST' style='display:inline;' onsubmit='return confirm("حذف البديل؟");'>
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type='submit' style='background:none;border:none;color:var(--ph-teal);cursor:pointer;padding:0;font-size:.8rem;'>×</button>
+                                            </form>
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p style='font-size:.85rem;color:var(--ph-ink-faint);'>لا توجد بدائل مسجلة</p>
+                            @endif
+                        </div>
+
+                        <form action='{{ route('pharmacy.alternatives.store') }}' method='POST' style='margin-block-start:auto;padding-block-start:12px;border-block-start:1px solid var(--ph-line-soft);'>
+                            @csrf
+                            <input type='hidden' name='base_medicine_id' value='{{ $pm->id }}'>
+                            <div class='ph-group' style='margin-block-end:10px;'>
+                                <label class='ph-form-label' style='font-size:.8rem;'>إضافة بديل</label>
+                                <select name='alternative_medicine_id' class='ph-select' required>
+                                    <option value=''>اختر دواء...</option>
+                                    @foreach($allMedicines as $med)
+                                        @continue($med->id === $pm->medicine->id)
+                                        @continue($pm->medicine->alternatives->contains('id', $med->id))
+                                        <option value='{{ $med->id }}'>{{ $med->trade_name }} ({{ $med->active_ingredient }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type='submit' class='ph-btn sm outline'><i class='fas fa-plus'></i> إضافة بديل</button>
+                        </form>
+                    </div>
+                </div>
+            @empty
+                <div class='ph-empty' style='grid-column:1/-1;'><i class='fas fa-box-open'></i><h3>لا توجد أدوية</h3></div>
+            @endforelse
+        </div>
+
+        @if($pharmacyMedicines->hasPages())
+            <div style='margin-block-start:24px;'>{{ $pharmacyMedicines->links() }}</div>
+        @endif
     </div>
 @endsection

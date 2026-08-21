@@ -41,7 +41,11 @@ class PharmacyAlternativeController extends Controller
             ->with(['medicine', 'medicine.alternatives']) // Eager load Medicine and its alternatives
             ->paginate(10);
 
-        return view('pharmacy.alternatives.index', compact('pharmacyMedicines', 'pharmacy'));
+        $allMedicines = Medicine::all(['id', 'trade_name', 'active_ingredient']);
+        $totalAlternatives = $pharmacyMedicines->pluck('medicine')->sum(fn ($m) => $m->alternatives->count());
+        $availableAlternatives = $pharmacyMedicines->filter(fn ($pm) => $pm->medicine->alternatives->isNotEmpty())->count();
+
+        return view('pharmacy.alternatives.index', compact('pharmacyMedicines', 'pharmacy', 'allMedicines', 'totalAlternatives', 'availableAlternatives'));
     }
 
     /**

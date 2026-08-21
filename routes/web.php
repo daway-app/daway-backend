@@ -20,6 +20,8 @@ use App\Http\Controllers\web\Patient\PatientController;
 use App\Http\Controllers\web\Pharmacy\PharmacyAlternativeController;
 use App\Http\Controllers\web\Pharmacy\PharmacyController;
 use App\Http\Controllers\web\Pharmacy\PharmacyDashboardController;
+use App\Http\Controllers\web\Pharmacy\PharmacyInquiryController;
+use App\Http\Controllers\web\Pharmacy\PharmacyInventoryController;
 use App\Http\Controllers\web\Pharmacy\PharmacyMedicineController;
 use App\Http\Controllers\web\Pharmacy\PharmacyProfileController;
 use App\Http\Controllers\web\Pharmacy\PharmacyRatingController;
@@ -148,6 +150,30 @@ Route::middleware(['auth', 'role:pharmacy'])->group(function () {
         PharmacyDashboardController::class,
         'index',
     ])->name('pharmacy.dashboard.index');
+
+    // ==================== PHARMACY INVENTORY ====================
+
+    Route::get('/pharmacy/inventory', [
+        PharmacyInventoryController::class,
+        'index',
+    ])->name('pharmacy.inventory.index');
+
+    Route::put('/pharmacy/inventory', [
+        PharmacyInventoryController::class,
+        'update',
+    ])->name('pharmacy.inventory.update');
+
+    // ==================== PHARMACY INQUIRIES ====================
+
+    Route::get('/pharmacy/inquiries', [
+        PharmacyInquiryController::class,
+        'index',
+    ])->name('pharmacy.inquiries.index');
+
+    Route::put('/pharmacy/inquiries/{inquiry}', [
+        PharmacyInquiryController::class,
+        'update',
+    ])->name('pharmacy.inquiries.update');
 
     // ==================== PHARMACY MEDICINES ====================
 

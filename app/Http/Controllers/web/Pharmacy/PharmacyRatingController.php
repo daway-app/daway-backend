@@ -38,6 +38,31 @@ class PharmacyRatingController extends Controller
         // Calculate average rating
         $averageRating = $pharmacy->ratings()->avg('stars_rating');
 
-        return view('pharmacy.ratings.index', compact('pharmacy', 'ratings', 'averageRating'));
+        // Rating distribution
+        $totalRatings = $pharmacy->ratings()->count();
+        $distribution = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $count = $pharmacy->ratings()->where('stars_rating', $i)->count();
+            $distribution[] = [
+                'stars' => $i,
+                'count' => $count,
+                'percent' => $totalRatings > 0 ? round(($count / $totalRatings) * 100) : 0,
+            ];
+        }
+
+        // Monthly trend (last 6 months)
+        $trendLabels = [];
+        $trendData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $trendLabels[] = $month->format('M');
+            $avg = $pharmacy->ratings()
+                ->whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->avg('stars_rating');
+            $trendData[] = $avg ? round($avg, 1) : 0;
+        }
+
+        return view('pharmacy.ratings.index', compact('pharmacy', 'ratings', 'averageRating', 'distribution', 'totalRatings', 'trendLabels', 'trendData'));
     }
 }

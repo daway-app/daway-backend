@@ -55,7 +55,12 @@ class PharmacyMedicineController extends Controller
             })
             ->count();
 
-        return view('pharmacy.medicines.index', compact('pharmacyMedicines', 'pharmacy', 'availableCount', 'outCount'));
+        $lowCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->where('quantity', '>', 0)
+            ->where('quantity', '<=', 10)
+            ->count();
+
+        return view('pharmacy.medicines.index', compact('pharmacyMedicines', 'pharmacy', 'availableCount', 'outCount', 'lowCount'));
     }
 
     /**

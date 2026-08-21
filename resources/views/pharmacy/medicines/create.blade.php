@@ -60,6 +60,10 @@
                                 <input class="fc" type="text" id="active_ingredient" name="active_ingredient" value="{{ old('active_ingredient') }}" placeholder="@lang('pharmacy.medicines.create.manual_ingredient_placeholder')">
                             </div>
                         </div>
+                        <div class="fg" style="margin-top:14px;">
+                            <label class="fl" for="image">صورة الدواء</label>
+                            <input class="fc" type="file" id="image" name="image" accept="image/*" style="height:auto;padding:10px;">
+                        </div>
                     </div>
 
                     <div class="fg" style="margin-top:12px;">
@@ -98,6 +102,11 @@
                             @error('quantity')
                                 <span class="error-text" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
+                        </div>
+                        <div class="fg">
+                            <label class="fl" for="min_stock">الحد الأدنى للمخزون</label>
+                            <input class="fc" type="number" id="min_stock" name="min_stock" min="0" value="{{ old('min_stock', 10) }}">
+                            <small class="fl-hint">عند الوصول لهذا الرقم يُعتبر المخزون منخفضاً</small>
                         </div>
                     </div>
                     <div class="fg" style="margin-top:14px;">

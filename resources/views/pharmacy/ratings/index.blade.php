@@ -3,52 +3,83 @@
 @section('title', __('pharmacy.ratings.title'))
 
 @section('content')
-    @vite(['resources/css/pages/medicines.css'])
+    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
 
-    <div class="animated-page">
-        <!-- 1. Top Header -->
-        <div class="top-header-bar">
-            <div class="header-title-section">
-                <h1>@lang('pharmacy.ratings.heading', ['pharmacy' => $pharmacy->pharmacy_name])</h1>
-                <p>@lang('pharmacy.ratings.avg_label', ['avg' => number_format($averageRating, 1)])</p>
+    @push('scripts')
+        <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+    @endpush
+
+    @php
+        $avg = number_format($averageRating ?? 0, 1);
+        $total = $totalRatings ?? 0;
+        $labels = json_encode($trendLabels ?? []);
+        $data = json_encode($trendData ?? []);
+    @endphp
+
+    <div class='ph-page'>
+        <div class='ph-head'>
+            <div class='ph-page-title'>
+                <h1>التقييمات والملاحظات</h1>
+                <p>آراء المرضى حول صيدلية {{ $pharmacy->pharmacy_name }}</p>
             </div>
         </div>
 
-        @if (session('success'))
-            <div class="alert-message success">{{ session('success') }}</div>
-        @endif
-        @if (session('error'))
-            <div class="alert-message error">{{ session('error') }}</div>
-        @endif
-
-        <!-- 2. Ratings Card -->
-        <div class="main-card">
-            <div class="card-top-bar">
-                <h3>@lang('pharmacy.ratings.title')</h3>
-            </div>
-
-            <div style="padding: 0 24px;">
-                @forelse ($ratings as $rating)
-                    <div style="padding: 16px 0; border-bottom: 1px solid #f1f5f9;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <strong style="font-size: 14px; color: #0f172a;">{{ $rating->user->name ?? __('pharmacy.ratings.anonymous_user') }}</strong>
-                            <small style="color: #94a3b8; font-size: 12px;">{{ $rating->created_at->diffForHumans() }}</small>
-                        </div>
-                        <div class="rating-stars" style="margin-bottom: 8px; color: #e8a000;">
-                            @for ($i = 1; $i <= 5; $i++)
-                                <i class="{{ $i <= $rating->rating ? 'fas' : 'far' }} fa-star"></i>
-                            @endfor
-                        </div>
-                        <p style="margin: 0; font-size: 13.5px; color: #334155;">{{ $rating->comment }}</p>
+        <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-block-end:20px;'>
+            <div class='ph-card'>
+                <div class='ph-card-head'><h2><i class='fas fa-star'></i> متوسط التقييم</h2></div>
+                <div class='ph-card-body' style='text-align:center;'>
+                    <div style='font-size:3rem;font-weight:700;color:var(--ph-teal);'>{{ $avg }}</div>
+                    <div class='ph-stars' style='font-size:1.4rem;margin-block:10px;'>
+                        @for($i=1;$i<=5;$i++)<i class='{{ $i <= round($avg) ? 'fas' : 'far' }} fa-star'></i>@endfor
                     </div>
-                @empty
-                    <p style="text-align: center; padding: 30px; color: #94a3b8;">@lang('pharmacy.ratings.empty')</p>
-                @endforelse
+                    <p style='color:var(--ph-ink-faint);'>{{ $total }} تقييم</p>
+                </div>
             </div>
 
-            <div class="pagination-wrapper">
-                {{ $ratings->links() }}
+            <div class='ph-card'>
+                <div class='ph-card-head'><h2><i class='fas fa-chart-bar'></i> توزيع التقييمات</h2></div>
+                <div class='ph-card-body'>
+                    @foreach($distribution as $item)
+                        <div style='display:flex;align-items:center;gap:10px;margin-block-end:10px;'>
+                            <span style='width:50px;font-size:.85rem;'>{{ $item['stars'] }} نجوم</span>
+                            <div style='flex:1;height:8px;background:var(--ph-canvas);border-radius:var(--ph-r-full);overflow:hidden;'>
+                                <div style='width:{{ $item['percent'] }}%;height:100%;background:#F59E0B;border-radius:var(--ph-r-full);'></div>
+                            </div>
+                            <span style='width:60px;text-align:end;font-size:.85rem;color:var(--ph-ink-faint);'>{{ $item['count'] }} ({{ $item['percent'] }}%)</span>
+                        </div>
+                    @endforeach
+                </div>
             </div>
+
+            <div class='ph-card'>
+                <div class='ph-card-head'><h2><i class='fas fa-chart-line'></i> متوسط التقييم شهرياً</h2></div>
+                <div class='ph-card-body'><div class='chart-box chart-sm'><canvas data-ph-chart='line' data-ph-labels='{{ $labels }}' data-ph-data='{{ $data }}'></canvas></div></div>
+            </div>
+        </div>
+
+        <div class='ph-card'>
+            <div class='ph-card-head'><h2><i class='fas fa-comment-dots'></i> التعليقات</h2></div>
+            <div class='ph-card-body'>
+                <div class='ph-grid'>
+                    @forelse($ratings as $rating)
+                        <div class='ph-rating-card'>
+                            <div class='head'>
+                                <strong>{{ $rating->user->name ?? 'مريض' }}</strong>
+                                <span>{{ $rating->created_at->format('Y-m-d') }}</span>
+                            </div>
+                            <div class='ph-stars' style='margin-block-end:8px;'>
+                                @for($i=1;$i<=5;$i++)<i class='{{ $i <= $rating->stars_rating ? 'fas' : 'far' }} fa-star'></i>@endfor
+                            </div>
+                            <p>{{ $rating->comment }}</p>
+                        </div>
+                    @empty
+                        <div class='ph-empty' style='grid-column:1/-1;'><i class='far fa-comment-alt'></i><h3>لا توجد تعليقات بعد</h3></div>
+                    @endforelse
+                </div>
+            </div>
+            @if($ratings->hasPages())
+                <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>{{ $ratings->links() }}</div>
+            @endif
         </div>
     </div>
 @endsection

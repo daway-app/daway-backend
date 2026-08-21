@@ -38,6 +38,16 @@ class PharmacyDashboardController extends Controller
 
         // 1. عدد الأدوية في مخزونه
         $totalMedicinesInStock = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->count();
+        $availableCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->where('quantity', '>', 0)->count();
+        $lowStockCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->where('quantity', '>', 0)->where('quantity', '<=', 10)->count();
+        $outOfStockCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->where('quantity', '<=', 0)->count();
+        $lowStockItems = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->where('quantity', '>', 0)
+            ->where('quantity', '<=', 10)
+            ->with('medicine')
+            ->latest()
+            ->take(5)
+            ->get();
 
         // 2. متوسط التقييم
         $averageRating = $pharmacy->ratings()->avg('stars_rating');
@@ -80,15 +90,22 @@ class PharmacyDashboardController extends Controller
             'ratings' => $ratingsChart,
         ];
 
+        $newInquiries = $pharmacy->availabilityNotifications()->where('is_notified', false)->count();
+
         return view('pharmacy.dashboard.index', compact(
             'user',
             'pharmacy',
             'totalMedicinesInStock',
+            'availableCount',
+            'lowStockCount',
+            'outOfStockCount',
             'averageRating',
             'isPharmacyOpen',
             'pharmacyMedicines',
             'latestRatings',
-            'chartData'
+            'chartData',
+            'newInquiries',
+            'lowStockItems'
         ));
     }
 
