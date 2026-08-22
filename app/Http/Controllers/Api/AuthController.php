@@ -16,11 +16,6 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function patientLogin(Request $request)
-    {
-        return $this->verifyOtp($request);
-    }
-
     /**
      * تسجيل دخول الصيدلية باستخدام Pharmacy ID وكلمة المرور.
      */

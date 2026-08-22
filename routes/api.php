@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Route;
 // ✅ Routes Public
 Route::post('/otp/send', [AuthController::class, 'sendOtp'])->middleware('throttle:otp');
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:otp-verify');
-Route::post('/login/patient', [AuthController::class, 'patientLogin'])->middleware('throttle:login');
 Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middleware('throttle:login');
 
 // Medicines Routes Public
