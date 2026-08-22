@@ -16,6 +16,7 @@ use App\Http\Controllers\web\General\LocaleController;
 use App\Http\Controllers\web\General\ProfileController;
 // Patient Controllers
 use App\Http\Controllers\web\Patient\PatientController;
+use App\Http\Controllers\web\Patient\PatientInquiryController;
 // Pharmacy Controllers
 use App\Http\Controllers\web\Pharmacy\PharmacyAlternativeController;
 use App\Http\Controllers\web\Pharmacy\PharmacyController;
@@ -272,4 +273,11 @@ Route::middleware('auth')->group(function () {
         LoginController::class,
         'logout',
     ])->name('logout');
+
+    // ==================== PATIENT INQUIRIES ====================
+
+    Route::post('/patient/inquiries', [
+        PatientInquiryController::class,
+        'store',
+    ])->name('patient.inquiries.store');
 });

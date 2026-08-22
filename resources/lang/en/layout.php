@@ -59,6 +59,9 @@ return [
     // Generated notifications
     'notif_low_stock' => 'Low stock alert: :name — remaining quantity: :count',
     'notif_low_stock_pharmacy' => 'Low stock alert: :name in your pharmacy — remaining quantity: :count',
+    'notif_out_of_stock' => 'Out of stock alert: :name in your pharmacy',
+    'notif_new_inquiry' => 'New inquiry about medicine availability at :name pharmacy',
+    'notif_new_rating' => 'New rating (:stars stars) for :name pharmacy',
 
     // Change password
     'password_section_title' => 'Change Password',

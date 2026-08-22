@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany; // Import BelongsToMany
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 class Medicine extends Model
@@ -68,5 +69,27 @@ class Medicine extends Model
     public function availabilityNotifications(): HasMany
     {
         return $this->hasMany(AvailabilityNotification::class);
+    }
+
+    /**
+     * اقتراح أدوية بديلة بناءً على المادة الفعالة.
+     * يُستعمل في شاشة إضافة/تعديل دواء بالصيدلية لاقتراح بدائل لنفس المادة الفعالة.
+     */
+    public static function alternativesByActiveIngredient(?string $activeIngredient, ?int $excludeMedicineId = null): Collection
+    {
+        if (! $activeIngredient) {
+            return collect();
+        }
+
+        $query = static::query()
+            ->where('active_ingredient', $activeIngredient)
+            ->orderBy('trade_name')
+            ->limit(10);
+
+        if ($excludeMedicineId !== null) {
+            $query->where('id', '!=', $excludeMedicineId);
+        }
+
+        return $query->get();
     }
 }

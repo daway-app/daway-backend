@@ -59,6 +59,9 @@ return [
     // Generated notifications
     'notif_low_stock' => 'تنبيه نقص مخزون دواء :name — الكمية المتبقية: :count',
     'notif_low_stock_pharmacy' => 'تنبيه نقص مخزون دواء :name في صيدليتك — الكمية المتبقية: :count',
+    'notif_out_of_stock' => 'نفد المخزون من دواء :name',
+    'notif_new_inquiry' => 'استفسار جديد عن توفر دواء في صيدلية :name',
+    'notif_new_rating' => 'تقييم جديد (:stars نجوم) لصيدلية :name',
 
     // Change password
     'password_section_title' => 'تغيير كلمة السر',

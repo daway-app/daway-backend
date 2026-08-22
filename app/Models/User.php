@@ -83,4 +83,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(AvailabilityNotification::class);
     }
+
+    public function patientInquiries(): HasMany
+    {
+        return $this->hasMany(PatientInquiry::class);
+    }
 }

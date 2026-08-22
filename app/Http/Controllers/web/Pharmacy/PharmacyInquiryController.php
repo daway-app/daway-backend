@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\web\Pharmacy;
 
 use App\Http\Controllers\Controller;
+use App\Models\PatientInquiry;
 use App\Models\Pharmacy;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PharmacyInquiryController extends Controller
@@ -23,24 +25,27 @@ class PharmacyInquiryController extends Controller
     {
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
-        $inquiries = $pharmacy->availabilityNotifications()
+        $inquiries = $pharmacy->patientInquiries()
             ->with(['user', 'medicine'])
             ->latest()
             ->paginate(10);
-        $newCount = $pharmacy->availabilityNotifications()->where('is_notified', false)->count();
-        $answeredCount = 0;
-        $closedCount = $pharmacy->availabilityNotifications()->where('is_notified', true)->count();
+        $newCount = $pharmacy->patientInquiries()->where('status', 'new')->count();
+        $answeredCount = $pharmacy->patientInquiries()->where('status', 'answered')->count();
+        $closedCount = $pharmacy->patientInquiries()->where('status', 'closed')->count();
         return view('pharmacy.inquiries.index', compact('pharmacy', 'inquiries', 'newCount', 'answeredCount', 'closedCount'));
     }
 
-    public function update(Request $request, \App\Models\AvailabilityNotification $inquiry)
+    public function update(Request $request, PatientInquiry $inquiry)
     {
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
         if ($inquiry->pharmacy_id !== $pharmacy->id) {
             return redirect()->route('pharmacy.inquiries.index')->with('error', 'لا يمكنك تعديل هذا الاستفسار');
         }
-        $inquiry->update(['is_notified' => true]);
+        $data = $request->validate([
+            'status' => 'required|string|in:' . implode(',', PatientInquiry::STATUSES),
+        ]);
+        $inquiry->update(['status' => $data['status']]);
         return redirect()->route('pharmacy.inquiries.index')->with('success', 'تم تحديث حالة الاستفسار');
     }
 }

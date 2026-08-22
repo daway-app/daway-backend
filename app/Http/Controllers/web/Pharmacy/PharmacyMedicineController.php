@@ -5,6 +5,7 @@ namespace App\Http\Controllers\web\Pharmacy;
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
+use App\Models\Notification;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine; // Assuming this model exists for pivot table
 use App\Models\SearchLog;
@@ -73,7 +74,9 @@ class PharmacyMedicineController extends Controller
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
 
-        return view('pharmacy.medicines.create', compact('pharmacy'));
+        $suggestedAlternatives = Medicine::alternativesByActiveIngredient(null);
+
+        return view('pharmacy.medicines.create', compact('pharmacy', 'suggestedAlternatives'));
     }
 
     /**
@@ -131,6 +134,7 @@ class PharmacyMedicineController extends Controller
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0', // Changed from 'stock' to 'quantity'
             'is_available' => 'boolean',
+            'min_stock' => 'nullable|integer|min:0',
         ], [
             'price.required' => __('pharmacy.medicines.create.price_required'),
             'quantity.required' => __('pharmacy.medicines.create.quantity_required'),
@@ -153,6 +157,7 @@ class PharmacyMedicineController extends Controller
             $request->validate([
                 'trade_name' => 'required|string|max:150',
                 'active_ingredient' => 'required|string|max:150',
+                'min_stock' => 'nullable|integer|min:0',
             ], [
                 'trade_name.required' => __('pharmacy.medicines.create.trade_name_required'),
                 'active_ingredient.required' => __('pharmacy.medicines.create.ingredient_required'),
@@ -175,13 +180,16 @@ class PharmacyMedicineController extends Controller
             ]);
         }
 
-        PharmacyMedicine::create([
+        $pharmacyMedicine = PharmacyMedicine::create([
             'pharmacy_id' => $pharmacy->id,
             'medicine_id' => $medicine->id,
             'price' => $request->price,
             'quantity' => $request->quantity, // Changed from 'stock' to 'quantity'
             'is_available' => $request->boolean('is_available'),
+            'min_stock' => $request->min_stock,
         ]);
+
+        $this->notifyIfLowStock($pharmacyMedicine);
 
         return redirect()->route('pharmacy.medicines.index')->with('success', __('pharmacy.medicines.create.success'));
     }
@@ -201,7 +209,12 @@ class PharmacyMedicineController extends Controller
             return redirect()->route('pharmacy.medicines.index')->with('error', __('pharmacy.medicines.edit.not_found'));
         }
 
-        return view('pharmacy.medicines.edit', compact('pharmacyMedicine', 'pharmacy'));
+        $suggestedAlternatives = Medicine::alternativesByActiveIngredient(
+            $pharmacyMedicine->medicine?->active_ingredient,
+            $pharmacyMedicine->medicine_id
+        );
+
+        return view('pharmacy.medicines.edit', compact('pharmacyMedicine', 'pharmacy', 'suggestedAlternatives'));
     }
 
     /**
@@ -223,13 +236,17 @@ class PharmacyMedicineController extends Controller
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0', // Changed from 'stock' to 'quantity'
             'is_available' => 'boolean',
+            'min_stock' => 'nullable|integer|min:0',
         ]);
 
         $pharmacyMedicine->update([
             'price' => $request->price,
             'quantity' => $request->quantity, // Changed from 'stock' to 'quantity'
             'is_available' => $request->boolean('is_available'),
+            'min_stock' => $request->min_stock,
         ]);
+
+        $this->notifyIfLowStock($pharmacyMedicine);
 
         return redirect()->route('pharmacy.medicines.index')->with('success', __('pharmacy.medicines.edit.success'));
     }
@@ -252,5 +269,38 @@ class PharmacyMedicineController extends Controller
         $pharmacyMedicine->delete();
 
         return redirect()->route('pharmacy.medicines.index')->with('success', __('pharmacy.medicines.destroy.success'));
+    }
+
+    private function notifyIfLowStock(PharmacyMedicine $pm): void
+    {
+        $threshold = $pm->min_stock !== null ? (int) $pm->min_stock : 10;
+        $pharmacyUser = $pm->pharmacy?->user;
+        if (! $pharmacyUser) {
+            return;
+        }
+        if ($pm->quantity <= 0) {
+            Notification::create([
+                'user_id' => $pharmacyUser->id,
+                'medicine_id' => $pm->medicine_id,
+                'type' => 'out_of_stock',
+                'message' => __('layout.notif_out_of_stock', ['name' => $pm->medicine?->trade_name]),
+                'is_read' => false,
+                'created_at' => now(),
+            ]);
+            return;
+        }
+        if ($pm->quantity > 0 && $pm->quantity <= $threshold) {
+            Notification::create([
+                'user_id' => $pharmacyUser->id,
+                'medicine_id' => $pm->medicine_id,
+                'type' => 'low_stock',
+                'message' => __('layout.notif_low_stock_pharmacy', [
+                    'name' => $pm->medicine?->trade_name,
+                    'count' => $pm->quantity,
+                ]),
+                'is_read' => false,
+                'created_at' => now(),
+            ]);
+        }
     }
 }
