@@ -15,6 +15,17 @@ class EnsureRole
     {
         $user = $request->user();
 
+        if ($request->expectsJson()) {
+            if (! $user) {
+                abort(401);
+            }
+            if ($user->role !== $role) {
+                abort(403);
+            }
+
+            return $next($request);
+        }
+
         if (! $user) {
             return redirect()->route('login.show')->with('error', __('pharmacy.access_denied'));
         }

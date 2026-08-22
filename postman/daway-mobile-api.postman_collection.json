@@ -1,0 +1,539 @@
+{
+  "info": {
+    "name": "Daway — Mobile API",
+    "description": "Complete collection for the Daway mobile (Sanctum) API. Covers patient and pharmacy flows: OTP auth, public catalog, patient/pharmacy profiles, medicines, inventory, alternatives, patient inquiries, pharmacy inquiries, ratings, and notifications.\n\n**Setup**\n1. Set the `base_url` variable (default: `https://daway-backend.onrender.com`).\n2. Run `Auth → OTP Send` then `Auth → OTP Verify` (or `Auth → Login Pharmacy`). The bearer token is saved automatically to the `token` variable.\n3. All other endpoints inherit the bearer auth from the collection.\n\nBase folder: `app/Http/Controllers/Api/`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "daway-mobile-api-2026",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://daway-backend.onrender.com",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "phone",
+      "value": "+970591234567",
+      "type": "string"
+    },
+    {
+      "key": "pharmacy_custom_id",
+      "value": "PH-1234",
+      "type": "string"
+    },
+    {
+      "key": "medicine_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "pharmacy_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "pharmacy_medicine_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "inquiry_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "OTP-based patient login and pharmacy email/password login. Tokens are auto-captured.",
+      "item": [
+        {
+          "name": "OTP Send",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/otp/send", "host": ["{{base_url}}"], "path": ["api", "otp", "send"] },
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Send a 6-digit OTP to a phone number. Response includes the OTP (intentional — no SMS gateway yet)."
+          }
+        },
+        {
+          "name": "OTP Verify",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json && json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "  pm.environment.set('token', json.data.token);",
+                  "}",
+                  "pm.test('is_new present', function () { pm.expect(json.data.user).to.have.property('is_new'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/otp/verify", "host": ["{{base_url}}"], "path": ["api", "otp", "verify"] },
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"otp\": \"123456\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Verify OTP. Returns Sanctum token (auto-captured) and `is_new` flag."
+          }
+        },
+        {
+          "name": "Login Patient (alias of OTP verify)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/login/patient", "host": ["{{base_url}}"], "path": ["api", "login", "patient"] },
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"otp\": \"123456\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Alias of /api/otp/verify."
+          }
+        },
+        {
+          "name": "Login Pharmacy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json && json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/login/pharmacy", "host": ["{{base_url}}"], "path": ["api", "login", "pharmacy"] },
+            "body": { "mode": "raw", "raw": "{\n  \"pharmacy_id\": \"{{pharmacy_custom_id}}\",\n  \"password\": \"password\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Pharmacy login with `pharmacy_custom_id` (e.g. PH-1234) and password."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/logout", "host": ["{{base_url}}"], "path": ["api", "logout"] },
+            "description": "Revoke the current bearer token."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/refresh-token", "host": ["{{base_url}}"], "path": ["api", "refresh-token"] },
+            "description": "Issue a new token and revoke the previous one."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Catalog",
+      "description": "No auth required.",
+      "item": [
+        {
+          "name": "Medicines — Index",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/medicines?q=paracetamol&per_page=20&page=1", "host": ["{{base_url}}"], "path": ["api", "medicines"], "query": [{ "key": "q", "value": "paracetamol" }, { "key": "per_page", "value": "20" }, { "key": "page", "value": "1" }] },
+            "description": "List MOH catalog medicines (with optional search)."
+          }
+        },
+        {
+          "name": "Medicines — Search",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/medicines/search?q=paracetamol", "host": ["{{base_url}}"], "path": ["api", "medicines", "search"], "query": [{ "key": "q", "value": "paracetamol" }] },
+            "description": "Cross-catalog search (local + MOH)."
+          }
+        },
+        {
+          "name": "Medicines — By Active Ingredient",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/medicines/active-ingredient/Paracetamol", "host": ["{{base_url}}"], "path": ["api", "medicines", "active-ingredient", "Paracetamol"] },
+            "description": "Find medicines by active ingredient."
+          }
+        },
+        {
+          "name": "Medicines — Show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/medicines/{{medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "medicines", "{{medicine_id}}"] },
+            "description": "Medicine detail with pharmacies that carry it."
+          }
+        },
+        {
+          "name": "Medicines — Available Pharmacies",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/medicines/{{medicine_id}}/pharmacies", "host": ["{{base_url}}"], "path": ["api", "medicines", "{{medicine_id}}", "pharmacies"] },
+            "description": "List active pharmacies carrying the medicine with stock."
+          }
+        },
+        {
+          "name": "Pharmacies — Index",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacies?pharmacy_name=Daway&medicine_id={{medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacies"], "query": [{ "key": "pharmacy_name", "value": "Daway" }, { "key": "medicine_id", "value": "{{medicine_id}}" }] },
+            "description": "List active pharmacies (with optional name/medicine filters)."
+          }
+        },
+        {
+          "name": "Pharmacies — Show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacies/{{pharmacy_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacies", "{{pharmacy_id}}"] },
+            "description": "Pharmacy detail with hours, ratings, and available medicines."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "description": "Patient and pharmacy profile endpoints (auth required).",
+      "item": [
+        {
+          "name": "Patient Profile — Show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/profile/patient", "host": ["{{base_url}}"], "path": ["api", "profile", "patient"] }
+          }
+        },
+        {
+          "name": "Patient Profile — Update",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/profile/patient", "host": ["{{base_url}}"], "path": ["api", "profile", "patient"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Patient Name\",\n  \"phone\": \"+970590000111\",\n  \"avatar\": \"https://example.com/avatar.jpg\",\n  \"address\": \"Gaza\",\n  \"latitude\": 31.5,\n  \"longitude\": 34.466,\n  \"birth_date\": \"1990-01-01\",\n  \"emergency_contact\": \"+970590000222\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Pharmacy Profile — Show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/profile/pharmacy", "host": ["{{base_url}}"], "path": ["api", "profile", "pharmacy"] }
+          }
+        },
+        {
+          "name": "Pharmacy Profile — Update",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/profile/pharmacy", "host": ["{{base_url}}"], "path": ["api", "profile", "pharmacy"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"صيدلية الأمل\",\n  \"phone\": \"+970591234567\",\n  \"logo_url\": \"https://example.com/logo.jpg\",\n  \"address\": \"غزة، شارع الوحدة\",\n  \"latitude\": 31.5016,\n  \"longitude\": 34.4668,\n  \"working_hours\": {\n    \"sat\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"sun\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"mon\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"tue\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"wed\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"thu\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"fri\": null\n  }\n}", "options": { "raw": { "language": "json" } } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Inquiries",
+      "description": "Patients ask pharmacies about medicine availability. Creating an inquiry notifies the pharmacy owner.",
+      "item": [
+        {
+          "name": "List My Inquiries",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/inquiries", "host": ["{{base_url}}"], "path": ["api", "patient", "inquiries"] }
+          }
+        },
+        {
+          "name": "Create Inquiry",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/inquiries", "host": ["{{base_url}}"], "path": ["api", "patient", "inquiries"] },
+            "body": { "mode": "raw", "raw": "{\n  \"pharmacy_id\": {{pharmacy_id}},\n  \"medicine_id\": {{medicine_id}},\n  \"message\": \"هل يتوفر هذا الدواء؟\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Triggers a `new_inquiry` notification to the pharmacy user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pharmacy Inquiries",
+      "description": "Pharmacy owners manage status of incoming availability inquiries. Requires `role:pharmacy`.",
+      "item": [
+        {
+          "name": "List Inquiries",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/inquiries", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "inquiries"] }
+          }
+        },
+        {
+          "name": "Show Inquiry",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/inquiries/{{inquiry_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "inquiries", "{{inquiry_id}}"] }
+          }
+        },
+        {
+          "name": "Update Inquiry Status",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/inquiries/{{inquiry_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "inquiries", "{{inquiry_id}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"answered\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Valid statuses: `new`, `answered`, `closed`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pharmacy Medicines",
+      "description": "Manage a pharmacy's own inventory entries. Requires `role:pharmacy`.",
+      "item": [
+        {
+          "name": "Search Catalog",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/medicines/search?q=para", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "search"], "query": [{ "key": "q", "value": "para" }] }
+          }
+        },
+        {
+          "name": "List My Medicines",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/medicines?per_page=20", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines"], "query": [{ "key": "per_page", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Show Medicine",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/medicines/{{pharmacy_medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "{{pharmacy_medicine_id}}"] }
+          }
+        },
+        {
+          "name": "Add Medicine",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/medicines", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines"] },
+            "body": { "mode": "raw", "raw": "{\n  \"medicine_id\": {{medicine_id}},\n  \"price\": 12.50,\n  \"quantity\": 20,\n  \"min_stock\": 5,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Adding a medicine with `quantity <= min_stock` triggers a low_stock notification; `quantity = 0` triggers out_of_stock."
+          }
+        },
+        {
+          "name": "Update Medicine",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/medicines/{{pharmacy_medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "{{pharmacy_medicine_id}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"medicine_id\": {{medicine_id}},\n  \"price\": 14.00,\n  \"quantity\": 3,\n  \"min_stock\": 5,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Delete Medicine",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/medicines/{{pharmacy_medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "{{pharmacy_medicine_id}}"] }
+          }
+        },
+        {
+          "name": "Alternatives by Active Ingredient",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/medicines/{{pharmacy_medicine_id}}/alternatives", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "{{pharmacy_medicine_id}}", "alternatives"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pharmacy Inventory",
+      "description": "Single + bulk stock updates with `min_stock` thresholds and auto low/out-of-stock notifications.",
+      "item": [
+        {
+          "name": "List Inventory + Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/inventory?per_page=20", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "inventory"], "query": [{ "key": "per_page", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Update Single Item",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/inventory/{{pharmacy_medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "inventory", "{{pharmacy_medicine_id}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 50,\n  \"min_stock\": 10,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Bulk Update",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/inventory/bulk", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "inventory", "bulk"] },
+            "body": { "mode": "raw", "raw": "{\n  \"items\": [\n    { \"id\": 1, \"quantity\": 25, \"min_stock\": 5, \"is_available\": true },\n    { \"id\": 2, \"quantity\": 30, \"min_stock\": 5, \"is_available\": true }\n  ]\n}", "options": { "raw": { "language": "json" } } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pharmacy Alternatives",
+      "description": "Manual equivalents mapping using the `alternative_medicine` pivot.",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/alternatives", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "alternatives"] }
+          }
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/alternatives", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "alternatives"] },
+            "body": { "mode": "raw", "raw": "{\n  \"base_medicine_id\": {{medicine_id}},\n  \"alternative_id\": 2\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/alternatives/{{pharmacy_medicine_id}}/2", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "alternatives", "{{pharmacy_medicine_id}}", "2"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pharmacy Dashboard",
+      "description": "Aggregate stats for the mobile dashboard.",
+      "item": [
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/dashboard/stats", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "dashboard", "stats"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ratings",
+      "description": "Patients rate pharmacies; pharmacy owners can list their own ratings. New ratings auto-notify the pharmacy.",
+      "item": [
+        {
+          "name": "List Ratings (filtered)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/ratings?pharmacy_id={{pharmacy_id}}", "host": ["{{base_url}}"], "path": ["api", "ratings"], "query": [{ "key": "pharmacy_id", "value": "{{pharmacy_id}}" }] }
+          }
+        },
+        {
+          "name": "Create Rating",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/ratings", "host": ["{{base_url}}"], "path": ["api", "ratings"] },
+            "body": { "mode": "raw", "raw": "{\n  \"pharmacy_id\": {{pharmacy_id}},\n  \"stars_rating\": 5,\n  \"comment\": \"Great service\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Triggers `new_rating` notification to the pharmacy user. Pharmacy must be active."
+          }
+        },
+        {
+          "name": "Pharmacy — My Ratings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/ratings", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "ratings"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "Mobile notification feed (replaces web `/api/notifications/*` for mobile callers).",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/notifications", "host": ["{{base_url}}"], "path": ["api", "notifications"] }
+          }
+        },
+        {
+          "name": "Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/notifications/count", "host": ["{{base_url}}"], "path": ["api", "notifications", "count"] }
+          }
+        },
+        {
+          "name": "Mark One as Read",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/notifications/{{notification_id}}/read", "host": ["{{base_url}}"], "path": ["api", "notifications", "{{notification_id}}", "read"] }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/notifications/mark-all-as-read", "host": ["{{base_url}}"], "path": ["api", "notifications", "mark-all-as-read"] }
+          }
+        }
+      ]
+    }
+  ]
+}
