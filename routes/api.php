@@ -64,7 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('ratings', [PharmacyRatingController::class, 'index']);
 
         Route::get('medicines/search', [PharmacyMedicineController::class, 'search']);
-        Route::apiResource('medicines', PharmacyMedicineController::class);
+        Route::apiResource('medicines', PharmacyMedicineController::class)
+            ->names('api.pharmacy.medicines');
         Route::get('medicines/{medicine}/alternatives', [PharmacyMedicineController::class, 'alternatives']);
 
         Route::get('inventory', [PharmacyInventoryController::class, 'index']);
