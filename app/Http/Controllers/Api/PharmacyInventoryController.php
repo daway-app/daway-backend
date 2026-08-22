@@ -39,7 +39,7 @@ class PharmacyInventoryController extends Controller
         $outCount = (clone $base)->where(function ($query) {
             $query->where('is_available', false)->orWhere('quantity', '<=', 0);
         })->count();
-        $lowCount = (clone $base)->where('quantity', '>', 0)->where('quantity', '<=', 10)->count();
+        $lowCount = (clone $base)->get()->filter(fn ($i) => $i->quantity > 0 && $i->quantity <= ($i->min_stock ?? 10))->count();
 
         $items = $base->with('medicine')->orderByDesc('id')->paginate($perPage);
 

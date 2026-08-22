@@ -61,7 +61,7 @@ class PharmacyInventoryApiTest extends TestCase
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('stats.total', 3)
             ->assertJsonPath('stats.available_count', 2)
-            ->assertJsonPath('stats.low_count', 2)
+            ->assertJsonPath('stats.low_count', 1)
             ->assertJsonPath('stats.out_count', 1);
     }
 

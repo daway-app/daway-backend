@@ -256,17 +256,6 @@ Route::middleware('auth')->group(function () {
         'showAll',
     ])->name('notifications.index');
 
-    Route::prefix('api/notifications')->group(function () {
-        Route::get('/count', [NotificationController::class, 'count'])
-            ->name('notifications.count');
-        Route::get('/', [NotificationController::class, 'index'])
-            ->name('notifications.feed');
-        Route::post('/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])
-            ->name('notifications.mark-all-as-read');
-        Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])
-            ->name('notifications.mark-as-read');
-    });
-
     // ==================== LOGOUT ====================
 
     Route::post('/logout', [

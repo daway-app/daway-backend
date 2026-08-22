@@ -36,6 +36,13 @@ class Rating extends Model
         return $this->belongsTo(User::class);
     }
 
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime',
+        ];
+    }
+
     /**
      * علاقة عكسية: هاد التقييم لصيدلية وحيدة.
      */

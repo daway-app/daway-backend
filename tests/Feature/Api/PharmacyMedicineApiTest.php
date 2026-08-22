@@ -264,9 +264,7 @@ class PharmacyMedicineApiTest extends TestCase
             ->assertJsonPath('data.0.id', $medicineB->id)
             ->assertJsonPath('data.0.active_ingredient', 'Paracetamol');
 
-        $this->assertDatabaseMissing('medicines', [
-            'id' => $medicineC->id,
-            'trade_name' => 'Brufen',
-        ]);
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertNotContains($medicineC->id, $ids);
     }
 }
