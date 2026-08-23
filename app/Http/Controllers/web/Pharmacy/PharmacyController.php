@@ -72,16 +72,9 @@ class PharmacyController extends Controller
     {
         $request->validate([
             'pharmacy_name' => 'required|string|max:255',
-            'phone_number' => 'required|string|max:20',
-            'address_line' => 'required|string|max:255', // Specific address line
-            'city' => 'required|string|max:255',
-            'area' => 'nullable|string|max:255',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'email' => 'required|string|email|max:255|unique:users', // Email for the user
         ]);
 
-        // كلمة المرور الافتراضية = معرّف الصيدلية (PH-XXXX) ويجب تغييرها عند أول دخول
+        // كلمة المرور الافتراضية = معرّف الصيدلية (PH-XXXX)
         $pharmacyCustomId = 'PH-'.Str::upper(Str::random(4));
 
         // إنشاء حساب المستخدم + سجل الصيدلية في معاملة واحدة (فشل أحدهما يلغي الآخر)
@@ -89,27 +82,25 @@ class PharmacyController extends Controller
             // 1. Create the User account for the pharmacy
             $user = User::create([
                 'name' => $request->pharmacy_name, // Use pharmacy name as user name
-                'email' => $request->email,
+                'email' => null,
                 'password' => Hash::make($pharmacyCustomId),
             ]);
             $user->role = 'pharmacy'; // Assign 'pharmacy' role
             $user->is_active = true;
-            // تفعيل البريد فوراً: حساب يُنشأ من لوحة التحكم موثوق،
-            // وبدونه لا يستطيع صاحبه تسجيل الدخول عبر الـ API (فحص email_verified_at)
-            $user->email_verified_at = now();
-            $user->must_change_password = true;
+            $user->must_change_password = false; // no longer used for profile completion
             $user->save();
             $user->syncRoles(['pharmacy']);
 
-            // 2. Create the Pharmacy record
+            // 2. Create the Pharmacy record (only name is set; rest filled by pharmacy on first login)
             Pharmacy::create([
                 'user_id' => $user->id,
                 'pharmacy_custom_id' => $pharmacyCustomId,
                 'pharmacy_name' => $request->pharmacy_name,
-                'address' => $request->address_line.', '.$request->city.($request->area ? ', '.$request->area : ''),
-                'latitude' => $request->latitude ?? 0,
-                'longitude' => $request->longitude ?? 0,
-                'phone_number' => $request->phone_number,
+                'address' => null,
+                'region' => null,
+                'latitude' => null,
+                'longitude' => null,
+                'phone_number' => null,
                 'is_active' => true, // Default to active
             ]);
         });

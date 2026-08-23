@@ -29,6 +29,8 @@ class PharmacyFactory extends Factory
             'logo' => null,
             'avg_rating' => 0.00,
             'is_active' => true,
+            'profile_completed_at' => now(),
+            'region' => fake()->city(),
         ];
     }
 }

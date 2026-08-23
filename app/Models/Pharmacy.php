@@ -20,12 +20,14 @@ class Pharmacy extends Model
         'pharmacy_custom_id',  // كود مخصص للصيدلية (unique)
         'pharmacy_name',       // اسم الصيدلية
         'address',             // العنوان النصي
+        'region',              // المنطقة / الحي
         'latitude',            // خط العرض (للموقع على الخريطة)
         'longitude',           // خط الطول (للموقع على الخريطة)
         'phone_number',        // رقم هاتف الصيدلية
         'logo',                // مسار صورة الشعار
         'avg_rating',          // متوسط التقييم (بيتحدث تلقائياً غالباً عبر الكود مش يدوي)
         'is_active',           // هل الصيدلية شغالة حالياً
+        'profile_completed_at',// وقت إكمال الصيدلي لبياناته عند أول دخول
     ];
 
     protected function casts(): array
@@ -35,6 +37,7 @@ class Pharmacy extends Model
             'longitude' => 'decimal:8',  // نفس دقة العمود بالداتابيز (11,8)
             'avg_rating' => 'decimal:2', // نفس دقة العمود بالداتابيز (3,2)
             'is_active' => 'boolean',
+            'profile_completed_at' => 'datetime',
         ];
     }
 
@@ -82,6 +85,14 @@ class Pharmacy extends Model
     public function patientInquiries(): HasMany
     {
         return $this->hasMany(PatientInquiry::class);
+    }
+
+    /**
+     * هل أكمل الصيدلي تعبئة بياناته عند أول دخول؟
+     */
+    public function profileCompleted(): bool
+    {
+        return $this->profile_completed_at !== null;
     }
 }
 

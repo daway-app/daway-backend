@@ -87,9 +87,11 @@ class LoginController extends Controller
             Auth::login($user, $remember);
             $request->session()->regenerate();
 
-            if ($user->must_change_password) {
-                return redirect()->route('pharmacy.profile.edit')
-                    ->with('warning', 'يجب تغيير كلمة المرور الافتراضية قبل المتابعة.');
+            $pharmacy = $user->pharmacy;
+
+            if ($pharmacy && ! $pharmacy->profileCompleted()) {
+                return redirect()->route('pharmacy.profile.complete.show')
+                    ->with('warning', __('pharmacy.profile.complete.required_message'));
             }
 
             // Redirect pharmacy users to their specific dashboard

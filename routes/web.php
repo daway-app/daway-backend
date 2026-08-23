@@ -153,6 +153,21 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
 Route::middleware(['auth', 'role:pharmacy'])->group(function () {
 
+    // ==================== PHARMACY PROFILE COMPLETION (first login) ====================
+
+    Route::get('/pharmacy/profile/complete', [
+        \App\Http\Controllers\web\Pharmacy\PharmacyProfileCompletionController::class,
+        'show',
+    ])->name('pharmacy.profile.complete.show');
+
+    Route::post('/pharmacy/profile/complete', [
+        \App\Http\Controllers\web\Pharmacy\PharmacyProfileCompletionController::class,
+        'store',
+    ])->name('pharmacy.profile.complete');
+});
+
+Route::middleware(['auth', 'role:pharmacy', 'profile.complete'])->group(function () {
+
     // ==================== PHARMACY DASHBOARD ====================
 
     Route::get('/pharmacy/dashboard', [

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureProfileComplete;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\SetAppLocale;
 use Illuminate\Auth\AuthenticationException;
@@ -31,6 +32,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => EnsureRole::class,
+            'profile.complete' => EnsureProfileComplete::class,
         ]);
 
         $middleware->web(append: [

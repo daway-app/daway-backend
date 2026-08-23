@@ -56,6 +56,8 @@ return [
     'validation_errors_title' => 'Validation Errors',
     'pharmacy_id_auto_generate' => 'Pharmacy ID will be auto-generated.',
     'pharmacy_id_hint' => 'This is a unique identifier for the pharmacy.',
+    'first_login_data_title' => 'Remaining data on first login',
+    'first_login_data_desc' => 'The pharmacy owner will be asked to complete location, address, phone, region, and working hours on first login.',
     'basic_pharmacy_info' => 'Basic Pharmacy Info',
     'pharmacy_name_placeholder' => 'Enter pharmacy name',
     'phone_number_placeholder' => 'Enter phone number',

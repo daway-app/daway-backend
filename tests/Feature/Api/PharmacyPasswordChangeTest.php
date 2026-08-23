@@ -15,22 +15,19 @@ class PharmacyPasswordChangeTest extends TestCase
 
         $response = $this->actingAs($admin)->post(route('pharmacies.store'), [
             'pharmacy_name' => 'Test Pharmacy',
-            'phone_number' => '0599123456',
-            'address_line' => 'Main St',
-            'city' => 'Gaza',
-            'area' => 'Rimal',
-            'latitude' => 31.5,
-            'longitude' => 34.4,
-            'email' => 'pharmacy@example.com',
         ]);
 
         $response->assertRedirect(route('pharmacies.index'));
 
         $pharmacy = Pharmacy::where('pharmacy_name', 'Test Pharmacy')->first();
         $this->assertNotNull($pharmacy);
+        $this->assertNull($pharmacy->phone_number);
+        $this->assertNull($pharmacy->address);
+        $this->assertNull($pharmacy->profile_completed_at);
 
         $user = $pharmacy->user;
-        $this->assertTrue($user->must_change_password);
+        $this->assertNull($user->email);
+        $this->assertFalse($user->must_change_password);
         $this->assertTrue(Hash::check($pharmacy->pharmacy_custom_id, $user->password));
     }
 

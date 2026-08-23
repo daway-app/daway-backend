@@ -56,6 +56,8 @@ return [
     'validation_errors_title' => 'أخطاء التحقق',
     'pharmacy_id_auto_generate' => 'سيتم إنشاء معرف الصيدلية تلقائيًا.',
     'pharmacy_id_hint' => 'هذا معرف فريد للصيدلية.',
+    'first_login_data_title' => 'البيانات المتبقية عند أول دخول',
+    'first_login_data_desc' => 'الصيدلي سيُطلب منه إكمال الموقع والعنوان ورقم الهاتف والمنطقة ومواعيد العمل عند أول تسجيل دخول.',
     'basic_pharmacy_info' => 'معلومات الصيدلية الأساسية',
     'pharmacy_name_placeholder' => 'أدخل اسم الصيدلية',
     'phone_number_placeholder' => 'أدخل رقم الهاتف',
