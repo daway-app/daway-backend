@@ -61,7 +61,7 @@
                             </div>
                         </div>
                         <div class="fg" style="margin-top:14px;">
-                            <label class="fl" for="image">صورة الدواء</label>
+                            <label class="fl" for="image">@lang('pharmacy.medicines.create.image_label')</label>
                             <input class="fc" type="file" id="image" name="image" accept="image/*" style="height:auto;padding:10px;">
                         </div>
                     </div>
@@ -104,9 +104,9 @@
                             @enderror
                         </div>
                         <div class="fg">
-                            <label class="fl" for="min_stock">الحد الأدنى للمخزون</label>
+                            <label class="fl" for="min_stock">@lang('pharmacy.medicines.create.min_stock_label')</label>
                             <input class="fc" type="number" id="min_stock" name="min_stock" min="0" value="{{ old('min_stock', 10) }}">
-                            <small class="fl-hint">عند الوصول لهذا الرقم يُعتبر المخزون منخفضاً</small>
+                            <small class="fl-hint">@lang('pharmacy.medicines.create.min_stock_hint')</small>
                         </div>
                     </div>
                     <div class="fg" style="margin-top:14px;">

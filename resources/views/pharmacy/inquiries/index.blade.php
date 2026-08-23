@@ -1,15 +1,20 @@
 @extends('layouts.app')
 
-@section('title', 'استفسارات التوفر')
+@section('title', __('pharmacy.inquiries.title'))
 
 @section('content')
     @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
+    @include('partials.pharmacy-hub-i18n')
+
+    @php
+        $statusText = fn($status) => $status === 'new' ? __('pharmacy.inquiries.status_new') : ($status === 'answered' ? __('pharmacy.inquiries.status_answered') : __('pharmacy.inquiries.status_closed'));
+    @endphp
 
     <div class='ph-page'>
         <div class='ph-head'>
             <div class='ph-page-title'>
-                <h1>استفسارات المرضى</h1>
-                <p>متابعة استفسارات توفر الأدوية</p>
+                <h1>@lang('pharmacy.inquiries.heading')</h1>
+                <p>@lang('pharmacy.inquiries.subtitle')</p>
             </div>
         </div>
 
@@ -21,21 +26,21 @@
         @endif
 
         <div class='ph-stats'>
-            <div class='ph-stat'><i class='fas fa-lock gray'></i><div><strong>{{ $closedCount }}</strong><span>مغلقة</span></div></div>
-            <div class='ph-stat'><i class='fas fa-comment-dots blue'></i><div><strong>{{ $answeredCount }}</strong><span>تم الرد</span></div></div>
-            <div class='ph-stat'><i class='fas fa-envelope green'></i><div><strong>{{ $newCount }}</strong><span>جديدة</span></div></div>
+            <div class='ph-stat'><i class='fas fa-lock gray'></i><div><strong>{{ $closedCount }}</strong><span>@lang('pharmacy.inquiries.stat_closed')</span></div></div>
+            <div class='ph-stat'><i class='fas fa-comment-dots blue'></i><div><strong>{{ $answeredCount }}</strong><span>@lang('pharmacy.inquiries.stat_answered')</span></div></div>
+            <div class='ph-stat'><i class='fas fa-envelope green'></i><div><strong>{{ $newCount }}</strong><span>@lang('pharmacy.inquiries.stat_new')</span></div></div>
         </div>
 
         <div class='ph-filters'>
             <div class='ph-tabs' data-ph-tabs='.ph-inquiry-table'>
-                <button class='ph-tab active' data-filter='all'>الكل</button>
-                <button class='ph-tab' data-filter='closed'>مغلقة</button>
-                <button class='ph-tab' data-filter='ans'>تم الرد</button>
-                <button class='ph-tab' data-filter='new'>جديدة</button>
+                <button class='ph-tab active' data-filter='all'>@lang('pharmacy.inquiries.filter_all')</button>
+                <button class='ph-tab' data-filter='closed'>@lang('pharmacy.inquiries.filter_closed')</button>
+                <button class='ph-tab' data-filter='ans'>@lang('pharmacy.inquiries.filter_answered')</button>
+                <button class='ph-tab' data-filter='new'>@lang('pharmacy.inquiries.filter_new')</button>
             </div>
             <div class='ph-search'>
                 <i class='fas fa-search'></i>
-                <input type='text' placeholder='ابحث باسم المريض أو الدواء أو نص الاستفسار...' data-ph-search='.ph-inquiry-table tbody tr'>
+                <input type='text' placeholder='@lang('pharmacy.inquiries.search_placeholder')' data-ph-search='.ph-inquiry-table tbody tr'>
             </div>
         </div>
 
@@ -44,21 +49,20 @@
                 <table class='ph-table'>
                     <thead>
                         <tr>
-                            <th>المريض</th>
-                            <th>الدواء</th>
-                            <th>الاستفسار</th>
-                            <th>التاريخ</th>
-                            <th>الحالة</th>
-                            <th>الإجراء</th>
+                            <th>@lang('pharmacy.inquiries.col_patient')</th>
+                            <th>@lang('pharmacy.inquiries.col_medicine')</th>
+                            <th>@lang('pharmacy.inquiries.col_inquiry')</th>
+                            <th>@lang('pharmacy.inquiries.col_date')</th>
+                            <th>@lang('pharmacy.inquiries.col_status')</th>
+                            <th>@lang('pharmacy.inquiries.col_action')</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($inquiries as $inquiry)
                             @php
                                 $status = $inquiry->status ?? 'new';
-                                $statusText = $status === 'new' ? 'جديدة' : ($status === 'answered' ? 'تم الرد' : 'مغلقة');
                                 $badgeClass = $status === 'new' ? 'new' : ($status === 'answered' ? 'ans' : 'closed');
-                                $name = $inquiry->user->name ?? 'مريض';
+                                $name = $inquiry->user->name ?? __('pharmacy.inquiries.patient_fallback');
                                 $initials = mb_substr($name, 0, 2);
                             @endphp
                             <tr data-status='{{ $status }}'>
@@ -69,14 +73,14 @@
                                     </div>
                                 </td>
                                 <td>
-                                    {{ $inquiry->medicine->trade_name ?? 'دواء غير محدد' }}
+                                    {{ $inquiry->medicine->trade_name ?? __('pharmacy.inquiries.medicine_fallback') }}
                                     @if($inquiry->medicine)
                                         <br><span class='ph-badge new' style='margin-block-start:4px;'>{{ $inquiry->medicine->strength ?? '' }}</span>
                                     @endif
                                 </td>
-                                <td style='max-width:280px;'>{{ $inquiry->message ?? 'هل يتوفر هذا الدواء؟' }}</td>
+                                <td style='max-width:280px;'>{{ $inquiry->message ?? __('pharmacy.inquiries.message_fallback') }}</td>
                                 <td>{{ $inquiry->created_at->format('Y-m-d') }}<br><small style='color:var(--ph-ink-faint);'>{{ $inquiry->created_at->format('h:i A') }}</small></td>
-                                <td><span class='ph-badge {{ $badgeClass }}'>{{ $statusText }}</span></td>
+                                <td><span class='ph-badge {{ $badgeClass }}'>{{ $statusText($status) }}</span></td>
                                 <td>
                                     <div style='display:flex;gap:8px;'>
                                         @if($status === 'new')
@@ -84,27 +88,27 @@
                                                 @csrf
                                                 @method('PUT')
                                                 <input type='hidden' name='status' value='answered'>
-                                                <button type='submit' class='ph-btn sm primary'>تم الرد</button>
+                                                <button type='submit' class='ph-btn sm primary'>@lang('pharmacy.inquiries.answer_button')</button>
                                             </form>
                                             <form action='{{ route('pharmacy.inquiries.update', $inquiry) }}' method='POST'>
                                                 @csrf
                                                 @method('PUT')
                                                 <input type='hidden' name='status' value='closed'>
-                                                <button type='submit' class='ph-btn sm ghost'>إغلاق</button>
+                                                <button type='submit' class='ph-btn sm ghost'>@lang('pharmacy.inquiries.close_button')</button>
                                             </form>
                                         @elseif($status === 'answered')
                                             <form action='{{ route('pharmacy.inquiries.update', $inquiry) }}' method='POST'>
                                                 @csrf
                                                 @method('PUT')
                                                 <input type='hidden' name='status' value='closed'>
-                                                <button type='submit' class='ph-btn sm ghost'>إغلاق</button>
+                                                <button type='submit' class='ph-btn sm ghost'>@lang('pharmacy.inquiries.close_button')</button>
                                             </form>
                                         @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan='6'><div class='ph-empty'><i class='fas fa-inbox'></i><h3>لا توجد استفسارات</h3></div></td></tr>
+                            <tr><td colspan='6'><div class='ph-empty'><i class='fas fa-inbox'></i><h3>@lang('pharmacy.inquiries.empty')</h3></div></td></tr>
                         @endforelse
                     </tbody>
                 </table>
