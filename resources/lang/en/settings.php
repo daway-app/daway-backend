@@ -44,4 +44,10 @@ return [
     'next_backup' => 'Next Backup',
     'next_backup_value' => 'Scheduled for tomorrow',
     'cancel_changes' => 'Cancel',
+    'catalog_import_title' => 'Ministry of Health Medicine Catalog',
+    'catalog_import_desc' => 'Import the medicine catalog from the bundled file (17,000+ medicines) when needed.',
+    'catalog_import_button' => 'Import Catalog',
+    'catalog_already_loaded' => 'The catalog is already loaded (:count medicines).',
+    'catalog_import_success' => 'Catalog imported successfully (:count medicines).',
+    'catalog_import_failed' => 'Catalog import failed. Make sure the file exists.',
 ];

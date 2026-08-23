@@ -102,6 +102,17 @@
                                 <span class="slider"></span>
                             </label>
                         </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <strong>@lang('settings.catalog_import_title')</strong>
+                                <span>@lang('settings.catalog_import_desc')</span>
+                            </div>
+                            <form method="POST" action="{{ route('settings.catalog.import') }}" style="display:inline;">
+                                @csrf
+                                <button type="submit" class="btn-primary">@lang('settings.catalog_import_button')</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -9,6 +9,7 @@ use App\Http\Controllers\web\Admin\InventoryController;
 use App\Http\Controllers\web\Admin\LogController;
 use App\Http\Controllers\web\Admin\MedicineController;
 use App\Http\Controllers\web\Admin\NotificationController;
+use App\Http\Controllers\web\Admin\CatalogImportController;
 use App\Http\Controllers\web\Admin\SettingController;
 use App\Http\Controllers\web\Admin\UserController;
 use App\Http\Controllers\web\Auth\LoginController;
@@ -127,6 +128,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         SettingController::class,
         'update',
     ])->name('settings.update');
+
+    // ==================== CATALOG IMPORT ====================
+
+    Route::post('/settings/catalog-import', [
+        CatalogImportController::class,
+        'import',
+    ])->name('settings.catalog.import');
 
     // ==================== LOGS ====================
 

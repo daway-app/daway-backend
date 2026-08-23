@@ -44,4 +44,10 @@ return [
     'next_backup' => 'النسخ الاحتياطي التالي',
     'next_backup_value' => 'مجدول ليوم غد',
     'cancel_changes' => 'إلغاء',
+    'catalog_import_title' => 'كتالوج أدوية وزارة الصحة',
+    'catalog_import_desc' => 'استيراد كتالوج الأدوية من الملف الثابت (17,000+ دواء) عند الحاجة.',
+    'catalog_import_button' => 'استيراد الكتالوج',
+    'catalog_already_loaded' => 'الكتالوج محمّل بالفعل (:count دواء).',
+    'catalog_import_success' => 'تم استيراد الكتالوج بنجاح (:count دواء).',
+    'catalog_import_failed' => 'فشل استيراد الكتالوج. تأكد من وجود الملف.',
 ];
