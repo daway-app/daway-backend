@@ -56,8 +56,6 @@ return [
     'validation_errors_title' => 'أخطاء التحقق',
     'pharmacy_id_auto_generate' => 'سيتم إنشاء معرف الصيدلية تلقائيًا.',
     'pharmacy_id_hint' => 'هذا معرف فريد للصيدلية.',
-    'password_same_as_id' => 'كلمة المرور ستكون نفس معرّف الصيدلية (PH-XXXX).',
-    'password_same_as_id_hint' => 'يجب على الصيدلي تغييرها عند أول تسجيل دخول.',
     'basic_pharmacy_info' => 'معلومات الصيدلية الأساسية',
     'pharmacy_name_placeholder' => 'أدخل اسم الصيدلية',
     'phone_number_placeholder' => 'أدخل رقم الهاتف',

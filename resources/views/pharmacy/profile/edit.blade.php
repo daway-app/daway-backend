@@ -8,26 +8,13 @@
     @push('scripts')
         <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
         <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
-        <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
     @endpush
 
     <div class='ph-page'>
-        <div class='ph-banner'>
-            <div>
-                <h2>{{ $pharmacy->pharmacy_name }}</h2>
-                <p>{{ $pharmacy->address }}</p>
-            </div>
-            @if($pharmacy->logo)
-                <img src='{{ \App\Support\Image::url($pharmacy->logo) }}' alt='{{ $pharmacy->pharmacy_name }}' class='ph-avatar'>
-            @else
-                <div class='ph-avatar' style='display:grid;place-items:center;background:var(--ph-teal-mist);color:var(--ph-teal);font-size:2rem;font-weight:700;'>{{ mb_substr($pharmacy->pharmacy_name, 0, 1) }}</div>
-            @endif
-        </div>
-
         <div class='ph-head'>
             <div class='ph-page-title'>
-                <h1>الملف التعريفي للصيدلية</h1>
-                <p>تعديل بيانات الصيدلية وساعات العمل والموقع</p>
+                <h1>الملف الشخصي</h1>
+                <p>إدارة بيانات صيدلية {{ $pharmacy->pharmacy_name }}</p>
             </div>
         </div>
 
@@ -42,83 +29,125 @@
             @csrf
             @method('PUT')
 
-            <div class='ph-card'>
-                <div class='ph-card-head'><h2><i class='fas fa-info-circle'></i> البيانات الأساسية</h2></div>
-                <div class='ph-card-body'>
-                    <div class='ph-form-row'>
-                        <div class='ph-group'>
-                            <label class='ph-form-label' for='pharmacy_name'>اسم الصيدلية <span class='req'>*</span></label>
-                            <input type='text' name='pharmacy_name' id='pharmacy_name' class='ph-control' value='{{ old('pharmacy_name', $pharmacy->pharmacy_name) }}' required>
-                            @error('pharmacy_name')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                        </div>
-                        <div class='ph-group'>
-                            <label class='ph-form-label' for='phone_number'>رقم التواصل <span class='req'>*</span></label>
-                            <input type='text' name='phone_number' id='phone_number' class='ph-control' value='{{ old('phone_number', $pharmacy->phone_number) }}' required>
-                            @error('phone_number')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                        </div>
-                    </div>
-                    <div class='ph-form-row'>
-                        <div class='ph-group'>
-                            <label class='ph-form-label' for='address'>العنوان <span class='req'>*</span></label>
-                            <input type='text' name='address' id='address' class='ph-control' value='{{ old('address', $pharmacy->address) }}' required>
-                            @error('address')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                        </div>
-                        <div class='ph-group'>
-                            <label class='ph-form-label' for='logo'>شعار الصيدلية</label>
-                            <input type='file' name='logo' id='logo' class='ph-control' accept='image/*' style='height:auto;padding:10px;'>
-                            @error('logo')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class='ph-card'>
-                <div class='ph-card-head'><h2><i class='fas fa-map-marker-alt'></i> تحديد الموقع</h2></div>
-                <div class='ph-card-body'>
-                    <div class='ph-form-row'>
-                        <div class='ph-group'>
-                            <label class='ph-form-label' for='latitude'>خط العرض</label>
-                            <input type='text' name='latitude' id='latitude' class='ph-control' value='{{ old('latitude', $pharmacy->latitude) }}' required>
-                        </div>
-                        <div class='ph-group'>
-                            <label class='ph-form-label' for='longitude'>خط الطول</label>
-                            <input type='text' name='longitude' id='longitude' class='ph-control' value='{{ old('longitude', $pharmacy->longitude) }}' required>
-                        </div>
-                    </div>
-                    <div id='pharmacyMap' class='ph-map' data-lat='{{ old('latitude', $pharmacy->latitude) }}' data-lng='{{ old('longitude', $pharmacy->longitude) }}'></div>
-                    <p class='ph-hint'>انقر على الخريطة أو حرك الدبوس لتحديد الموقع بدقة</p>
-                </div>
-            </div>
-
-            <div class='ph-card'>
-                <div class='ph-card-head'><h2><i class='fas fa-clock'></i> ساعات العمل</h2></div>
-                <div class='ph-card-body ph-hours'>
-                    @foreach($daysOfWeek as $dayKey => $dayName)
-                        @php
-                            $hour = $pharmacyHours[$dayKey] ?? null;
-                            $isClosed = old('hours.'.$dayKey.'.is_closed', $hour?->is_closed ?? false);
-                        @endphp
-                        <div class='day-row'>
-                            <label>
-                                <input type='checkbox' name='hours[{{ $dayKey }}][is_closed]' value='1' {{ $isClosed ? 'checked' : '' }} onchange='toggleTime("{{ $dayKey }}")'>
-                                {{ $dayName }}
-                            </label>
-                            <div class='ph-group'>
-                                <label class='ph-form-label'>من</label>
-                                <input type='time' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.open_time', $hour?->open_time ?? '') }}' {{ $isClosed ? 'disabled' : '' }}>
+            <div class='ph-profile-grid'>
+                <div class='ph-profile-side'>
+                    <div class='ph-card'>
+                        <div class='ph-card-head'><h2><i class='fas fa-map-marker-alt'></i> موقع الصيدلية</h2></div>
+                        <div class='ph-card-body'>
+                            <div class='ph-form-row' style='grid-template-columns:1fr 1fr;margin-block-end:12px;'>
+                                <div class='ph-group'>
+                                    <label class='ph-form-label' for='latitude'>خط العرض</label>
+                                    <input type='text' name='latitude' id='latitude' class='ph-control' value='{{ old('latitude', $pharmacy->latitude) }}' required>
+                                </div>
+                                <div class='ph-group'>
+                                    <label class='ph-form-label' for='longitude'>خط الطول</label>
+                                    <input type='text' name='longitude' id='longitude' class='ph-control' value='{{ old('longitude', $pharmacy->longitude) }}' required>
+                                </div>
                             </div>
+                            <div id='pharmacyMap' class='ph-map ph-map-sm' data-lat='{{ old('latitude', $pharmacy->latitude) }}' data-lng='{{ old('longitude', $pharmacy->longitude) }}'></div>
+                            <p class='ph-hint'>انقر على الخريطة أو حرّك الدبوس لتحديد الموقع</p>
+                        </div>
+                    </div>
+
+                    <div class='ph-card'>
+                        <div class='ph-card-head'><h2><i class='fas fa-clock'></i> ساعات العمل</h2></div>
+                        <div class='ph-card-body ph-hours-compact'>
+                            @foreach($daysOfWeek as $dayKey => $dayName)
+                                @php
+                                    $hour = $pharmacyHours[$dayKey] ?? null;
+                                    $isClosed = old('hours.'.$dayKey.'.is_closed', $hour?->is_closed ?? false);
+                                @endphp
+                                <div class='hc-row'>
+                                    <span class='hc-day'>{{ $dayName }}</span>
+                                    <span class='hc-time'>
+                                        @if($isClosed) مغلق @else
+                                            {{ old('hours.'.$dayKey.'.close_time', $hour?->close_time ?? '') }} – {{ old('hours.'.$dayKey.'.open_time', $hour?->open_time ?? '') }}
+                                        @endif
+                                    </span>
+                                    <i class='fas fa-calendar-days'></i>
+                                </div>
+                            @endforeach
+                        </div>
+                        <details class='ph-hours-editor'>
+                            <summary class='ph-btn sm outline' style='width:calc(100% - 44px);margin:0 22px 18px;'><i class='fas fa-pen'></i> تعديل ساعات العمل</summary>
+                            <div class='ph-card-body ph-hours' style='padding-block-start:0;'>
+                                @foreach($daysOfWeek as $dayKey => $dayName)
+                                    @php
+                                        $hour = $pharmacyHours[$dayKey] ?? null;
+                                        $isClosed = old('hours.'.$dayKey.'.is_closed', $hour?->is_closed ?? false);
+                                    @endphp
+                                    <div class='day-row'>
+                                        <label>
+                                            <input type='checkbox' name='hours[{{ $dayKey }}][is_closed]' value='1' {{ $isClosed ? 'checked' : '' }} onchange='toggleTime("{{ $dayKey }}")'>
+                                            {{ $dayName }}
+                                        </label>
+                                        <div class='ph-group'>
+                                            <label class='ph-form-label'>من</label>
+                                            <input type='time' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.open_time', $hour?->open_time ?? '') }}' {{ $isClosed ? 'disabled' : '' }}>
+                                        </div>
+                                        <div class='ph-group'>
+                                            <label class='ph-form-label'>إلى</label>
+                                            <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.close_time', $hour?->close_time ?? '') }}' {{ $isClosed ? 'disabled' : '' }}>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <div class='ph-profile-main'>
+                    <div class='ph-card'>
+                        <div class='ph-banner'>
+                            <div>
+                                <h2>{{ $pharmacy->pharmacy_name }}</h2>
+                                <p>تعتني بصحتك لحياة أفضل</p>
+                            </div>
+                            @if($pharmacy->logo)
+                                <img src='{{ \App\Support\Image::url($pharmacy->logo) }}' alt='{{ $pharmacy->pharmacy_name }}' class='ph-avatar'>
+                            @else
+                                <div class='ph-avatar' style='display:grid;place-items:center;background:var(--ph-teal-mist);color:var(--ph-teal);font-size:2rem;font-weight:700;'>{{ mb_substr($pharmacy->pharmacy_name, 0, 1) }}</div>
+                            @endif
+                        </div>
+                        <div class='ph-card-body'>
+                            <div class='ph-group' style='margin-block-end:18px;'>
+                                <label class='ph-form-label' for='pharmacy_name'>اسم الصيدلية <span class='req'>*</span></label>
+                                <input type='text' name='pharmacy_name' id='pharmacy_name' class='ph-control' value='{{ old('pharmacy_name', $pharmacy->pharmacy_name) }}' required>
+                                @error('pharmacy_name')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                            </div>
+
+                            @if(isset($pharmacy->email))
+                                <div class='ph-group' style='margin-block-end:18px;'>
+                                    <label class='ph-form-label' for='email'>البريد الإلكتروني <span class='req'>*</span></label>
+                                    <input type='email' name='email' id='email' class='ph-control' value='{{ old('email', $pharmacy->email) }}'>
+                                    @error('email')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                                </div>
+                            @endif
+
+                            <div class='ph-group' style='margin-block-end:18px;'>
+                                <label class='ph-form-label' for='phone_number'>رقم الهاتف <span class='req'>*</span></label>
+                                <input type='text' name='phone_number' id='phone_number' class='ph-control' value='{{ old('phone_number', $pharmacy->phone_number) }}' required>
+                                @error('phone_number')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                            </div>
+
+                            <div class='ph-group' style='margin-block-end:18px;'>
+                                <label class='ph-form-label' for='address'>العنوان <span class='req'>*</span></label>
+                                <textarea name='address' id='address' class='ph-textarea' style='width:100%;' required>{{ old('address', $pharmacy->address) }}</textarea>
+                                @error('address')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                            </div>
+
                             <div class='ph-group'>
-                                <label class='ph-form-label'>إلى</label>
-                                <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.close_time', $hour?->close_time ?? '') }}' {{ $isClosed ? 'disabled' : '' }}>
+                                <label class='ph-form-label' for='logo'>شعار الصيدلية</label>
+                                <input type='file' name='logo' id='logo' class='ph-control' accept='image/*' style='height:auto;padding:10px;'>
+                                @error('logo')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
                         </div>
-                    @endforeach
+                        <div style='display:flex;gap:10px;padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>
+                            <button type='submit' class='ph-btn primary'><i class='fas fa-save'></i> حفظ التغييرات</button>
+                            <a href='{{ route('pharmacy.dashboard.index') }}' class='ph-btn ghost'>إلغاء</a>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <div style='display:flex;gap:10px;margin-block-start:20px;'>
-                <button type='submit' class='ph-btn primary'><i class='fas fa-save'></i> حفظ التعديلات</button>
-                <a href='{{ route('pharmacy.dashboard.index') }}' class='ph-btn ghost'>إلغاء</a>
             </div>
         </form>
     </div>

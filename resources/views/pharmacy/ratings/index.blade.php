@@ -24,47 +24,50 @@
             </div>
         </div>
 
-        <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-block-end:20px;'>
+        <div style='display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:20px;margin-block-end:20px;'>
             <div class='ph-card'>
-                <div class='ph-card-head'><h2><i class='fas fa-star'></i> متوسط التقييم</h2></div>
                 <div class='ph-card-body' style='text-align:center;'>
-                    <div style='font-size:3rem;font-weight:700;color:var(--ph-teal);'>{{ $avg }}</div>
-                    <div class='ph-stars' style='font-size:1.4rem;margin-block:10px;'>
+                    <div style='font-size:2.6rem;font-weight:700;color:var(--ph-ink);line-height:1;'>{{ $avg }} <span style='font-size:1.1rem;color:var(--ph-ink-faint);font-weight:600;'>من 5</span></div>
+                    <div class='ph-stars' style='font-size:1.3rem;margin-block:12px;'>
                         @for($i=1;$i<=5;$i++)<i class='{{ $i <= round($avg) ? 'fas' : 'far' }} fa-star'></i>@endfor
                     </div>
-                    <p style='color:var(--ph-ink-faint);'>{{ $total }} تقييم</p>
+                    <p style='color:var(--ph-ink-faint);margin:0;'>{{ $total }} تقييماً</p>
                 </div>
             </div>
 
             <div class='ph-card'>
-                <div class='ph-card-head'><h2><i class='fas fa-chart-bar'></i> توزيع التقييمات</h2></div>
+                <div class='ph-card-head'><h2>توزيع التقييمات</h2></div>
                 <div class='ph-card-body'>
                     @foreach($distribution as $item)
                         <div style='display:flex;align-items:center;gap:10px;margin-block-end:10px;'>
-                            <span style='width:50px;font-size:.85rem;'>{{ $item['stars'] }} نجوم</span>
+                            <span style='width:56px;font-size:.85rem;color:var(--ph-ink-soft);'>{{ $item['stars'] }} {{ $item['stars'] == 1 ? 'نجمة' : 'نجوم' }}</span>
                             <div style='flex:1;height:8px;background:var(--ph-canvas);border-radius:var(--ph-r-full);overflow:hidden;'>
                                 <div style='width:{{ $item['percent'] }}%;height:100%;background:#F59E0B;border-radius:var(--ph-r-full);'></div>
                             </div>
-                            <span style='width:60px;text-align:end;font-size:.85rem;color:var(--ph-ink-faint);'>{{ $item['count'] }} ({{ $item['percent'] }}%)</span>
+                            <span style='width:70px;text-align:end;font-size:.8rem;color:var(--ph-ink-faint);'>{{ $item['count'] }} ({{ $item['percent'] }}%)</span>
                         </div>
                     @endforeach
                 </div>
             </div>
 
             <div class='ph-card'>
-                <div class='ph-card-head'><h2><i class='fas fa-chart-line'></i> متوسط التقييم شهرياً</h2></div>
+                <div class='ph-card-head'><h2>متوسط التقييم خلال آخر 6 أشهر</h2></div>
                 <div class='ph-card-body'><div class='chart-box chart-sm'><canvas data-ph-chart='line' data-ph-labels='{{ $labels }}' data-ph-data='{{ $data }}'></canvas></div></div>
             </div>
         </div>
 
         <div class='ph-card'>
-            <div class='ph-card-head'><h2><i class='fas fa-comment-dots'></i> التعليقات</h2></div>
+            <div class='ph-card-head'><h2><i class='fas fa-comment-dots'></i> آخر التقييمات</h2></div>
             <div class='ph-card-body'>
                 <div class='ph-grid'>
                     @forelse($ratings as $rating)
+                        @php $name = $rating->user->name ?? 'مريض'; @endphp
                         <div class='ph-rating-card'>
                             <div class='head'>
-                                <strong>{{ $rating->user->name ?? 'مريض' }}</strong>
+                                <div style='display:flex;align-items:center;gap:10px;'>
+                                    <span class='ph-avatar-sm'>{{ mb_substr($name, 0, 2) }}</span>
+                                    <strong>{{ $name }}</strong>
+                                </div>
                                 <span>{{ $rating->created_at->format('Y-m-d') }}</span>
                             </div>
                             <div class='ph-stars' style='margin-block-end:8px;'>

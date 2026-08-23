@@ -90,10 +90,12 @@ class PharmacyDashboardController extends Controller
             'ratings' => $ratingsChart,
         ];
 
-        $pendingInquiries = $pharmacy->patientInquiries()->where('status', 'new')->count();
-        $totalInquiries = $pharmacy->patientInquiries()->count();
-        $newRatingsThisWeek = $pharmacy->ratings()->where('created_at', '>=', now()->subDays(7))->count();
-        $newInquiries = $pendingInquiries;
+        $newInquiries = $pharmacy->patientInquiries()->where('status', 'new')->count();
+        $latestInquiries = $pharmacy->patientInquiries()
+            ->with(['user', 'medicine'])
+            ->latest()
+            ->take(5)
+            ->get();
 
         return view('pharmacy.dashboard.index', compact(
             'user',
@@ -109,9 +111,7 @@ class PharmacyDashboardController extends Controller
             'chartData',
             'newInquiries',
             'lowStockItems',
-            'pendingInquiries',
-            'totalInquiries',
-            'newRatingsThisWeek'
+            'latestInquiries'
         ));
     }
 

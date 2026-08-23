@@ -13,6 +13,8 @@
         $available = $available ?? 0;
         $low = $low ?? 0;
         $out = $out ?? 0;
+        $total = $available + $low + $out;
+        $pct = fn($n) => $total > 0 ? round(($n / $total) * 100, 1) : 0;
         $labels = json_encode($trendLabels ?? []);
         $data = json_encode($trendData ?? []);
     @endphp
@@ -33,18 +35,40 @@
         @endif
 
         <div class='ph-stats'>
+            <div class='ph-stat'><i class='fas fa-xmark red'></i><div><strong>{{ $out }}</strong><span>منتهي الصلاحية / غير متوفر</span></div></div>
+            <div class='ph-stat'><i class='fas fa-triangle-exclamation orange'></i><div><strong>{{ $low }}</strong><span>مخزون منخفض</span></div></div>
             <div class='ph-stat'><i class='fas fa-check green'></i><div><strong>{{ $available }}</strong><span>متوفر</span></div></div>
-            <div class='ph-stat'><i class='fas fa-triangle-exclamation orange'></i><div><strong>{{ $low }}</strong><span>منخفض</span></div></div>
-            <div class='ph-stat'><i class='fas fa-xmark red'></i><div><strong>{{ $out }}</strong><span>نافذ</span></div></div>
         </div>
 
-        <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-block-end:20px;'>
+        <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-block-end:20px;'>
             <div class='ph-card'>
-                <div class='ph-card-head'><h2><i class='fas fa-chart-pie'></i> حالة المخزون</h2></div>
-                <div class='ph-card-body'><div class='chart-box'><canvas data-ph-chart='donut' data-ph-labels='["متوفر","منخفض","نافذ"]' data-ph-data='[{{ $available }},{{ $low }},{{ $out }}]' data-ph-colors='["#16A34A","#CA8A04","#DC2626"]'></canvas></div></div>
+                <div class='ph-card-head'>
+                    <h2><i class='fas fa-chart-pie'></i> حالة المخزون</h2>
+                    <p>نسبة الأصناف حسب حالة التوفر</p>
+                </div>
+                <div class='ph-card-body'>
+                    <div class='ph-donut-wrap'>
+                        <div class='ph-donut-chart'>
+                            <canvas data-ph-chart='donut' data-ph-legend='off'
+                                data-ph-center-value='{{ $total }}'
+                                data-ph-center-label='إجمالي الأصناف'
+                                data-ph-labels='["متوفر","مخزون منخفض","نافذ"]'
+                                data-ph-data='[{{ $available }},{{ $low }},{{ $out }}]'
+                                data-ph-colors='["#16A34A","#CA8A04","#DC2626"]'></canvas>
+                        </div>
+                        <ul class='ph-legend'>
+                            <li><span class='dot' style='background:#16A34A'></span> متوفر <b>{{ $pct($available) }}%</b></li>
+                            <li><span class='dot' style='background:#CA8A04'></span> منخفض المخزون <b>{{ $pct($low) }}%</b></li>
+                            <li><span class='dot' style='background:#DC2626'></span> منتهي الصلاحية / غير متوفر <b>{{ $pct($out) }}%</b></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class='ph-card'>
-                <div class='ph-card-head'><h2><i class='fas fa-chart-line'></i> اتجاه المخزون</h2></div>
+                <div class='ph-card-head'>
+                    <h2><i class='fas fa-chart-line'></i> اتجاه المخزون</h2>
+                    <p>إجمالي عدد الأصناف المتوفرة</p>
+                </div>
                 <div class='ph-card-body'><div class='chart-box'><canvas data-ph-chart='line' data-ph-labels='{{ $labels }}' data-ph-data='{{ $data }}'></canvas></div></div>
             </div>
         </div>
@@ -56,7 +80,7 @@
                 <div class='ph-card-head'><h2><i class='fas fa-boxes-stacked'></i> تحديث الكميات</h2></div>
                 <div class='ph-card-body ph-table-wrap'>
                     <table class='ph-table'>
-                        <thead><tr><th>الدواء</th><th>الحد الأدنى</th><th>الكمية الحالية</th><th>تعديل</th><th>الحالة</th></tr></thead>
+                        <thead><tr><th>الدواء</th><th>الحالة</th><th>الحد الأدنى</th><th>الكمية الحالية</th><th>تعديل الكمية</th></tr></thead>
                         <tbody>
                             @forelse($items as $item)
                                 @php
@@ -67,7 +91,9 @@
                                 @endphp
                                 <tr data-status='{{ $status }}' data-min='{{ $min }}'>
                                     <td><strong>{{ $item->medicine->trade_name }}</strong><br><small style='color:var(--ph-ink-faint);'>{{ $item->medicine->active_ingredient }}</small></td>
+                                    <td><span class='ph-badge {{ $status }}'>{{ $statusText }}</span></td>
                                     <td>{{ $min }}</td>
+                                    <td>{{ $q }}</td>
                                     <td>
                                         <div class='ph-stepper'>
                                             <button type='button' class='dec'><i class='fas fa-minus'></i></button>
@@ -75,8 +101,6 @@
                                             <button type='button' class='inc'><i class='fas fa-plus'></i></button>
                                         </div>
                                     </td>
-                                    <td><a href='{{ route('pharmacy.medicines.edit', $item->id) }}' class='ph-btn sm outline'>تعديل الدواء</a></td>
-                                    <td><span class='ph-badge {{ $status }}'>{{ $statusText }}</span></td>
                                 </tr>
                             @empty
                                 <tr><td colspan='5'><div class='ph-empty'><i class='fas fa-box-open'></i><h3>لا توجد أدوية في المخزون</h3></div></td></tr>
