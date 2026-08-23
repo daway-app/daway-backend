@@ -120,6 +120,27 @@
                                 <p class='ph-hint'>@lang('pharmacy.profile.complete.email_hint')</p>
                                 @error('email')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
+
+                            <div class='ph-card-head' style='margin-block-end:12px;padding:0;'><h2><i class='fas fa-lock'></i> @lang('pharmacy.profile.complete.password_section')</h2></div>
+
+                            <div class='ph-group' style='margin-block-end:18px;'>
+                                <label class='ph-form-label' for='current_password'>@lang('pharmacy.profile.complete.current_password') <span class='req'>*</span></label>
+                                <input type='password' name='current_password' id='current_password' class='ph-control' required>
+                                <p class='ph-hint'>@lang('pharmacy.profile.complete.current_password_hint')</p>
+                                @error('current_password')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                            </div>
+
+                            <div class='ph-group' style='margin-block-end:18px;'>
+                                <label class='ph-form-label' for='password'>@lang('pharmacy.profile.complete.new_password') <span class='req'>*</span></label>
+                                <input type='password' name='password' id='password' class='ph-control' required>
+                                <p class='ph-hint'>@lang('pharmacy.profile.complete.password_hint')</p>
+                                @error('password')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                            </div>
+
+                            <div class='ph-group' style='margin-block-end:18px;'>
+                                <label class='ph-form-label' for='password_confirmation'>@lang('pharmacy.profile.complete.confirm_password') <span class='req'>*</span></label>
+                                <input type='password' name='password_confirmation' id='password_confirmation' class='ph-control' required>
+                            </div>
                         </div>
                         <div style='display:flex;gap:10px;padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>
                             <button type='submit' class='ph-btn primary'><i class='fas fa-save'></i> @lang('pharmacy.profile.complete.save_button')</button>

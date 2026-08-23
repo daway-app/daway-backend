@@ -62,9 +62,11 @@ class PharmacyProfileCompletionTest extends TestCase
             ->assertRedirect(route('pharmacy.profile.complete.show'));
     }
 
-    public function test_pharmacy_can_complete_profile(): void
+    public function test_pharmacy_can_complete_profile_with_password_change(): void
     {
-        $user = User::factory()->pharmacy()->create();
+        $user = User::factory()->pharmacy()->create([
+            'password' => Hash::make('PH-COMPL1'),
+        ]);
         $pharmacy = Pharmacy::factory()->create([
             'user_id' => $user->id,
             'profile_completed_at' => null,
@@ -77,6 +79,9 @@ class PharmacyProfileCompletionTest extends TestCase
             'latitude' => 31.5,
             'longitude' => 34.4,
             'email' => 'pharmacy@example.com',
+            'current_password' => 'PH-COMPL1',
+            'password' => 'new-secure-password',
+            'password_confirmation' => 'new-secure-password',
             'hours' => [
                 'Saturday' => ['open_time' => '09:00', 'close_time' => '17:00', 'is_closed' => false],
                 'Sunday' => ['open_time' => '09:00', 'close_time' => '17:00', 'is_closed' => false],
@@ -97,6 +102,7 @@ class PharmacyProfileCompletionTest extends TestCase
 
         $user->refresh();
         $this->assertEquals('pharmacy@example.com', $user->email);
+        $this->assertTrue(Hash::check('new-secure-password', $user->password));
 
         $this->assertDatabaseHas('pharmacy_hours', [
             'pharmacy_id' => $pharmacy->id,
@@ -107,9 +113,11 @@ class PharmacyProfileCompletionTest extends TestCase
         ]);
     }
 
-    public function test_profile_completion_requires_at_least_one_open_day(): void
+    public function test_profile_completion_rejects_wrong_current_password(): void
     {
-        $user = User::factory()->pharmacy()->create();
+        $user = User::factory()->pharmacy()->create([
+            'password' => Hash::make('correct-password'),
+        ]);
         Pharmacy::factory()->create([
             'user_id' => $user->id,
             'profile_completed_at' => null,
@@ -121,6 +129,36 @@ class PharmacyProfileCompletionTest extends TestCase
             'region' => 'Rimal',
             'latitude' => 31.5,
             'longitude' => 34.4,
+            'current_password' => 'wrong-password',
+            'password' => 'new-secure-password',
+            'password_confirmation' => 'new-secure-password',
+            'hours' => [
+                'Saturday' => ['open_time' => '09:00', 'close_time' => '17:00'],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors(['current_password']);
+    }
+
+    public function test_profile_completion_requires_at_least_one_open_day(): void
+    {
+        $user = User::factory()->pharmacy()->create([
+            'password' => Hash::make('PH-COMPL2'),
+        ]);
+        Pharmacy::factory()->create([
+            'user_id' => $user->id,
+            'profile_completed_at' => null,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('pharmacy.profile.complete'), [
+            'phone_number' => '0599123456',
+            'address' => 'Main St, Gaza',
+            'region' => 'Rimal',
+            'latitude' => 31.5,
+            'longitude' => 34.4,
+            'current_password' => 'PH-COMPL2',
+            'password' => 'new-secure-password',
+            'password_confirmation' => 'new-secure-password',
             'hours' => [
                 'Saturday' => ['is_closed' => true],
                 'Sunday' => ['is_closed' => true],
@@ -134,6 +172,7 @@ class PharmacyProfileCompletionTest extends TestCase
     {
         $user = User::factory()->pharmacy()->create([
             'email' => null,
+            'password' => Hash::make('PH-COMPL3'),
         ]);
         $pharmacy = Pharmacy::factory()->create([
             'user_id' => $user->id,
@@ -146,6 +185,9 @@ class PharmacyProfileCompletionTest extends TestCase
             'region' => 'Rimal',
             'latitude' => 31.5,
             'longitude' => 34.4,
+            'current_password' => 'PH-COMPL3',
+            'password' => 'new-secure-password',
+            'password_confirmation' => 'new-secure-password',
             'hours' => [
                 'Saturday' => ['open_time' => '09:00', 'close_time' => '17:00'],
             ],

@@ -75,6 +75,7 @@ class ProfileImageUploadTest extends TestCase
                 'pharmacy_name' => $pharmacy->pharmacy_name,
                 'phone_number' => $pharmacy->phone_number,
                 'address' => $pharmacy->address,
+                'region' => $pharmacy->region,
                 'latitude' => $pharmacy->latitude,
                 'longitude' => $pharmacy->longitude,
                 'logo' => UploadedFile::fake()->image('logo.jpg', 10, 10),

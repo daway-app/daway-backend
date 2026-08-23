@@ -7,6 +7,8 @@ use App\Models\PharmacyHour;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -60,25 +62,44 @@ class PharmacyProfileCompletionController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', Password::min(8)],
+            'password_confirmation' => ['required', 'string'],
             'hours' => ['required', 'array'],
-            'hours.*.open_time' => ['nullable', 'date_format:H:i'],
-            'hours.*.close_time' => ['nullable', 'date_format:H:i', 'after:hours.*.open_time'],
-            'hours.*.is_closed' => ['boolean'],
         ]);
 
-        // يجب تحديد مواعيد عمل يوم واحد على الأقل
-        $hasOpenDay = collect($validated['hours'])->contains(function ($hour) {
-            return empty($hour['is_closed']) && ! empty($hour['open_time']) && ! empty($hour['close_time']);
-        });
+        // تحقق من كلمة المرور الحالية
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            return redirect()->route('pharmacy.profile.complete.show')
+                ->withErrors(['current_password' => __('pharmacy.profile.complete.password_wrong')])
+                ->withInput();
+        }
+
+        // تحقق من مواعيد العمل — يجب تحديد يوم واحد على الأقل
+        $hoursData = $request->input('hours', []);
+        $hasOpenDay = false;
+
+        foreach ($hoursData as $dayOfWeek => $hourData) {
+            $isClosed = ! empty($hourData['is_closed']);
+            $openTime = $hourData['open_time'] ?? null;
+            $closeTime = $hourData['close_time'] ?? null;
+
+            if (! $isClosed && ! empty($openTime) && ! empty($closeTime)) {
+                $hasOpenDay = true;
+            }
+        }
 
         if (! $hasOpenDay) {
-            return back()->withErrors(['hours' => __('pharmacy.profile.complete.hours_required')])->withInput();
+            return redirect()->route('pharmacy.profile.complete.show')
+                ->withErrors(['hours' => __('pharmacy.profile.complete.hours_required')])
+                ->withInput();
         }
 
-        // تحديث بيانات المستخدم (البريد اختياري)
-        if (! empty($validated['email'])) {
-            $user->update(['email' => $validated['email']]);
-        }
+        // تحديث كلمة المرور
+        $user->update([
+            'password' => Hash::make($validated['password']),
+            'email' => ! empty($validated['email']) ? $validated['email'] : $user->email,
+        ]);
 
         // تحديث بيانات الصيدلية
         $pharmacy->update([
@@ -91,8 +112,8 @@ class PharmacyProfileCompletionController extends Controller
         ]);
 
         // حفظ ساعات العمل
-        foreach ($validated['hours'] as $dayOfWeek => $hourData) {
-            $isClosed = $hourData['is_closed'] ?? false;
+        foreach ($hoursData as $dayOfWeek => $hourData) {
+            $isClosed = ! empty($hourData['is_closed']);
 
             PharmacyHour::updateOrCreate(
                 ['pharmacy_id' => $pharmacy->id, 'day_of_week' => $dayOfWeek],

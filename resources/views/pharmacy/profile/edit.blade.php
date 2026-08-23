@@ -137,6 +137,12 @@
                                 @error('address')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 
+                            <div class='ph-group' style='margin-block-end:18px;'>
+                                <label class='ph-form-label' for='region'>@lang('pharmacy.profile.complete.region_label') <span class='req'>*</span></label>
+                                <input type='text' name='region' id='region' class='ph-control' value='{{ old('region', $pharmacy->region) }}' required>
+                                @error('region')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                            </div>
+
                             <div class='ph-group'>
                                 <label class='ph-form-label' for='logo'>@lang('pharmacy.profile.logo_label')</label>
                                 <input type='file' name='logo' id='logo' class='ph-control' accept='image/*' style='height:auto;padding:10px;'>
