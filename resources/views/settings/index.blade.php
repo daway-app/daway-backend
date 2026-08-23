@@ -11,6 +11,11 @@
                 {{ session('success') }}
             </div>
         @endif
+        @if(session('error'))
+            <div style="background: #fee2e2; border: 1px solid #ef4444; color: #7f1d1d; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; font-weight: 600;">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <div class="settings-header">
             <div class="settings-title-group">
@@ -107,6 +112,7 @@
                             <div class="toggle-info">
                                 <strong>@lang('settings.catalog_import_title')</strong>
                                 <span>@lang('settings.catalog_import_desc')</span>
+                                <br><span style="font-size:.85rem;color:#0f766e;">@lang('settings.catalog_count', ['count' => number_format($catalogCount ?? 0)])</span>
                             </div>
                             <form method="POST" action="{{ route('settings.catalog.import') }}" style="display:inline;">
                                 @csrf

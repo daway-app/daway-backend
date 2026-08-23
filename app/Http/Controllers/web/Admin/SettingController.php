@@ -39,8 +39,9 @@ class SettingController extends Controller
     public function index()
     {
         $settings = DB::table('settings')->pluck('value', 'key')->all();
+        $catalogCount = \App\Models\MohMedicine::count();
 
-        return view('settings.index', compact('settings'));
+        return view('settings.index', compact('settings', 'catalogCount'));
     }
 
     /**

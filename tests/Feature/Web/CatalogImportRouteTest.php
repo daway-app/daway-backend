@@ -17,6 +17,8 @@ class CatalogImportRouteTest extends TestCase
             ->once()
             ->with('moh:import')
             ->andReturn(0);
+        Artisan::shouldReceive('output')
+            ->andReturn('');
 
         $response = $this->actingAs($admin)->post(route('settings.catalog.import'));
 

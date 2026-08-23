@@ -50,4 +50,5 @@ return [
     'catalog_already_loaded' => 'The catalog is already loaded (:count medicines).',
     'catalog_import_success' => 'Catalog imported successfully (:count medicines).',
     'catalog_import_failed' => 'Catalog import failed. Make sure the file exists.',
+    'catalog_count' => 'Current medicine count: :count',
 ];

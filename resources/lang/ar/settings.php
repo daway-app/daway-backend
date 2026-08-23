@@ -50,4 +50,5 @@ return [
     'catalog_already_loaded' => 'الكتالوج محمّل بالفعل (:count دواء).',
     'catalog_import_success' => 'تم استيراد الكتالوج بنجاح (:count دواء).',
     'catalog_import_failed' => 'فشل استيراد الكتالوج. تأكد من وجود الملف.',
+    'catalog_count' => 'عدد الأدوية الحالي: :count',
 ];

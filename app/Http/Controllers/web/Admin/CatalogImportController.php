@@ -7,6 +7,7 @@ use App\Models\MohMedicine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 
 class CatalogImportController extends Controller
 {
@@ -30,6 +31,9 @@ class CatalogImportController extends Controller
             return redirect()->back()->with('success', __('settings.catalog_import_success', ['count' => number_format($newCount)]));
         }
 
-        return redirect()->back()->with('error', __('settings.catalog_import_failed'));
+        $output = trim(Artisan::output());
+        Log::warning('استيراد الكتالوج فشل. الخروج: '.$exitCode.' الناتج: '.$output);
+
+        return redirect()->back()->with('error', __('settings.catalog_import_failed').($output ? ' ('.$output.')' : ''));
     }
 }
