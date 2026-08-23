@@ -6,6 +6,8 @@
     @vite(['resources/css/pages/settings.css'])
 
     <div class="settings-wrapper">
+        @php($activeTab = request('tab', 'general'))
+
         @if(session('success'))
             <div style="background: #d1fae5; border: 1px solid #10b981; color: #065f46; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; font-weight: 600;">
                 {{ session('success') }}
@@ -25,17 +27,17 @@
         </div>
 
         <div class="tabs-nav">
-            <button class="tab-btn active" onclick="switchTab(event, 'general')">@lang('settings.general_data_tab')</button>
-            <button class="tab-btn" onclick="switchTab(event, 'pharmacies')">@lang('settings.pharmacies_tab')</button>
-            <button class="tab-btn" onclick="switchTab(event, 'notifications')">@lang('settings.notifications_tab')</button>
-            <button class="tab-btn" onclick="switchTab(event, 'security')">@lang('settings.security_tab')</button>
+            <button class="tab-btn {{ $activeTab === 'general' ? 'active' : '' }}" onclick="switchTab(event, 'general')">@lang('settings.general_data_tab')</button>
+            <button class="tab-btn {{ $activeTab === 'pharmacies' ? 'active' : '' }}" onclick="switchTab(event, 'pharmacies')">@lang('settings.pharmacies_tab')</button>
+            <button class="tab-btn {{ $activeTab === 'notifications' ? 'active' : '' }}" onclick="switchTab(event, 'notifications')">@lang('settings.notifications_tab')</button>
+            <button class="tab-btn {{ $activeTab === 'security' ? 'active' : '' }}" onclick="switchTab(event, 'security')">@lang('settings.security_tab')</button>
         </div>
 
         <form id="settingsForm" action="{{ route('settings.update') }}" method="POST">
             @csrf
 
             <!-- 1. General Tab -->
-            <div id="general" class="tab-pane active">
+            <div id="general" class="tab-pane {{ $activeTab === 'general' ? 'active' : '' }}">
                 <div class="settings-card">
                     <div class="card-section-title">@lang('settings.basic_app_info')</div>
                     <div class="card-section-desc">@lang('settings.basic_app_info_desc')</div>
@@ -69,7 +71,7 @@
             </div>
 
             <!-- 2. Pharmacies Tab -->
-            <div id="pharmacies" class="tab-pane">
+            <div id="pharmacies" class="tab-pane {{ $activeTab === 'pharmacies' ? 'active' : '' }}">
                 <div class="settings-card">
                     <div class="card-section-title">@lang('settings.pharmacy_controls_search_rules')</div>
                     <div class="card-section-desc">@lang('settings.pharmacy_controls_search_rules_desc')</div>
@@ -113,6 +115,7 @@
                                 <strong>@lang('settings.catalog_import_title')</strong>
                                 <span>@lang('settings.catalog_import_desc')</span>
                                 <br><span style="font-size:.85rem;color:#0f766e;">@lang('settings.catalog_count', ['count' => number_format($catalogCount ?? 0)])</span>
+                                <br><span style="font-size:.8rem;color:#64748b;">@lang('settings.catalog_file_status', ['exists' => $catalogFileExists ? __('settings.yes') : __('settings.no'), 'size' => $catalogFileSize ?? 0])</span>
                             </div>
                             <form method="POST" action="{{ route('settings.catalog.import') }}" style="display:inline;">
                                 @csrf
@@ -124,7 +127,7 @@
             </div>
 
             <!-- 3. Notifications Tab -->
-            <div id="notifications" class="tab-pane">
+            <div id="notifications" class="tab-pane {{ $activeTab === 'notifications' ? 'active' : '' }}">
                 <div class="settings-card">
                     <div class="card-section-title">@lang('settings.alerts_messages_settings')</div>
                     <div class="card-section-desc">@lang('settings.alerts_messages_settings_desc')</div>
@@ -156,7 +159,7 @@
             </div>
 
             <!-- 4. Security Tab -->
-            <div id="security" class="tab-pane">
+            <div id="security" class="tab-pane {{ $activeTab === 'security' ? 'active' : '' }}">
                 <div class="settings-card">
                     <div class="card-section-title">@lang('settings.maintenance_security')</div>
                     <div class="card-section-desc">@lang('settings.maintenance_security_desc')</div>

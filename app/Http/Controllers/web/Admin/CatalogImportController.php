@@ -17,23 +17,36 @@ class CatalogImportController extends Controller
      */
     public function import(Request $request): RedirectResponse
     {
+        set_time_limit(0);
+
         $count = MohMedicine::count();
 
         if ($count > 0) {
-            return redirect()->back()->with('success', __('settings.catalog_already_loaded', ['count' => number_format($count)]));
+            return $this->backToPharmaciesTab()->with('success', __('settings.catalog_already_loaded', ['count' => number_format($count)]));
         }
+
+        Log::info('CatalogImportController: بدء استيراد الكتالوج من المتصفح');
 
         $exitCode = Artisan::call('moh:import');
 
+        $output = trim(Artisan::output());
         $newCount = MohMedicine::count();
 
+        Log::info('CatalogImportController: انتهى moh:import', [
+            'exit_code' => $exitCode,
+            'new_count' => $newCount,
+            'output' => $output,
+        ]);
+
         if ($exitCode === 0 && $newCount > 0) {
-            return redirect()->back()->with('success', __('settings.catalog_import_success', ['count' => number_format($newCount)]));
+            return $this->backToPharmaciesTab()->with('success', __('settings.catalog_import_success', ['count' => number_format($newCount)]));
         }
 
-        $output = trim(Artisan::output());
-        Log::warning('استيراد الكتالوج فشل. الخروج: '.$exitCode.' الناتج: '.$output);
+        return $this->backToPharmaciesTab()->with('error', __('settings.catalog_import_failed').($output ? ' ('.$output.')' : ''));
+    }
 
-        return redirect()->back()->with('error', __('settings.catalog_import_failed').($output ? ' ('.$output.')' : ''));
+    private function backToPharmaciesTab(): RedirectResponse
+    {
+        return redirect()->route('settings.index', ['tab' => 'pharmacies']);
     }
 }

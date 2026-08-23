@@ -51,4 +51,7 @@ return [
     'catalog_import_success' => 'Catalog imported successfully (:count medicines).',
     'catalog_import_failed' => 'Catalog import failed. Make sure the file exists.',
     'catalog_count' => 'Current medicine count: :count',
+    'catalog_file_status' => 'Local file: :exists (:size MB)',
+    'yes' => 'exists',
+    'no' => 'missing',
 ];

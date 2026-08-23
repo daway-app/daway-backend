@@ -41,7 +41,11 @@ class SettingController extends Controller
         $settings = DB::table('settings')->pluck('value', 'key')->all();
         $catalogCount = \App\Models\MohMedicine::count();
 
-        return view('settings.index', compact('settings', 'catalogCount'));
+        $catalogPath = base_path('database/data/moh_medicines.json');
+        $catalogFileExists = is_file($catalogPath);
+        $catalogFileSize = $catalogFileExists ? round(filesize($catalogPath) / 1024 / 1024, 2) : 0;
+
+        return view('settings.index', compact('settings', 'catalogCount', 'catalogFileExists', 'catalogFileSize'));
     }
 
     /**
