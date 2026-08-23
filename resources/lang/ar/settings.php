@@ -52,6 +52,7 @@ return [
     'catalog_import_failed' => 'فشل استيراد الكتالوج. تأكد من وجود الملف.',
     'catalog_count' => 'عدد الأدوية الحالي: :count',
     'catalog_file_status' => 'الملف المحلي: :exists (:size MB)',
+    'catalog_importing' => 'جاري الاستيراد...',
     'yes' => 'موجود',
     'no' => 'غير موجود',
 ];

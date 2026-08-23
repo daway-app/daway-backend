@@ -117,10 +117,9 @@
                                 <br><span style="font-size:.85rem;color:#0f766e;">@lang('settings.catalog_count', ['count' => number_format($catalogCount ?? 0)])</span>
                                 <br><span style="font-size:.8rem;color:#64748b;">@lang('settings.catalog_file_status', ['exists' => $catalogFileExists ? __('settings.yes') : __('settings.no'), 'size' => $catalogFileSize ?? 0])</span>
                             </div>
-                            <form method="POST" action="{{ route('settings.catalog.import') }}" style="display:inline;">
-                                @csrf
-                                <button type="submit" class="btn-primary">@lang('settings.catalog_import_button')</button>
-                            </form>
+                            <button type="button" class="btn-primary" data-url="{{ route('settings.catalog.import') }}" data-token="{{ csrf_token() }}" onclick="submitCatalogImport(this)">
+                                @lang('settings.catalog_import_button')
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -204,6 +203,24 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
+        }
+
+        function submitCatalogImport(button) {
+            button.disabled = true;
+            button.textContent = '@lang('settings.catalog_importing')';
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = button.dataset.url;
+
+            const token = document.createElement('input');
+            token.type = 'hidden';
+            token.name = '_token';
+            token.value = button.dataset.token;
+            form.appendChild(token);
+
+            document.body.appendChild(form);
+            form.submit();
         }
     </script>
 @endsection
