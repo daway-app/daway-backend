@@ -9,6 +9,8 @@ return [
         'manage_alternatives' => 'إدارة البدائل',
         'pharmacy_profile' => 'ملف الصيدلية',
         'ratings' => 'التقييمات',
+        'inventory' => 'إدارة المخزون',
+        'inquiries' => 'استفسارات التوفر',
     ],
 
     'common' => [

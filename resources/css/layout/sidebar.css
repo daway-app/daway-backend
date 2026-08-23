@@ -258,13 +258,13 @@ html[dir="ltr"] .nav-item::before {
     order: 1;
 }
 
-/* بالإنجليزي (LTR): زر الخروج عند الحافة الخارجية والصورة/الاسم عند الداخلية */
+/* بالإنجليزي (LTR): الصورة/الاسم عند الحافة الخارجية وزر الخروج نحو الداخل */
 html[dir="ltr"] .user-profile-footer .more-options-btn {
-    order: 1;
+    order: 2;
 }
 
 html[dir="ltr"] .user-profile-footer .user-info-group {
-    order: 2;
+    order: 1;
 }
 
 .user-info-group {

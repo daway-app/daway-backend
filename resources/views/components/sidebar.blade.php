@@ -100,12 +100,12 @@
                     @php $isPharmacyInventory = request()->routeIs('pharmacy.inventory.*'); @endphp
                     <a href='{{ route("pharmacy.inventory.index") }}' class='nav-item {{ $isPharmacyInventory ? "active" : "" }}'>
                         <span class='nav-icon'><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/><polyline points='3.27 6.96 12 12.01 20.73 6.96'/><line x1='12' y1='22.08' x2='12' y2='12'/></svg></span>
-                        <span class='nav-text'>إدارة المخزون</span>
+                        <span class='nav-text'>@lang('pharmacy.sidebar.inventory')</span>
                     </a>
                     @php $isPharmacyInquiries = request()->routeIs('pharmacy.inquiries.*'); @endphp
                     <a href='{{ route("pharmacy.inquiries.index") }}' class='nav-item {{ $isPharmacyInquiries ? "active" : "" }}'>
                         <span class='nav-icon'><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg></span>
-                        <span class='nav-text'>استفسارات التوفر</span>
+                        <span class='nav-text'>@lang('pharmacy.sidebar.inquiries')</span>
                     </a>
                     @php $isPharmacyMedicineCreate = request()->routeIs('pharmacy.medicines.create'); @endphp
                     <a href="{{ route('pharmacy.medicines.create') }}" class="nav-item {{ $isPharmacyMedicineCreate ? 'active' : '' }}">
@@ -134,14 +134,6 @@
 
     <!-- User Profile Footer -->
     <div class="user-profile-footer">
-        <div class="more-options-btn">
-            <form method="POST" action="{{ route('logout') }}" id="logoutForm">
-                @csrf
-                <button type="submit" id="logoutBtn" style="background: none; border: none; color: inherit; cursor: pointer; font-size: inherit;" title="@lang('layout.logout_tooltip')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                </button>
-            </form>
-        </div>
         <div class="user-info-group" onclick="openProfileModal()" title="@lang('layout.edit_profile_modal_title')">
             <div class="avatar-box" id="sidebarDisplayUserAvatar">
                 @if(auth()->user()->avatar)
@@ -154,6 +146,14 @@
                 <div class="user-name" id="sidebarDisplayUserName">{{ auth()->user()->name }}</div>
                 <div class="user-role" id="sidebarDisplayUserRole">{{ auth()->user()->role ?? 'User' }}</div>
             </div>
+        </div>
+        <div class="more-options-btn">
+            <form method="POST" action="{{ route('logout') }}" id="logoutForm">
+                @csrf
+                <button type="submit" id="logoutBtn" style="background: none; border: none; color: inherit; cursor: pointer; font-size: inherit;" title="@lang('layout.logout_tooltip')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </form>
         </div>
     </div>
 </aside>

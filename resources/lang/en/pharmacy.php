@@ -9,6 +9,8 @@ return [
         'manage_alternatives' => 'Manage Alternatives',
         'pharmacy_profile' => 'Pharmacy Profile',
         'ratings' => 'Ratings',
+        'inventory' => 'Manage Inventory',
+        'inquiries' => 'Availability Inquiries',
     ],
 
     'common' => [
