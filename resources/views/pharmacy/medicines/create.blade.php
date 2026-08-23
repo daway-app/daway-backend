@@ -18,6 +18,16 @@
         <form action="{{ route('pharmacy.medicines.store') }}" method="POST">
             @csrf
 
+            @if(isset($catalogEmpty) && $catalogEmpty)
+                <div class="alert alert-error" style="margin-bottom:18px;">
+                    <span class="alert-icon">!</span>
+                    <div>
+                        <div class="alert-title">@lang('pharmacy.medicines.create.catalog_empty_title')</div>
+                        <div style="font-size:.85rem;">@lang('pharmacy.medicines.create.catalog_empty_hint')</div>
+                    </div>
+                </div>
+            @endif
+
             <div class="premium-card">
                 <div class="card-head">
                     <div class="card-head-content">

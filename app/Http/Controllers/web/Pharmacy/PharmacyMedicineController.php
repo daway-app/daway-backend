@@ -76,7 +76,9 @@ class PharmacyMedicineController extends Controller
 
         $suggestedAlternatives = Medicine::alternativesByActiveIngredient(null);
 
-        return view('pharmacy.medicines.create', compact('pharmacy', 'suggestedAlternatives'));
+        $catalogEmpty = MohMedicine::count() === 0 && Medicine::count() === 0;
+
+        return view('pharmacy.medicines.create', compact('pharmacy', 'suggestedAlternatives', 'catalogEmpty'));
     }
 
     /**
