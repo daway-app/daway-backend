@@ -39,7 +39,7 @@ return [
         'unclassified' => 'غير مصنف',
     ],
 
-    'currency' => 'ر.س',
+    'currency' => '₪',
 
     'medicines' => [
         'index' => [
