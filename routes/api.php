@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('alternatives/{base}/{alternative}', [PharmacyAlternativeController::class, 'destroy']);
 
         Route::get('dashboard/stats', [PharmacyDashboardController::class, 'stats']);
+        Route::post('change-password', [PharmacyProfileController::class, 'changePassword']);
     });
 
     // Ratings

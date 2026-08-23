@@ -28,7 +28,8 @@ class User extends Authenticatable
         'latitude',
         'longitude',
         'emergency_contact',
-        'pharmacy_id', //
+        'pharmacy_id',
+        'must_change_password',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -40,6 +41,16 @@ class User extends Authenticatable
     protected $hidden = [
         'password', 'remember_token',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
+        ];
+    }
 
     /**
      * Get the notifications for the user.

@@ -56,6 +56,8 @@ return [
     'validation_errors_title' => 'Validation Errors',
     'pharmacy_id_auto_generate' => 'Pharmacy ID will be auto-generated.',
     'pharmacy_id_hint' => 'This is a unique identifier for the pharmacy.',
+    'password_same_as_id' => 'The password will be the same as the Pharmacy ID (PH-XXXX).',
+    'password_same_as_id_hint' => 'The pharmacist must change it on first login.',
     'basic_pharmacy_info' => 'Basic Pharmacy Info',
     'pharmacy_name_placeholder' => 'Enter pharmacy name',
     'phone_number_placeholder' => 'Enter phone number',

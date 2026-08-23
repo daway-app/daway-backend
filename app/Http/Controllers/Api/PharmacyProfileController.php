@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\PharmacyChangePasswordRequest;
 use App\Http\Requests\Api\PharmacyProfileRequest;
 use App\Models\Pharmacy;
 use App\Models\PharmacyHour;
@@ -10,6 +11,7 @@ use App\Support\Image;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class PharmacyProfileController extends Controller
 {
@@ -100,6 +102,25 @@ class PharmacyProfileController extends Controller
             'success' => true,
             'message' => 'تم تحديث الملف الشخصي بنجاح',
             'data' => $this->payload($pharmacy->fresh('hours')),
+        ]);
+    }
+
+    /**
+     * تغيير كلمة المرور للصيدلية وإلغاء إجبارية التغيير.
+     */
+    public function changePassword(PharmacyChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user->role === 'pharmacy', 403, 'غير مصرح');
+
+        $user->password = Hash::make($request->input('password'));
+        $user->must_change_password = false;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تغيير كلمة المرور بنجاح',
         ]);
     }
 

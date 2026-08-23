@@ -59,6 +59,7 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'pharmacy_id' => $pharmacy->pharmacy_custom_id,
                     'role' => $user->role,
+                    'must_change_password' => (bool) $user->must_change_password,
                 ],
                 'token' => $token,
             ],

@@ -110,29 +110,17 @@
             <div class="card">
                 <div class="card-head"><h2>@lang('pharmacies.user_account_section')</h2></div>
                 <div class="card-body">
-                    <p class="card-section-desc" style="margin-bottom: 20px;">@lang('pharmacies.login_credentials_desc')</p>
+                    <div class="alert alert-ok" style="margin-bottom: 18px;">
+                        <span style="font-size:20px">🔑</span>
+                        <div>
+                            <div style="font-weight:700;margin-bottom:2px">@lang('pharmacies.password_same_as_id')</div>
+                            <div style="font-size:.78rem">@lang('pharmacies.password_same_as_id_hint')</div>
+                        </div>
+                    </div>
                     <div class="fg">
                         <label class="fl">@lang('pharmacies.email_label') <span class="req">*</span></label>
                         <input class="fc" type="email" name="email" placeholder="@lang('pharmacies.email_placeholder')" value="{{ old('email') }}" required>
                         @error('email')<div class="error-message">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="form-row">
-                        <div class="fg">
-                            <label class="fl">@lang('pharmacies.password_label') <span class="req">*</span></label>
-                            <div class="fc-icon">
-                                <span class="ico">🔒</span>
-                                <input class="fc" type="password" name="password" placeholder="@lang('pharmacies.password_placeholder')" required>
-                            </div>
-                            @error('password')<div class="error-message">{{ $message }}</div>@enderror
-                        </div>
-                        <div class="fg">
-                            <label class="fl">@lang('pharmacies.password_confirmation_label') <span class="req">*</span></label>
-                            <div class="fc-icon">
-                                <span class="ico">🔒</span>
-                                <input class="fc" type="password" name="password_confirmation" placeholder="@lang('pharmacies.confirm_password_placeholder')" required>
-                            </div>
-                            @error('password_confirmation')<div class="error-message">{{ $message }}</div>@enderror
-                        </div>
                     </div>
                 </div>
             </div>
