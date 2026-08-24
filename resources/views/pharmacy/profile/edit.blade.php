@@ -38,11 +38,11 @@
                             <div class='ph-form-row' style='grid-template-columns:1fr 1fr;margin-block-end:12px;'>
                                 <div class='ph-group'>
                                     <label class='ph-form-label' for='latitude'>@lang('pharmacy.profile.latitude_label')</label>
-                                    <input type='text' name='latitude' id='latitude' class='ph-control' value='{{ old('latitude', $pharmacy->latitude) }}' required>
+                                    <input type='text' name='latitude' id='latitude' class='ph-control' value='{{ old('latitude', $pharmacy->latitude) }}'>
                                 </div>
                                 <div class='ph-group'>
                                     <label class='ph-form-label' for='longitude'>@lang('pharmacy.profile.longitude_label')</label>
-                                    <input type='text' name='longitude' id='longitude' class='ph-control' value='{{ old('longitude', $pharmacy->longitude) }}' required>
+                                    <input type='text' name='longitude' id='longitude' class='ph-control' value='{{ old('longitude', $pharmacy->longitude) }}'>
                                 </div>
                             </div>
                             <div id='pharmacyMap' class='ph-map ph-map-sm' data-lat='{{ old('latitude', $pharmacy->latitude) }}' data-lng='{{ old('longitude', $pharmacy->longitude) }}'></div>
@@ -112,34 +112,34 @@
                         </div>
                         <div class='ph-card-body'>
                             <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='pharmacy_name'>@lang('pharmacy.profile.name_label') <span class='req'>*</span></label>
-                                <input type='text' name='pharmacy_name' id='pharmacy_name' class='ph-control' value='{{ old('pharmacy_name', $pharmacy->pharmacy_name) }}' required>
+                                <label class='ph-form-label' for='pharmacy_name'>@lang('pharmacy.profile.name_label')</label>
+                                <input type='text' name='pharmacy_name' id='pharmacy_name' class='ph-control' value='{{ old('pharmacy_name', $pharmacy->pharmacy_name) }}'>
                                 @error('pharmacy_name')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 
                             @if(isset($pharmacy->email))
                                 <div class='ph-group' style='margin-block-end:18px;'>
-                                    <label class='ph-form-label' for='email'>@lang('pharmacy.profile.email_label') <span class='req'>*</span></label>
+                                    <label class='ph-form-label' for='email'>@lang('pharmacy.profile.email_label')</label>
                                     <input type='email' name='email' id='email' class='ph-control' value='{{ old('email', $pharmacy->email) }}'>
                                     @error('email')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                                 </div>
                             @endif
 
                             <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='phone_number'>@lang('pharmacy.profile.phone_label') <span class='req'>*</span></label>
-                                <input type='text' name='phone_number' id='phone_number' class='ph-control' value='{{ old('phone_number', $pharmacy->phone_number) }}' required>
+                                <label class='ph-form-label' for='phone_number'>@lang('pharmacy.profile.phone_label')</label>
+                                <input type='text' name='phone_number' id='phone_number' class='ph-control' value='{{ old('phone_number', $pharmacy->phone_number) }}'>
                                 @error('phone_number')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 
                             <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='address'>@lang('pharmacy.profile.address_label') <span class='req'>*</span></label>
-                                <textarea name='address' id='address' class='ph-textarea' style='width:100%;' required>{{ old('address', $pharmacy->address) }}</textarea>
+                                <label class='ph-form-label' for='address'>@lang('pharmacy.profile.address_label')</label>
+                                <textarea name='address' id='address' class='ph-textarea' style='width:100%;'>{{ old('address', $pharmacy->address) }}</textarea>
                                 @error('address')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 
                             <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='region'>@lang('pharmacy.profile.complete.region_label') <span class='req'>*</span></label>
-                                <input type='text' name='region' id='region' class='ph-control' value='{{ old('region', $pharmacy->region) }}' required>
+                                <label class='ph-form-label' for='region'>@lang('pharmacy.profile.complete.region_label')</label>
+                                <input type='text' name='region' id='region' class='ph-control' value='{{ old('region', $pharmacy->region) }}'>
                                 @error('region')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 

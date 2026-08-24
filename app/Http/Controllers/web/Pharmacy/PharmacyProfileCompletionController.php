@@ -62,18 +62,10 @@ class PharmacyProfileCompletionController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'current_password' => ['required', 'string'],
             'password' => ['required', 'string', 'min:8', 'confirmed', Password::min(8)],
             'password_confirmation' => ['required', 'string'],
             'hours' => ['required', 'array'],
         ]);
-
-        // تحقق من كلمة المرور الحالية
-        if (! Hash::check($validated['current_password'], $user->password)) {
-            return redirect()->route('pharmacy.profile.complete.show')
-                ->withErrors(['current_password' => __('pharmacy.profile.complete.password_wrong')])
-                ->withInput();
-        }
 
         // تحقق من مواعيد العمل — يجب تحديد يوم واحد على الأقل
         $hoursData = $request->input('hours', []);

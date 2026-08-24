@@ -79,7 +79,6 @@ class PharmacyProfileCompletionTest extends TestCase
             'latitude' => 31.5,
             'longitude' => 34.4,
             'email' => 'pharmacy@example.com',
-            'current_password' => 'PH-COMPL1',
             'password' => 'new-secure-password',
             'password_confirmation' => 'new-secure-password',
             'hours' => [
@@ -113,23 +112,23 @@ class PharmacyProfileCompletionTest extends TestCase
         ]);
     }
 
-    public function test_profile_completion_rejects_wrong_current_password(): void
+    public function test_profile_completion_does_not_require_current_password(): void
     {
         $user = User::factory()->pharmacy()->create([
-            'password' => Hash::make('correct-password'),
+            'password' => Hash::make('PH-COMPL4'),
         ]);
         Pharmacy::factory()->create([
             'user_id' => $user->id,
             'profile_completed_at' => null,
         ]);
 
+        // بدون حقل current_password إطلاقاً — يجب أن ينجح
         $response = $this->actingAs($user)->post(route('pharmacy.profile.complete'), [
             'phone_number' => '0599123456',
             'address' => 'Main St, Gaza',
             'region' => 'Rimal',
             'latitude' => 31.5,
             'longitude' => 34.4,
-            'current_password' => 'wrong-password',
             'password' => 'new-secure-password',
             'password_confirmation' => 'new-secure-password',
             'hours' => [
@@ -137,7 +136,7 @@ class PharmacyProfileCompletionTest extends TestCase
             ],
         ]);
 
-        $response->assertSessionHasErrors(['current_password']);
+        $response->assertRedirect(route('pharmacy.dashboard.index'));
     }
 
     public function test_profile_completion_requires_at_least_one_open_day(): void
@@ -156,7 +155,6 @@ class PharmacyProfileCompletionTest extends TestCase
             'region' => 'Rimal',
             'latitude' => 31.5,
             'longitude' => 34.4,
-            'current_password' => 'PH-COMPL2',
             'password' => 'new-secure-password',
             'password_confirmation' => 'new-secure-password',
             'hours' => [
@@ -185,7 +183,6 @@ class PharmacyProfileCompletionTest extends TestCase
             'region' => 'Rimal',
             'latitude' => 31.5,
             'longitude' => 34.4,
-            'current_password' => 'PH-COMPL3',
             'password' => 'new-secure-password',
             'password_confirmation' => 'new-secure-password',
             'hours' => [
@@ -196,5 +193,54 @@ class PharmacyProfileCompletionTest extends TestCase
         $response->assertRedirect(route('pharmacy.dashboard.index'));
         $this->assertNull($user->fresh()->email);
         $this->assertNotNull($pharmacy->fresh()->profile_completed_at);
+    }
+
+    public function test_profile_edit_all_fields_optional_and_empty_does_not_wipe_data(): void
+    {
+        $user = User::factory()->pharmacy()->create();
+        $pharmacy = Pharmacy::factory()->create([
+            'user_id' => $user->id,
+            'phone_number' => '0599000000',
+            'address' => 'Old Address',
+            'region' => 'Old Region',
+        ]);
+
+        // إرسال حقول فارغة فقط — يجب ألا تُمسح البيانات الموجودة
+        $response = $this->actingAs($user)->put(route('pharmacy.profile.update'), [
+            'pharmacy_name' => '',
+            'phone_number' => '',
+            'address' => '',
+            'region' => '',
+            'latitude' => '',
+            'longitude' => '',
+        ]);
+
+        $response->assertRedirect(route('pharmacy.profile.edit'));
+
+        $pharmacy->refresh();
+        $this->assertEquals('0599000000', $pharmacy->phone_number);
+        $this->assertEquals('Old Address', $pharmacy->address);
+        $this->assertEquals('Old Region', $pharmacy->region);
+    }
+
+    public function test_profile_edit_updates_only_filled_fields(): void
+    {
+        $user = User::factory()->pharmacy()->create();
+        $pharmacy = Pharmacy::factory()->create([
+            'user_id' => $user->id,
+            'phone_number' => '0599000000',
+            'address' => 'Old Address',
+            'region' => 'Old Region',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('pharmacy.profile.update'), [
+            'phone_number' => '0599111222',
+        ]);
+
+        $response->assertRedirect(route('pharmacy.profile.edit'));
+
+        $pharmacy->refresh();
+        $this->assertEquals('0599111222', $pharmacy->phone_number);
+        $this->assertEquals('Old Address', $pharmacy->address);
     }
 }

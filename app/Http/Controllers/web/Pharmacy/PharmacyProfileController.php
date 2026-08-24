@@ -60,14 +60,23 @@ class PharmacyProfileController extends Controller
         $request->merge(['hours' => $hoursInput]);
 
         $request->validate([
-            'pharmacy_name' => ['required', 'string', 'max:255'],
-            'phone_number' => ['required', 'string', 'max:20'],
-            'address' => ['required', 'string', 'max:255'],
-            'region' => ['required', 'string', 'max:150'],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'pharmacy_name' => ['nullable', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'region' => ['nullable', 'string', 'max:150'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'logo' => ['nullable', 'image', 'max:2048'],
         ]);
+
+        // كل الحقول اختيارية: نحدّث فقط ما أُرسل ولا نمسح البيانات الموجودة
+        $data = collect($request->only(['pharmacy_name', 'phone_number', 'address', 'region', 'latitude', 'longitude']))
+            ->filter(fn ($value) => $value !== null && $value !== '')
+            ->all();
+
+        if (! empty($data)) {
+            $pharmacy->update($data);
+        }
 
         if ($request->hasFile('logo')) {
             if ($pharmacy->logo) {
@@ -76,15 +85,6 @@ class PharmacyProfileController extends Controller
             $logoPath = $request->file('logo')->store('pharmacy_logos', 'public');
             $pharmacy->logo = $logoPath;
         }
-
-        $pharmacy->update([
-            'pharmacy_name' => $request->pharmacy_name,
-            'phone_number' => $request->phone_number,
-            'address' => $request->address,
-            'region' => $request->region,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-        ]);
 
         // حفظ ساعات العمل بدون قواعد تحقق معقدة
         foreach ($request->input('hours', []) as $dayOfWeek => $hourData) {
