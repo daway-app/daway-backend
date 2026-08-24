@@ -93,7 +93,20 @@ class PharmacyMedicineController extends Controller
         }
 
         $data = $request->validated();
-        $medicine = Medicine::findOrFail($data['medicine_id']);
+
+        // 1) دواء مختار من الكتالوج العام
+        // 2) عنصر من كتالوج وزارة الصحة — يُضاف تلقائياً للكتالوج العام عند الحاجة (نفس منطق الويب)
+        if (! empty($data['medicine_id'])) {
+            $medicine = Medicine::findOrFail($data['medicine_id']);
+        } else {
+            $moh = MohMedicine::findOrFail($data['moh_medicine_id']);
+            $medicine = Medicine::where('trade_name', $moh->trade_name)->first()
+                ?? Medicine::create([
+                    'trade_name' => $moh->trade_name,
+                    'active_ingredient' => $moh->generic_name ?? $moh->trade_name,
+                    'description' => $moh->manufacturer ?? $moh->company,
+                ]);
+        }
 
         $exists = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->where('medicine_id', $medicine->id)
