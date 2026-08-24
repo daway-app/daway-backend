@@ -11,6 +11,7 @@ use App\Models\Notification;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
+use App\Support\Cloudinary;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -102,6 +103,13 @@ class PharmacyMedicineController extends Controller
             throw ValidationException::withMessages([
                 'medicine_id' => 'هذا الدواء مضاف مسبقاً لمخزون الصيدلية',
             ])->status(422);
+        }
+
+        // صورة اختيارية من الموبايل (رابط مباشر — Cloudinary) تُحفظ على الدواء في الكتالوج العام
+        if (! empty($data['image_url'])) {
+            Cloudinary::deleteLocal($medicine->image);
+            $medicine->image = $data['image_url'];
+            $medicine->save();
         }
 
         $pharmacyMedicine = PharmacyMedicine::create([

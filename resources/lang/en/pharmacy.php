@@ -96,6 +96,7 @@ return [
             'manual_ingredient' => 'Active ingredient',
             'manual_ingredient_placeholder' => 'e.g. Paracetamol',
             'image_label' => 'Medicine image',
+            'optional' => '(Optional)',
             'catalog_empty_title' => 'The medicine catalog is empty',
             'catalog_empty_hint' => 'Run the php artisan moh:import command to load the Ministry of Health catalog, or add the medicine manually.',
             'search_error' => 'Search failed, please try again.',

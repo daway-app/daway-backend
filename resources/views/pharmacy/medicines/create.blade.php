@@ -70,10 +70,6 @@
                                 <input class="fc" type="text" id="active_ingredient" name="active_ingredient" value="{{ old('active_ingredient') }}" placeholder="@lang('pharmacy.medicines.create.manual_ingredient_placeholder')">
                             </div>
                         </div>
-                        <div class="fg" style="margin-top:14px;">
-                            <label class="fl" for="image">@lang('pharmacy.medicines.create.image_label')</label>
-                            <input class="fc" type="file" id="image" name="image" accept="image/*" style="height:auto;padding:10px;">
-                        </div>
                     </div>
 
                     <div class="fg" style="margin-top:12px;">
@@ -124,6 +120,15 @@
                             <input type="checkbox" name="is_available" id="is_available" value="1" {{ old('is_available', true) ? 'checked' : '' }}>
                             @lang('pharmacy.medicines.create.available_now')
                         </label>
+                    </div>
+
+                    <div class="fg" style="margin-top:14px;">
+                        <label class="fl" for="image">@lang('pharmacy.medicines.create.image_label') <span style="color:#64748b;font-weight:400;">@lang('pharmacy.medicines.create.optional')</span></label>
+                        <input class="fc" type="file" id="image" name="image" accept="image/*" style="height:auto;padding:10px;">
+                        <img id="medicine_image_preview" alt="" style="display:none;width:72px;height:72px;object-fit:cover;border-radius:10px;margin-top:8px;">
+                        @error('image')
+                            <span class="error-text" role="alert"><strong>{{ $message }}</strong></span>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -207,6 +212,21 @@
             resultsBox.style.display = 'none';
         }
     });
+
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('medicine_image_preview');
+    if (imageInput && imagePreview) {
+        imageInput.addEventListener('change', function () {
+            const file = this.files && this.files[0];
+            if (!file) {
+                imagePreview.src = '';
+                imagePreview.style.display = 'none';
+                return;
+            }
+            imagePreview.src = URL.createObjectURL(file);
+            imagePreview.style.display = 'block';
+        });
+    }
 
     function runSearch(q) {
         const url = searchUrl + '?q=' + encodeURIComponent(q);

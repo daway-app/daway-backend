@@ -96,6 +96,7 @@ return [
             'manual_ingredient' => 'المادة الفعالة',
             'manual_ingredient_placeholder' => 'مثال: باراسيتامول',
             'image_label' => 'صورة الدواء',
+            'optional' => '(اختيارية)',
             'catalog_empty_title' => 'كتالوج الأدوية فارغ',
             'catalog_empty_hint' => 'شغّل الأمر php artisan moh:import لملء كتالوج وزارة الصحة، أو أضف الدواء يدوياً.',
             'search_error' => 'حدث خطأ في البحث، حاول مرة أخرى.',
