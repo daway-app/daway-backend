@@ -350,6 +350,16 @@ return [
             'password_hint' => 'At least 8 characters',
             'wrong_current' => 'Current password is incorrect.',
         ],
+        'hours_quick' => [
+            'unified' => 'Uniform 9-5',
+            'h24' => '24 Hours',
+            'friday_off' => 'Friday Off',
+            'clear' => 'Clear All',
+            'copy' => 'Copy',
+            'copy_title' => 'Copy this day to all others',
+            'closed' => 'Closed',
+            'closed_title' => 'Close this day',
+        ],
         'complete' => [
             'title' => 'Complete Pharmacy Profile',
             'heading' => 'Complete Your Pharmacy Profile',

@@ -72,6 +72,12 @@
                         <details class='ph-hours-editor'>
                             <summary class='ph-btn sm outline' style='width:calc(100% - 44px);margin:0 22px 18px;'><i class='fas fa-pen'></i> @lang('pharmacy.profile.edit_hours')</summary>
                             <div class='ph-card-body ph-hours' style='padding-block-start:0;'>
+                                <div class='ph-hours-quickbar'>
+                                    <button type='button' class='ph-btn sm' onclick='applyPreset("unified")'>@lang('pharmacy.profile.hours_quick.unified')</button>
+                                    <button type='button' class='ph-btn sm' onclick='applyPreset("24h")'>@lang('pharmacy.profile.hours_quick.h24')</button>
+                                    <button type='button' class='ph-btn sm' onclick='applyPreset("friday_off")'>@lang('pharmacy.profile.hours_quick.friday_off')</button>
+                                    <button type='button' class='ph-btn sm outline' onclick='applyPreset("clear")'>@lang('pharmacy.profile.hours_quick.clear')</button>
+                                </div>
                                 @foreach($daysOfWeek as $dayKey => $dayName)
                                     @php
                                         $hour = $pharmacyHours[$dayKey] ?? null;
@@ -90,6 +96,11 @@
                                             <label class='ph-form-label'>@lang('pharmacy.profile.to')</label>
                                             <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.close_time', $hour?->close_time ?? '') }}' {{ $isClosed ? 'disabled' : '' }}>
                                         </div>
+                                        <span class='day-quick'>
+                                            <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.copy_title')' onclick='copyDay("{{ $dayKey }}")'>@lang('pharmacy.profile.hours_quick.copy')</button>
+                                            <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.h24')' onclick='setDay("{{ $dayKey }}", "00:00", "23:59")'>24h</button>
+                                            <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.closed_title')' onclick='closeDay("{{ $dayKey }}")'>@lang('pharmacy.profile.hours_quick.closed')</button>
+                                        </span>
                                     </div>
                                 @endforeach
                             </div>
@@ -185,6 +196,46 @@
             const closed = document.querySelector('input[name="hours['+day+'][is_closed]"]').checked;
             document.getElementById('open_'+day).disabled = closed;
             document.getElementById('close_'+day).disabled = closed;
+        }
+
+        var hoursDays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+        function setDay(day, open, close, closed) {
+            var openEl = document.getElementById('open_'+day);
+            var closeEl = document.getElementById('close_'+day);
+            var closedEl = document.querySelector('input[name="hours['+day+'][is_closed]"]');
+            closedEl.checked = !!closed;
+            openEl.disabled = !!closed;
+            closeEl.disabled = !!closed;
+            if (!closed) {
+                openEl.value = open;
+                closeEl.value = close;
+            }
+        }
+
+        function closeDay(day) { setDay(day, '', '', true); }
+
+        function copyDay(day) {
+            var open = document.getElementById('open_'+day).value;
+            var close = document.getElementById('close_'+day).value;
+            var closed = document.querySelector('input[name="hours['+day+'][is_closed]"]').checked;
+            hoursDays.forEach(function(d) {
+                if (d !== day) setDay(d, open, close, closed);
+            });
+        }
+
+        function applyPreset(mode) {
+            var fridayOff = ['Friday'];
+            if (mode === 'unified' || mode === 'friday_off') {
+                hoursDays.forEach(function(d) {
+                    var closed = mode === 'friday_off' && fridayOff.indexOf(d) !== -1;
+                    setDay(d, '09:00', '17:00', closed);
+                });
+            } else if (mode === '24h') {
+                hoursDays.forEach(function(d) { setDay(d, '00:00', '23:59', false); });
+            } else if (mode === 'clear') {
+                hoursDays.forEach(function(d) { closeDay(d); });
+            }
         }
     </script>
 @endsection
