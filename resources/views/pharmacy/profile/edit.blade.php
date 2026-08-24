@@ -26,7 +26,7 @@
             <div class='ph-card' style='margin-block-end:20px;background:var(--ph-red-bg);color:var(--ph-red);border-color:var(--ph-red-bg);padding:14px 18px;'>{{ session('error') }}</div>
         @endif
 
-        <form action='{{ route('pharmacy.profile.update') }}' method='POST' enctype='multipart/form-data'>
+        <form action='{{ route('pharmacy.profile.update') }}' method='POST' enctype='multipart/form-data' class='ph-profile-form'>
             @csrf
             @method('PUT')
 
@@ -116,9 +116,9 @@
                                 <p>@lang('pharmacy.profile.tagline')</p>
                             </div>
                             @if($pharmacy->logo)
-                                <img src='{{ \App\Support\Image::url($pharmacy->logo) }}' alt='{{ $pharmacy->pharmacy_name }}' class='ph-avatar'>
+                                <img src='{{ \App\Support\Image::url($pharmacy->logo) }}' alt='{{ $pharmacy->pharmacy_name }}' class='ph-avatar' style='cursor:pointer;' title='@lang('pharmacy.profile.logo_change')' onclick='openModal("logoModal")'>
                             @else
-                                <div class='ph-avatar' style='display:grid;place-items:center;background:var(--ph-teal-mist);color:var(--ph-teal);font-size:2rem;font-weight:700;'>{{ mb_substr($pharmacy->pharmacy_name, 0, 1) }}</div>
+                                <div class='ph-avatar' style='display:grid;place-items:center;background:var(--ph-teal-mist);color:var(--ph-teal);font-size:2rem;font-weight:700;cursor:pointer;' title='@lang('pharmacy.profile.logo_change')' onclick='openModal("logoModal")'>{{ mb_substr($pharmacy->pharmacy_name, 0, 1) }}</div>
                             @endif
                         </div>
                         <div class='ph-card-body'>
@@ -154,31 +154,9 @@
                                 @error('region')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 
-                            <div class='ph-group'>
-                                <label class='ph-form-label' for='logo'>@lang('pharmacy.profile.logo_label')</label>
-                                <input type='file' name='logo' id='logo' class='ph-control' accept='image/*' style='height:auto;padding:10px;'>
-                                @error('logo')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class='ph-card-head' style='margin-block-start:24px;margin-block-end:12px;padding:0;'><h2><i class='fas fa-lock'></i> @lang('pharmacy.profile.password_change.title')</h2></div>
-                            <p class='ph-hint' style='margin-block-end:14px;'>@lang('pharmacy.profile.password_change.hint')</p>
-
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='current_password'>@lang('pharmacy.profile.password_change.current_password')</label>
-                                <input type='password' name='current_password' id='current_password' class='ph-control'>
-                                @error('current_password')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='password'>@lang('pharmacy.profile.password_change.new_password')</label>
-                                <input type='password' name='password' id='new_password' class='ph-control'>
-                                <p class='ph-hint'>@lang('pharmacy.profile.password_change.password_hint')</p>
-                                @error('password')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='password_confirmation'>@lang('pharmacy.profile.password_change.confirm_password')</label>
-                                <input type='password' name='password_confirmation' id='password_confirmation' class='ph-control'>
+                            <div style='display:flex;gap:24px;flex-wrap:wrap;margin-block-start:10px;'>
+                                <button type='button' class='ph-text-action' onclick='openModal("logoModal")'><i class='fas fa-camera'></i> @lang('pharmacy.profile.logo_change')</button>
+                                <button type='button' class='ph-text-action' onclick='openModal("passwordModal")'><i class='fas fa-key'></i> @lang('pharmacy.profile.password_change.title')</button>
                             </div>
                         </div>
                         <div style='display:flex;gap:10px;padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>
@@ -188,10 +166,110 @@
                     </div>
                 </div>
             </div>
+
+            <!-- حوار تغيير كلمة المرور -->
+            <div class='ph-modal-overlay' id='passwordModal' role='dialog' aria-modal='true'>
+                <div class='ph-modal'>
+                    <div class='ph-modal-head'>
+                        <h3>@lang('pharmacy.profile.password_change.title')</h3>
+                        <button type='button' class='ph-close' onclick='closeModal("passwordModal")'>&times;</button>
+                    </div>
+                    <div class='ph-modal-body'>
+                        <p class='ph-hint' style='margin-block-end:14px;'>@lang('pharmacy.profile.password_change.hint')</p>
+                        <div class='ph-group' style='margin-block-end:18px;'>
+                            <label class='ph-form-label' for='current_password'>@lang('pharmacy.profile.password_change.current_password')</label>
+                            <input type='password' name='current_password' id='current_password' class='ph-control'>
+                            @error('current_password')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                        </div>
+                        <div class='ph-group' style='margin-block-end:18px;'>
+                            <label class='ph-form-label' for='new_password'>@lang('pharmacy.profile.password_change.new_password')</label>
+                            <input type='password' name='password' id='new_password' class='ph-control'>
+                            <p class='ph-hint'>@lang('pharmacy.profile.password_change.password_hint')</p>
+                            @error('password')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                        </div>
+                        <div class='ph-group'>
+                            <label class='ph-form-label' for='password_confirmation'>@lang('pharmacy.profile.password_change.confirm_password')</label>
+                            <input type='password' name='password_confirmation' id='password_confirmation' class='ph-control'>
+                        </div>
+                    </div>
+                    <div class='ph-modal-foot'>
+                        <button type='button' class='ph-btn ghost' onclick='closeModal("passwordModal")'>@lang('pharmacy.profile.cancel_button')</button>
+                        <button type='button' class='ph-btn primary' onclick='saveFromModal("passwordModal")'>@lang('pharmacy.profile.save_button')</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- حوار تغيير شعار الصيدلية -->
+            <div class='ph-modal-overlay' id='logoModal' role='dialog' aria-modal='true'>
+                <div class='ph-modal'>
+                    <div class='ph-modal-head'>
+                        <h3>@lang('pharmacy.profile.logo_label')</h3>
+                        <button type='button' class='ph-close' onclick='closeModal("logoModal")'>&times;</button>
+                    </div>
+                    <div class='ph-modal-body' style='text-align:center;'>
+                        @if($pharmacy->logo)
+                            <img src='{{ \App\Support\Image::url($pharmacy->logo) }}' alt='' id='logoPreview' class='ph-logo-preview'>
+                        @else
+                            <div id='logoPreviewPlaceholder' class='ph-logo-preview' style='display:grid;place-items:center;background:var(--ph-teal-mist);color:var(--ph-teal);font-size:2.2rem;font-weight:700;'>{{ mb_substr($pharmacy->pharmacy_name, 0, 1) }}</div>
+                        @endif
+                        <input type='file' name='logo' id='logoInput' accept='image/*' style='display:none;' onchange='previewLogo(this)'>
+                        <button type='button' class='ph-btn sm outline' style='margin-block-start:14px;' onclick='document.getElementById("logoInput").click()'>@lang('pharmacy.profile.choose_image')</button>
+                        @error('logo')<span style='display:block;color:var(--ph-red);font-size:.8rem;margin-block-start:10px;'>{{ $message }}</span>@enderror
+                    </div>
+                    <div class='ph-modal-foot'>
+                        <button type='button' class='ph-btn ghost' onclick='closeModal("logoModal")'>@lang('pharmacy.profile.cancel_button')</button>
+                        <button type='button' class='ph-btn primary' onclick='saveFromModal("logoModal")'>@lang('pharmacy.profile.save_button')</button>
+                    </div>
+                </div>
+            </div>
+
+            @if($errors->hasAny(['current_password', 'password', 'password_confirmation']))
+                <script>document.addEventListener('DOMContentLoaded', function () { openModal('passwordModal'); });</script>
+            @elseif($errors->has('logo'))
+                <script>document.addEventListener('DOMContentLoaded', function () { openModal('logoModal'); });</script>
+            @endif
         </form>
     </div>
 
     <script>
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function saveFromModal(id) {
+            closeModal(id);
+            var form = document.querySelector('form.ph-profile-form');
+            if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
+        }
+
+        function previewLogo(input) {
+            var file = input.files && input.files[0];
+            if (!file) return;
+            var img = document.getElementById('logoPreview');
+            var placeholder = document.getElementById('logoPreviewPlaceholder');
+            if (!img) {
+                img = document.createElement('img');
+                img.id = 'logoPreview';
+                img.className = 'ph-logo-preview';
+                img.alt = '';
+                if (placeholder) { placeholder.parentNode.replaceChild(img, placeholder); }
+                else { input.parentNode.insertBefore(img, input); }
+            }
+            img.src = URL.createObjectURL(file);
+            img.style.display = 'block';
+            if (placeholder) { placeholder.style.display = 'none'; }
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.ph-modal-overlay.active').forEach(function (m) { m.classList.remove('active'); });
+            }
+        });
+
         function toggleTime(day) {
             const closed = document.querySelector('input[name="hours['+day+'][is_closed]"]').checked;
             document.getElementById('open_'+day).disabled = closed;

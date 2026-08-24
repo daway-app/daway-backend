@@ -337,6 +337,8 @@ return [
         'phone_label' => 'Phone Number',
         'address_label' => 'Address',
         'logo_label' => 'Pharmacy Logo',
+        'logo_change' => 'Change Logo',
+        'choose_image' => 'Choose Image',
         'save_button' => 'Save Changes',
         'cancel_button' => 'Cancel',
         'update_button' => 'Update Profile',

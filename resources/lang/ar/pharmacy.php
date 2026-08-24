@@ -337,6 +337,8 @@ return [
         'phone_label' => 'رقم الهاتف',
         'address_label' => 'العنوان',
         'logo_label' => 'شعار الصيدلية',
+        'logo_change' => 'تغيير الشعار',
+        'choose_image' => 'اختيار صورة',
         'save_button' => 'حفظ التغييرات',
         'cancel_button' => 'إلغاء',
         'update_button' => 'تحديث الملف الشخصي',

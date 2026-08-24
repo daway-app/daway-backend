@@ -147,6 +147,12 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .ph-modal-body{padding:22px;}
 .ph-modal-foot{padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);display:flex;justify-content:flex-end;gap:10px;}
 .ph-close{background:none;border:none;font-size:1.4rem;color:var(--ph-ink-faint);cursor:pointer;}
+/* أزرار نصية لفتح حوارات تغيير الشعار/كلمة المرور */
+.ph-text-action{background:none;border:none;color:var(--ph-teal);font-weight:600;font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:0;}
+.ph-text-action:hover{text-decoration:underline;}
+.ph-text-action i{color:var(--ph-teal);}
+/* معاينة الشعار داخل الحوار */
+.ph-logo-preview{width:120px;height:120px;border-radius:var(--ph-r-full);object-fit:cover;border:1px solid var(--ph-line);margin-inline:auto;display:block;}
 .ph-profile-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;}
 /* الاسم والبيانات يمين (العمود الأول) والموقع/الساعات شمال في وضع العربي (RTL) */
 .ph-profile-grid .ph-profile-main{order:-1;}
