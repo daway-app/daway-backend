@@ -83,6 +83,10 @@ class PharmacyProfileController extends Controller
             Cloudinary::deleteLocal($pharmacy->logo);
             $pharmacy->logo = Cloudinary::upload($request->file('logo'), 'pharmacy_logos');
             $pharmacy->save();
+
+            // مزامنة الصورة: شعار الصيدلية وصورة الحساب صورة وحدة
+            $user->avatar = $pharmacy->logo;
+            $user->save();
         }
 
         // تغيير كلمة المرور اختياري: يُطبق فقط عند تعبئة حقل كلمة المرور الجديدة

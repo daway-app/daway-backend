@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\web\General;
 
 use App\Http\Controllers\Controller;
+use App\Models\Pharmacy;
 use App\Support\Cloudinary;
 use App\Support\Image;
 use Illuminate\Http\Request;
@@ -40,11 +41,29 @@ class ProfileController extends Controller
         if ($request->hasFile('avatar')) {
             Cloudinary::deleteLocal($user->avatar);
             $user->avatar = Cloudinary::upload($request->file('avatar'), 'avatars');
+            $this->syncPharmacyLogo($user);
         }
 
         $user->save();
 
         return redirect()->route('profile.edit')->with('success', __('layout.profile_saved'));
+    }
+
+    /**
+     * مزامنة الصورة: لحسابات الصيدليات صورة الحساب وشعار الصيدلية صورة وحدة —
+     * أي تحديث على واحدة ينعكس تلقائياً على التانية.
+     */
+    private function syncPharmacyLogo($user): void
+    {
+        if ($user->role !== 'pharmacy') {
+            return;
+        }
+
+        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        if ($pharmacy) {
+            $pharmacy->logo = $user->avatar;
+            $pharmacy->save();
+        }
     }
 
     public function updatePassword(Request $request)
@@ -80,6 +99,7 @@ class ProfileController extends Controller
         if ($request->hasFile('avatar')) {
             Cloudinary::deleteLocal($user->avatar);
             $user->avatar = Cloudinary::upload($request->file('avatar'), 'avatars');
+            $this->syncPharmacyLogo($user);
         }
 
         $user->save();
