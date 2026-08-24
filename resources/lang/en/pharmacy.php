@@ -341,6 +341,15 @@ return [
         'cancel_button' => 'Cancel',
         'update_button' => 'Update Profile',
         'success' => 'Pharmacy profile updated successfully.',
+        'password_change' => [
+            'title' => 'Change Password',
+            'hint' => 'Optional — fill the fields only if you want to change your password.',
+            'current_password' => 'Current Password',
+            'new_password' => 'New Password',
+            'confirm_password' => 'Confirm New Password',
+            'password_hint' => 'At least 8 characters',
+            'wrong_current' => 'Current password is incorrect.',
+        ],
         'complete' => [
             'title' => 'Complete Pharmacy Profile',
             'heading' => 'Complete Your Pharmacy Profile',

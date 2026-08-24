@@ -7,6 +7,7 @@ use App\Models\Pharmacy;
 use App\Models\PharmacyHour;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -84,6 +85,24 @@ class PharmacyProfileController extends Controller
             }
             $logoPath = $request->file('logo')->store('pharmacy_logos', 'public');
             $pharmacy->logo = $logoPath;
+        }
+
+        // تغيير كلمة المرور اختياري: يُطبق فقط عند تعبئة حقل كلمة المرور الجديدة
+        $newPassword = (string) $request->input('password');
+        if ($newPassword !== '') {
+            $request->validate([
+                'current_password' => ['required', 'string'],
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+                'password_confirmation' => ['required', 'string'],
+            ]);
+
+            if (! Hash::check($request->input('current_password'), $user->password)) {
+                return redirect()->route('pharmacy.profile.edit')
+                    ->withErrors(['current_password' => __('pharmacy.profile.password_change.wrong_current')])
+                    ->withInput();
+            }
+
+            $user->update(['password' => Hash::make($newPassword)]);
         }
 
         // حفظ ساعات العمل بدون قواعد تحقق معقدة
