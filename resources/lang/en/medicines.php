@@ -63,6 +63,7 @@ return [
     'medicine_name_ar' => 'Medicine Name (Arabic)',
     'active_ingredient_label' => 'Active Ingredient',
     'description_usage_label' => 'Description / Usage',
+    'image_label' => 'Medicine Image',
     'alternative_medicines' => 'Alternative Medicines',
     'alternative_medicines_desc' => 'Select medicines that can serve as alternatives for this medicine.',
     'add_alternative_placeholder' => 'Search for an alternative medicine...',

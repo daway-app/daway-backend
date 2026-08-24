@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\web\General;
 
 use App\Http\Controllers\Controller;
+use App\Support\Cloudinary;
+use App\Support\Image;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -37,10 +38,8 @@ class ProfileController extends Controller
         }
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+            Cloudinary::deleteLocal($user->avatar);
+            $user->avatar = Cloudinary::upload($request->file('avatar'), 'avatars');
         }
 
         $user->save();
@@ -79,10 +78,8 @@ class ProfileController extends Controller
         $user->name = $request->input('name');
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+            Cloudinary::deleteLocal($user->avatar);
+            $user->avatar = Cloudinary::upload($request->file('avatar'), 'avatars');
         }
 
         $user->save();
@@ -90,13 +87,8 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'name' => $user->name,
-            // الصور الجديدة تُخزن على قرص public (public/uploads/avatars) — نبني الرابط منها،
-            // وإلا نرجع لرابط uploads القديم للملفات السابقة
-            'avatar' => $user->avatar
-                ? (Storage::disk('public')->exists($user->avatar)
-                    ? Storage::disk('public')->url($user->avatar)
-                    : asset('uploads/'.$user->avatar))
-                : null,
+            // الرابط إما Cloudinary أو القرص العام المحلي — Image::url يتكفل بالحالتين
+            'avatar' => Image::url($user->avatar),
         ]);
     }
 }

@@ -18,7 +18,7 @@
             </div>
         </div>
 
-        <form action="{{ route('medicines.update', $medicine->id) }}" method="POST">
+        <form action="{{ route('medicines.update', $medicine->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -47,6 +47,13 @@
                     <div class="fg">
                         <label class="fl" for="description">@lang('medicines.description_usage_label')</label>
                         <textarea class="fc" id="description" name="description" rows="3">{{ old('description', $medicine->description) }}</textarea>
+                    </div>
+                    <div class="fg">
+                        <label class="fl" for="image">@lang('medicines.image_label')</label>
+                        @if($medicine->image)
+                            <img src="{{ \App\Support\Image::url($medicine->image) }}" alt="{{ $medicine->trade_name }}" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:10px;margin-bottom:8px;">
+                        @endif
+                        <input class="fc" type="file" id="image" name="image" accept="image/*" style="height:auto;padding:10px;">
                     </div>
                 </div>
             </div>

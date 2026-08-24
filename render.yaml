@@ -40,3 +40,10 @@ services:
         value: "*"
       # عيّن القيمة من Render Dashboard (مثل https://daway-backend.onrender.com)
       - key: APP_URL
+      # تخزين الصور على Cloudinary (قيم عامة — الرفع غير الموقّع عبر preset)
+      - key: CLOUDINARY_CLOUD_NAME
+        value: dmvzcwm3g
+      - key: CLOUDINARY_UPLOAD_PRESET
+        value: daway_medicines
+      - key: CLOUDINARY_FOLDER
+        value: daway

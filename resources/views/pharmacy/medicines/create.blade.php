@@ -15,7 +15,7 @@
             </div>
         </div>
 
-        <form action="{{ route('pharmacy.medicines.store') }}" method="POST">
+        <form action="{{ route('pharmacy.medicines.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             @if(isset($catalogEmpty) && $catalogEmpty)

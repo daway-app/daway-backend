@@ -4,6 +4,7 @@ namespace App\Http\Controllers\web\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
+use App\Support\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
@@ -102,6 +103,7 @@ class MedicineController extends Controller
             'name_ar' => 'required|string|max:255',
             'active_ingredient' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'alternatives' => 'nullable|array',
             'alternatives.*' => 'exists:medicines,id',
         ]);
@@ -111,6 +113,11 @@ class MedicineController extends Controller
             'active_ingredient' => $request->active_ingredient,
             'description' => $request->description,
         ]);
+
+        if ($request->hasFile('image')) {
+            $medicine->image = Cloudinary::upload($request->file('image'), 'medicines');
+            $medicine->save();
+        }
 
         if ($request->has('alternatives')) {
             $medicine->alternatives()->sync($request->alternatives);
@@ -156,6 +163,7 @@ class MedicineController extends Controller
             'name_ar' => 'required|string|max:255',
             'active_ingredient' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'alternatives' => 'nullable|array',
             'alternatives.*' => 'exists:medicines,id',
         ]);
@@ -165,6 +173,12 @@ class MedicineController extends Controller
             'active_ingredient' => $request->active_ingredient,
             'description' => $request->description,
         ]);
+
+        if ($request->hasFile('image')) {
+            Cloudinary::deleteLocal($medicine->image);
+            $medicine->image = Cloudinary::upload($request->file('image'), 'medicines');
+            $medicine->save();
+        }
 
         if ($request->has('alternatives')) {
             $medicine->alternatives()->sync($request->alternatives);

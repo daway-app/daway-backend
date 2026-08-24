@@ -18,7 +18,7 @@
             </div>
         </div>
 
-        <form action="{{ route('medicines.store') }}" method="POST">
+        <form action="{{ route('medicines.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             <div class="premium-card">
@@ -46,6 +46,10 @@
                     <div class="fg">
                         <label class="fl" for="description">@lang('medicines.description_usage_label')</label>
                         <textarea class="fc" id="description" name="description" rows="3">{{ old('description') }}</textarea>
+                    </div>
+                    <div class="fg">
+                        <label class="fl" for="image">@lang('medicines.image_label')</label>
+                        <input class="fc" type="file" id="image" name="image" accept="image/*" style="height:auto;padding:10px;">
                     </div>
                 </div>
             </div>

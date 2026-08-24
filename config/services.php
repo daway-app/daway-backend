@@ -39,4 +39,12 @@ return [
         'key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
+    // تخزين الصور على Cloudinary (رفع غير موقّع عبر upload_preset)
+    'cloudinary' => [
+        'cloud' => env('CLOUDINARY_CLOUD_NAME'),
+        'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
+        // مجلد الجذر لكل صور التطبيق داخل Cloudinary
+        'folder' => env('CLOUDINARY_FOLDER', 'daway'),
+    ],
+
 ];

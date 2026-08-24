@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine; // Assuming this model exists for pivot table
 use App\Models\SearchLog;
+use App\Support\Cloudinary;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -137,6 +138,7 @@ class PharmacyMedicineController extends Controller
             'quantity' => 'required|integer|min:0', // Changed from 'stock' to 'quantity'
             'is_available' => 'boolean',
             'min_stock' => 'nullable|integer|min:0',
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ], [
             'price.required' => __('pharmacy.medicines.create.price_required'),
             'quantity.required' => __('pharmacy.medicines.create.quantity_required'),
@@ -180,6 +182,13 @@ class PharmacyMedicineController extends Controller
             return back()->withInput()->withErrors([
                 'medicine_id' => __('pharmacy.medicines.create.already_exists'),
             ]);
+        }
+
+        // صورة الدواء (اختيارية) — تُرفع إلى Cloudinary وتُخزن على الدواء نفسه في الكتالوج العام
+        if ($request->hasFile('image')) {
+            Cloudinary::deleteLocal($medicine->image);
+            $medicine->image = Cloudinary::upload($request->file('image'), 'medicines');
+            $medicine->save();
         }
 
         $pharmacyMedicine = PharmacyMedicine::create([

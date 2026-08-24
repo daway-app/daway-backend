@@ -7,6 +7,7 @@ use App\Models\Medicine;
 use App\Models\MohMedicine;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
+use App\Support\Image;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -213,7 +214,7 @@ class MedicineController extends Controller
             'trade_name' => $m->trade_name,
             'active_ingredient' => $m->active_ingredient,
             'description' => $m->description,
-            'image' => $m->image ? asset($m->image) : null,
+            'image' => Image::url($m->image),
             'is_available' => $m->is_available,
         ];
 

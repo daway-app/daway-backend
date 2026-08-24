@@ -99,7 +99,7 @@ class PharmacyController extends Controller
                             'trade_name' => $pm->medicine->trade_name,
                             'active_ingredient' => $pm->medicine->active_ingredient,
                             'description' => $pm->medicine->description,
-                            'image' => $pm->medicine->image ? asset($pm->medicine->image) : null,
+                            'image' => Image::url($pm->medicine->image),
                         ],
                     ])
                     ->values(),

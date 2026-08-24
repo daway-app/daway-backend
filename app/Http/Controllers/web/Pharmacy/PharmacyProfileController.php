@@ -5,10 +5,10 @@ namespace App\Http\Controllers\web\Pharmacy;
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
 use App\Models\PharmacyHour;
+use App\Support\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class PharmacyProfileController extends Controller
@@ -80,11 +80,8 @@ class PharmacyProfileController extends Controller
         }
 
         if ($request->hasFile('logo')) {
-            if ($pharmacy->logo) {
-                Storage::disk('public')->delete($pharmacy->logo);
-            }
-            $logoPath = $request->file('logo')->store('pharmacy_logos', 'public');
-            $pharmacy->logo = $logoPath;
+            Cloudinary::deleteLocal($pharmacy->logo);
+            $pharmacy->logo = Cloudinary::upload($request->file('logo'), 'pharmacy_logos');
             $pharmacy->save();
         }
 

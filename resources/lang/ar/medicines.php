@@ -63,6 +63,7 @@ return [
     'medicine_name_ar' => 'اسم الدواء (بالعربية)',
     'active_ingredient_label' => 'المادة الفعالة',
     'description_usage_label' => 'الوصف / طريقة الاستخدام',
+    'image_label' => 'صورة الدواء',
     'alternative_medicines' => 'الأدوية البديلة',
     'alternative_medicines_desc' => 'اختر الأدوية التي يمكن أن تكون بديلاً لهذا الدواء.',
     'add_alternative_placeholder' => 'ابحث عن دواء بديل...',
