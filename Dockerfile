@@ -55,7 +55,10 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
     --filename=composer
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Retry up to 3 times: GitHub API sometimes returns HTTP 504 during builds
+RUN composer install --no-dev --optimize-autoloader \
+    || (sleep 10 && composer install --no-dev --optimize-autoloader) \
+    || (sleep 30 && composer install --no-dev --optimize-autoloader)
 
 # Run as non-root user
 RUN useradd -m -u 1000 appuser \
