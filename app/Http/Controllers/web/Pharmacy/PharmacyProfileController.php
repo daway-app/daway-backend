@@ -85,6 +85,7 @@ class PharmacyProfileController extends Controller
             }
             $logoPath = $request->file('logo')->store('pharmacy_logos', 'public');
             $pharmacy->logo = $logoPath;
+            $pharmacy->save();
         }
 
         // تغيير كلمة المرور اختياري: يُطبق فقط عند تعبئة حقل كلمة المرور الجديدة
