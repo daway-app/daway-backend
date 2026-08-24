@@ -39,53 +39,7 @@
         <form action='{{ route('pharmacy.profile.complete') }}' method='POST'>
             @csrf
 
-            <div class='ph-profile-grid'>
-                <div class='ph-profile-side'>
-                    <div class='ph-card'>
-                        <div class='ph-card-head'><h2><i class='fas fa-map-marker-alt'></i> @lang('pharmacy.profile.location_title')</h2></div>
-                        <div class='ph-card-body'>
-                            <div class='ph-form-row' style='grid-template-columns:1fr 1fr;margin-block-end:12px;'>
-                                <div class='ph-group'>
-                                    <label class='ph-form-label' for='latitude'>@lang('pharmacy.profile.latitude_label') <span class='req'>*</span></label>
-                                    <input type='text' name='latitude' id='latitude' class='ph-control' value='{{ old('latitude') }}' required>
-                                </div>
-                                <div class='ph-group'>
-                                    <label class='ph-form-label' for='longitude'>@lang('pharmacy.profile.longitude_label') <span class='req'>*</span></label>
-                                    <input type='text' name='longitude' id='longitude' class='ph-control' value='{{ old('longitude') }}' required>
-                                </div>
-                            </div>
-                            <div id='pharmacyMap' class='ph-map ph-map-sm' data-lat='{{ old('latitude', 31.5016) }}' data-lng='{{ old('longitude', 34.4668) }}'></div>
-                            <p class='ph-hint'>@lang('pharmacy.profile.map_hint')</p>
-                        </div>
-                    </div>
-
-                    <div class='ph-card'>
-                        <div class='ph-card-head'><h2><i class='fas fa-clock'></i> @lang('pharmacy.profile.hours_title') <span class='req'>*</span></h2></div>
-                        <div class='ph-card-body ph-hours' style='padding-block-start:0;'>
-                            @foreach($daysOfWeek as $dayKey => $dayName)
-                                @php
-                                    $isClosed = old('hours.'.$dayKey.'.is_closed', false);
-                                @endphp
-                                <div class='day-row'>
-                                    <label>
-                                        <input type='checkbox' name='hours[{{ $dayKey }}][is_closed]' value='1' {{ $isClosed ? 'checked' : '' }} onchange='toggleTime("{{ $dayKey }}")'>
-                                        {{ $dayName }}
-                                    </label>
-                                    <div class='ph-group'>
-                                        <label class='ph-form-label'>@lang('pharmacy.profile.from')</label>
-                                        <input type='time' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.open_time') }}' {{ $isClosed ? 'disabled' : '' }}>
-                                    </div>
-                                    <div class='ph-group'>
-                                        <label class='ph-form-label'>@lang('pharmacy.profile.to')</label>
-                                        <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.close_time') }}' {{ $isClosed ? 'disabled' : '' }}>
-                                    </div>
-                                </div>
-                            @endforeach
-                            @error('hours')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                        </div>
-                    </div>
-                </div>
-
+            <div class='ph-profile-grid ph-complete-grid'>
                 <div class='ph-profile-main'>
                     <div class='ph-card'>
                         <div class='ph-banner'>
@@ -144,6 +98,52 @@
                         </div>
                         <div style='display:flex;gap:10px;padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>
                             <button type='submit' class='ph-btn primary'><i class='fas fa-save'></i> @lang('pharmacy.profile.complete.save_button')</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class='ph-profile-side'>
+                    <div class='ph-card'>
+                        <div class='ph-card-head'><h2><i class='fas fa-map-marker-alt'></i> @lang('pharmacy.profile.location_title')</h2></div>
+                        <div class='ph-card-body'>
+                            <div class='ph-form-row' style='grid-template-columns:1fr 1fr;margin-block-end:12px;'>
+                                <div class='ph-group'>
+                                    <label class='ph-form-label' for='latitude'>@lang('pharmacy.profile.latitude_label') <span class='req'>*</span></label>
+                                    <input type='text' name='latitude' id='latitude' class='ph-control' value='{{ old('latitude') }}' required>
+                                </div>
+                                <div class='ph-group'>
+                                    <label class='ph-form-label' for='longitude'>@lang('pharmacy.profile.longitude_label') <span class='req'>*</span></label>
+                                    <input type='text' name='longitude' id='longitude' class='ph-control' value='{{ old('longitude') }}' required>
+                                </div>
+                            </div>
+                            <div id='pharmacyMap' class='ph-map ph-map-sm' data-lat='{{ old('latitude', 31.5016) }}' data-lng='{{ old('longitude', 34.4668) }}'></div>
+                            <p class='ph-hint'>@lang('pharmacy.profile.map_hint')</p>
+                        </div>
+                    </div>
+
+                    <div class='ph-card'>
+                        <div class='ph-card-head'><h2><i class='fas fa-clock'></i> @lang('pharmacy.profile.hours_title') <span class='req'>*</span></h2></div>
+                        <div class='ph-card-body ph-hours' style='padding-block-start:0;'>
+                            @foreach($daysOfWeek as $dayKey => $dayName)
+                                @php
+                                    $isClosed = old('hours.'.$dayKey.'.is_closed', false);
+                                @endphp
+                                <div class='day-row'>
+                                    <label>
+                                        <input type='checkbox' name='hours[{{ $dayKey }}][is_closed]' value='1' {{ $isClosed ? 'checked' : '' }} onchange='toggleTime("{{ $dayKey }}")'>
+                                        {{ $dayName }}
+                                    </label>
+                                    <div class='ph-group'>
+                                        <label class='ph-form-label'>@lang('pharmacy.profile.from')</label>
+                                        <input type='time' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.open_time') }}' {{ $isClosed ? 'disabled' : '' }}>
+                                    </div>
+                                    <div class='ph-group'>
+                                        <label class='ph-form-label'>@lang('pharmacy.profile.to')</label>
+                                        <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.close_time') }}' {{ $isClosed ? 'disabled' : '' }}>
+                                    </div>
+                                </div>
+                            @endforeach
+                            @error('hours')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                         </div>
                     </div>
                 </div>

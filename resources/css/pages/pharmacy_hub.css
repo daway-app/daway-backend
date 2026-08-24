@@ -128,7 +128,7 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .ph-banner .ph-avatar{position:absolute;inset-block-end:-40px;inset-inline-start:30px;}
 .ph-banner h2{margin:0;color:#fff;font-size:1.4rem;}
 .ph-banner p{margin:4px 0 0;color:rgba(255,255,255,.85);font-size:.9rem;}
-.ph-hours .day-row{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;align-items:center;gap:16px;padding:14px 0;border-block-end:1px solid var(--ph-line-soft);}
+.ph-hours .day-row{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);align-items:center;gap:10px;padding:14px 0;border-block-end:1px solid var(--ph-line-soft);}
 .ph-hours .day-row:last-child{border-block-end:none;}
 .ph-hours label{display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;}
 .ph-hours input[type=checkbox]{width:18px;height:18px;accent-color:var(--ph-teal);}
@@ -142,6 +142,11 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .ph-close{background:none;border:none;font-size:1.4rem;color:var(--ph-ink-faint);cursor:pointer;}
 .ph-profile-grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
 .ph-map-sm{height:180px;}
+/* صفحة إكمال البيانات: البيانات يمين (1fr) والموقع/الساعات شمال (340px) في RTL */
+.ph-complete-grid{grid-template-columns:1fr 340px;}
+@media(max-width:900px){.ph-complete-grid{grid-template-columns:1fr;}}
+.ph-profile-grid .ph-control,.ph-profile-grid .ph-select{width:100%;min-width:0;box-sizing:border-box;}
+.ph-hours input[type=time]{width:100%;min-width:0;box-sizing:border-box;}
 .ph-hours-compact{padding:8px 22px 4px;}
 .ph-hours-compact .hc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-block-end:1px solid var(--ph-line-soft);font-size:.85rem;}
 .ph-hours-compact .hc-row:last-child{border-block-end:none;}
