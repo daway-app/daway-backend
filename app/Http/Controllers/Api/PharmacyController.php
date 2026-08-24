@@ -78,8 +78,8 @@ class PharmacyController extends Controller
                 ...$this->payload($pharmacy),
                 'hours' => $pharmacy->hours->map(fn ($hour) => [
                     'day_of_week' => $hour->day_of_week,
-                    'open_time' => $hour->open_time ? substr((string) $hour->open_time, 0, 5) : null,
-                    'close_time' => $hour->close_time ? substr((string) $hour->close_time, 0, 5) : null,
+                    'open_time' => $hour->open_time?->format('H:i'),
+                    'close_time' => $hour->close_time?->format('H:i'),
                     'is_closed' => (bool) $hour->is_closed,
                 ])->values(),
                 'ratings' => $pharmacy->ratings->map(fn ($rating) => [

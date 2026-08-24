@@ -62,7 +62,7 @@
                                     <span class='hc-day'>{{ $dayName }}</span>
                                     <span class='hc-time'>
                                         @if($isClosed) @lang('pharmacy.profile.closed') @else
-                                            {{ old('hours.'.$dayKey.'.close_time', $hour?->close_time ?? '') }} – {{ old('hours.'.$dayKey.'.open_time', $hour?->open_time ?? '') }}
+                                            {{ old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i')) }} – {{ old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i')) }}
                                         @endif
                                     </span>
                                     <i class='fas fa-calendar-days'></i>
@@ -90,11 +90,11 @@
                                         </label>
                                         <div class='ph-group'>
                                             <label class='ph-form-label'>@lang('pharmacy.profile.from')</label>
-                                            <input type='time' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.open_time', $hour?->open_time ?? '') }}' {{ $isClosed ? 'disabled' : '' }}>
+                                            <input type='time' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i')) }}' {{ $isClosed ? 'disabled' : '' }}>
                                         </div>
                                         <div class='ph-group'>
                                             <label class='ph-form-label'>@lang('pharmacy.profile.to')</label>
-                                            <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.close_time', $hour?->close_time ?? '') }}' {{ $isClosed ? 'disabled' : '' }}>
+                                            <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i')) }}' {{ $isClosed ? 'disabled' : '' }}>
                                         </div>
                                         <span class='day-quick'>
                                             <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.copy_title')' onclick='copyDay("{{ $dayKey }}")'>@lang('pharmacy.profile.hours_quick.copy')</button>
