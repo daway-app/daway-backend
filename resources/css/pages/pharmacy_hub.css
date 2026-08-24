@@ -147,7 +147,9 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .ph-modal-body{padding:22px;}
 .ph-modal-foot{padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);display:flex;justify-content:flex-end;gap:10px;}
 .ph-close{background:none;border:none;font-size:1.4rem;color:var(--ph-ink-faint);cursor:pointer;}
-.ph-profile-grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+.ph-profile-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;}
+/* الاسم والبيانات يمين (العمود الأول) والموقع/الساعات شمال في وضع العربي (RTL) */
+.ph-profile-grid .ph-profile-main{order:-1;}
 .ph-map-sm{height:180px;}
 /* صفحة إكمال البيانات: البيانات يمين (1fr) والموقع/الساعات شمال (340px) في RTL */
 .ph-complete-grid{grid-template-columns:1fr 340px;}
