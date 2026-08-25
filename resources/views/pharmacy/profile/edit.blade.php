@@ -414,9 +414,9 @@
             var h24 = row.querySelector('.ph-day-24 input');
 
             if (closedInput.value === '1') {
-                status.textContent = @lang('pharmacy.profile.closed');
+                status.textContent = @json(__('pharmacy.profile.closed'));
             } else if (h24.checked) {
-                status.textContent = @lang('pharmacy.profile.hours_quick.open_24');
+                status.textContent = @json(__('pharmacy.profile.hours_quick.open_24'));
             } else {
                 status.textContent = (from.value || '—') + ' – ' + (to.value || '—');
             }
@@ -472,13 +472,13 @@
 
             if (open.length === rows.length && uniform && open.length) {
                 unifiedEl.textContent = open[0].is24
-                    ? @lang('pharmacy.profile.hours_quick.open_24')
+                    ? @json(__('pharmacy.profile.hours_quick.open_24'))
                     : open[0].from + ' – ' + open[0].to;
             } else {
                 unifiedEl.textContent = open.length ? '…' : '—';
             }
 
-            exceptionEl.textContent = closedNames.length ? closedNames.join('، ') : @lang('pharmacy.profile.hours_quick.no_exception');
+            exceptionEl.textContent = closedNames.length ? closedNames.join('، ') : @json(__('pharmacy.profile.hours_quick.no_exception'));
         }
 
         document.addEventListener('DOMContentLoaded', updateHoursSummary);
