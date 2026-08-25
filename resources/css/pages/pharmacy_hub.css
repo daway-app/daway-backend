@@ -190,11 +190,25 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .ph-switch-input:checked + .ph-switch-knob::after{transform:translateX(-20px);}
 [dir='ltr'] .ph-switch-input:checked + .ph-switch-knob::after{transform:translateX(20px);}
 .ph-day-controls{display:flex;align-items:center;gap:10px;margin-block-start:12px;}
-.ph-day-to{font-size:.8rem;color:var(--ph-ink-faint);}
+
 .ph-day-24{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ph-ink-soft);cursor:pointer;margin-inline-start:auto;white-space:nowrap;}
 .ph-day-24 input{width:16px;height:16px;accent-color:var(--ph-teal);}
-.hc-time-input{width:88px;text-align:center;padding:9px 10px;font-size:.95rem;font-variant-numeric:tabular-nums;direction:ltr;}
+
 @media(max-width:768px){.ph-day-controls{flex-wrap:wrap;}.ph-day-24{margin-inline-start:0;flex-basis:100%;}}
+
+/* حوار تعديل الساعات: تصغير وإزالة سكرول */
+.ph-hours-editor{padding:14px;}
+.ph-hours-editor .ph-hours-chips{margin-block-end:8px;}
+.ph-hours-editor .ph-chip{padding:6px 8px;}
+.ph-hours-editor .ph-chip-value{font-size:.82rem;}
+.ph-hours-editor .ph-day-card{padding:8px 10px;}
+.ph-hours-editor .ph-day-name{font-size:.85rem;min-width:48px;}
+.ph-hours-editor .ph-day-status{font-size:.78rem;}
+.ph-hours-editor .ph-day-controls{margin-block-start:6px;gap:8px;}
+.ph-hours-editor .ph-day-controls .ph-control{padding:5px 8px;height:32px;font-size:.8rem;}
+.ph-hours-editor .ph-day-24{font-size:.7rem;gap:4px;}
+.ph-hours-editor .ph-day-24 input{width:14px;height:14px;}
+@media(max-width:560px){.ph-hours-editor{padding:12px;}.ph-hours-editor .ph-day-controls{flex-wrap:wrap;}.ph-hours-editor .ph-day-24{flex-basis:100%;margin-inline-start:0;}}
 @media(max-width:900px){.ph-profile-grid{grid-template-columns:1fr;}}
 .chart-box{position:relative;height:260px;}
 .chart-sm{height:220px;}

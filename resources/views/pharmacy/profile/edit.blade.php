@@ -214,7 +214,7 @@
                         <h3>@lang('pharmacy.profile.hours_title')</h3>
                         <button type='button' class='ph-close' onclick='closeModal("hoursModal")'>&times;</button>
                     </div>
-                    <div class='ph-modal-body ph-hours-list' id='hoursList'>
+                    <div class='ph-modal-body ph-hours-list ph-hours-editor' id='hoursList'>
                         <div class='ph-hours-chips'>
                             <div class='ph-chip ph-chip-accent'>
                                 <div class='ph-chip-label'>@lang('pharmacy.profile.hours_quick.uniform')</div>
