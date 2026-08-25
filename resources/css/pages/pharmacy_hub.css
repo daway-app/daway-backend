@@ -153,15 +153,23 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .ph-text-action i{color:var(--ph-teal);}
 /* معاينة الشعار داخل الحوار */
 .ph-logo-preview{width:120px;height:120px;border-radius:var(--ph-r-full);object-fit:cover;border:1px solid var(--ph-line);margin-inline:auto;display:block;}
-.ph-profile-grid{display:grid;grid-template-columns:1fr 400px;gap:20px;align-items:start;}
+.ph-profile-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;}
 /* الاسم والبيانات يمين (العمود الأول) والموقع/الساعات شمال في وضع العربي (RTL) */
 .ph-profile-grid .ph-profile-main{order:-1;}
-.ph-map-sm{height:300px;}
-/* صفحة إكمال البيانات: البيانات يمين (1fr) والموقع/الساعات شمال (400px) في RTL */
-.ph-complete-grid{grid-template-columns:1fr 400px;}
+.ph-map-sm{height:180px;}
+.ph-map-edit{height:300px;}
+/* صفحة إكمال البيانات: البيانات يمين (1fr) والموقع/الساعات شمال (340px) في RTL */
+.ph-complete-grid{grid-template-columns:1fr 340px;}
 @media(max-width:900px){.ph-complete-grid{grid-template-columns:1fr;}}
 .ph-profile-grid .ph-control,.ph-profile-grid .ph-select{width:100%;min-width:0;box-sizing:border-box;}
 .ph-hours input[type=time]{width:100%;min-width:0;box-sizing:border-box;}
+/* قائمة ساعات العرض المختصرة (التعديل من الحوار) */
+.ph-hours-compact{display:flex;flex-direction:column;}
+.ph-hours-compact .hc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-block-end:1px solid var(--ph-line-soft);font-size:.9rem;}
+.ph-hours-compact .hc-row:last-child{border-block-end:none;}
+.ph-hours-compact .hc-day{font-weight:600;color:var(--ph-ink);}
+.ph-hours-compact .hc-time{color:var(--ph-ink-soft);flex:1;text-align:center;font-variant-numeric:tabular-nums;}
+.ph-hours-compact .hc-row i{color:var(--ph-ink-faint);}
 /* بطاقات أيام الدوام — تعديل مباشر (مفتاح + حقول 24 ساعة) */
 .ph-hours-list{display:flex;flex-direction:column;gap:10px;}
 .ph-hours-chips{display:flex;gap:10px;margin-block-end:4px;}

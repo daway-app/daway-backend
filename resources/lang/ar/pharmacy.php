@@ -340,6 +340,8 @@ return [
         'logo_label' => 'شعار الصيدلية',
         'logo_change' => 'تغيير الشعار',
         'choose_image' => 'اختيار صورة',
+        'location_change' => 'تعديل الموقع',
+        'hours_change' => 'تعديل الساعات',
         'save_button' => 'حفظ التغييرات',
         'cancel_button' => 'إلغاء',
         'update_button' => 'تحديث الملف الشخصي',

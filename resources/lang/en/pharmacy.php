@@ -340,6 +340,8 @@ return [
         'logo_label' => 'Pharmacy Logo',
         'logo_change' => 'Change Logo',
         'choose_image' => 'Choose Image',
+        'location_change' => 'Edit Location',
+        'hours_change' => 'Edit Hours',
         'save_button' => 'Save Changes',
         'cancel_button' => 'Cancel',
         'update_button' => 'Update Profile',

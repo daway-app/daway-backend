@@ -35,76 +35,34 @@
                     <div class='ph-card'>
                         <div class='ph-card-head'><h2><i class='fas fa-map-marker-alt'></i> @lang('pharmacy.profile.location_title')</h2></div>
                         <div class='ph-card-body'>
-                            <div class='ph-form-row' style='grid-template-columns:1fr 1fr;margin-block-end:12px;'>
-                                <div class='ph-group'>
-                                    <label class='ph-form-label' for='latitude'>@lang('pharmacy.profile.latitude_label')</label>
-                                    <input type='text' name='latitude' id='latitude' class='ph-control' value='{{ old('latitude', $pharmacy->latitude) }}'>
-                                </div>
-                                <div class='ph-group'>
-                                    <label class='ph-form-label' for='longitude'>@lang('pharmacy.profile.longitude_label')</label>
-                                    <input type='text' name='longitude' id='longitude' class='ph-control' value='{{ old('longitude', $pharmacy->longitude) }}'>
-                                </div>
-                            </div>
+                            {{-- خريطة عرض فقط — غير تفاعلية، التعديل من الحوار --}}
                             <div id='pharmacyMap' class='ph-map ph-map-sm' data-lat='{{ old('latitude', $pharmacy->latitude) }}' data-lng='{{ old('longitude', $pharmacy->longitude) }}'></div>
                             <p class='ph-hint'>@lang('pharmacy.profile.map_hint')</p>
+                            <button type='button' class='ph-text-action' style='margin-block-start:12px;' onclick='openLocationModal()'><i class='fas fa-location-dot'></i> @lang('pharmacy.profile.location_change')</button>
                         </div>
                     </div>
 
-                    <div class='ph-card ph-hours-card'>
-                        <div class='ph-card-head'>
-                            <h2><i class='fas fa-clock'></i> @lang('pharmacy.profile.hours_title')</h2>
-                            <button type='button' class='ph-btn sm outline' onclick='applyAllDays()'>@lang('pharmacy.profile.hours_quick.apply_all')</button>
-                        </div>
-                        <div class='ph-card-body ph-hours-list' id='hoursList'>
-                            <div class='ph-hours-chips'>
-                                <div class='ph-chip ph-chip-accent'>
-                                    <div class='ph-chip-label'>@lang('pharmacy.profile.hours_quick.uniform')</div>
-                                    <div class='ph-chip-value' id='chipUnified'>—</div>
-                                </div>
-                                <div class='ph-chip'>
-                                    <div class='ph-chip-label'>@lang('pharmacy.profile.hours_quick.exception')</div>
-                                    <div class='ph-chip-value' id='chipException'>—</div>
-                                </div>
-                            </div>
-
+                    <div class='ph-card'>
+                        <div class='ph-card-head'><h2><i class='fas fa-clock'></i> @lang('pharmacy.profile.hours_title')</h2></div>
+                        <div class='ph-card-body ph-hours-compact'>
                             @foreach($daysOfWeek as $dayKey => $dayName)
                                 @php
                                     $hour = $pharmacyHours[$dayKey] ?? null;
                                     $isClosed = old('hours.'.$dayKey.'.is_closed', $hour?->is_closed ?? false);
-                                    $openVal = old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i'));
-                                    $closeVal = old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i'));
-                                    $is24 = $openVal === '00:00' && $closeVal === '23:59';
                                 @endphp
-                                <div class='ph-day-card' data-day='{{ $dayKey }}'>
-                                    <div class='ph-day-top'>
-                                        <span class='ph-day-name'>{{ $dayName }}</span>
-                                        <span class='ph-day-status' data-status>
-                                            @if($isClosed) @lang('pharmacy.profile.closed')
-                                            @elseif($is24) @lang('pharmacy.profile.hours_quick.open_24')
-                                            @else {{ $openVal.' – '.$closeVal }} @endif
-                                        </span>
-                                        <span class='ph-switch'>
-                                            <input type='hidden' name='hours[{{ $dayKey }}][is_closed]' value='{{ $isClosed ? 1 : 0 }}' data-closed-input>
-                                            <input type='checkbox' class='ph-switch-input' {{ $isClosed ? '' : 'checked' }} aria-label='{{ $dayName }}' onchange='toggleOpenDay(this)'>
-                                            <span class='ph-switch-knob'></span>
-                                        </span>
-                                    </div>
-                                    <div class='ph-day-controls' data-controls @if($isClosed) hidden @endif>
-                                        <input type='text' inputmode='numeric' maxlength='5' placeholder='09:00' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $openVal }}' data-from {{ $isClosed || $is24 ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true); refreshDayRow(this)'>
-                                        <span class='ph-day-to'>@lang('pharmacy.profile.to')</span>
-                                        <input type='text' inputmode='numeric' maxlength='5' placeholder='17:00' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $closeVal }}' data-to {{ $isClosed || $is24 ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true); refreshDayRow(this)'>
-                                        <label class='ph-day-24'>
-                                            <input type='checkbox' {{ $is24 ? 'checked' : '' }} onchange='toggle24Day(this)'>
-                                            @lang('pharmacy.profile.hours_quick.open_24')
-                                        </label>
-                                    </div>
+                                <div class='hc-row'>
+                                    <span class='hc-day'>{{ $dayName }}</span>
+                                    <span class='hc-time'>
+                                        @if($isClosed) @lang('pharmacy.profile.closed') @else
+                                            {{ old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i')) }} – {{ old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i')) }}
+                                        @endif
+                                    </span>
+                                    <i class='fas fa-calendar-days'></i>
                                 </div>
                             @endforeach
-
-                            @php($hoursError = collect($errors->keys())->first(fn ($k) => str_starts_with($k, 'hours.')))
-                            @if($hoursError)
-                                <span style='display:block;color:var(--ph-red);font-size:.8rem;'>{{ $errors->first($hoursError) }}</span>
-                            @endif
+                        </div>
+                        <div style='padding:0 22px 18px;'>
+                            <button type='button' class='ph-text-action' onclick='openModal("hoursModal")'><i class='fas fa-pen'></i> @lang('pharmacy.profile.hours_change')</button>
                         </div>
                     </div>
                 </div>
@@ -224,6 +182,97 @@
                 </div>
             </div>
 
+            <!-- حوار تعديل موقع الصيدلية -->
+            <div class='ph-modal-overlay' id='locationModal' role='dialog' aria-modal='true'>
+                <div class='ph-modal'>
+                    <div class='ph-modal-head'>
+                        <h3>@lang('pharmacy.profile.location_title')</h3>
+                        <button type='button' class='ph-close' onclick='closeModal("locationModal")'>&times;</button>
+                    </div>
+                    <div class='ph-modal-body'>
+                        <div id='pharmacyMapEdit' class='ph-map ph-map-edit' data-lat='{{ old('latitude', $pharmacy->latitude) }}' data-lng='{{ old('longitude', $pharmacy->longitude) }}'></div>
+                        <p class='ph-hint' style='margin-block-start:10px;'>@lang('pharmacy.profile.map_hint')</p>
+                        <input type='hidden' name='latitude' id='latitude' value='{{ old('latitude', $pharmacy->latitude) }}'>
+                        <input type='hidden' name='longitude' id='longitude' value='{{ old('longitude', $pharmacy->longitude) }}'>
+                        @error('latitude')<span style='display:block;color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                        @error('longitude')<span style='display:block;color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                    </div>
+                    <div class='ph-modal-foot'>
+                        <button type='button' class='ph-btn ghost' onclick='closeModal("locationModal")'>@lang('pharmacy.profile.cancel_button')</button>
+                        <button type='button' class='ph-btn primary' onclick='saveFromModal("locationModal")'>@lang('pharmacy.profile.save_button')</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- حوار تعديل ساعات الدوام -->
+            <div class='ph-modal-overlay' id='hoursModal' role='dialog' aria-modal='true'>
+                <div class='ph-modal'>
+                    <div class='ph-modal-head'>
+                        <h3>@lang('pharmacy.profile.hours_title')</h3>
+                        <button type='button' class='ph-close' onclick='closeModal("hoursModal")'>&times;</button>
+                    </div>
+                    <div class='ph-modal-body ph-hours-list' id='hoursList'>
+                        <div class='ph-hours-chips'>
+                            <div class='ph-chip ph-chip-accent'>
+                                <div class='ph-chip-label'>@lang('pharmacy.profile.hours_quick.uniform')</div>
+                                <div class='ph-chip-value' id='chipUnified'>—</div>
+                            </div>
+                            <div class='ph-chip'>
+                                <div class='ph-chip-label'>@lang('pharmacy.profile.hours_quick.exception')</div>
+                                <div class='ph-chip-value' id='chipException'>—</div>
+                            </div>
+                        </div>
+
+                        <div style='margin-block-end:10px;'>
+                            <button type='button' class='ph-btn sm outline' onclick='applyAllDays()'>@lang('pharmacy.profile.hours_quick.apply_all')</button>
+                        </div>
+
+                        @foreach($daysOfWeek as $dayKey => $dayName)
+                            @php
+                                $hour = $pharmacyHours[$dayKey] ?? null;
+                                $isClosed = old('hours.'.$dayKey.'.is_closed', $hour?->is_closed ?? false);
+                                $openVal = old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i'));
+                                $closeVal = old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i'));
+                                $is24 = $openVal === '00:00' && $closeVal === '23:59';
+                            @endphp
+                            <div class='ph-day-card' data-day='{{ $dayKey }}'>
+                                <div class='ph-day-top'>
+                                    <span class='ph-day-name'>{{ $dayName }}</span>
+                                    <span class='ph-day-status' data-status>
+                                        @if($isClosed) @lang('pharmacy.profile.closed')
+                                        @elseif($is24) @lang('pharmacy.profile.hours_quick.open_24')
+                                        @else {{ $openVal.' – '.$closeVal }} @endif
+                                    </span>
+                                    <span class='ph-switch'>
+                                        <input type='hidden' name='hours[{{ $dayKey }}][is_closed]' value='{{ $isClosed ? 1 : 0 }}' data-closed-input>
+                                        <input type='checkbox' class='ph-switch-input' {{ $isClosed ? '' : 'checked' }} aria-label='{{ $dayName }}' onchange='toggleOpenDay(this)'>
+                                        <span class='ph-switch-knob'></span>
+                                    </span>
+                                </div>
+                                <div class='ph-day-controls' data-controls @if($isClosed) hidden @endif>
+                                    <input type='text' inputmode='numeric' maxlength='5' placeholder='09:00' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $openVal }}' data-from {{ $isClosed || $is24 ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true); refreshDayRow(this)'>
+                                    <span class='ph-day-to'>@lang('pharmacy.profile.to')</span>
+                                    <input type='text' inputmode='numeric' maxlength='5' placeholder='17:00' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $closeVal }}' data-to {{ $isClosed || $is24 ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true); refreshDayRow(this)'>
+                                    <label class='ph-day-24'>
+                                        <input type='checkbox' {{ $is24 ? 'checked' : '' }} onchange='toggle24Day(this)'>
+                                        @lang('pharmacy.profile.hours_quick.open_24')
+                                    </label>
+                                </div>
+                            </div>
+                        @endforeach
+
+                        @php($hoursError = collect($errors->keys())->first(fn ($k) => str_starts_with($k, 'hours.')))
+                        @if($hoursError)
+                            <span style='display:block;color:var(--ph-red);font-size:.8rem;'>{{ $errors->first($hoursError) }}</span>
+                        @endif
+                    </div>
+                    <div class='ph-modal-foot'>
+                        <button type='button' class='ph-btn ghost' onclick='closeModal("hoursModal")'>@lang('pharmacy.profile.cancel_button')</button>
+                        <button type='button' class='ph-btn primary' onclick='saveFromModal("hoursModal")'>@lang('pharmacy.profile.save_button')</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- حوار تأكيد تغيير موقع الصيدلية على الخريطة -->
             <div class='ph-modal-overlay' id='mapConfirmModal' role='dialog' aria-modal='true'>
                 <div class='ph-modal' style='max-width:420px;'>
@@ -245,6 +294,8 @@
                 <script>document.addEventListener('DOMContentLoaded', function () { openModal('passwordModal'); });</script>
             @elseif($errors->has('logo'))
                 <script>document.addEventListener('DOMContentLoaded', function () { openModal('logoModal'); });</script>
+            @elseif(isset($hoursError) && $hoursError)
+                <script>document.addEventListener('DOMContentLoaded', function () { openModal('hoursModal'); });</script>
             @endif
         </form>
     </div>
