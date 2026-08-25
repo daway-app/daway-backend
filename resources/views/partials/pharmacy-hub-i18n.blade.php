@@ -5,6 +5,11 @@
             'low' => __('pharmacy.status.low'),
             'out' => __('pharmacy.status.out'),
         ],
+        'map' => [
+            'confirm_title' => __('pharmacy.map.confirm_title'),
+            'confirm_message' => __('pharmacy.map.confirm_message'),
+            'confirm_ok' => __('pharmacy.map.confirm_ok'),
+        ],
     ];
 @endphp
 <script>

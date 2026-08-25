@@ -224,6 +224,23 @@
                 </div>
             </div>
 
+            <!-- حوار تأكيد تغيير موقع الصيدلية على الخريطة -->
+            <div class='ph-modal-overlay' id='mapConfirmModal' role='dialog' aria-modal='true'>
+                <div class='ph-modal' style='max-width:420px;'>
+                    <div class='ph-modal-head'>
+                        <h3>@lang('pharmacy.map.confirm_title')</h3>
+                        <button type='button' class='ph-close' onclick='mapConfirmCancel()'>&times;</button>
+                    </div>
+                    <div class='ph-modal-body'>
+                        <p style='margin:0;font-size:.9rem;color:var(--ph-ink-soft);line-height:1.8;'>@lang('pharmacy.map.confirm_message')</p>
+                    </div>
+                    <div class='ph-modal-foot'>
+                        <button type='button' class='ph-btn ghost' onclick='mapConfirmCancel()'>@lang('pharmacy.profile.cancel_button')</button>
+                        <button type='button' class='ph-btn primary' onclick='mapConfirmOk()'>@lang('pharmacy.map.confirm_ok')</button>
+                    </div>
+                </div>
+            </div>
+
             @if($errors->hasAny(['current_password', 'password', 'password_confirmation']))
                 <script>document.addEventListener('DOMContentLoaded', function () { openModal('passwordModal'); });</script>
             @elseif($errors->has('logo'))
@@ -289,6 +306,8 @@
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.ph-modal-overlay.active').forEach(function (m) { m.classList.remove('active'); });
+                // إلغاء أي تغيير موقع معلّق على الخريطة عند الضغط على ESC
+                if (window.mapConfirmCancel) { window.mapConfirmCancel(); }
             }
         });
 

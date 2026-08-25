@@ -153,39 +153,39 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .ph-text-action i{color:var(--ph-teal);}
 /* معاينة الشعار داخل الحوار */
 .ph-logo-preview{width:120px;height:120px;border-radius:var(--ph-r-full);object-fit:cover;border:1px solid var(--ph-line);margin-inline:auto;display:block;}
-.ph-profile-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;}
+.ph-profile-grid{display:grid;grid-template-columns:1fr 400px;gap:20px;align-items:start;}
 /* الاسم والبيانات يمين (العمود الأول) والموقع/الساعات شمال في وضع العربي (RTL) */
 .ph-profile-grid .ph-profile-main{order:-1;}
-.ph-map-sm{height:180px;}
-/* صفحة إكمال البيانات: البيانات يمين (1fr) والموقع/الساعات شمال (340px) في RTL */
-.ph-complete-grid{grid-template-columns:1fr 340px;}
+.ph-map-sm{height:300px;}
+/* صفحة إكمال البيانات: البيانات يمين (1fr) والموقع/الساعات شمال (400px) في RTL */
+.ph-complete-grid{grid-template-columns:1fr 400px;}
 @media(max-width:900px){.ph-complete-grid{grid-template-columns:1fr;}}
 .ph-profile-grid .ph-control,.ph-profile-grid .ph-select{width:100%;min-width:0;box-sizing:border-box;}
 .ph-hours input[type=time]{width:100%;min-width:0;box-sizing:border-box;}
 /* بطاقات أيام الدوام — تعديل مباشر (مفتاح + حقول 24 ساعة) */
-.ph-hours-list{display:flex;flex-direction:column;gap:8px;}
-.ph-hours-chips{display:flex;gap:8px;margin-block-end:4px;}
-.ph-chip{flex:1;background:var(--ph-paper);border:1px solid var(--ph-line-soft);border-radius:var(--ph-r-md);padding:8px 10px;}
+.ph-hours-list{display:flex;flex-direction:column;gap:10px;}
+.ph-hours-chips{display:flex;gap:10px;margin-block-end:4px;}
+.ph-chip{flex:1;background:var(--ph-paper);border:1px solid var(--ph-line-soft);border-radius:var(--ph-r-md);padding:10px 12px;}
 .ph-chip-accent{background:var(--ph-teal-mist);border-color:var(--ph-teal-mist);}
-.ph-chip-label{font-size:.68rem;color:var(--ph-ink-faint);margin-block-end:2px;}
+.ph-chip-label{font-size:.72rem;color:var(--ph-ink-faint);margin-block-end:2px;}
 .ph-chip-accent .ph-chip-label{color:var(--ph-teal);}
-.ph-chip-value{font-size:.8rem;font-weight:600;color:var(--ph-ink);font-variant-numeric:tabular-nums;}
-.ph-day-card{border:1px solid var(--ph-line-soft);border-radius:var(--ph-r-md);padding:10px 12px;}
+.ph-chip-value{font-size:.9rem;font-weight:600;color:var(--ph-ink);font-variant-numeric:tabular-nums;}
+.ph-day-card{border:1px solid var(--ph-line-soft);border-radius:var(--ph-r-md);padding:14px 16px;}
 .ph-day-top{display:flex;align-items:center;gap:10px;}
-.ph-day-name{font-size:.85rem;font-weight:600;color:var(--ph-ink);min-width:52px;}
-.ph-day-status{flex:1;font-size:.78rem;color:var(--ph-ink-soft);font-variant-numeric:tabular-nums;}
-.ph-switch{position:relative;width:38px;height:22px;flex-shrink:0;display:inline-block;}
+.ph-day-name{font-size:.95rem;font-weight:600;color:var(--ph-ink);min-width:60px;}
+.ph-day-status{flex:1;font-size:.85rem;color:var(--ph-ink-soft);font-variant-numeric:tabular-nums;}
+.ph-switch{position:relative;width:44px;height:24px;flex-shrink:0;display:inline-block;}
 .ph-switch-input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:1;}
 .ph-switch-knob{position:absolute;inset:0;border-radius:999px;background:var(--ph-line);transition:background .2s;display:block;}
-.ph-switch-knob::after{content:'';position:absolute;top:2px;inset-inline-start:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:var(--ph-sh-sm);transition:transform .2s;}
+.ph-switch-knob::after{content:'';position:absolute;top:2px;inset-inline-start:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:var(--ph-sh-sm);transition:transform .2s;}
 .ph-switch-input:checked + .ph-switch-knob{background:var(--ph-teal);}
-.ph-switch-input:checked + .ph-switch-knob::after{transform:translateX(-16px);}
-[dir='ltr'] .ph-switch-input:checked + .ph-switch-knob::after{transform:translateX(16px);}
-.ph-day-controls{display:flex;align-items:center;gap:8px;margin-block-start:10px;}
-.ph-day-to{font-size:.75rem;color:var(--ph-ink-faint);}
-.ph-day-24{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--ph-ink-soft);cursor:pointer;margin-inline-start:auto;white-space:nowrap;}
-.ph-day-24 input{width:15px;height:15px;accent-color:var(--ph-teal);}
-.hc-time-input{width:76px;text-align:center;padding:7px 8px;font-size:.85rem;font-variant-numeric:tabular-nums;direction:ltr;}
+.ph-switch-input:checked + .ph-switch-knob::after{transform:translateX(-20px);}
+[dir='ltr'] .ph-switch-input:checked + .ph-switch-knob::after{transform:translateX(20px);}
+.ph-day-controls{display:flex;align-items:center;gap:10px;margin-block-start:12px;}
+.ph-day-to{font-size:.8rem;color:var(--ph-ink-faint);}
+.ph-day-24{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ph-ink-soft);cursor:pointer;margin-inline-start:auto;white-space:nowrap;}
+.ph-day-24 input{width:16px;height:16px;accent-color:var(--ph-teal);}
+.hc-time-input{width:88px;text-align:center;padding:9px 10px;font-size:.95rem;font-variant-numeric:tabular-nums;direction:ltr;}
 @media(max-width:768px){.ph-day-controls{flex-wrap:wrap;}.ph-day-24{margin-inline-start:0;flex-basis:100%;}}
 @media(max-width:900px){.ph-profile-grid{grid-template-columns:1fr;}}
 .chart-box{position:relative;height:260px;}
