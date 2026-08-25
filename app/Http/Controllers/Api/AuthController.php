@@ -43,10 +43,8 @@ class AuthController extends Controller
             return response()->json(['message' => 'Account is inactive'], 403);
         }
 
-        // ✅ تحقق اختياري من البريد الإلكتروني
-        if (! $user->email_verified_at) {
-            return response()->json(['message' => 'Email not verified'], 403);
-        }
+        // ملاحظة: لا يوجد فحص لتوثيق البريد الإلكتروني هنا — مطابقة لسلوك تسجيل دخول الويب،
+        // والتطبيق لا يرسل إيميلات توثيق أصلاً (فحص email_verified_at كان يحظر كل الصيدليات)
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
