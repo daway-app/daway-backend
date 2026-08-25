@@ -140,6 +140,8 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .ph-hours label{display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;}
 .ph-hours input[type=checkbox]{width:18px;height:18px;accent-color:var(--ph-teal);}
 .ph-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px;}
+/* إيقاف سكرول الصفحة الخلفية عند فتح أي حوار */
+body.ph-modal-open{overflow:hidden;}
 .ph-modal-overlay.active{display:flex;}
 .ph-modal{background:var(--ph-paper);border-radius:var(--ph-r-lg);width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:var(--ph-sh-lg);}
 .ph-modal-head{padding:18px 22px;border-block-end:1px solid var(--ph-line-soft);display:flex;align-items:center;justify-content:space-between;}

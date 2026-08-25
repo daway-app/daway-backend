@@ -11,7 +11,12 @@ function initFilterTabs(){document.querySelectorAll('[data-ph-tabs]').forEach(c=
 
 function initMedicineSearch(){const i=document.querySelector('[data-ph-search]');if(!i)return;const t=i.dataset.phSearch;i.addEventListener('input',()=>{const q=i.value.trim().toLowerCase();document.querySelectorAll(t).forEach(c=>c.style.display=c.textContent.toLowerCase().includes(q)?'':'none');});}
 
-function initModals(){document.querySelectorAll('[data-ph-modal-open]').forEach(b=>b.addEventListener('click',()=>{const m=document.querySelector(b.dataset.phModalOpen);if(m)m.classList.add('active');}));document.querySelectorAll('[data-ph-modal-close]').forEach(b=>b.addEventListener('click',()=>{const m=document.querySelector(b.dataset.phModalClose);if(m)m.classList.remove('active');}));document.querySelectorAll('.ph-modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('active');}));}
+function initModals(){document.querySelectorAll('[data-ph-modal-open]').forEach(b=>b.addEventListener('click',()=>{const m=document.querySelector(b.dataset.phModalOpen);if(m)m.classList.add('active');}));document.querySelectorAll('[data-ph-modal-close]').forEach(b=>b.addEventListener('click',()=>{const m=document.querySelector(b.dataset.phModalClose);if(m)m.classList.remove('active');}));document.querySelectorAll('.ph-modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('active');}));
+// قفل سكرول الصفحة الخلفية طالما في حوار مفتوح (يمنع اللاق أثناء تعديل الساعات/الموقع)
+const syncScrollLock=()=>document.body.classList.toggle('ph-modal-open',!!document.querySelector('.ph-modal-overlay.active'));
+const mo=new MutationObserver(syncScrollLock);
+document.querySelectorAll('.ph-modal-overlay').forEach(o=>mo.observe(o,{attributes:true,attributeFilter:['class']}));
+syncScrollLock();}
 
 function initMap(){
 // خريطة العرض: ثابتة وغير تفاعلية — لا سحب ولا ضغط (التعديل من حوار الموقع فقط)

@@ -189,7 +189,7 @@
     "isEntry": true
   },
   "resources/css/pages/pharmacy_hub.css": {
-    "file": "assets/pharmacy_hub-yPnokOFm.css",
+    "file": "assets/pharmacy_hub-ChlFGszc.css",
     "name": "pharmacy_hub",
     "names": [
       "pharmacy_hub.css"
@@ -249,7 +249,7 @@
     "isEntry": true
   },
   "resources/js/pharmacy_hub.js": {
-    "file": "assets/pharmacy_hub-stuWRHkC.js",
+    "file": "assets/pharmacy_hub-CaJ7qZFD.js",
     "name": "pharmacy_hub",
     "src": "resources/js/pharmacy_hub.js",
     "isEntry": true
