@@ -348,11 +348,6 @@ return [
         'update_button' => 'Update Profile',
         'success' => 'Pharmacy profile updated successfully.',
         'done' => 'Done',
-        'map' => [
-            'confirm_title' => 'Confirm location change',
-            'confirm_message' => 'Are you sure you want to change the pharmacy location on the map?',
-            'confirm_ok' => 'Yes, change it',
-        ],
         'password_change' => [
             'title' => 'Change Password',
             'hint' => 'Optional — fill the fields only if you want to change your password.',
@@ -401,6 +396,13 @@ return [
             'Friday' => 'Friday',
             'Saturday' => 'Saturday',
         ],
+    ],
+
+    // Map location change confirmation (top-level key: pharmacy.map.*)
+    'map' => [
+        'confirm_title' => 'Confirm location change',
+        'confirm_message' => 'Are you sure you want to change the pharmacy location on the map?',
+        'confirm_ok' => 'Yes, change it',
     ],
 
     'ratings' => [
