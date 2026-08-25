@@ -30,144 +30,37 @@ html.dark-mode {
 }
 
 /* ==========================================================
-   عناصر الخلفية المتحركة التفاعلية (خلف محتوى التطبيق)
+   خلفية ثابتة هادئة واحترافية — تدرجات شعاعية ناعمة جداً
+   بدون أي عناصر متحركة (الطبقة فارغة في الـ layout)
    ========================================================== */
 .bg-anim-layer {
     position: fixed;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    overflow: hidden;
+    background:
+        radial-gradient(900px 520px at 88% -8%, rgba(11, 143, 172, .06), transparent 60%),
+        radial-gradient(760px 460px at 0% 104%, rgba(123, 193, 183, .07), transparent 55%);
 }
 
-.bg-mover {
-    position: absolute;
-    bottom: -90px;
-    will-change: transform;
+body.dark-mode .bg-anim-layer {
+    background:
+        radial-gradient(900px 520px at 88% -8%, rgba(79, 209, 197, .04), transparent 60%),
+        radial-gradient(760px 460px at 0% 104%, rgba(11, 143, 172, .05), transparent 55%);
 }
 
-.bg-shape {
-    display: block;
-    opacity: var(--op, .55);
-    animation: bgFloatUp var(--dur, 22s) linear infinite;
-    animation-delay: var(--delay, 0s);
+/* انتقال دخول خفيف لمحتوى الصفحة عند التنقل بين الصفحات */
+@keyframes pageFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
 }
 
-.bg-shape--capsule {
-    width: 26px;
-    height: 54px;
-    border-radius: 999px;
-    background: linear-gradient(170deg, #7BC1B7 0%, #0B8FAC 55%, #00657A 100%);
-    position: relative;
-    box-shadow: inset 0 -4px 8px rgba(0, 68, 82, .35), 0 4px 12px rgba(0, 101, 122, .22);
-}
-.bg-shape--capsule::after {
-    content: '';
-    position: absolute;
-    top: 10px;
-    bottom: 10px;
-    inset-inline-start: 50%;
-    width: 4px;
-    transform: translateX(-50%);
-    background: rgba(255, 255, 255, .6);
-    border-radius: 999px;
+.main-content {
+    animation: pageFadeIn .35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.bg-shape--pill {
-    width: 38px;
-    height: 17px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #0B8FAC 0%, #0B8FAC 50%, #7BC1B7 50%, #7BC1B7 100%);
-    box-shadow: inset 0 -3px 6px rgba(0, 68, 82, .35), 0 3px 9px rgba(0, 101, 122, .25);
-}
-
-.bg-shape--cross {
-    width: 30px;
-    height: 30px;
-    position: relative;
-    filter: drop-shadow(0 3px 6px rgba(0, 101, 122, .28));
-}
-.bg-shape--cross::before,
-.bg-shape--cross::after {
-    content: '';
-    position: absolute;
-    background: #0B8FAC;
-    border-radius: 6px;
-}
-.bg-shape--cross::before { width: 10px; height: 100%; left: 50%; transform: translateX(-50%); }
-.bg-shape--cross::after { width: 100%; height: 10px; top: 50%; transform: translateY(-50%); }
-
-.bg-shape--ring {
-    width: 32px;
-    height: 32px;
-    border: 4px solid rgba(0, 101, 122, .8);
-    border-radius: 50%;
-    position: relative;
-    box-shadow: 0 3px 9px rgba(0, 101, 122, .22);
-}
-.bg-shape--ring::after {
-    content: '';
-    position: absolute;
-    inset: 7px;
-    border: 3px solid rgba(11, 143, 172, .85);
-    border-radius: 50%;
-}
-
-.bg-mover:nth-child(1)  { inset-inline-start: 4%;  --dur: 27s; --delay: -3s;  --sway: 20px; --op: .5;  }
-.bg-mover:nth-child(2)  { inset-inline-start: 15%; --dur: 20s; --delay: -9s;  --sway: 14px; --op: .6;  }
-.bg-mover:nth-child(3)  { inset-inline-start: 26%; --dur: 25s; --delay: -15s; --sway: 24px; --op: .45; }
-.bg-mover:nth-child(4)  { inset-inline-start: 37%; --dur: 18s; --delay: -6s;  --sway: 17px; --op: .55; }
-.bg-mover:nth-child(5)  { inset-inline-start: 49%; --dur: 28s; --delay: -20s; --sway: 19px; --op: .42; }
-.bg-mover:nth-child(6)  { inset-inline-start: 61%; --dur: 21s; --delay: -12s; --sway: 23px; --op: .58; }
-.bg-mover:nth-child(7)  { inset-inline-start: 73%; --dur: 26s; --delay: -5s;  --sway: 15px; --op: .48; }
-.bg-mover:nth-child(8)  { inset-inline-start: 85%; --dur: 19s; --delay: -17s; --sway: 21px; --op: .56; }
-.bg-mover:nth-child(9)  { inset-inline-start: 9%;  --dur: 22s; --delay: -2s;  --sway: 18px; --op: .52; }
-.bg-mover:nth-child(10) { inset-inline-start: 42%; --dur: 24s; --delay: -13s; --sway: 26px; --op: .46; }
-.bg-mover:nth-child(11) { inset-inline-start: 57%; --dur: 17s; --delay: -7s;  --sway: 14px; --op: .6;  }
-.bg-mover:nth-child(12) { inset-inline-start: 95%; --dur: 26s; --delay: -22s; --sway: 20px; --op: .5;  }
-
-@keyframes bgFloatUp {
-    0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
-    25%  { transform: translate3d(var(--sway, 18px), -26vh, 0) rotate(12deg); }
-    50%  { transform: translate3d(calc(var(--sway, 18px) * -1), -52vh, 0) rotate(-10deg); }
-    75%  { transform: translate3d(var(--sway, 18px), -78vh, 0) rotate(14deg); }
-    100% { transform: translate3d(0, -104vh, 0) rotate(0deg); }
-}
-
-/* الوضع الداكن: إضاءة أوضح للعناصر */
-body.dark-mode .bg-shape {
-    opacity: var(--op-dark, .7);
-}
-body.dark-mode .bg-shape--cross::before,
-body.dark-mode .bg-shape--cross::after {
-    background: #4fd1c5;
-}
-body.dark-mode .bg-shape--ring {
-    border-color: rgba(79, 209, 197, .85);
-}
-body.dark-mode .bg-shape--ring::after {
-    border-color: rgba(11, 143, 172, .9);
-}
-body.dark-mode .bg-shape--capsule {
-    box-shadow: inset 0 -4px 8px rgba(0, 68, 82, .5), 0 0 14px rgba(79, 209, 197, .25);
-}
-
-@media (max-width: 900px) {
-    .bg-mover:nth-child(n+6) { display: none; }
-}
-
-/* عند تقليل الحركة: توزيع ثابت واضح للعناصر بدل الاختفاء */
 @media (prefers-reduced-motion: reduce) {
-    .bg-mover { animation: none; bottom: auto; }
-    .bg-shape { animation: none; }
-    .bg-mover:nth-child(1) { top: 6%; }
-    .bg-mover:nth-child(2) { top: 22%; }
-    .bg-mover:nth-child(3) { top: 38%; }
-    .bg-mover:nth-child(4) { top: 54%; }
-    .bg-mover:nth-child(5) { top: 70%; }
-    .bg-mover:nth-child(6) { top: 14%; }
-    .bg-mover:nth-child(7) { top: 46%; }
-    .bg-mover:nth-child(8) { top: 78%; }
+    .main-content { animation: none; }
 }
 
 body {

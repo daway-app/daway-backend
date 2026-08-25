@@ -31,21 +31,8 @@
         } catch (e) {}
     })();
 </script>
-{{-- عناصر الخلفية المتحركة التفاعلية --}}
-<div class="bg-anim-layer" id="bgAnimLayer" aria-hidden="true">
-    <span class="bg-mover" data-depth="0.05"><span class="bg-shape bg-shape--capsule"></span></span>
-    <span class="bg-mover" data-depth="0.12"><span class="bg-shape bg-shape--cross"></span></span>
-    <span class="bg-mover" data-depth="0.08"><span class="bg-shape bg-shape--pill"></span></span>
-    <span class="bg-mover" data-depth="0.15"><span class="bg-shape bg-shape--ring"></span></span>
-    <span class="bg-mover" data-depth="0.06"><span class="bg-shape bg-shape--cross"></span></span>
-    <span class="bg-mover" data-depth="0.13"><span class="bg-shape bg-shape--capsule"></span></span>
-    <span class="bg-mover" data-depth="0.07"><span class="bg-shape bg-shape--ring"></span></span>
-    <span class="bg-mover" data-depth="0.11"><span class="bg-shape bg-shape--pill"></span></span>
-    <span class="bg-mover" data-depth="0.09"><span class="bg-shape bg-shape--capsule"></span></span>
-    <span class="bg-mover" data-depth="0.14"><span class="bg-shape bg-shape--ring"></span></span>
-    <span class="bg-mover" data-depth="0.1"><span class="bg-shape bg-shape--cross"></span></span>
-    <span class="bg-mover" data-depth="0.04"><span class="bg-shape bg-shape--pill"></span></span>
-</div>
+{{-- خلفية ثابتة هادئة (التنسيق في app_layout.css) --}}
+<div class="bg-anim-layer" aria-hidden="true"></div>
 <div class="app-layout">
     {{-- الشريط الجانبي --}}
     @include('components.sidebar')
@@ -67,31 +54,6 @@
     </div>
 </div>
 <link rel="stylesheet" href="{{ asset('css/responsive.css') }}">
-<script>
-    (function () {
-        var layer = document.getElementById('bgAnimLayer');
-        if (!layer) return;
-        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-        var movers = Array.prototype.slice.call(layer.querySelectorAll('.bg-mover'));
-        var nx = 0, ny = 0, raf = null;
-
-        window.addEventListener('mousemove', function (e) {
-            nx = (e.clientX / window.innerWidth) - 0.5;
-            ny = (e.clientY / window.innerHeight) - 0.5;
-            if (!raf) raf = requestAnimationFrame(apply);
-        }, { passive: true });
-
-        function apply() {
-            raf = null;
-            for (var i = 0; i < movers.length; i++) {
-                var m = movers[i];
-                var d = parseFloat(m.getAttribute('data-depth')) || 0.08;
-                m.style.transform = 'translate3d(' + (nx * 34 * d).toFixed(1) + 'px,' + (ny * 34 * d).toFixed(1) + 'px,0)';
-            }
-        }
-    })();
-</script>
 @yield('scripts')
 @stack('scripts')
 </body>

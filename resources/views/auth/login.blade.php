@@ -12,22 +12,6 @@
 
 <body>
 
-    <!-- عناصر الخلفية المتحركة التفاعلية (خلف بطاقة الدخول) -->
-    <div class="bg-anim-layer" id="bgAnimLayer" aria-hidden="true">
-        <span class="bg-mover" data-depth="0.05"><span class="bg-shape bg-shape--capsule"></span></span>
-        <span class="bg-mover" data-depth="0.12"><span class="bg-shape bg-shape--cross"></span></span>
-        <span class="bg-mover" data-depth="0.08"><span class="bg-shape bg-shape--pill"></span></span>
-        <span class="bg-mover" data-depth="0.15"><span class="bg-shape bg-shape--ring"></span></span>
-        <span class="bg-mover" data-depth="0.06"><span class="bg-shape bg-shape--cross"></span></span>
-        <span class="bg-mover" data-depth="0.13"><span class="bg-shape bg-shape--capsule"></span></span>
-        <span class="bg-mover" data-depth="0.07"><span class="bg-shape bg-shape--ring"></span></span>
-        <span class="bg-mover" data-depth="0.11"><span class="bg-shape bg-shape--pill"></span></span>
-        <span class="bg-mover" data-depth="0.16"><span class="bg-shape bg-shape--cross"></span></span>
-        <span class="bg-mover" data-depth="0.09"><span class="bg-shape bg-shape--capsule"></span></span>
-        <span class="bg-mover" data-depth="0.14"><span class="bg-shape bg-shape--pill"></span></span>
-        <span class="bg-mover" data-depth="0.1"><span class="bg-shape bg-shape--ring"></span></span>
-    </div>
-
     <div class="auth-container">
 
         <!-- Progress Loader Overlay -->
@@ -105,12 +89,8 @@
             </div>
         </div>
 
-        <!-- الجانب الأيمن: الهوية البصرية مع الدوائر المتحركة ورادار الموقع -->
+        <!-- الجانب الأيمن: الهوية البصرية ورادار الموقع -->
         <div class="auth-hero">
-            <div class="bubble-shape bubble-1"></div>
-            <div class="bubble-shape bubble-2"></div>
-            <div class="bubble-shape bubble-3"></div>
-
             <div class="hero-content">
                 <div class="logo-wrapper">
                     <img src="{{ asset('images/dawaei-logo.jpg') }}" alt="شعار دوائي" class="brand-logo-img">
@@ -180,30 +160,6 @@
             const accountTypeSelect = document.getElementById('account_type');
             switchRole(accountTypeSelect.value);
         });
-
-        // ===== تفاعل باراللاكس: عناصر الخلفية تتحرك مع حركة الماوس =====
-        (function () {
-            const layer = document.getElementById('bgAnimLayer');
-            if (!layer) return;
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-            const movers = Array.from(layer.querySelectorAll('.bg-mover'));
-            let nx = 0, ny = 0, raf = null;
-
-            window.addEventListener('mousemove', function (e) {
-                nx = (e.clientX / window.innerWidth) - 0.5;
-                ny = (e.clientY / window.innerHeight) - 0.5;
-                if (!raf) raf = requestAnimationFrame(apply);
-            }, { passive: true });
-
-            function apply() {
-                raf = null;
-                movers.forEach(function (m) {
-                    const d = parseFloat(m.dataset.depth || '0.08');
-                    m.style.transform = 'translate3d(' + (nx * 34 * d).toFixed(1) + 'px,' + (ny * 34 * d).toFixed(1) + 'px,0)';
-                });
-            }
-        })();
     </script>
 
 </body>
