@@ -168,6 +168,18 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .ph-hours-compact .hc-day{font-weight:600;color:var(--ph-ink);}
 .ph-hours-compact .hc-time{color:var(--ph-ink-soft);flex:1;text-align:center;}
 .ph-hours-compact .hc-row i{color:var(--ph-ink-faint);}
+/* تعديل الساعات في نفس المكان: تبديل عرض/تحرير بدون تحريك الصفحة */
+.ph-hours-compact .hc-edit{display:none;align-items:center;gap:8px;flex:1;flex-wrap:wrap;justify-content:flex-end;}
+.ph-hours-compact .hc-closed{display:flex;align-items:center;gap:6px;font-weight:600;font-size:.8rem;cursor:pointer;white-space:nowrap;color:var(--ph-ink);}
+.ph-hours-compact .hc-closed input{width:16px;height:16px;accent-color:var(--ph-teal);}
+.ph-hours-compact .hc-time-input{width:76px;text-align:center;padding:7px 8px;font-size:.85rem;font-variant-numeric:tabular-nums;direction:ltr;}
+.ph-hours-compact .hc-dash{color:var(--ph-ink-faint);}
+.ph-hours-compact .ph-hours-quickbar{display:none;}
+.ph-hours-compact.editing .hc-time{display:none;}
+.ph-hours-compact.editing .hc-row > i{display:none;}
+.ph-hours-compact.editing .hc-edit{display:flex;}
+.ph-hours-compact.editing .ph-hours-quickbar{display:flex;}
+@media(max-width:768px){.ph-hours-compact .hc-row{flex-wrap:wrap;}.ph-hours-compact .hc-edit{justify-content:flex-start;}}
 .ph-hours-editor summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
 .ph-hours-editor summary::-webkit-details-marker{display:none;}
 @media(max-width:900px){.ph-profile-grid{grid-template-columns:1fr;}}

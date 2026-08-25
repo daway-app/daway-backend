@@ -344,6 +344,7 @@ return [
         'cancel_button' => 'Cancel',
         'update_button' => 'Update Profile',
         'success' => 'Pharmacy profile updated successfully.',
+        'done' => 'Done',
         'password_change' => [
             'title' => 'Change Password',
             'hint' => 'Optional — fill the fields only if you want to change your password.',

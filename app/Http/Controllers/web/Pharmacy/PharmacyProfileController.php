@@ -68,6 +68,9 @@ class PharmacyProfileController extends Controller
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'logo' => ['nullable', 'image', 'max:2048'],
+            // صيغة 24 ساعة إجبارية حتى لو تم تجاوز تحقق الجافاسكريبت
+            'hours.*.open_time' => ['nullable', 'date_format:H:i'],
+            'hours.*.close_time' => ['nullable', 'date_format:H:i'],
         ]);
 
         // كل الحقول اختيارية: نحدّث فقط ما أُرسل ولا نمسح البيانات الموجودة

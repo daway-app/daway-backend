@@ -50,61 +50,54 @@
                         </div>
                     </div>
 
-                    <div class='ph-card'>
-                        <div class='ph-card-head'><h2><i class='fas fa-clock'></i> @lang('pharmacy.profile.hours_title')</h2></div>
-                        <div class='ph-card-body ph-hours-compact'>
+                    <div class='ph-card ph-hours-card'>
+                        <div class='ph-card-head'>
+                            <h2><i class='fas fa-clock'></i> @lang('pharmacy.profile.hours_title')</h2>
+                            <button type='button' class='ph-btn sm outline' id='hoursEditBtn' onclick='toggleHoursEdit()'><i class='fas fa-pen'></i> @lang('pharmacy.profile.edit_hours')</button>
+                        </div>
+                        <div class='ph-card-body ph-hours-compact' id='hoursList'>
+                            <div class='ph-hours-quickbar'>
+                                <button type='button' class='ph-btn sm' onclick='applyPreset("unified")'>@lang('pharmacy.profile.hours_quick.unified')</button>
+                                <button type='button' class='ph-btn sm' onclick='applyPreset("24h")'>@lang('pharmacy.profile.hours_quick.h24')</button>
+                                <button type='button' class='ph-btn sm' onclick='applyPreset("friday_off")'>@lang('pharmacy.profile.hours_quick.friday_off')</button>
+                                <button type='button' class='ph-btn sm outline' onclick='applyPreset("clear")'>@lang('pharmacy.profile.hours_quick.clear')</button>
+                            </div>
                             @foreach($daysOfWeek as $dayKey => $dayName)
                                 @php
                                     $hour = $pharmacyHours[$dayKey] ?? null;
                                     $isClosed = old('hours.'.$dayKey.'.is_closed', $hour?->is_closed ?? false);
+                                    $openVal = old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i'));
+                                    $closeVal = old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i'));
                                 @endphp
-                                <div class='hc-row'>
+                                <div class='hc-row' data-day='{{ $dayKey }}'>
                                     <span class='hc-day'>{{ $dayName }}</span>
                                     <span class='hc-time'>
                                         @if($isClosed) @lang('pharmacy.profile.closed') @else
-                                            {{ old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i')) }} – {{ old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i')) }}
+                                            {{ $closeVal }} – {{ $openVal }}
                                         @endif
                                     </span>
-                                    <i class='fas fa-calendar-days'></i>
-                                </div>
-                            @endforeach
-                        </div>
-                        <details class='ph-hours-editor'>
-                            <summary class='ph-btn sm outline' style='width:calc(100% - 44px);margin:0 22px 18px;'><i class='fas fa-pen'></i> @lang('pharmacy.profile.edit_hours')</summary>
-                            <div class='ph-card-body ph-hours' style='padding-block-start:0;'>
-                                <div class='ph-hours-quickbar'>
-                                    <button type='button' class='ph-btn sm' onclick='applyPreset("unified")'>@lang('pharmacy.profile.hours_quick.unified')</button>
-                                    <button type='button' class='ph-btn sm' onclick='applyPreset("24h")'>@lang('pharmacy.profile.hours_quick.h24')</button>
-                                    <button type='button' class='ph-btn sm' onclick='applyPreset("friday_off")'>@lang('pharmacy.profile.hours_quick.friday_off')</button>
-                                    <button type='button' class='ph-btn sm outline' onclick='applyPreset("clear")'>@lang('pharmacy.profile.hours_quick.clear')</button>
-                                </div>
-                                @foreach($daysOfWeek as $dayKey => $dayName)
-                                    @php
-                                        $hour = $pharmacyHours[$dayKey] ?? null;
-                                        $isClosed = old('hours.'.$dayKey.'.is_closed', $hour?->is_closed ?? false);
-                                    @endphp
-                                    <div class='day-row'>
-                                        <label>
+                                    <span class='hc-edit'>
+                                        <label class='hc-closed'>
                                             <input type='checkbox' name='hours[{{ $dayKey }}][is_closed]' value='1' {{ $isClosed ? 'checked' : '' }} onchange='toggleTime("{{ $dayKey }}")'>
-                                            {{ $dayName }}
+                                            @lang('pharmacy.profile.closed')
                                         </label>
-                                        <div class='ph-group'>
-                                            <label class='ph-form-label'>@lang('pharmacy.profile.from')</label>
-                                            <input type='time' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i')) }}' {{ $isClosed ? 'disabled' : '' }}>
-                                        </div>
-                                        <div class='ph-group'>
-                                            <label class='ph-form-label'>@lang('pharmacy.profile.to')</label>
-                                            <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i')) }}' {{ $isClosed ? 'disabled' : '' }}>
-                                        </div>
+                                        <input type='text' inputmode='numeric' maxlength='5' placeholder='09:00' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $openVal }}' {{ $isClosed ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true)'>
+                                        <span class='hc-dash'>–</span>
+                                        <input type='text' inputmode='numeric' maxlength='5' placeholder='17:00' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $closeVal }}' {{ $isClosed ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true)'>
                                         <span class='day-quick'>
                                             <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.copy_title')' onclick='copyDay("{{ $dayKey }}")'>@lang('pharmacy.profile.hours_quick.copy')</button>
                                             <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.h24')' onclick='setDay("{{ $dayKey }}", "00:00", "23:59")'>24h</button>
                                             <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.closed_title')' onclick='closeDay("{{ $dayKey }}")'>@lang('pharmacy.profile.hours_quick.closed')</button>
                                         </span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </details>
+                                    </span>
+                                    <i class='fas fa-calendar-days'></i>
+                                </div>
+                            @endforeach
+                            @php($hoursError = collect($errors->keys())->first(fn ($k) => str_starts_with($k, 'hours.')))
+                            @if($hoursError)
+                                <span style='display:block;color:var(--ph-red);font-size:.8rem;padding-block-start:10px;'>{{ $errors->first($hoursError) }}</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
@@ -228,10 +221,49 @@
             @elseif($errors->has('logo'))
                 <script>document.addEventListener('DOMContentLoaded', function () { openModal('logoModal'); });</script>
             @endif
+
+            @if(isset($hoursError) && $hoursError)
+                <script>document.addEventListener('DOMContentLoaded', function () { toggleHoursEdit(); });</script>
+            @endif
         </form>
     </div>
 
     <script>
+        // تعديل الساعات في نفس المكان: تبديل عرض/تحرير بدون أي قفز بالصفحة
+        function toggleHoursEdit() {
+            var list = document.getElementById('hoursList');
+            var btn = document.getElementById('hoursEditBtn');
+            var editing = list.classList.toggle('editing');
+            btn.innerHTML = editing
+                ? '<i class="fas fa-check"></i> @lang('pharmacy.profile.done')'
+                : '<i class="fas fa-pen"></i> @lang('pharmacy.profile.edit_hours')';
+            if (editing) {
+                var first = list.querySelector('.hc-time-input:not(:disabled)');
+                if (first) { first.focus({ preventScroll: true }); }
+            }
+        }
+
+        // إجبار صيغة 24 ساعة: أثناء الكتابة أرقام فقط (حد 4 أرقام)، وعند الخروج تُكمل الصيغة HH:MM
+        function formatTimeInput(el, strict) {
+            var d = el.value.replace(/\D/g, '').slice(0, 4);
+            if (!strict) {
+                el.value = d;
+                return;
+            }
+            if (d.length === 0) { el.value = ''; return; }
+            var h, m;
+            if (d.length <= 2) {
+                h = d; m = '00';          // "9" أو "09" → 09:00
+            } else if (d.length === 3) {
+                h = d.slice(0, 1); m = d.slice(1);  // "900" → 09:00
+            } else {
+                h = d.slice(0, 2); m = d.slice(2, 4);  // "0930" → 09:30
+            }
+            var hh = Math.min(parseInt(h, 10) || 0, 23);
+            var mm = Math.min(parseInt(m, 10) || 0, 59);
+            el.value = ('0' + hh).slice(-2) + ':' + ('0' + mm).slice(-2);
+        }
+
         function openModal(id) {
             document.getElementById(id).classList.add('active');
         }
