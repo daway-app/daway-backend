@@ -213,35 +213,3 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 .chart-box{position:relative;height:260px;}
 .chart-sm{height:220px;}
 @media(max-width:768px){.ph-stats{grid-template-columns:repeat(2,1fr);}.ph-grid{grid-template-columns:1fr;}.ph-hours .day-row{grid-template-columns:1fr;gap:10px;}.ph-head{flex-direction:column;align-items:flex-start;}.ph-filters{flex-direction:column;align-items:stretch;}.ph-search{min-width:auto;width:100%;}.chart-box{height:220px;}}
-
-/* صفحة تعديل بيانات الصيدلية: ضغط المحتوى بحيث يبين بدون سكرول على الشاشات العادية */
-.ph-profile-edit-page{padding:16px;}
-.ph-profile-edit-page > .ph-head{margin-block-end:10px;}
-.ph-profile-edit-page .ph-page-title h1{font-size:1.1rem;margin:0;}
-.ph-profile-edit-page .ph-page-title p{font-size:.78rem;margin:2px 0 0;color:var(--ph-ink-soft);}
-.ph-profile-edit-page .ph-profile-grid{gap:14px;}
-.ph-profile-edit-page .ph-card{border-radius:var(--ph-r-md);}
-.ph-profile-edit-page .ph-card-head{padding:9px 14px;}
-.ph-profile-edit-page .ph-card-head h2{font-size:.92rem;}
-.ph-profile-edit-page .ph-card-body{padding:12px 14px;}
-.ph-profile-edit-page .ph-banner{height:108px;margin-block-end:32px;padding:14px 18px;}
-.ph-profile-edit-page .ph-banner h2{font-size:1.05rem;}
-.ph-profile-edit-page .ph-banner p{font-size:.76rem;margin-block-start:2px;}
-.ph-profile-edit-page .ph-banner .ph-avatar{width:58px;height:58px;inset-block-end:-26px;inset-inline-start:18px;border-width:3px;font-size:1.3rem;}
-.ph-profile-edit-page .ph-form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;}
-.ph-profile-edit-page .ph-group{margin-block-end:6px;}
-.ph-profile-edit-page .ph-form-label{font-size:.74rem;margin-block-end:2px;}
-.ph-profile-edit-page .ph-control,.ph-profile-edit-page .ph-textarea{padding:5px 10px;font-size:.82rem;}
-.ph-profile-edit-page .ph-textarea{min-height:40px;max-height:54px;resize:none;}
-.ph-profile-edit-page .ph-form-actions{display:flex;gap:16px;flex-wrap:wrap;margin-block-start:4px;}
-.ph-profile-edit-page .ph-text-action{font-size:.76rem;}
-.ph-profile-edit-page .ph-form-foot{padding:8px 14px;gap:8px;}
-.ph-profile-edit-page .ph-form-foot .ph-btn{padding:7px 14px;font-size:.82rem;}
-.ph-profile-edit-page .ph-map-sm{height:170px;}
-.ph-profile-edit-page .ph-map-edit{height:260px;}
-.ph-profile-edit-page .ph-hours-compact .hc-row{padding:5px 0;font-size:.8rem;}
-.ph-profile-edit-page .ph-hours-compact .hc-row i{font-size:.8rem;}
-@media (max-width: 900px){
-  .ph-profile-edit-page .ph-form-row{grid-template-columns:1fr;}
-  .ph-profile-edit-page .ph-map-sm{height:200px;}
-}
