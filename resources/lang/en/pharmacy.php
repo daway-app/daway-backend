@@ -356,6 +356,7 @@ return [
         ],
         'hours_quick' => [
             'unified' => 'Uniform 9-5',
+            'uniform' => 'Uniform hours',
             'h24' => '24 Hours',
             'friday_off' => 'Friday Off',
             'clear' => 'Clear All',
@@ -363,6 +364,10 @@ return [
             'copy_title' => 'Copy this day to all others',
             'closed' => 'Closed',
             'closed_title' => 'Close this day',
+            'apply_all' => 'Apply to all days',
+            'open_24' => 'Open 24 hours',
+            'exception' => 'Exceptions',
+            'no_exception' => 'None',
         ],
         'complete' => [
             'title' => 'Complete Pharmacy Profile',

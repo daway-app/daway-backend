@@ -53,49 +53,57 @@
                     <div class='ph-card ph-hours-card'>
                         <div class='ph-card-head'>
                             <h2><i class='fas fa-clock'></i> @lang('pharmacy.profile.hours_title')</h2>
-                            <button type='button' class='ph-btn sm outline' id='hoursEditBtn' onclick='toggleHoursEdit()'><i class='fas fa-pen'></i> @lang('pharmacy.profile.edit_hours')</button>
+                            <button type='button' class='ph-btn sm outline' onclick='applyAllDays()'>@lang('pharmacy.profile.hours_quick.apply_all')</button>
                         </div>
-                        <div class='ph-card-body ph-hours-compact' id='hoursList'>
-                            <div class='ph-hours-quickbar'>
-                                <button type='button' class='ph-btn sm' onclick='applyPreset("unified")'>@lang('pharmacy.profile.hours_quick.unified')</button>
-                                <button type='button' class='ph-btn sm' onclick='applyPreset("24h")'>@lang('pharmacy.profile.hours_quick.h24')</button>
-                                <button type='button' class='ph-btn sm' onclick='applyPreset("friday_off")'>@lang('pharmacy.profile.hours_quick.friday_off')</button>
-                                <button type='button' class='ph-btn sm outline' onclick='applyPreset("clear")'>@lang('pharmacy.profile.hours_quick.clear')</button>
+                        <div class='ph-card-body ph-hours-list' id='hoursList'>
+                            <div class='ph-hours-chips'>
+                                <div class='ph-chip ph-chip-accent'>
+                                    <div class='ph-chip-label'>@lang('pharmacy.profile.hours_quick.uniform')</div>
+                                    <div class='ph-chip-value' id='chipUnified'>—</div>
+                                </div>
+                                <div class='ph-chip'>
+                                    <div class='ph-chip-label'>@lang('pharmacy.profile.hours_quick.exception')</div>
+                                    <div class='ph-chip-value' id='chipException'>—</div>
+                                </div>
                             </div>
+
                             @foreach($daysOfWeek as $dayKey => $dayName)
                                 @php
                                     $hour = $pharmacyHours[$dayKey] ?? null;
                                     $isClosed = old('hours.'.$dayKey.'.is_closed', $hour?->is_closed ?? false);
                                     $openVal = old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i'));
                                     $closeVal = old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i'));
+                                    $is24 = $openVal === '00:00' && $closeVal === '23:59';
                                 @endphp
-                                <div class='hc-row' data-day='{{ $dayKey }}'>
-                                    <span class='hc-day'>{{ $dayName }}</span>
-                                    <span class='hc-time'>
-                                        @if($isClosed) @lang('pharmacy.profile.closed') @else
-                                            {{ $closeVal }} – {{ $openVal }}
-                                        @endif
-                                    </span>
-                                    <span class='hc-edit'>
-                                        <label class='hc-closed'>
-                                            <input type='checkbox' name='hours[{{ $dayKey }}][is_closed]' value='1' {{ $isClosed ? 'checked' : '' }} onchange='toggleTime("{{ $dayKey }}")'>
-                                            @lang('pharmacy.profile.closed')
-                                        </label>
-                                        <input type='text' inputmode='numeric' maxlength='5' placeholder='09:00' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $openVal }}' {{ $isClosed ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true)'>
-                                        <span class='hc-dash'>–</span>
-                                        <input type='text' inputmode='numeric' maxlength='5' placeholder='17:00' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $closeVal }}' {{ $isClosed ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true)'>
-                                        <span class='day-quick'>
-                                            <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.copy_title')' onclick='copyDay("{{ $dayKey }}")'>@lang('pharmacy.profile.hours_quick.copy')</button>
-                                            <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.h24')' onclick='setDay("{{ $dayKey }}", "00:00", "23:59")'>24h</button>
-                                            <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.closed_title')' onclick='closeDay("{{ $dayKey }}")'>@lang('pharmacy.profile.hours_quick.closed')</button>
+                                <div class='ph-day-card' data-day='{{ $dayKey }}'>
+                                    <div class='ph-day-top'>
+                                        <span class='ph-day-name'>{{ $dayName }}</span>
+                                        <span class='ph-day-status' data-status>
+                                            @if($isClosed) @lang('pharmacy.profile.closed')
+                                            @elseif($is24) @lang('pharmacy.profile.hours_quick.open_24')
+                                            @else {{ $openVal.' – '.$closeVal }} @endif
                                         </span>
-                                    </span>
-                                    <i class='fas fa-calendar-days'></i>
+                                        <span class='ph-switch'>
+                                            <input type='hidden' name='hours[{{ $dayKey }}][is_closed]' value='{{ $isClosed ? 1 : 0 }}' data-closed-input>
+                                            <input type='checkbox' class='ph-switch-input' {{ $isClosed ? '' : 'checked' }} aria-label='{{ $dayName }}' onchange='toggleOpenDay(this)'>
+                                            <span class='ph-switch-knob'></span>
+                                        </span>
+                                    </div>
+                                    <div class='ph-day-controls' data-controls @if($isClosed) hidden @endif>
+                                        <input type='text' inputmode='numeric' maxlength='5' placeholder='09:00' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $openVal }}' data-from {{ $isClosed || $is24 ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true); refreshDayRow(this)'>
+                                        <span class='ph-day-to'>@lang('pharmacy.profile.to')</span>
+                                        <input type='text' inputmode='numeric' maxlength='5' placeholder='17:00' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $closeVal }}' data-to {{ $isClosed || $is24 ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true); refreshDayRow(this)'>
+                                        <label class='ph-day-24'>
+                                            <input type='checkbox' {{ $is24 ? 'checked' : '' }} onchange='toggle24Day(this)'>
+                                            @lang('pharmacy.profile.hours_quick.open_24')
+                                        </label>
+                                    </div>
                                 </div>
                             @endforeach
+
                             @php($hoursError = collect($errors->keys())->first(fn ($k) => str_starts_with($k, 'hours.')))
                             @if($hoursError)
-                                <span style='display:block;color:var(--ph-red);font-size:.8rem;padding-block-start:10px;'>{{ $errors->first($hoursError) }}</span>
+                                <span style='display:block;color:var(--ph-red);font-size:.8rem;'>{{ $errors->first($hoursError) }}</span>
                             @endif
                         </div>
                     </div>
@@ -221,28 +229,10 @@
             @elseif($errors->has('logo'))
                 <script>document.addEventListener('DOMContentLoaded', function () { openModal('logoModal'); });</script>
             @endif
-
-            @if(isset($hoursError) && $hoursError)
-                <script>document.addEventListener('DOMContentLoaded', function () { toggleHoursEdit(); });</script>
-            @endif
         </form>
     </div>
 
     <script>
-        // تعديل الساعات في نفس المكان: تبديل عرض/تحرير بدون أي قفز بالصفحة
-        function toggleHoursEdit() {
-            var list = document.getElementById('hoursList');
-            var btn = document.getElementById('hoursEditBtn');
-            var editing = list.classList.toggle('editing');
-            btn.innerHTML = editing
-                ? '<i class="fas fa-check"></i> @lang('pharmacy.profile.done')'
-                : '<i class="fas fa-pen"></i> @lang('pharmacy.profile.edit_hours')';
-            if (editing) {
-                var first = list.querySelector('.hc-time-input:not(:disabled)');
-                if (first) { first.focus({ preventScroll: true }); }
-            }
-        }
-
         // إجبار صيغة 24 ساعة: أثناء الكتابة أرقام فقط (حد 4 أرقام)، وعند الخروج تُكمل الصيغة HH:MM
         function formatTimeInput(el, strict) {
             var d = el.value.replace(/\D/g, '').slice(0, 4);
@@ -302,50 +292,108 @@
             }
         });
 
-        function toggleTime(day) {
-            const closed = document.querySelector('input[name="hours['+day+'][is_closed]"]').checked;
-            document.getElementById('open_'+day).disabled = closed;
-            document.getElementById('close_'+day).disabled = closed;
+        // ===== ساعات الدوام: بطاقة لكل يوم — تعديل مباشر بدون وضع تحرير منفصل =====
+
+        // مفتاح فتح/إغلاق اليوم
+        function toggleOpenDay(checkbox) {
+            var row = checkbox.closest('.ph-day-card');
+            row.querySelector('[data-closed-input]').value = checkbox.checked ? 0 : 1;
+            var controls = row.querySelector('[data-controls]');
+            controls.hidden = !checkbox.checked;
+            refreshDayRow(checkbox);
         }
 
-        var hoursDays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-
-        function setDay(day, open, close, closed) {
-            var openEl = document.getElementById('open_'+day);
-            var closeEl = document.getElementById('close_'+day);
-            var closedEl = document.querySelector('input[name="hours['+day+'][is_closed]"]');
-            closedEl.checked = !!closed;
-            openEl.disabled = !!closed;
-            closeEl.disabled = !!closed;
-            if (!closed) {
-                openEl.value = open;
-                closeEl.value = close;
+        // خيار "مفتوح 24 ساعة": 00:00 – 23:59 مع تعطيل الحقول
+        function toggle24Day(checkbox) {
+            var row = checkbox.closest('.ph-day-card');
+            var from = row.querySelector('[data-from]');
+            var to = row.querySelector('[data-to]');
+            if (checkbox.checked) {
+                from.value = '00:00';
+                to.value = '23:59';
             }
+            from.disabled = checkbox.checked;
+            to.disabled = checkbox.checked;
+            refreshDayRow(checkbox);
         }
 
-        function closeDay(day) { setDay(day, '', '', true); }
+        // تحديث نص الحالة داخل البطاقة + شرائح الملخص
+        function refreshDayRow(el) {
+            var row = el.closest('.ph-day-card');
+            var status = row.querySelector('[data-status]');
+            var closedInput = row.querySelector('[data-closed-input]');
+            var from = row.querySelector('[data-from]');
+            var to = row.querySelector('[data-to]');
+            var h24 = row.querySelector('.ph-day-24 input');
 
-        function copyDay(day) {
-            var open = document.getElementById('open_'+day).value;
-            var close = document.getElementById('close_'+day).value;
-            var closed = document.querySelector('input[name="hours['+day+'][is_closed]"]').checked;
-            hoursDays.forEach(function(d) {
-                if (d !== day) setDay(d, open, close, closed);
+            if (closedInput.value === '1') {
+                status.textContent = @lang('pharmacy.profile.closed');
+            } else if (h24.checked) {
+                status.textContent = @lang('pharmacy.profile.hours_quick.open_24');
+            } else {
+                status.textContent = (from.value || '—') + ' – ' + (to.value || '—');
+            }
+            updateHoursSummary();
+        }
+
+        // تطبيق إعدادات اليوم الأول على كل الأيام
+        function applyAllDays() {
+            var rows = document.querySelectorAll('#hoursList .ph-day-card');
+            if (!rows.length) return;
+            var ref = rows[0];
+            var refOpen = ref.querySelector('[data-from]').value || '09:00';
+            var refClose = ref.querySelector('[data-to]').value || '17:00';
+            var ref24 = ref.querySelector('.ph-day-24 input').checked;
+
+            rows.forEach(function (row) {
+                var h24 = row.querySelector('.ph-day-24 input');
+                var from = row.querySelector('[data-from]');
+                var to = row.querySelector('[data-to]');
+                var sw = row.querySelector('.ph-switch-input');
+                h24.checked = ref24;
+                from.value = refOpen;
+                to.value = refClose;
+                from.disabled = ref24;
+                to.disabled = ref24;
+                sw.checked = true;
+                row.querySelector('[data-closed-input]').value = 0;
+                row.querySelector('[data-controls]').hidden = false;
+                refreshDayRow(sw);
             });
         }
 
-        function applyPreset(mode) {
-            var fridayOff = ['Friday'];
-            if (mode === 'unified' || mode === 'friday_off') {
-                hoursDays.forEach(function(d) {
-                    var closed = mode === 'friday_off' && fridayOff.indexOf(d) !== -1;
-                    setDay(d, '09:00', '17:00', closed);
-                });
-            } else if (mode === '24h') {
-                hoursDays.forEach(function(d) { setDay(d, '00:00', '23:59', false); });
-            } else if (mode === 'clear') {
-                hoursDays.forEach(function(d) { closeDay(d); });
+        // شرائح الملخص: دوام موحد + الاستثناءات
+        function updateHoursSummary() {
+            var rows = document.querySelectorAll('#hoursList .ph-day-card');
+            var open = [], closedNames = [], signature = null, uniform = true;
+
+            rows.forEach(function (row) {
+                var name = row.querySelector('.ph-day-name').textContent.trim();
+                var isOpen = row.querySelector('.ph-switch-input').checked;
+                if (!isOpen) { closedNames.push(name); return; }
+                var from = row.querySelector('[data-from]').value;
+                var to = row.querySelector('[data-to]').value;
+                var is24 = row.querySelector('.ph-day-24 input').checked;
+                open.push({ from: from, to: to, is24: is24 });
+                var sig = from + '|' + to + '|' + (is24 ? 1 : 0);
+                if (signature === null) { signature = sig; }
+                else if (sig !== signature) { uniform = false; }
+            });
+
+            var unifiedEl = document.getElementById('chipUnified');
+            var exceptionEl = document.getElementById('chipException');
+
+            if (open.length === rows.length && uniform && open.length) {
+                unifiedEl.textContent = open[0].is24
+                    ? @lang('pharmacy.profile.hours_quick.open_24')
+                    : open[0].from + ' – ' + open[0].to;
+            } else {
+                unifiedEl.textContent = open.length ? '…' : '—';
             }
+
+            exceptionEl.textContent = closedNames.length ? closedNames.join('، ') : @lang('pharmacy.profile.hours_quick.no_exception');
         }
+
+        document.addEventListener('DOMContentLoaded', updateHoursSummary);
     </script>
 @endsection

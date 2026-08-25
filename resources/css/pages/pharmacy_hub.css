@@ -162,26 +162,31 @@ html[dir='rtl'] .ph-search i,html[dir='rtl'] .ph-search svg{left:auto;right:14px
 @media(max-width:900px){.ph-complete-grid{grid-template-columns:1fr;}}
 .ph-profile-grid .ph-control,.ph-profile-grid .ph-select{width:100%;min-width:0;box-sizing:border-box;}
 .ph-hours input[type=time]{width:100%;min-width:0;box-sizing:border-box;}
-.ph-hours-compact{padding:8px 22px 4px;}
-.ph-hours-compact .hc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-block-end:1px solid var(--ph-line-soft);font-size:.85rem;}
-.ph-hours-compact .hc-row:last-child{border-block-end:none;}
-.ph-hours-compact .hc-day{font-weight:600;color:var(--ph-ink);}
-.ph-hours-compact .hc-time{color:var(--ph-ink-soft);flex:1;text-align:center;}
-.ph-hours-compact .hc-row i{color:var(--ph-ink-faint);}
-/* تعديل الساعات في نفس المكان: تبديل عرض/تحرير بدون تحريك الصفحة */
-.ph-hours-compact .hc-edit{display:none;align-items:center;gap:8px;flex:1;flex-wrap:wrap;justify-content:flex-end;}
-.ph-hours-compact .hc-closed{display:flex;align-items:center;gap:6px;font-weight:600;font-size:.8rem;cursor:pointer;white-space:nowrap;color:var(--ph-ink);}
-.ph-hours-compact .hc-closed input{width:16px;height:16px;accent-color:var(--ph-teal);}
-.ph-hours-compact .hc-time-input{width:76px;text-align:center;padding:7px 8px;font-size:.85rem;font-variant-numeric:tabular-nums;direction:ltr;}
-.ph-hours-compact .hc-dash{color:var(--ph-ink-faint);}
-.ph-hours-compact .ph-hours-quickbar{display:none;}
-.ph-hours-compact.editing .hc-time{display:none;}
-.ph-hours-compact.editing .hc-row > i{display:none;}
-.ph-hours-compact.editing .hc-edit{display:flex;}
-.ph-hours-compact.editing .ph-hours-quickbar{display:flex;}
-@media(max-width:768px){.ph-hours-compact .hc-row{flex-wrap:wrap;}.ph-hours-compact .hc-edit{justify-content:flex-start;}}
-.ph-hours-editor summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
-.ph-hours-editor summary::-webkit-details-marker{display:none;}
+/* بطاقات أيام الدوام — تعديل مباشر (مفتاح + حقول 24 ساعة) */
+.ph-hours-list{display:flex;flex-direction:column;gap:8px;}
+.ph-hours-chips{display:flex;gap:8px;margin-block-end:4px;}
+.ph-chip{flex:1;background:var(--ph-paper);border:1px solid var(--ph-line-soft);border-radius:var(--ph-r-md);padding:8px 10px;}
+.ph-chip-accent{background:var(--ph-teal-mist);border-color:var(--ph-teal-mist);}
+.ph-chip-label{font-size:.68rem;color:var(--ph-ink-faint);margin-block-end:2px;}
+.ph-chip-accent .ph-chip-label{color:var(--ph-teal);}
+.ph-chip-value{font-size:.8rem;font-weight:600;color:var(--ph-ink);font-variant-numeric:tabular-nums;}
+.ph-day-card{border:1px solid var(--ph-line-soft);border-radius:var(--ph-r-md);padding:10px 12px;}
+.ph-day-top{display:flex;align-items:center;gap:10px;}
+.ph-day-name{font-size:.85rem;font-weight:600;color:var(--ph-ink);min-width:52px;}
+.ph-day-status{flex:1;font-size:.78rem;color:var(--ph-ink-soft);font-variant-numeric:tabular-nums;}
+.ph-switch{position:relative;width:38px;height:22px;flex-shrink:0;display:inline-block;}
+.ph-switch-input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:1;}
+.ph-switch-knob{position:absolute;inset:0;border-radius:999px;background:var(--ph-line);transition:background .2s;display:block;}
+.ph-switch-knob::after{content:'';position:absolute;top:2px;inset-inline-start:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:var(--ph-sh-sm);transition:transform .2s;}
+.ph-switch-input:checked + .ph-switch-knob{background:var(--ph-teal);}
+.ph-switch-input:checked + .ph-switch-knob::after{transform:translateX(-16px);}
+[dir='ltr'] .ph-switch-input:checked + .ph-switch-knob::after{transform:translateX(16px);}
+.ph-day-controls{display:flex;align-items:center;gap:8px;margin-block-start:10px;}
+.ph-day-to{font-size:.75rem;color:var(--ph-ink-faint);}
+.ph-day-24{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--ph-ink-soft);cursor:pointer;margin-inline-start:auto;white-space:nowrap;}
+.ph-day-24 input{width:15px;height:15px;accent-color:var(--ph-teal);}
+.hc-time-input{width:76px;text-align:center;padding:7px 8px;font-size:.85rem;font-variant-numeric:tabular-nums;direction:ltr;}
+@media(max-width:768px){.ph-day-controls{flex-wrap:wrap;}.ph-day-24{margin-inline-start:0;flex-basis:100%;}}
 @media(max-width:900px){.ph-profile-grid{grid-template-columns:1fr;}}
 .chart-box{position:relative;height:260px;}
 .chart-sm{height:220px;}
