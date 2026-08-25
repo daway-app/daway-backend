@@ -11,7 +11,7 @@
         <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
     @endpush
 
-    <div class='ph-page'>
+    <div class='ph-page ph-profile-edit-page'>
         <div class='ph-head'>
             <div class='ph-page-title'>
                 <h1>@lang('pharmacy.profile.heading_page')</h1>
@@ -84,44 +84,48 @@
                             @endif
                         </div>
                         <div class='ph-card-body'>
-                            <div class='ph-group' style='margin-block-end:18px;'>
+                            <div class='ph-group'>
                                 <label class='ph-form-label' for='pharmacy_name'>@lang('pharmacy.profile.name_label')</label>
                                 <input type='text' name='pharmacy_name' id='pharmacy_name' class='ph-control' value='{{ old('pharmacy_name', $pharmacy->pharmacy_name) }}'>
                                 @error('pharmacy_name')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 
-                            @if(isset($pharmacy->email))
-                                <div class='ph-group' style='margin-block-end:18px;'>
-                                    <label class='ph-form-label' for='email'>@lang('pharmacy.profile.email_label')</label>
-                                    <input type='email' name='email' id='email' class='ph-control' value='{{ old('email', $pharmacy->email) }}'>
-                                    @error('email')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                            <div class='ph-form-row'>
+                                @if(isset($pharmacy->email))
+                                    <div class='ph-group'>
+                                        <label class='ph-form-label' for='email'>@lang('pharmacy.profile.email_label')</label>
+                                        <input type='email' name='email' id='email' class='ph-control' value='{{ old('email', $pharmacy->email) }}'>
+                                        @error('email')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                                    </div>
+                                @endif
+
+                                <div class='ph-group'>
+                                    <label class='ph-form-label' for='phone_number'>@lang('pharmacy.profile.phone_label')</label>
+                                    <input type='text' name='phone_number' id='phone_number' class='ph-control' value='{{ old('phone_number', $pharmacy->phone_number) }}'>
+                                    @error('phone_number')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                                 </div>
-                            @endif
-
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='phone_number'>@lang('pharmacy.profile.phone_label')</label>
-                                <input type='text' name='phone_number' id='phone_number' class='ph-control' value='{{ old('phone_number', $pharmacy->phone_number) }}'>
-                                @error('phone_number')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='address'>@lang('pharmacy.profile.address_label')</label>
-                                <textarea name='address' id='address' class='ph-textarea' style='width:100%;'>{{ old('address', $pharmacy->address) }}</textarea>
-                                @error('address')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                            <div class='ph-form-row'>
+                                <div class='ph-group'>
+                                    <label class='ph-form-label' for='address'>@lang('pharmacy.profile.address_label')</label>
+                                    <textarea name='address' id='address' class='ph-textarea' style='width:100%;'>{{ old('address', $pharmacy->address) }}</textarea>
+                                    @error('address')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                                </div>
+
+                                <div class='ph-group'>
+                                    <label class='ph-form-label' for='region'>@lang('pharmacy.profile.complete.region_label')</label>
+                                    <input type='text' name='region' id='region' class='ph-control' value='{{ old('region', $pharmacy->region) }}'>
+                                    @error('region')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                                </div>
                             </div>
 
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='region'>@lang('pharmacy.profile.complete.region_label')</label>
-                                <input type='text' name='region' id='region' class='ph-control' value='{{ old('region', $pharmacy->region) }}'>
-                                @error('region')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                            </div>
-
-                            <div style='display:flex;gap:24px;flex-wrap:wrap;margin-block-start:10px;'>
+                            <div class='ph-form-actions'>
                                 <button type='button' class='ph-text-action' onclick='openModal("logoModal")'><i class='fas fa-camera'></i> @lang('pharmacy.profile.logo_change')</button>
                                 <button type='button' class='ph-text-action' onclick='openModal("passwordModal")'><i class='fas fa-key'></i> @lang('pharmacy.profile.password_change.title')</button>
                             </div>
                         </div>
-                        <div style='display:flex;gap:10px;padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>
+                        <div class='ph-form-foot'>
                             <button type='submit' class='ph-btn primary'><i class='fas fa-save'></i> @lang('pharmacy.profile.save_button')</button>
                             <a href='{{ route('pharmacy.dashboard.index') }}' class='ph-btn ghost'>@lang('pharmacy.profile.cancel_button')</a>
                         </div>
