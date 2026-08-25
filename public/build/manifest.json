@@ -72,7 +72,7 @@
     "isEntry": true
   },
   "resources/css/layout/app_layout.css": {
-    "file": "assets/app_layout-C5Y9BjJ-.css",
+    "file": "assets/app_layout-C1a8IOIb.css",
     "name": "app_layout",
     "names": [
       "app_layout.css"
@@ -189,7 +189,7 @@
     "isEntry": true
   },
   "resources/css/pages/pharmacy_hub.css": {
-    "file": "assets/pharmacy_hub-Cmw-d8hj.css",
+    "file": "assets/pharmacy_hub-C6gHB2Lq.css",
     "name": "pharmacy_hub",
     "names": [
       "pharmacy_hub.css"
@@ -249,7 +249,7 @@
     "isEntry": true
   },
   "resources/js/pharmacy_hub.js": {
-    "file": "assets/pharmacy_hub-Cmpxe0BI.js",
+    "file": "assets/pharmacy_hub-stuWRHkC.js",
     "name": "pharmacy_hub",
     "src": "resources/js/pharmacy_hub.js",
     "isEntry": true

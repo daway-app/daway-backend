@@ -37,7 +37,7 @@
                         <div class='ph-card-body'>
                             {{-- خريطة عرض فقط — غير تفاعلية، التعديل من الحوار --}}
                             <div id='pharmacyMap' class='ph-map ph-map-sm' data-lat='{{ old('latitude', $pharmacy->latitude) }}' data-lng='{{ old('longitude', $pharmacy->longitude) }}'></div>
-                            <p class='ph-hint'>@lang('pharmacy.profile.map_hint')</p>
+                            <p class='ph-hint'>@lang('pharmacy.profile.map_display_hint')</p>
                             <button type='button' class='ph-text-action' style='margin-block-start:12px;' onclick='openLocationModal()'><i class='fas fa-location-dot'></i> @lang('pharmacy.profile.location_change')</button>
                         </div>
                     </div>
@@ -49,13 +49,16 @@
                                 @php
                                     $hour = $pharmacyHours[$dayKey] ?? null;
                                     $isClosed = old('hours.'.$dayKey.'.is_closed', $hour?->is_closed ?? false);
+                                    $openVal = old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i'));
+                                    $closeVal = old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i'));
+                                    $is24 = $openVal === '00:00' && $closeVal === '23:59';
                                 @endphp
                                 <div class='hc-row'>
                                     <span class='hc-day'>{{ $dayName }}</span>
                                     <span class='hc-time'>
-                                        @if($isClosed) @lang('pharmacy.profile.closed') @else
-                                            {{ old('hours.'.$dayKey.'.close_time', $hour?->close_time?->format('H:i')) }} – {{ old('hours.'.$dayKey.'.open_time', $hour?->open_time?->format('H:i')) }}
-                                        @endif
+                                        @if($isClosed) @lang('pharmacy.profile.closed')
+                                        @elseif($is24) @lang('pharmacy.profile.hours_quick.open_24')
+                                        @else {{ $openVal.' – '.$closeVal }} @endif
                                     </span>
                                     <i class='fas fa-calendar-days'></i>
                                 </div>
@@ -297,6 +300,9 @@
             @elseif(isset($hoursError) && $hoursError)
                 <script>document.addEventListener('DOMContentLoaded', function () { openModal('hoursModal'); });</script>
             @endif
+
+            {{-- زر إرسال النموذج الرئيسي (يُستخدم من حوارات التعديل) --}}
+            <button type='submit' style='position:absolute;inset-inline-start:-9999px;width:0;height:0;padding:0;border:0;overflow:hidden;' aria-hidden='true' tabindex='-1'>@lang('pharmacy.profile.save_button')</button>
         </form>
     </div>
 
@@ -333,7 +339,18 @@
         function saveFromModal(id) {
             closeModal(id);
             var form = document.querySelector('form.ph-profile-form');
-            if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
+            if (!form) return;
+            // نفعّل أي حقول وقت معطّلة داخل حوار الساعات حتى تُرسل قيمها مع النموذج
+            form.querySelectorAll('#hoursList input[disabled]').forEach(function (input) { input.disabled = false; });
+            // نستخدم زر إرسال مخفي لضمان إرسال النموذج بشكل موثوق
+            var submitter = form.querySelector('button[type="submit"]');
+            if (submitter) {
+                submitter.click();
+            } else if (form.requestSubmit) {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
         }
 
         function previewLogo(input) {

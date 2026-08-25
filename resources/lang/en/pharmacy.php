@@ -327,6 +327,7 @@ return [
         'latitude_label' => 'Latitude',
         'longitude_label' => 'Longitude',
         'map_hint' => 'Click on the map or move the pin to set the location',
+        'map_display_hint' => 'Current pharmacy location on the map',
         'hours_title' => 'Working Hours',
         'closed' => 'Closed',
         'edit_hours' => 'Edit Working Hours',
