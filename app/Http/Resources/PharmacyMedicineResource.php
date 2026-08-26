@@ -14,7 +14,7 @@ class PharmacyMedicineResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $threshold = $this->min_stock !== null ? (int) $this->min_stock : 10;
+        $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
         $quantity = (int) $this->quantity;
 
         return [
@@ -23,7 +23,7 @@ class PharmacyMedicineResource extends JsonResource
             'pharmacy_id' => $this->pharmacy_id,
             'price' => $this->price !== null ? (float) $this->price : 0.0,
             'quantity' => $quantity,
-            'min_stock' => $this->min_stock !== null ? (int) $this->min_stock : null,
+            'min_stock' => $threshold,
             'is_available' => (bool) $this->is_available,
             'is_low_stock' => $quantity > 0 && $quantity <= $threshold,
             'is_out_of_stock' => $quantity <= 0,
@@ -33,6 +33,7 @@ class PharmacyMedicineResource extends JsonResource
                 return [
                     'id' => $medicine?->id,
                     'trade_name' => $medicine?->trade_name,
+                    'trade_name_ar' => $medicine?->trade_name_ar,
                     'active_ingredient' => $medicine?->active_ingredient,
                     'image_url' => Image::url($medicine?->image),
                 ];

@@ -130,7 +130,6 @@ class PharmacyMedicineController extends Controller
             'medicine_id' => $medicine->id,
             'price' => $data['price'],
             'quantity' => $data['quantity'],
-            'min_stock' => $data['min_stock'] ?? null,
             'is_available' => $request->boolean('is_available'),
         ]);
 
@@ -148,10 +147,12 @@ class PharmacyMedicineController extends Controller
     /**
      * إضافة دواء للمخزون بالاسم مباشرة — مخصصة للموبايل بدون الاعتماد على أي معرّف.
      *
+     * الاسم الإنجليزي (trade_name) إلزامي، والعربي (trade_name_ar) اختياري.
+     *
      * ترتيب الحل:
-     *  1) البحث بالاسم في الكتالوج العام.
+     *  1) الاسم الإنجليزي في الكتالوج العام، ثم الاسم العربي إن أُرسل.
      *  2) البحث في كتالوج وزارة الصحة وإنشاؤه تلقائياً بالكتالوج العام (نفس منطق الويب).
-     *  3) إنشاء دواء جديد من الاسم المُرسل والمادة الفعالة الاختيارية.
+     *  3) إنشاء دواء جديد من الأسماء والمادة الفعالة الاختيارية.
      */
     public function storeByName(Request $request): JsonResponse
     {
@@ -165,32 +166,52 @@ class PharmacyMedicineController extends Controller
         }
 
         $data = $request->validate([
-            'trade_name' => 'required|string|max:255',
+            // الاسم الإنجليزي إلزامي — يُرفض أي اسم يحتوي حروفاً عربية
+            'trade_name' => [
+                'required',
+                'string',
+                'max:150',
+                'not_regex:/[\x{0600}-\x{06FF}]/u',
+            ],
+            // الاسم العربي اختياري — عند إرساله يجب أن يحتوي حروفاً عربية
+            'trade_name_ar' => [
+                'nullable',
+                'string',
+                'max:150',
+                'regex:/[\x{0600}-\x{06FF}]/u',
+            ],
             'active_ingredient' => 'nullable|string|max:255',
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
-            'min_stock' => 'nullable|integer|min:0',
             'is_available' => 'sometimes|boolean',
             // صورة اختيارية — رابط Cloudinary مباشر من الموبايل
             'image_url' => 'nullable|url|max:2048',
         ]);
 
         $name = trim($data['trade_name']);
+        $nameAr = isset($data['trade_name_ar']) ? trim($data['trade_name_ar']) : null;
 
-        // 1) الكتالوج العام حسب الاسم
-        $medicine = Medicine::where('trade_name', $name)->first();
+        // الحل بالأسماء فقط بدون أي معرّف:
+        // 1) الاسم الإنجليزي في الكتالوج العام، وإلا الاسم العربي إن أُرسل
+        $medicine = Medicine::where('trade_name', $name)->first()
+            ?? ($nameAr ? Medicine::where('trade_name_ar', $nameAr)->first() : null);
 
         if (! $medicine) {
-            // 2) كتالوج وزارة الصحة — يُنسخ للكتالوج العام عند الحاجة
+            // 2) كتالوج وزارة الصحة بالاسم الإنجليزي — يُنسخ للكتالوج العام عند الحاجة
             $moh = MohMedicine::where('trade_name', $name)->first();
 
-            // 3) لا وجود بالكتالوجين — إنشاء دواء جديد من البيانات المرسلة
+            // 3) لا وجود بالكتالوجين — إنشاء دواء جديد: إنجليزي إلزامي + عربي اختياري
             $medicine = Medicine::create([
                 'trade_name' => $name,
+                'trade_name_ar' => $nameAr,
                 'active_ingredient' => $data['active_ingredient']
                     ?? ($moh->generic_name ?? $name),
                 'description' => $moh->manufacturer ?? ($moh->company ?? null),
             ]);
+        } elseif ($nameAr && empty($medicine->trade_name_ar)) {
+            // إثراء الكتالوج: دواء موجود بلا اسم عربي + الموبايل أرسله
+            $medicine->trade_name_ar = $nameAr;
+            $medicine->save();
         }
 
         $exists = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
@@ -215,7 +236,6 @@ class PharmacyMedicineController extends Controller
             'medicine_id' => $medicine->id,
             'price' => $data['price'],
             'quantity' => $data['quantity'],
-            'min_stock' => $data['min_stock'] ?? null,
             'is_available' => $request->boolean('is_available'),
         ]);
 
@@ -249,7 +269,6 @@ class PharmacyMedicineController extends Controller
         $medicine->update([
             'price' => $data['price'],
             'quantity' => $data['quantity'],
-            'min_stock' => $data['min_stock'] ?? $medicine->min_stock,
             'is_available' => $request->boolean('is_available'),
         ]);
 
@@ -304,6 +323,7 @@ class PharmacyMedicineController extends Controller
         SearchLog::track($q, 'pharmacy');
 
         $medicines = Medicine::where('trade_name', 'like', "%{$q}%")
+            ->orWhere('trade_name_ar', 'like', "%{$q}%")
             ->orWhere('active_ingredient', 'like', "%{$q}%")
             ->limit(10)
             ->get()
@@ -311,6 +331,7 @@ class PharmacyMedicineController extends Controller
                 'type' => 'medicine',
                 'id' => $m->id,
                 'name' => $m->trade_name,
+                'name_ar' => $m->trade_name_ar,
                 'sub' => $m->active_ingredient,
             ]);
 
@@ -386,7 +407,7 @@ class PharmacyMedicineController extends Controller
      */
     private function notifyIfLowStock(PharmacyMedicine $pm): void
     {
-        $threshold = $pm->min_stock !== null ? (int) $pm->min_stock : 10;
+        $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
         $pharmacyUser = $pm->pharmacy?->user;
         if (! $pharmacyUser) {
             return;

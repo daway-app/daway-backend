@@ -385,4 +385,96 @@ class PharmacyMedicineApiTest extends TestCase
             'quantity' => 15,
         ])->assertForbidden();
     }
+
+    public function test_add_medicine_requires_english_name(): void
+    {
+        [$user] = $this->pharmacyUserWithPharmacy();
+
+        Sanctum::actingAs($user);
+
+        // اسم عربي في الحقل الإلزامي → يُرفض
+        $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'بنادول اكسترا',
+            'price' => 8,
+            'quantity' => 15,
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors('trade_name');
+
+        // حقل الاسم العربي يجب أن يكون عربياً عند إرساله
+        $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Panadol',
+            'trade_name_ar' => 'not arabic',
+            'price' => 8,
+            'quantity' => 15,
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors('trade_name_ar');
+    }
+
+    public function test_add_medicine_with_optional_arabic_name_persists_it(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Panadol Advance',
+            'trade_name_ar' => 'بنادول أدفانس',
+            'price' => 9,
+            'quantity' => 12,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.medicine.trade_name_ar', 'بنادول أدفانس');
+
+        $this->assertDatabaseHas('medicines', [
+            'trade_name' => 'Panadol Advance',
+            'trade_name_ar' => 'بنادول أدفانس',
+        ]);
+    }
+
+    public function test_add_medicine_resolves_existing_entry_by_arabic_name(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $existing = Medicine::factory()->create([
+            'trade_name' => 'Panadol XR',
+            'trade_name_ar' => 'بنادول ممتد',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Brand Unknown EN',
+            'trade_name_ar' => 'بنادول ممتد',
+            'price' => 11,
+            'quantity' => 6,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.medicine.id', $existing->id);
+
+        // لم يُنشأ دواء جديد — تمت المطابقة بالاسم العربي
+        $this->assertSame(1, Medicine::where('trade_name_ar', 'بنادول ممتد')->count());
+        $this->assertDatabaseHas('pharmacy_medicines', [
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $existing->id,
+        ]);
+    }
+
+    public function test_search_matches_arabic_name_and_returns_it(): void
+    {
+        [$user] = $this->pharmacyUserWithPharmacy();
+        Medicine::factory()->create([
+            'trade_name' => 'Panadol',
+            'trade_name_ar' => 'بنادول',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/pharmacy/medicines/search?q='.urlencode('بنادول'));
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.medicines.0.name', 'Panadol')
+            ->assertJsonPath('data.medicines.0.name_ar', 'بنادول');
+    }
 }

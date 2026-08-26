@@ -19,6 +19,7 @@ class Medicine extends Model
 
     protected $fillable = [
         'trade_name',
+        'trade_name_ar',
         'active_ingredient',
         'description',
         'image',
