@@ -474,10 +474,10 @@ class PharmacyMedicineApiTest extends TestCase
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
 
-        // دواء موجود بالكتالوج بدون مادة فعالة (فارغة)
+        // دواء موجود بالكتالوج بدون مادة فعالة (سلسلة فارغة — العمود NOT NULL)
         $existing = Medicine::factory()->create([
             'trade_name' => 'Brufen 400',
-            'active_ingredient' => null,
+            'active_ingredient' => '',
         ]);
 
         Sanctum::actingAs($user);
