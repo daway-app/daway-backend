@@ -5,16 +5,34 @@ namespace App\Services\Ai;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
 use App\Models\PharmacyMedicine;
+use App\Support\MedicineNameMapper;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * يحوّل اسم الدواء (من الـ AI أو الـ OCR) إلى نتائج حقيقية من قاعدة البيانات:
  * مرشحين من الكتالوجين + الصيدليات القريبة المتوفرة + البدائل.
+ *
+ * يدعم البحث بالعربي: أسماء الكتالوج إنجليزية، لكن ملف chatbot_medicines.json
+ * يحتوي اسم عربي (تحويل صوتي) وaliases لكل دواء — نستخدمه لترجمة الاستعلام العربي
+ * إلى معرفات moh_product_id ثم نجلبها من قاعدة البيانات.
  */
 final class MedicineResolver
 {
+    private ?string $mappingPath = null;
+
+    /** مسار ملف الـ mapping (قابل للتبديل في الاختبارات) */
+    public function setMappingPath(?string $path): static
+    {
+        $this->mappingPath = $path;
+
+        return $this;
+    }
+
     /**
-     * يبحث عن الدواء في الكتالوج المحلي وكتالوج وزارة الصحة.
+     * يبحث عن الدواء في الكتالوج المحلي وكتالوج وزارة الصحة،
+     * ويضيف نتائج الـ mapping العربي إن وُجدت.
      *
      * @return array{local: Collection, moh: Collection}
      */
@@ -44,7 +62,113 @@ final class MedicineResolver
             ->limit(20)
             ->get(['id', 'trade_name', 'generic_name', 'manufacturer', 'official_price', 'availability']);
 
+        // دمج نتائج الـ mapping العربي (استعلام عربي ↔ اسم إنجليزي بالكتالوج)
+        $moh = $this->mergeMappingHits($moh, $name);
+
         return ['local' => $local, 'moh' => $moh];
+    }
+
+    /**
+     * يبحث في ملف chatbot_medicines.json عن سجلات تطابق الاستعلام (عربي أو إنجليزي)
+     * عبر aliases كل دواء. قراءة تدفقية سطراً بسطر لتوفير الذاكرة.
+     *
+     * @return array<int, array{moh_product_id:?int, moh_drug_id:?int, name_en:string, name_ar:?string}>
+     */
+    public function lookupMapping(string $query, int $limit = 10): array
+    {
+        $needle = mb_strtolower(MedicineNameMapper::clean($query));
+
+        if (mb_strlen($needle) < 2) {
+            return [];
+        }
+
+        $path = $this->mappingPath ?? base_path('database/data/chatbot_medicines.json');
+        $cacheKey = 'ai_mapping_lookup|'.md5($needle.'|'.$limit.'|'.$path);
+
+        return Cache::remember($cacheKey, 600, function () use ($needle, $limit, $path) {
+            if (! is_file($path)) {
+                return [];
+            }
+
+            $hits = [];
+
+            try {
+                $handle = fopen($path, 'r');
+
+                if ($handle === false) {
+                    return [];
+                }
+
+                while (($line = fgets($handle)) !== false && count($hits) < $limit) {
+                    $line = trim($line, " \t\r\n,");
+
+                    if ($line === '' || $line === '[' || $line === ']') {
+                        continue;
+                    }
+
+                    $record = json_decode($line, true);
+
+                    if (! is_array($record)) {
+                        continue;
+                    }
+
+                    foreach (($record['aliases'] ?? []) as $alias) {
+                        if (! is_string($alias)) {
+                            continue;
+                        }
+
+                        if (str_contains(mb_strtolower($alias), $needle)) {
+                            $hits[] = [
+                                'moh_product_id' => isset($record['moh_product_id']) ? (int) $record['moh_product_id'] : null,
+                                'moh_drug_id' => isset($record['moh_drug_id']) ? (int) $record['moh_drug_id'] : null,
+                                'name_en' => (string) ($record['name_en'] ?? ''),
+                                'name_ar' => isset($record['name_ar']) ? (string) $record['name_ar'] : null,
+                            ];
+                            break;
+                        }
+                    }
+                }
+
+                fclose($handle);
+            } catch (\Throwable $e) {
+                Log::warning('mapping lookup failed', ['error' => $e->getMessage()]);
+
+                return [];
+            }
+
+            return $hits;
+        });
+    }
+
+    /** يدمج سجلات كتالوج وزارة الصحة المطابقة عبر الـ mapping مع نتائج LIKE العادية */
+    private function mergeMappingHits(Collection $moh, string $name): Collection
+    {
+        $hits = $this->lookupMapping($name);
+
+        if ($hits === []) {
+            return $moh;
+        }
+
+        $productIds = array_values(array_filter(array_column($hits, 'moh_product_id')));
+        $drugIds = array_values(array_filter(array_column($hits, 'moh_drug_id')));
+
+        if ($productIds === [] && $drugIds === []) {
+            return $moh;
+        }
+
+        $extra = MohMedicine::query()
+            ->where(function ($q) use ($productIds, $drugIds) {
+                if ($productIds !== []) {
+                    $q->orWhereIn('moh_product_id', $productIds);
+                }
+                if ($drugIds !== []) {
+                    $q->orWhereIn('moh_drug_id', $drugIds);
+                }
+            })
+            ->limit(20)
+            ->get(['id', 'trade_name', 'generic_name', 'manufacturer', 'official_price', 'availability']);
+
+        return $moh->merge($extra)->unique('id')->values();
     }
 
     /**

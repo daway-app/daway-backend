@@ -155,4 +155,69 @@ class MedicineResolverTest extends TestCase
         $this->assertCount(1, $alternatives);
         $this->assertEquals($alt->id, $alternatives[0]['id']);
     }
+
+    public function test_arabic_query_resolves_moh_via_mapping_file(): void
+    {
+        // الكتالوج إنجليزي — LIKE '%بانادول%' ما بيلحقو
+        \App\Models\MohMedicine::create([
+            'trade_name' => 'PANADOL EXTRA TABLETS',
+            'generic_name' => 'Paracetamol',
+            'moh_product_id' => 555001,
+        ]);
+
+        $fixturePath = storage_path('app/private/resolver_mapping_fixture.json');
+        @mkdir(dirname($fixturePath), 0775, true);
+        file_put_contents($fixturePath, json_encode([
+            [
+                'id' => 1,
+                'moh_product_id' => 555001,
+                'moh_drug_id' => null,
+                'product_class' => 'Human Drug',
+                'name_en' => 'PANADOL EXTRA TABLETS',
+                'name_ar' => 'بانادول اكسترا',
+                'aliases' => ['panadol extra tablets', 'panadol extra', 'بانادول اكسترا'],
+            ],
+        ], JSON_UNESCAPED_UNICODE));
+
+        try {
+            $resolver = (new MedicineResolver)->setMappingPath($fixturePath);
+            $candidates = $resolver->resolveCandidates('بانادول');
+
+            $this->assertCount(1, $candidates['moh']);
+            $this->assertEquals('PANADOL EXTRA TABLETS', $candidates['moh'][0]->trade_name);
+        } finally {
+            @unlink($fixturePath);
+        }
+    }
+
+    public function test_mapping_lookup_returns_hits_with_metadata(): void
+    {
+        $fixturePath = storage_path('app/private/resolver_mapping_fixture2.json');
+        @mkdir(dirname($fixturePath), 0775, true);
+        file_put_contents($fixturePath, "[\n".
+            json_encode(['id' => 1, 'moh_product_id' => 1, 'moh_drug_id' => null, 'product_class' => 'Human Drug', 'name_en' => 'VOLTAREN GEL', 'name_ar' => 'فولتارين جل', 'aliases' => ['voltaren gel', 'فولتارين جل']], JSON_UNESCAPED_UNICODE).",\n".
+            json_encode(['id' => 2, 'moh_product_id' => 2, 'moh_drug_id' => 77, 'product_class' => 'Human Drug', 'name_en' => 'VOLTAREN SR 75', 'name_ar' => 'فولتارين اس ار', 'aliases' => ['voltaren sr 75', 'فولتارين اس ار']], JSON_UNESCAPED_UNICODE)."\n]\n");
+
+        try {
+            $resolver = (new MedicineResolver)->setMappingPath($fixturePath);
+            $hits = $resolver->lookupMapping('فولتارين');
+
+            $this->assertCount(2, $hits);
+            $this->assertSame('VOLTAREN GEL', $hits[0]['name_en']);
+            $this->assertSame(77, $hits[1]['moh_drug_id']);
+        } finally {
+            @unlink($fixturePath);
+        }
+    }
+
+    public function test_missing_mapping_file_is_graceful(): void
+    {
+        $resolver = (new MedicineResolver)->setMappingPath(storage_path('app/private/does_not_exist.json'));
+
+        $this->assertSame([], $resolver->lookupMapping('بانادول'));
+
+        $candidates = $resolver->resolveCandidates('بانادول');
+        $this->assertIsArray($candidates);
+        $this->assertInstanceOf(Collection::class, $candidates['moh']);
+    }
 }
