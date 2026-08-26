@@ -332,7 +332,32 @@
           "request": {
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/pharmacy/medicines/search?q=para", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "search"], "query": [{ "key": "q", "value": "para" }] }
+            "url": { "raw": "{{base_url}}/api/pharmacy/medicines/search?q=para", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "search"], "query": [{ "key": "q", "value": "para" }] },
+            "description": "Search the general catalog + MOH catalog. Arabic names are matched too and results include `name_ar` next to `name`."
+          }
+        },
+        {
+          "name": "Add Medicine by Name (no ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json && json.data && json.data.medicine && json.data.medicine.id) {",
+                  "  pm.collectionVariables.set('medicine_id', json.data.medicine.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/pharmacy/medicines/by-name", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "by-name"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trade_name\": \"Panadol Extra\",\n  \"trade_name_ar\": \"بنادول اكسترا\",\n  \"price\": 12.5,\n  \"quantity\": 40,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Add a medicine by name directly — no IDs required.\n\nRules:\n- `trade_name` — required, English only (any Arabic character → 422).\n- `trade_name_ar` — optional, must contain Arabic when sent.\n- `active_ingredient`, `image_url` — optional.\n\nResolution order: general catalog (EN) → general catalog (AR) → MOH catalog (auto-copied) → brand-new entry. Duplicate stock line → 422. Missing Arabic name on an existing match gets enriched from the request."
           }
         },
         {
@@ -352,13 +377,13 @@
           }
         },
         {
-          "name": "Add Medicine",
+          "name": "Add Medicine (by ID)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/pharmacy/medicines", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines"] },
-            "body": { "mode": "raw", "raw": "{\n  \"medicine_id\": {{medicine_id}},\n  \"price\": 12.50,\n  \"quantity\": 20,\n  \"min_stock\": 5,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } },
-            "description": "Adding a medicine with `quantity <= min_stock` triggers a low_stock notification; `quantity = 0` triggers out_of_stock."
+            "body": { "mode": "raw", "raw": "{\n  \"moh_medicine_id\": 16,\n  \"price\": 12.50,\n  \"quantity\": 20,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Requires `medicine_id` or `moh_medicine_id` (one of them). `min_stock` was removed — the low-stock threshold is fixed internally at 10: quantity <= 10 (>0) triggers low_stock; quantity = 0 triggers out_of_stock."
           }
         },
         {
@@ -367,7 +392,8 @@
             "method": "PUT",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/pharmacy/medicines/{{pharmacy_medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "{{pharmacy_medicine_id}}"] },
-            "body": { "mode": "raw", "raw": "{\n  \"medicine_id\": {{medicine_id}},\n  \"price\": 14.00,\n  \"quantity\": 3,\n  \"min_stock\": 5,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } }
+            "body": { "mode": "raw", "raw": "{\n  \"medicine_id\": {{medicine_id}},\n  \"price\": 14.00,\n  \"quantity\": 3,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } },
+            "description": "`min_stock` removed here as well — alerts use the fixed threshold (10)."
           }
         },
         {
@@ -390,7 +416,7 @@
     },
     {
       "name": "Pharmacy Inventory",
-      "description": "Single + bulk stock updates with `min_stock` thresholds and auto low/out-of-stock notifications.",
+      "description": "Single + bulk stock updates with auto low/out-of-stock notifications (fixed threshold: 10 — `min_stock` was removed from the API).",
       "item": [
         {
           "name": "List Inventory + Stats",
@@ -406,7 +432,7 @@
             "method": "PUT",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/pharmacy/inventory/{{pharmacy_medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "inventory", "{{pharmacy_medicine_id}}"] },
-            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 50,\n  \"min_stock\": 10,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } }
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 50,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } }
           }
         },
         {
@@ -415,7 +441,7 @@
             "method": "POST",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/pharmacy/inventory/bulk", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "inventory", "bulk"] },
-            "body": { "mode": "raw", "raw": "{\n  \"items\": [\n    { \"id\": 1, \"quantity\": 25, \"min_stock\": 5, \"is_available\": true },\n    { \"id\": 2, \"quantity\": 30, \"min_stock\": 5, \"is_available\": true }\n  ]\n}", "options": { "raw": { "language": "json" } } }
+            "body": { "mode": "raw", "raw": "{\n  \"items\": [\n    { \"id\": 1, \"quantity\": 25, \"is_available\": true },\n    { \"id\": 2, \"quantity\": 30, \"is_available\": true }\n  ]\n}", "options": { "raw": { "language": "json" } } }
           }
         }
       ]
