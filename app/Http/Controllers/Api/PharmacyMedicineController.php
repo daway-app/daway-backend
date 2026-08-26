@@ -146,6 +146,91 @@ class PharmacyMedicineController extends Controller
     }
 
     /**
+     * إضافة دواء للمخزون بالاسم مباشرة — مخصصة للموبايل بدون الاعتماد على أي معرّف.
+     *
+     * ترتيب الحل:
+     *  1) البحث بالاسم في الكتالوج العام.
+     *  2) البحث في كتالوج وزارة الصحة وإنشاؤه تلقائياً بالكتالوج العام (نفس منطق الويب).
+     *  3) إنشاء دواء جديد من الاسم المُرسل والمادة الفعالة الاختيارية.
+     */
+    public function storeByName(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user->role === 'pharmacy', 403);
+
+        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        if (! $pharmacy) {
+            return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
+        }
+
+        $data = $request->validate([
+            'trade_name' => 'required|string|max:255',
+            'active_ingredient' => 'nullable|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'quantity' => 'required|integer|min:0',
+            'min_stock' => 'nullable|integer|min:0',
+            'is_available' => 'sometimes|boolean',
+            // صورة اختيارية — رابط Cloudinary مباشر من الموبايل
+            'image_url' => 'nullable|url|max:2048',
+        ]);
+
+        $name = trim($data['trade_name']);
+
+        // 1) الكتالوج العام حسب الاسم
+        $medicine = Medicine::where('trade_name', $name)->first();
+
+        if (! $medicine) {
+            // 2) كتالوج وزارة الصحة — يُنسخ للكتالوج العام عند الحاجة
+            $moh = MohMedicine::where('trade_name', $name)->first();
+
+            // 3) لا وجود بالكتالوجين — إنشاء دواء جديد من البيانات المرسلة
+            $medicine = Medicine::create([
+                'trade_name' => $name,
+                'active_ingredient' => $data['active_ingredient']
+                    ?? ($moh->generic_name ?? $name),
+                'description' => $moh->manufacturer ?? ($moh->company ?? null),
+            ]);
+        }
+
+        $exists = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->where('medicine_id', $medicine->id)
+            ->exists();
+
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'trade_name' => 'هذا الدواء مضاف مسبقاً لمخزون الصيدلية',
+            ])->status(422);
+        }
+
+        // صورة اختيارية من الموبايل (رابط مباشر — Cloudinary) تُحفظ على الدواء في الكتالوج العام
+        if (! empty($data['image_url'])) {
+            Cloudinary::deleteLocal($medicine->image);
+            $medicine->image = $data['image_url'];
+            $medicine->save();
+        }
+
+        $pharmacyMedicine = PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => $data['price'],
+            'quantity' => $data['quantity'],
+            'min_stock' => $data['min_stock'] ?? null,
+            'is_available' => $request->boolean('is_available'),
+        ]);
+
+        $this->notifyIfLowStock($pharmacyMedicine);
+
+        $pharmacyMedicine->load('medicine');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تمت إضافة الدواء بنجاح',
+            'data' => new PharmacyMedicineResource($pharmacyMedicine),
+        ], 201);
+    }
+
+    /**
      * تحديث سطر دواء ضمن مخزون الصيدلية.
      */
     public function update(PharmacyMedicineRequest $request, PharmacyMedicine $medicine): JsonResponse

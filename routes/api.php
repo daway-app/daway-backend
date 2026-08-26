@@ -71,6 +71,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('ratings', [PharmacyRatingController::class, 'index']);
 
         Route::get('medicines/search', [PharmacyMedicineController::class, 'search']);
+        // إضافة دواء بالاسم مباشرة (للموبايل) — بدون medicine_id أو moh_medicine_id
+        Route::post('medicines/by-name', [PharmacyMedicineController::class, 'storeByName']);
         Route::apiResource('medicines', PharmacyMedicineController::class)
             ->names('api.pharmacy.medicines');
         Route::get('medicines/{medicine}/alternatives', [PharmacyMedicineController::class, 'alternatives']);

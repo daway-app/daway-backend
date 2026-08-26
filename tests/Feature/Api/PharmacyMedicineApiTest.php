@@ -267,4 +267,122 @@ class PharmacyMedicineApiTest extends TestCase
         $ids = collect($response->json('data'))->pluck('id')->all();
         $this->assertNotContains($medicineC->id, $ids);
     }
+
+    public function test_pharmacy_can_add_medicine_by_name_without_id(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        Medicine::factory()->create(['trade_name' => 'Panadol', 'active_ingredient' => 'Paracetamol']);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Panadol',
+            'price' => 8,
+            'quantity' => 15,
+            'min_stock' => 4,
+            'is_available' => true,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.medicine.trade_name', 'Panadol');
+
+        // لا يُنشئ دواء جديداً — يعيد استخدام الكتالوج العام
+        $this->assertSame(1, Medicine::where('trade_name', 'Panadol')->count());
+        $this->assertDatabaseHas('pharmacy_medicines', [
+            'pharmacy_id' => $pharmacy->id,
+            'quantity' => 15,
+            'price' => 8,
+            'min_stock' => 4,
+        ]);
+    }
+
+    public function test_add_medicine_by_name_resolves_moh_catalog_entry(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        MohMedicine::create([
+            'trade_name' => 'Adol Extra',
+            'generic_name' => 'Paracetamol',
+            'manufacturer' => 'GSK',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Adol Extra',
+            'price' => 10,
+            'quantity' => 5,
+        ]);
+
+        $response->assertStatus(201);
+
+        $medicine = Medicine::where('trade_name', 'Adol Extra')->first();
+        $this->assertNotNull($medicine);
+        $this->assertSame('Paracetamol', $medicine->active_ingredient);
+        $this->assertDatabaseHas('pharmacy_medicines', [
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+        ]);
+    }
+
+    public function test_add_medicine_by_unknown_name_creates_new_catalog_entry(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Brand New Drug',
+            'active_ingredient' => 'Mysteryol',
+            'price' => 20,
+            'quantity' => 7,
+        ]);
+
+        $response->assertStatus(201);
+
+        $medicine = Medicine::where('trade_name', 'Brand New Drug')->first();
+        $this->assertNotNull($medicine);
+        $this->assertSame('Mysteryol', $medicine->active_ingredient);
+        $this->assertDatabaseHas('pharmacy_medicines', [
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 7,
+        ]);
+    }
+
+    public function test_duplicate_medicine_by_name_returns_422(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $medicine = Medicine::factory()->create(['trade_name' => 'Duplix']);
+
+        PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => 5,
+            'quantity' => 10,
+            'is_available' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Duplix',
+            'price' => 6,
+            'quantity' => 3,
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors('trade_name');
+    }
+
+    public function test_patient_cannot_add_medicine_by_name(): void
+    {
+        $patient = User::factory()->patient()->create();
+
+        Sanctum::actingAs($patient);
+
+        $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Panadol',
+            'price' => 8,
+            'quantity' => 15,
+        ])->assertForbidden();
+    }
 }
