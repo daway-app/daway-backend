@@ -180,7 +180,7 @@ class PharmacyMedicineController extends Controller
                 'max:150',
                 'regex:/[\x{0600}-\x{06FF}]/u',
             ],
-            'active_ingredient' => 'nullable|string|max:255',
+            'active_ingredient' => ['required', 'string', 'max:255'],
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
             'is_available' => 'sometimes|boolean',
@@ -200,30 +200,22 @@ class PharmacyMedicineController extends Controller
             // 2) كتالوج وزارة الصحة بالاسم الإنجليزي — يُنسخ للكتالوج العام عند الحاجة
             $moh = MohMedicine::where('trade_name', $name)->first();
 
-            // 3) لا وجود بالكتالوجين — إنشاء دواء جديد: إنجليزي إلزامي + عربي اختياري
+            // 3) لا وجود بالكتالوجين — إنشاء دواء جديد (المادة الفعالة إجبارية من الموبايل)
             $medicine = Medicine::create([
                 'trade_name' => $name,
                 'trade_name_ar' => $nameAr,
-                'active_ingredient' => $data['active_ingredient']
-                    ?? ($moh->generic_name ?? $name),
+                'active_ingredient' => trim($data['active_ingredient']),
                 'description' => $moh->manufacturer ?? ($moh->company ?? null),
             ]);
         } else {
-            // إثراء الكتالوج من الموبايل (اختياري):
-            // دواء موجود بلا اسم عريض/مادة فعالة + الموبايل أرسلهما → يُكمّلا
-            $dirty = false;
+            // إثراء الكتالوج: دواء موجود بمادة فعالة فارغة + الموبايل أرسلها → تُكمّل
+            if (empty($medicine->active_ingredient)) {
+                $medicine->active_ingredient = trim($data['active_ingredient']);
+                $medicine->save();
+            }
 
             if ($nameAr && empty($medicine->trade_name_ar)) {
                 $medicine->trade_name_ar = $nameAr;
-                $dirty = true;
-            }
-
-            if (! empty($data['active_ingredient']) && empty($medicine->active_ingredient)) {
-                $medicine->active_ingredient = trim($data['active_ingredient']);
-                $dirty = true;
-            }
-
-            if ($dirty) {
                 $medicine->save();
             }
         }

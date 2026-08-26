@@ -356,8 +356,8 @@
             "method": "POST",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/pharmacy/medicines/by-name", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "by-name"] },
-            "body": { "mode": "raw", "raw": "{\n  \"trade_name\": \"Panadol Extra\",\n  \"trade_name_ar\": \"بنادول اكسترا\",\n  \"price\": 12.5,\n  \"quantity\": 40,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } },
-            "description": "Add a medicine by name directly — no IDs required.\n\nRules:\n- `trade_name` — required, English only (any Arabic character → 422).\n- `trade_name_ar` — optional, must contain Arabic when sent.\n- `active_ingredient`, `image_url` — optional.\n\nResolution order: general catalog (EN) → general catalog (AR) → MOH catalog (auto-copied) → brand-new entry. Duplicate stock line → 422. Missing Arabic name on an existing match gets enriched from the request."
+            "body": { "mode": "raw", "raw": "{\n  \"trade_name\": \"Panadol Extra\",\n  \"trade_name_ar\": \"بنادول اكسترا\",\n  \"active_ingredient\": \"Paracetamol\",\n  \"price\": 12.5,\n  \"quantity\": 40,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Add a medicine by name directly — no IDs required.\n\nRules:\n- `trade_name` — required, English only (any Arabic character → 422).\n- `trade_name_ar` — optional, must contain Arabic when sent.\n- `active_ingredient` — required.\n- `image_url` — optional (direct Cloudinary URL).\n\nResolution order: general catalog (EN) → general catalog (AR) → MOH catalog (auto-copied) → brand-new entry. Duplicate stock line → 422. Empty fields on an existing match (Arabic name / active ingredient) get enriched from the request."
           }
         },
         {

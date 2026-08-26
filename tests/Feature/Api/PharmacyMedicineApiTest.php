@@ -271,6 +271,7 @@ class PharmacyMedicineApiTest extends TestCase
 
         $response = $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Panadol',
+            'active_ingredient' => 'Paracetamol',
             'price' => 8,
             'quantity' => 15,
             'is_available' => true,
@@ -302,6 +303,7 @@ class PharmacyMedicineApiTest extends TestCase
 
         $response = $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Adol Extra',
+            'active_ingredient' => 'Paracetamol',
             'price' => 10,
             'quantity' => 5,
         ]);
@@ -359,6 +361,7 @@ class PharmacyMedicineApiTest extends TestCase
 
         $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Duplix',
+            'active_ingredient' => 'Paracetamol',
             'price' => 6,
             'quantity' => 3,
         ])->assertStatus(422)
@@ -396,10 +399,25 @@ class PharmacyMedicineApiTest extends TestCase
         $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Panadol',
             'trade_name_ar' => 'not arabic',
+            'active_ingredient' => 'Paracetamol',
             'price' => 8,
             'quantity' => 15,
         ])->assertStatus(422)
             ->assertJsonValidationErrors('trade_name_ar');
+    }
+
+    public function test_add_by_name_requires_active_ingredient(): void
+    {
+        [$user] = $this->pharmacyUserWithPharmacy();
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Panadol',
+            'price' => 8,
+            'quantity' => 15,
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors('active_ingredient');
     }
 
     public function test_add_medicine_with_optional_arabic_name_persists_it(): void
@@ -411,6 +429,7 @@ class PharmacyMedicineApiTest extends TestCase
         $response = $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Panadol Advance',
             'trade_name_ar' => 'بنادول أدفانس',
+            'active_ingredient' => 'Paracetamol',
             'price' => 9,
             'quantity' => 12,
         ]);
@@ -437,6 +456,7 @@ class PharmacyMedicineApiTest extends TestCase
         $response = $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Brand Unknown EN',
             'trade_name_ar' => 'بنادول ممتد',
+            'active_ingredient' => 'Paracetamol',
             'price' => 11,
             'quantity' => 6,
         ]);
@@ -470,7 +490,7 @@ class PharmacyMedicineApiTest extends TestCase
             ->assertJsonPath('data.medicines.0.name_ar', 'بنادول');
     }
 
-    public function test_add_by_name_enriches_existing_medicine_with_optional_active_ingredient(): void
+    public function test_add_by_name_enriches_existing_medicine_with_active_ingredient(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
 
@@ -492,7 +512,7 @@ class PharmacyMedicineApiTest extends TestCase
         $response->assertStatus(201)
             ->assertJsonPath('data.medicine.id', $existing->id);
 
-        // المادة الفعالة الاختيارية أثرت الدواء الموجود بدل تجاهلها
+        // المادة الفعالة أثرت الدواء الموجود الفارغ بدل تجاهلها
         $this->assertSame('Ibuprofen', $existing->fresh()->active_ingredient);
         $this->assertDatabaseHas('pharmacy_medicines', [
             'pharmacy_id' => $pharmacy->id,
