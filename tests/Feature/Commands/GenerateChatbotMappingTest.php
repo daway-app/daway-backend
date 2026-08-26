@@ -78,7 +78,9 @@ class GenerateChatbotMappingTest extends TestCase
 
         $this->assertSame(2, $augmentin['id']);
         $this->assertTrue(str_starts_with((string) $augmentin['name_ar'], 'اوجمينتين'));
-        $this->assertSame('augmentin', $augmentin['aliases'][0]);
+        // aliases[0] هو الاسم الكامل lowercase — والاسم الأساسي المنظف موجود ضمن القائمة
+        $this->assertSame('augmentin 1g', $augmentin['aliases'][0]);
+        $this->assertContains('augmentin', $augmentin['aliases']);
     }
 
     public function test_fails_when_source_file_missing(): void

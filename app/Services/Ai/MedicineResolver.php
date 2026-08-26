@@ -112,21 +112,22 @@ final class MedicineResolver
                         continue;
                     }
 
-                    foreach (($record['aliases'] ?? []) as $alias) {
-                        if (! is_string($alias)) {
-                            continue;
+                    // الملف عادة سطر لكل سجل (JSONL)، لكن نتقبّل أيضاً مصفوفة كاملة في سطر واحد
+                    if (array_is_list($record)) {
+                        foreach ($record as $subRecord) {
+                            if (is_array($subRecord)) {
+                                $this->collectMappingHit($subRecord, $needle, $hits, $limit);
+                            }
+
+                            if (count($hits) >= $limit) {
+                                break 2;
+                            }
                         }
 
-                        if (str_contains(mb_strtolower($alias), $needle)) {
-                            $hits[] = [
-                                'moh_product_id' => isset($record['moh_product_id']) ? (int) $record['moh_product_id'] : null,
-                                'moh_drug_id' => isset($record['moh_drug_id']) ? (int) $record['moh_drug_id'] : null,
-                                'name_en' => (string) ($record['name_en'] ?? ''),
-                                'name_ar' => isset($record['name_ar']) ? (string) $record['name_ar'] : null,
-                            ];
-                            break;
-                        }
+                        continue;
                     }
+
+                    $this->collectMappingHit($record, $needle, $hits, $limit);
                 }
 
                 fclose($handle);
@@ -138,6 +139,30 @@ final class MedicineResolver
 
             return $hits;
         });
+    }
+
+    /** يفحص سجل mapping واحداً ويضيفه للنتائج إن طابق الاستعلام عبر aliases */
+    private function collectMappingHit(array $record, string $needle, array &$hits, int $limit): void
+    {
+        if (count($hits) >= $limit) {
+            return;
+        }
+
+        foreach (($record['aliases'] ?? []) as $alias) {
+            if (! is_string($alias)) {
+                continue;
+            }
+
+            if (str_contains(mb_strtolower($alias), $needle)) {
+                $hits[] = [
+                    'moh_product_id' => isset($record['moh_product_id']) ? (int) $record['moh_product_id'] : null,
+                    'moh_drug_id' => isset($record['moh_drug_id']) ? (int) $record['moh_drug_id'] : null,
+                    'name_en' => (string) ($record['name_en'] ?? ''),
+                    'name_ar' => isset($record['name_ar']) ? (string) $record['name_ar'] : null,
+                ];
+                break;
+            }
+        }
     }
 
     /** يدمج سجلات كتالوج وزارة الصحة المطابقة عبر الـ mapping مع نتائج LIKE العادية */

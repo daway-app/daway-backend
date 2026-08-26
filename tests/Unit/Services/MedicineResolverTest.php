@@ -7,6 +7,7 @@ use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Services\Ai\MedicineResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Tests\TestCase;
 
 class MedicineResolverTest extends TestCase
