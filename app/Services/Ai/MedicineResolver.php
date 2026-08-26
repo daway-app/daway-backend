@@ -128,7 +128,8 @@ final class MedicineResolver
             $da = $a['distance_km'] ?? PHP_FLOAT_MAX;
             $db = $b['distance_km'] ?? PHP_FLOAT_MAX;
 
-            if ($da === $db) {
+            // مسافات متعادلة ضمن متر واحد → السعر يحسم
+            if (abs($da - $db) < 0.001) {
                 return $a['price'] <=> $b['price'];
             }
 

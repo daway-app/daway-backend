@@ -29,8 +29,11 @@ class MedicineResolverTest extends TestCase
             'is_available' => true,
         ]);
 
+        // صيدليتان على مسافة متطابقة تماماً من المريض (تماثل حول خط العرض)
+        // حتى يشتغل ترتيب السعر عند تعادل المسافة
+        $patientLat = 31.5016;
         $near = Pharmacy::factory()->create(['latitude' => 31.5017, 'longitude' => 34.4668]);
-        $nearCheap = Pharmacy::factory()->create(['latitude' => 31.5018, 'longitude' => 34.4669]);
+        $nearCheap = Pharmacy::factory()->create(['latitude' => 31.5015, 'longitude' => 34.4668]);
         $far = Pharmacy::factory()->create(['latitude' => 32.5, 'longitude' => 35.5]);
 
         foreach ([
@@ -49,13 +52,13 @@ class MedicineResolverTest extends TestCase
 
         $results = $this->resolver->pharmaciesFor(
             drugName: 'بانادول',
-            latitude: 31.5016,
+            latitude: $patientLat,
             longitude: 34.4668,
             radiusKm: 500,
         );
 
         $this->assertCount(3, $results);
-        // نفس المسافة تقريباً للأقربين → الأرخص أولاً
+        // نفس المسافة للأقربين → الأرخص أولاً، والبعيد أخيراً
         $this->assertEquals($nearCheap->id, $results[0]['pharmacy_id']);
         $this->assertEquals($near->id, $results[1]['pharmacy_id']);
         $this->assertEquals($far->id, $results[2]['pharmacy_id']);
@@ -94,10 +97,12 @@ class MedicineResolverTest extends TestCase
             'active_ingredient' => 'ايبوبروفين',
         ]);
 
-        $pharmacy = Pharmacy::factory()->create();
+        // unique(pharmacy_id, medicine_id) → نستخدم صيدليتين مختلفتين
+        $zeroQty = Pharmacy::factory()->create();
+        $unavailable = Pharmacy::factory()->create();
 
         PharmacyMedicine::create([
-            'pharmacy_id' => $pharmacy->id,
+            'pharmacy_id' => $zeroQty->id,
             'medicine_id' => $medicine->id,
             'price' => 8,
             'quantity' => 0,
@@ -105,7 +110,7 @@ class MedicineResolverTest extends TestCase
         ]);
 
         PharmacyMedicine::create([
-            'pharmacy_id' => $pharmacy->id,
+            'pharmacy_id' => $unavailable->id,
             'medicine_id' => $medicine->id,
             'price' => 8,
             'quantity' => 5,
