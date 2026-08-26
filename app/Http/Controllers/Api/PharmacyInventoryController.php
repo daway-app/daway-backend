@@ -39,7 +39,7 @@ class PharmacyInventoryController extends Controller
         $outCount = (clone $base)->where(function ($query) {
             $query->where('is_available', false)->orWhere('quantity', '<=', 0);
         })->count();
-        $lowCount = (clone $base)->get()->filter(fn ($i) => $i->quantity > 0 && $i->quantity <= ($i->min_stock ?? 10))->count();
+        $lowCount = (clone $base)->get()->filter(fn ($i) => $i->quantity > 0 && $i->quantity <= PharmacyMedicine::LOW_STOCK_THRESHOLD)->count();
 
         $items = $base->with('medicine')->orderByDesc('id')->paginate($perPage);
 
@@ -63,7 +63,7 @@ class PharmacyInventoryController extends Controller
     }
 
     /**
-     * تحديث سريع لسطر مخزون واحد (الكمية/الحد الأدنى/التوفر).
+     * تحديث سريع لسطر مخزون واحد (الكمية/التوفر).
      */
     public function update(Request $request, PharmacyMedicine $medicine): JsonResponse
     {
@@ -78,13 +78,11 @@ class PharmacyInventoryController extends Controller
 
         $data = $request->validate([
             'quantity' => 'required|integer|min:0',
-            'min_stock' => 'nullable|integer|min:0',
             'is_available' => 'sometimes|boolean',
         ]);
 
         $medicine->update([
             'quantity' => $data['quantity'],
-            'min_stock' => $data['min_stock'] ?? $medicine->min_stock,
             'is_available' => $request->boolean('is_available', (bool) $medicine->is_available),
         ]);
 
@@ -126,9 +124,6 @@ class PharmacyInventoryController extends Controller
             }
 
             $payload = ['quantity' => $item['quantity']];
-            if (array_key_exists('min_stock', $item) && $item['min_stock'] !== null) {
-                $payload['min_stock'] = $item['min_stock'];
-            }
             if (array_key_exists('is_available', $item)) {
                 $payload['is_available'] = (bool) $item['is_available'];
             }
@@ -150,7 +145,7 @@ class PharmacyInventoryController extends Controller
      */
     private function notifyIfLowStock(PharmacyMedicine $pm): void
     {
-        $threshold = $pm->min_stock !== null ? (int) $pm->min_stock : 10;
+        $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
         $pharmacyUser = $pm->pharmacy?->user;
         if (! $pharmacyUser) {
             return;

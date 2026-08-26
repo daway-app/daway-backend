@@ -101,17 +101,16 @@
                 </div>
                 <div class='ph-card-body ph-table-wrap'>
                     <table class='ph-table'>
-                        <thead><tr><th>@lang('pharmacy.dashboard.col_medicine')</th><th>@lang('pharmacy.dashboard.col_min_stock')</th><th>@lang('pharmacy.dashboard.col_quantity_left')</th><th>@lang('pharmacy.dashboard.col_status')</th></tr></thead>
+                        <thead><tr><th>@lang('pharmacy.dashboard.col_medicine')</th><th>@lang('pharmacy.dashboard.col_quantity_left')</th><th>@lang('pharmacy.dashboard.col_status')</th></tr></thead>
                         <tbody>
                             @forelse($lowStockItems as $pm)
                                 <tr>
                                     <td><strong>{{ $pm->medicine->trade_name }}</strong><br><small style='color:var(--ph-ink-faint);'>{{ $pm->medicine->active_ingredient }}</small></td>
-                                    <td>{{ $pm->min_stock ?? 10 }}</td>
                                     <td>{{ $pm->quantity }}</td>
                                     <td><span class='ph-badge low'>@lang('pharmacy.dashboard.badge_low')</span></td>
                                 </tr>
                             @empty
-                                <tr><td colspan='4'><div class='ph-empty'><i class='fas fa-check-circle'></i><h3>@lang('pharmacy.dashboard.no_alerts')</h3><p>@lang('pharmacy.dashboard.no_alerts_desc')</p></div></td></tr>
+                                <tr><td colspan='3'><div class='ph-empty'><i class='fas fa-check-circle'></i><h3>@lang('pharmacy.dashboard.no_alerts')</h3><p>@lang('pharmacy.dashboard.no_alerts_desc')</p></div></td></tr>
                             @endforelse
                         </tbody>
                     </table>

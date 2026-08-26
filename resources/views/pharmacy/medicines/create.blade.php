@@ -109,11 +109,6 @@
                                 <span class="error-text" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </div>
-                        <div class="fg">
-                            <label class="fl" for="min_stock">@lang('pharmacy.medicines.create.min_stock_label')</label>
-                            <input class="fc" type="number" id="min_stock" name="min_stock" min="0" value="{{ old('min_stock', 10) }}">
-                            <small class="fl-hint">@lang('pharmacy.medicines.create.min_stock_hint')</small>
-                        </div>
                     </div>
                     <div class="fg" style="margin-top:14px;">
                         <label class="fl-check">

@@ -31,7 +31,6 @@ class PharmacyMedicineApiTest extends TestCase
             'medicine_id' => $medicineA->id,
             'price' => 5,
             'quantity' => 20,
-            'min_stock' => 5,
             'is_available' => true,
         ]);
         PharmacyMedicine::create([
@@ -39,7 +38,6 @@ class PharmacyMedicineApiTest extends TestCase
             'medicine_id' => $medicineB->id,
             'price' => 7,
             'quantity' => 3,
-            'min_stock' => 5,
             'is_available' => true,
         ]);
 
@@ -79,7 +77,6 @@ class PharmacyMedicineApiTest extends TestCase
         $response = $this->postJson('/api/pharmacy/medicines', [
             'medicine_id' => $medicine->id,
             'quantity' => 10,
-            'min_stock' => 5,
             'price' => 12.50,
             'is_available' => true,
         ]);
@@ -87,7 +84,8 @@ class PharmacyMedicineApiTest extends TestCase
         $response->assertStatus(201)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.quantity', 10)
-            ->assertJsonPath('data.min_stock', 5)
+            // الحد الأدنى ثابت (10) — القيمة المرسلة تُتجاهل
+            ->assertJsonPath('data.min_stock', PharmacyMedicine::LOW_STOCK_THRESHOLD)
             ->assertJsonPath('data.price', (float) 12.50)
             ->assertJsonPath('data.medicine.id', $medicine->id);
 
@@ -95,7 +93,6 @@ class PharmacyMedicineApiTest extends TestCase
             'pharmacy_id' => $pharmacy->id,
             'medicine_id' => $medicine->id,
             'quantity' => 10,
-            'min_stock' => 5,
             'price' => 12.50,
         ]);
     }
@@ -134,7 +131,6 @@ class PharmacyMedicineApiTest extends TestCase
             'medicine_id' => $medicine->id,
             'price' => 5,
             'quantity' => 10,
-            'min_stock' => 3,
             'is_available' => true,
         ]);
 
@@ -143,7 +139,6 @@ class PharmacyMedicineApiTest extends TestCase
         $response = $this->putJson("/api/pharmacy/medicines/{$pharmacyMedicine->id}", [
             'medicine_id' => $medicine->id,
             'quantity' => 20,
-            'min_stock' => 8,
             'price' => 6,
             'is_available' => true,
         ]);
@@ -151,12 +146,11 @@ class PharmacyMedicineApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.quantity', 20)
-            ->assertJsonPath('data.min_stock', 8);
+            ->assertJsonPath('data.min_stock', PharmacyMedicine::LOW_STOCK_THRESHOLD);
 
         $this->assertDatabaseHas('pharmacy_medicines', [
             'id' => $pharmacyMedicine->id,
             'quantity' => 20,
-            'min_stock' => 8,
         ]);
     }
 
@@ -279,7 +273,6 @@ class PharmacyMedicineApiTest extends TestCase
             'trade_name' => 'Panadol',
             'price' => 8,
             'quantity' => 15,
-            'min_stock' => 4,
             'is_available' => true,
         ]);
 
@@ -293,7 +286,6 @@ class PharmacyMedicineApiTest extends TestCase
             'pharmacy_id' => $pharmacy->id,
             'quantity' => 15,
             'price' => 8,
-            'min_stock' => 4,
         ]);
     }
 

@@ -13,9 +13,6 @@ use Illuminate\Support\Facades\Cache;
  */
 class NotificationGenerator
 {
-    /** الحد الأدنى للمخزون الذي يطلق تنبيه نقص المخزون. */
-    public const LOW_STOCK_THRESHOLD = 10;
-
     /**
      * ينشئ إشعارات نقص المخزون للمستخدم المحدد.
      *
@@ -35,7 +32,7 @@ class NotificationGenerator
         if ($pharmacy) {
             $lowStockRows = $pharmacy->pharmacyMedicines()
                 ->with('medicine')
-                ->where('quantity', '<=', self::LOW_STOCK_THRESHOLD)
+                ->where('quantity', '<=', PharmacyMedicine::LOW_STOCK_THRESHOLD)
                 ->get();
 
             $existingIds = self::existingMedicineIds($user);
@@ -66,7 +63,7 @@ class NotificationGenerator
                 return PharmacyMedicine::query()
                     ->select('medicine_id')
                     ->selectRaw('MAX(quantity) as max_quantity')
-                    ->where('quantity', '<=', self::LOW_STOCK_THRESHOLD)
+                    ->where('quantity', '<=', PharmacyMedicine::LOW_STOCK_THRESHOLD)
                     ->groupBy('medicine_id')
                     ->get()
                     ->map(fn ($row) => [

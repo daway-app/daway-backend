@@ -29,8 +29,8 @@ class PharmacyInventoryController extends Controller
         $items = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->with('medicine')->get();
         $available = $items->where('quantity', '>', 0)->count();
         $out = $items->where('quantity', '<=', 0)->count();
-        $low = $items->filter(fn ($i) => $i->quantity > 0 && $i->quantity <= ($i->min_stock ?? 10))->count();
-        $threshold = (int) ($items->whereNotNull('min_stock')->avg('min_stock') ?? 10);
+        $low = $items->filter(fn ($i) => $i->quantity > 0 && $i->quantity <= PharmacyMedicine::LOW_STOCK_THRESHOLD)->count();
+        $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
 
         $trendLabels = [];
         $trendData = [];
@@ -47,18 +47,13 @@ class PharmacyInventoryController extends Controller
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
         $quantities = $request->input('quantities', []);
-        $minStocks = $request->input('min_stocks', []);
         foreach ($quantities as $id => $qty) {
             $item = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->find($id);
             if (! $item) {
                 continue;
             }
             $qty = max(0, (int) $qty);
-            $payload = ['quantity' => $qty, 'is_available' => $qty > 0];
-            if (array_key_exists($id, $minStocks) && $minStocks[$id] !== null && $minStocks[$id] !== '') {
-                $payload['min_stock'] = max(0, (int) $minStocks[$id]);
-            }
-            $item->update($payload);
+            $item->update(['quantity' => $qty, 'is_available' => $qty > 0]);
         }
         PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->get()->each(fn ($pm) => $this->maybeNotify($pm));
         return redirect()->route('pharmacy.inventory.index')->with('success', 'تم تحديث المخزون بنجاح');
@@ -71,7 +66,7 @@ class PharmacyInventoryController extends Controller
 
     private function notifyIfLowStock(PharmacyMedicine $pm): void
     {
-        $threshold = $pm->min_stock !== null ? (int) $pm->min_stock : 10;
+        $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
         $pharmacyUser = $pm->pharmacy?->user;
         if (! $pharmacyUser) {
             return;

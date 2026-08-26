@@ -21,6 +21,11 @@ class PharmacyMedicine extends Model
     use HasFactory;
     use LogsActivity;
 
+    /**
+     * الحد الثابت لاعتبار المخزون منخفضاً (لم يعد قابلاً للاختيار لكل دواء).
+     */
+    public const LOW_STOCK_THRESHOLD = 10;
+
     protected $table = 'pharmacy_medicines';
 
     protected $fillable = [
@@ -29,7 +34,6 @@ class PharmacyMedicine extends Model
         'price',            // سعر الدواء بهاي الصيدلية بالتحديد
         'quantity',         // الكمية المتوفرة
         'is_available',     // هل متوفر حالياً أو لأ
-        'min_stock',        // الحد الأدنى للكمية قبل اعتبار المخزون منخفضاً
     ];
 
     protected function casts(): array

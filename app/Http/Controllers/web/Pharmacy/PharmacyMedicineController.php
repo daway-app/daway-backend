@@ -137,7 +137,6 @@ class PharmacyMedicineController extends Controller
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0', // Changed from 'stock' to 'quantity'
             'is_available' => 'boolean',
-            'min_stock' => 'nullable|integer|min:0',
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ], [
             'price.required' => __('pharmacy.medicines.create.price_required'),
@@ -161,7 +160,6 @@ class PharmacyMedicineController extends Controller
             $request->validate([
                 'trade_name' => 'required|string|max:150',
                 'active_ingredient' => 'required|string|max:150',
-                'min_stock' => 'nullable|integer|min:0',
             ], [
                 'trade_name.required' => __('pharmacy.medicines.create.trade_name_required'),
                 'active_ingredient.required' => __('pharmacy.medicines.create.ingredient_required'),
@@ -197,7 +195,6 @@ class PharmacyMedicineController extends Controller
             'price' => $request->price,
             'quantity' => $request->quantity, // Changed from 'stock' to 'quantity'
             'is_available' => $request->boolean('is_available'),
-            'min_stock' => $request->min_stock,
         ]);
 
         $this->notifyIfLowStock($pharmacyMedicine);
@@ -247,14 +244,12 @@ class PharmacyMedicineController extends Controller
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0', // Changed from 'stock' to 'quantity'
             'is_available' => 'boolean',
-            'min_stock' => 'nullable|integer|min:0',
         ]);
 
         $pharmacyMedicine->update([
             'price' => $request->price,
             'quantity' => $request->quantity, // Changed from 'stock' to 'quantity'
             'is_available' => $request->boolean('is_available'),
-            'min_stock' => $request->min_stock,
         ]);
 
         $this->notifyIfLowStock($pharmacyMedicine);
@@ -284,7 +279,7 @@ class PharmacyMedicineController extends Controller
 
     private function notifyIfLowStock(PharmacyMedicine $pm): void
     {
-        $threshold = $pm->min_stock !== null ? (int) $pm->min_stock : 10;
+        $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
         $pharmacyUser = $pm->pharmacy?->user;
         if (! $pharmacyUser) {
             return;

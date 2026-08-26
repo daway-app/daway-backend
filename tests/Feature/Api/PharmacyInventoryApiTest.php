@@ -32,7 +32,6 @@ class PharmacyInventoryApiTest extends TestCase
             'medicine_id' => $medicineA->id,
             'price' => 5,
             'quantity' => 20,
-            'min_stock' => 5,
             'is_available' => true,
         ]);
         PharmacyMedicine::create([
@@ -40,7 +39,6 @@ class PharmacyInventoryApiTest extends TestCase
             'medicine_id' => $medicineB->id,
             'price' => 5,
             'quantity' => 5,
-            'min_stock' => 5,
             'is_available' => true,
         ]);
         PharmacyMedicine::create([
@@ -48,7 +46,6 @@ class PharmacyInventoryApiTest extends TestCase
             'medicine_id' => $medicineC->id,
             'price' => 5,
             'quantity' => 0,
-            'min_stock' => 5,
             'is_available' => true,
         ]);
 
@@ -75,7 +72,6 @@ class PharmacyInventoryApiTest extends TestCase
             'medicine_id' => $medicine->id,
             'price' => 5,
             'quantity' => 10,
-            'min_stock' => 5,
             'is_available' => true,
         ]);
 
@@ -83,7 +79,6 @@ class PharmacyInventoryApiTest extends TestCase
 
         $response = $this->putJson("/api/pharmacy/inventory/{$pharmacyMedicine->id}", [
             'quantity' => 50,
-            'min_stock' => 10,
             'is_available' => true,
         ]);
 
@@ -95,7 +90,6 @@ class PharmacyInventoryApiTest extends TestCase
         $this->assertDatabaseHas('pharmacy_medicines', [
             'id' => $pharmacyMedicine->id,
             'quantity' => 50,
-            'min_stock' => 10,
         ]);
     }
 
@@ -133,9 +127,9 @@ class PharmacyInventoryApiTest extends TestCase
 
         $response = $this->postJson('/api/pharmacy/inventory/bulk', [
             'items' => [
-                ['id' => $pmA->id, 'quantity' => 25, 'min_stock' => 5],
-                ['id' => $pmB->id, 'quantity' => 30, 'min_stock' => 5],
-                ['id' => $pmC->id, 'quantity' => 40, 'min_stock' => 5],
+                ['id' => $pmA->id, 'quantity' => 25],
+                ['id' => $pmB->id, 'quantity' => 30],
+                ['id' => $pmC->id, 'quantity' => 40],
             ],
         ]);
 
@@ -175,8 +169,8 @@ class PharmacyInventoryApiTest extends TestCase
 
         $response = $this->postJson('/api/pharmacy/inventory/bulk', [
             'items' => [
-                ['id' => $pmA->id, 'quantity' => 50, 'min_stock' => 5],
-                ['id' => $pmB->id, 'quantity' => 99, 'min_stock' => 5],
+                ['id' => $pmA->id, 'quantity' => 50],
+                ['id' => $pmB->id, 'quantity' => 99],
             ],
         ]);
 
@@ -204,7 +198,6 @@ class PharmacyInventoryApiTest extends TestCase
             'medicine_id' => $medicine->id,
             'price' => 5,
             'quantity' => 10,
-            'min_stock' => 5,
             'is_available' => true,
         ]);
 
@@ -212,7 +205,6 @@ class PharmacyInventoryApiTest extends TestCase
 
         $this->putJson("/api/pharmacy/inventory/{$pharmacyMedicine->id}", [
             'quantity' => 3,
-            'min_stock' => 5,
             'is_available' => true,
         ])->assertOk();
 
@@ -233,7 +225,6 @@ class PharmacyInventoryApiTest extends TestCase
             'medicine_id' => $medicine->id,
             'price' => 5,
             'quantity' => 10,
-            'min_stock' => 5,
             'is_available' => true,
         ]);
 
@@ -241,7 +232,6 @@ class PharmacyInventoryApiTest extends TestCase
 
         $this->putJson("/api/pharmacy/inventory/{$pharmacyMedicine->id}", [
             'quantity' => 0,
-            'min_stock' => 5,
             'is_available' => true,
         ])->assertOk();
 

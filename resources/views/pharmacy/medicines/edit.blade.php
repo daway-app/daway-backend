@@ -58,10 +58,6 @@
                             <input type='number' min='0' name='quantity' id='quantity' class='ph-control' value='{{ old('quantity', $pharmacyMedicine->quantity) }}' required>
                             @error('quantity')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                         </div>
-                        <div class='ph-group'>
-                            <label class='ph-form-label' for='min_stock'>@lang('pharmacy.medicines.edit.min_stock_label')</label>
-                            <input type='number' min='0' name='min_stock' id='min_stock' class='ph-control' value='{{ old('min_stock', $pharmacyMedicine->min_stock ?? 10) }}'>
-                        </div>
                     </div>
 
                     <div class='ph-group' style='margin-block-end:18px;'>

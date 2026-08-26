@@ -89,18 +89,16 @@
                 <div class='ph-card-head'><h2><i class='fas fa-boxes-stacked'></i> @lang('pharmacy.inventory.update_title')</h2></div>
                 <div class='ph-card-body ph-table-wrap'>
                     <table class='ph-table'>
-                        <thead><tr><th>@lang('pharmacy.inventory.col_medicine')</th><th>@lang('pharmacy.inventory.col_status')</th><th>@lang('pharmacy.inventory.col_min_stock')</th><th>@lang('pharmacy.inventory.col_current')</th><th>@lang('pharmacy.inventory.col_edit')</th></tr></thead>
+                        <thead><tr><th>@lang('pharmacy.inventory.col_medicine')</th><th>@lang('pharmacy.inventory.col_status')</th><th>@lang('pharmacy.inventory.col_current')</th><th>@lang('pharmacy.inventory.col_edit')</th></tr></thead>
                         <tbody>
                             @forelse($items as $item)
                                 @php
                                     $q = $item->quantity;
-                                    $min = $item->min_stock ?? 10;
-                                    $status = $q <= 0 ? 'out' : ($q <= $min ? 'low' : 'ok');
+                                    $status = $q <= 0 ? 'out' : ($q <= 10 ? 'low' : 'ok');
                                 @endphp
-                                <tr data-status='{{ $status }}' data-min='{{ $min }}'>
+                                <tr data-status='{{ $status }}' data-min='10'>
                                     <td><strong>{{ $item->medicine->trade_name }}</strong><br><small style='color:var(--ph-ink-faint);'>{{ $item->medicine->active_ingredient }}</small></td>
                                     <td><span class='ph-badge {{ $status }}'>{{ $statusText($status) }}</span></td>
-                                    <td>{{ $min }}</td>
                                     <td>{{ $q }}</td>
                                     <td>
                                         <div class='ph-stepper'>
@@ -111,7 +109,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan='5'><div class='ph-empty'><i class='fas fa-box-open'></i><h3>@lang('pharmacy.inventory.empty')</h3></div></td></tr>
+                                <tr><td colspan='4'><div class='ph-empty'><i class='fas fa-box-open'></i><h3>@lang('pharmacy.inventory.empty')</h3></div></td></tr>
                             @endforelse
                         </tbody>
                     </table>

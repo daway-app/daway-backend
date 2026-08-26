@@ -72,7 +72,7 @@
                                 $q = $pm->quantity;
                                 $status = $q <= 0 ? 'out' : ($q <= 10 ? 'low' : 'ok');
                             @endphp
-                            <tr data-status='{{ $status }}' data-min='{{ $pm->min_stock ?? 10 }}'>
+                            <tr data-status='{{ $status }}' data-min='10'>
                                 <td>
                                     <div style='display:flex;align-items:center;gap:12px;'>
                                         <div class='ph-med-thumb'>
