@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ChatAssistantController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\OcrController;
 use App\Http\Controllers\Api\PatientInquiryController;
 use App\Http\Controllers\Api\PatientProfileController;
 use App\Http\Controllers\Api\PharmacyAlternativeController;
@@ -32,6 +34,12 @@ Route::get('/medicines/{id}/pharmacies', [MedicineController::class, 'pharmacies
 // Pharmacies Routes Public
 Route::get('/pharmacies', [PharmacyController::class, 'index']);
 Route::get('/pharmacies/{id}', [PharmacyController::class, 'show']);
+
+// AI Assistant + OCR (محمية — للمستخدمين المسجلين)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/chat', [ChatAssistantController::class, 'chat'])->middleware('throttle:30,1');
+    Route::post('/ocr/medicine', [OcrController::class, 'identify'])->middleware('throttle:30,1');
+});
 
 // ✅ Routes Protected
 Route::middleware('auth:sanctum')->group(function () {

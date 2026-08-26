@@ -47,4 +47,18 @@ return [
         'folder' => env('CLOUDINARY_FOLDER', 'daway'),
     ],
 
+    // مساعد الذكاء الاصطناعي (تحليل رسائل المستخدم: نية البحث + اسم الدواء)
+    'daway_ai' => [
+        'base_url' => env('DAWAY_AI_BASE_URL'),
+        'timeout'  => (int) env('DAWAY_AI_TIMEOUT', 15),
+        'key'      => env('DAWAY_AI_KEY'),
+    ],
+
+    // خدمة OCR (قراءة اسم الدواء من صورة العلبة)
+    'daway_ocr' => [
+        'base_url' => env('DAWAY_OCR_BASE_URL'),
+        'timeout'  => (int) env('DAWAY_OCR_TIMEOUT', 20),
+        'key'      => env('DAWAY_OCR_KEY'),
+    ],
+
 ];
