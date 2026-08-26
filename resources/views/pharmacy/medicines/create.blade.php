@@ -63,12 +63,18 @@
                         <div class="form-row">
                             <div class="fg">
                                 <label class="fl" for="trade_name">@lang('pharmacy.medicines.create.manual_trade_name') <span class="req">*</span></label>
-                                <input class="fc" type="text" id="trade_name" name="trade_name" value="{{ old('trade_name') }}" placeholder="@lang('pharmacy.medicines.create.manual_trade_name_placeholder')">
+                                <input class="fc" type="text" id="trade_name" name="trade_name" value="{{ old('trade_name') }}" placeholder="@lang('pharmacy.medicines.create.manual_trade_name_placeholder')" dir="ltr">
+                                @error('trade_name')<span class="error-text" role="alert">{{ $message }}</span>@enderror
                             </div>
                             <div class="fg">
                                 <label class="fl" for="active_ingredient">@lang('pharmacy.medicines.create.manual_ingredient') <span class="req">*</span></label>
                                 <input class="fc" type="text" id="active_ingredient" name="active_ingredient" value="{{ old('active_ingredient') }}" placeholder="@lang('pharmacy.medicines.create.manual_ingredient_placeholder')">
                             </div>
+                        </div>
+                        <div class="fg">
+                            <label class="fl" for="trade_name_ar">@lang('pharmacy.medicines.create.arabic_name_label')</label>
+                            <input class="fc" type="text" id="trade_name_ar" name="trade_name_ar" value="{{ old('trade_name_ar') }}" placeholder="@lang('pharmacy.medicines.create.arabic_name_placeholder')">
+                            @error('trade_name_ar')<span class="error-text" role="alert">{{ $message }}</span>@enderror
                         </div>
                     </div>
 

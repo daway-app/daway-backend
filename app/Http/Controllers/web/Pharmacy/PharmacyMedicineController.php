@@ -158,18 +158,45 @@ class PharmacyMedicineController extends Controller
                 ]);
         } else {
             $request->validate([
-                'trade_name' => 'required|string|max:150',
+                // الاسم الإنجليزي إلزامي — يُرفض أي اسم يحتوي حروفاً عربية
+                'trade_name' => [
+                    'required',
+                    'string',
+                    'max:150',
+                    'not_regex:/[\x{0600}-\x{06FF}]/u',
+                ],
+                // الاسم العربي اختياري — عند إرساله يجب أن يحتوي حروفاً عربية
+                'trade_name_ar' => [
+                    'nullable',
+                    'string',
+                    'max:150',
+                    'regex:/[\x{0600}-\x{06FF}]/u',
+                ],
                 'active_ingredient' => 'required|string|max:150',
             ], [
                 'trade_name.required' => __('pharmacy.medicines.create.trade_name_required'),
+                'trade_name.not_regex' => __('pharmacy.medicines.create.trade_name_english'),
+                'trade_name_ar.regex' => __('pharmacy.medicines.create.arabic_name_required'),
                 'active_ingredient.required' => __('pharmacy.medicines.create.ingredient_required'),
             ]);
 
-            $medicine = Medicine::where('trade_name', $request->trade_name)->first()
-                ?? Medicine::create([
+            $nameAr = trim((string) $request->input('trade_name_ar'));
+
+            $medicine = Medicine::where('trade_name', $request->trade_name)->first();
+
+            if ($medicine) {
+                // إثراء الكتالوج: دواء موجود بلا اسم عربي + الصيدلية أدخله
+                if ($nameAr !== '' && empty($medicine->trade_name_ar)) {
+                    $medicine->trade_name_ar = $nameAr;
+                    $medicine->save();
+                }
+            } else {
+                $medicine = Medicine::create([
                     'trade_name' => $request->trade_name,
+                    'trade_name_ar' => $nameAr !== '' ? $nameAr : null,
                     'active_ingredient' => $request->active_ingredient,
                 ]);
+            }
         }
 
         $exists = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
