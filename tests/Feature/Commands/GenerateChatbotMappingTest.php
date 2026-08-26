@@ -70,8 +70,8 @@ class GenerateChatbotMappingTest extends TestCase
         $this->assertSame(1, $panadol['id']);
         $this->assertSame('Panadol Extra 500 mg', $panadol['name_en']);
         $this->assertSame(200, $panadol['moh_drug_id']);
-        // التحويل الصوتي يشمل الجرعة أيضاً (مطابقة تقريبية مقصودة)
-        $this->assertSame('بانادول اكسترا 500مج', $panadol['name_ar']);
+        // التحويل الصوتي يشمل الجرعة أيضاً (مطابقة تقريبية مقصودة) — بمسافات موحّدة
+        $this->assertSame('بانادول اكسترا 500 مج', $panadol['name_ar']);
         $this->assertContains('paracetamol', $panadol['aliases']);
         $this->assertContains('panadol extra', $panadol['aliases']);
         $this->assertNotContains('500 mg', $panadol['aliases']);
