@@ -469,4 +469,57 @@ class PharmacyMedicineApiTest extends TestCase
             ->assertJsonPath('data.medicines.0.name', 'Panadol')
             ->assertJsonPath('data.medicines.0.name_ar', 'بنادول');
     }
+
+    public function test_add_by_name_enriches_existing_medicine_with_optional_active_ingredient(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+
+        // دواء موجود بالكتالوج بدون مادة فعالة (فارغة)
+        $existing = Medicine::factory()->create([
+            'trade_name' => 'Brufen 400',
+            'active_ingredient' => null,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Brufen 400',
+            'active_ingredient' => 'Ibuprofen',
+            'price' => 7.5,
+            'quantity' => 10,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.medicine.id', $existing->id);
+
+        // المادة الفعالة الاختيارية أثرت الدواء الموجود بدل تجاهلها
+        $this->assertSame('Ibuprofen', $existing->fresh()->active_ingredient);
+        $this->assertDatabaseHas('pharmacy_medicines', [
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $existing->id,
+            'price' => 7.5,
+        ]);
+    }
+
+    public function test_add_by_name_does_not_overwrite_existing_active_ingredient(): void
+    {
+        [$user] = $this->pharmacyUserWithPharmacy();
+
+        $existing = Medicine::factory()->create([
+            'trade_name' => 'Adol 500',
+            'active_ingredient' => 'Paracetamol',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'Adol 500',
+            'active_ingredient' => 'مادة خاطئة',
+            'price' => 5,
+            'quantity' => 3,
+        ])->assertStatus(201);
+
+        // لا نمسح بيانات الكتالوج الصحيحة بقيم جديدة
+        $this->assertSame('Paracetamol', $existing->fresh()->active_ingredient);
+    }
 }

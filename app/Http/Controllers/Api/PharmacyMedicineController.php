@@ -208,10 +208,24 @@ class PharmacyMedicineController extends Controller
                     ?? ($moh->generic_name ?? $name),
                 'description' => $moh->manufacturer ?? ($moh->company ?? null),
             ]);
-        } elseif ($nameAr && empty($medicine->trade_name_ar)) {
-            // إثراء الكتالوج: دواء موجود بلا اسم عربي + الموبايل أرسله
-            $medicine->trade_name_ar = $nameAr;
-            $medicine->save();
+        } else {
+            // إثراء الكتالوج من الموبايل (اختياري):
+            // دواء موجود بلا اسم عريض/مادة فعالة + الموبايل أرسلهما → يُكمّلا
+            $dirty = false;
+
+            if ($nameAr && empty($medicine->trade_name_ar)) {
+                $medicine->trade_name_ar = $nameAr;
+                $dirty = true;
+            }
+
+            if (! empty($data['active_ingredient']) && empty($medicine->active_ingredient)) {
+                $medicine->active_ingredient = trim($data['active_ingredient']);
+                $dirty = true;
+            }
+
+            if ($dirty) {
+                $medicine->save();
+            }
         }
 
         $exists = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
