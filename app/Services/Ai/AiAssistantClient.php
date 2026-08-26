@@ -27,46 +27,55 @@ final class AiAssistantClient
             return $this->fallback();
         }
 
-        $startedAt = microtime(true);
+        // محاولتان: خدمة الـ AI على خطة مجانية أحياناً ترجع 503 لحظياً
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $startedAt = microtime(true);
 
-        try {
-            $request = Http::timeout($this->timeout)
-                ->acceptJson()
-                ->when($this->key, fn ($r) => $r->withToken($this->key))
-                ->post(rtrim($this->baseUrl, '/').'/ai/assistant', [
-                    'message' => $message,
+            try {
+                $request = Http::timeout($this->timeout)
+                    ->acceptJson()
+                    ->when($this->key, fn ($r) => $r->withToken($this->key))
+                    ->post(rtrim($this->baseUrl, '/').'/ai/assistant', [
+                        'message' => $message,
+                    ]);
+            } catch (\Throwable $e) {
+                Log::warning('AI Assistant call failed', [
+                    'error' => $e->getMessage(),
+                    'attempt' => $attempt,
                 ]);
-        } catch (\Throwable $e) {
-            Log::warning('AI Assistant call failed', ['error' => $e->getMessage()]);
 
-            return $this->fallback();
+                continue;
+            }
+
+            Log::info('ai_chat', [
+                'latency_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+                'status' => $request->status(),
+                'attempt' => $attempt,
+            ]);
+
+            if ($request->successful()) {
+                $data = $request->json();
+
+                return [
+                    'intent' => is_string($data['intent'] ?? null) ? $data['intent'] : 'unknown',
+                    'drug_name' => isset($data['drug_name']) && is_string($data['drug_name']) && trim($data['drug_name']) !== ''
+                        ? trim($data['drug_name'])
+                        : null,
+                    'symptoms' => is_array($data['symptoms'] ?? null) ? $data['symptoms'] : [],
+                    'user_message' => isset($data['user_message']) && is_string($data['user_message'])
+                        ? $data['user_message']
+                        : null,
+                    'requires_location' => (bool) ($data['requires_location'] ?? false),
+                    'source' => is_string($data['source'] ?? null) ? $data['source'] : 'gemini',
+                ];
+            }
+
+            if ($attempt < 2) {
+                sleep(2);
+            }
         }
 
-        Log::info('ai_chat', [
-            'latency_ms' => (int) ((microtime(true) - $startedAt) * 1000),
-            'status' => $request->status(),
-        ]);
-
-        if (! $request->successful()) {
-            Log::warning('AI Assistant non-2xx', ['status' => $request->status()]);
-
-            return $this->fallback();
-        }
-
-        $data = $request->json();
-
-        return [
-            'intent' => is_string($data['intent'] ?? null) ? $data['intent'] : 'unknown',
-            'drug_name' => isset($data['drug_name']) && is_string($data['drug_name']) && trim($data['drug_name']) !== ''
-                ? trim($data['drug_name'])
-                : null,
-            'symptoms' => is_array($data['symptoms'] ?? null) ? $data['symptoms'] : [],
-            'user_message' => isset($data['user_message']) && is_string($data['user_message'])
-                ? $data['user_message']
-                : null,
-            'requires_location' => (bool) ($data['requires_location'] ?? false),
-            'source' => is_string($data['source'] ?? null) ? $data['source'] : 'gemini',
-        ];
+        return $this->fallback();
     }
 
     private function fallback(): array

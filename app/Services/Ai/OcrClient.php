@@ -27,50 +27,64 @@ final class OcrClient
             return $this->failure('خدمة OCR غير مهيأة.');
         }
 
-        $startedAt = microtime(true);
+        // محاولتان: الخدمة على خطة مجانية أحياناً ترجع 503 لحظياً
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $startedAt = microtime(true);
 
-        try {
-            $request = Http::timeout($this->timeout)
-                ->acceptJson()
-                ->when($this->key, fn ($r) => $r->withToken($this->key))
-                ->asMultipart()
-                ->attach('file', $file->getContent(), $file->getClientOriginalName())
-                ->post(rtrim($this->baseUrl, '/').'/ocr/medicine');
-        } catch (\Throwable $e) {
-            Log::warning('OCR call failed', ['error' => $e->getMessage()]);
+            try {
+                $request = Http::timeout($this->timeout)
+                    ->acceptJson()
+                    ->when($this->key, fn ($r) => $r->withToken($this->key))
+                    ->asMultipart()
+                    ->attach('file', $file->getContent(), $file->getClientOriginalName())
+                    ->post(rtrim($this->baseUrl, '/').'/ocr/medicine');
+            } catch (\Throwable $e) {
+                Log::warning('OCR call failed', [
+                    'error' => $e->getMessage(),
+                    'attempt' => $attempt,
+                ]);
 
-            return $this->failure('تعذر الاتصال بخدمة التعرف على الصور.');
-        }
-
-        Log::info('ai_ocr', [
-            'latency_ms' => (int) ((microtime(true) - $startedAt) * 1000),
-            'status' => $request->status(),
-        ]);
-
-        if (! $request->successful()) {
-            Log::warning('OCR non-2xx', ['status' => $request->status()]);
-
-            return $this->failure('فشل التعرف على الصورة.');
-        }
-
-        $data = $request->json();
-
-        $drugName = null;
-        foreach (['drug_name', 'best_candidate'] as $field) {
-            if (isset($data[$field]) && is_string($data[$field]) && trim($data[$field]) !== '') {
-                $drugName = trim($data[$field]);
-                break;
+                continue;
             }
+
+            Log::info('ai_ocr', [
+                'latency_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+                'status' => $request->status(),
+                'attempt' => $attempt,
+            ]);
+
+            if (! $request->successful()) {
+                Log::warning('OCR non-2xx', ['status' => $request->status(), 'attempt' => $attempt]);
+
+                if ($attempt < 2) {
+                    sleep(2);
+                    continue;
+                }
+
+                return $this->failure('فشل التعرف على الصورة.');
+            }
+
+            $data = $request->json();
+
+            $drugName = null;
+            foreach (['drug_name', 'best_candidate'] as $field) {
+                if (isset($data[$field]) && is_string($data[$field]) && trim($data[$field]) !== '') {
+                    $drugName = trim($data[$field]);
+                    break;
+                }
+            }
+
+            return [
+                'drug_name' => $drugName,
+                'ocr_success' => (bool) ($data['ocr_success'] ?? false),
+                'match_score' => isset($data['match_score']) && is_numeric($data['match_score'])
+                    ? (float) $data['match_score']
+                    : null,
+                'message' => is_string($data['message'] ?? null) ? $data['message'] : null,
+            ];
         }
 
-        return [
-            'drug_name' => $drugName,
-            'ocr_success' => (bool) ($data['ocr_success'] ?? false),
-            'match_score' => isset($data['match_score']) && is_numeric($data['match_score'])
-                ? (float) $data['match_score']
-                : null,
-            'message' => is_string($data['message'] ?? null) ? $data['message'] : null,
-        ];
+        return $this->failure('تعذر الاتصال بخدمة التعرف على الصور.');
     }
 
     private function failure(string $message): array
