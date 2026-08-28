@@ -283,7 +283,11 @@ return [
         'status_available' => 'Available',
         'status_low' => 'Low',
         'status_out' => 'Out of stock',
+        'status_all' => 'All',
         'empty' => 'No medicines in inventory',
+        'no_results' => 'No results match the search and filter.',
+        'search_placeholder' => 'Search by name or active ingredient...',
+        'clear_filters' => 'Clear',
         'save_button' => 'Save Changes',
     ],
 

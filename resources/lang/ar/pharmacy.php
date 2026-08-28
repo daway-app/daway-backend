@@ -283,7 +283,11 @@ return [
         'status_available' => 'متوفر',
         'status_low' => 'منخفض',
         'status_out' => 'نافد',
+        'status_all' => 'الكل',
         'empty' => 'لا توجد أدوية في المخزون',
+        'no_results' => 'لا توجد نتائج تطابق البحث والفلتر.',
+        'search_placeholder' => 'ابحث بالاسم أو المادة الفعالة...',
+        'clear_filters' => 'مسح',
         'save_button' => 'حفظ التحديثات',
     ],
 

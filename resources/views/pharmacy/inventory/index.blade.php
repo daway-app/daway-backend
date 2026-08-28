@@ -86,7 +86,26 @@
             @csrf
             @method('PUT')
             <div class='ph-card'>
-                <div class='ph-card-head'><h2><i class='fas fa-boxes-stacked'></i> @lang('pharmacy.inventory.update_title')</h2></div>
+                <div class='ph-card-head' style='display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;'>
+                    <h2 style='margin:0;'><i class='fas fa-boxes-stacked'></i> @lang('pharmacy.inventory.update_title')</h2>
+                    <form method='GET' action='{{ route('pharmacy.inventory.index') }}' style='display:flex;gap:8px;flex-wrap:wrap;align-items:center;'>
+                        <input type='search' name='q' value='{{ $q ?? '' }}' placeholder='@lang('pharmacy.inventory.search_placeholder')' class='ph-control' style='min-width:220px;height:38px;'>
+                        <div class='ph-filter-chips' role='tablist'>
+                            @php
+                                $chips = ['all' => 'status_all', 'ok' => 'status_available', 'low' => 'status_low', 'out' => 'status_out'];
+                            @endphp
+                            @foreach($chips as $val => $labelKey)
+                                <a href='{{ route('pharmacy.inventory.index', array_filter(['q' => $q ?? null, 'status' => $val])) }}'
+                                   class='ph-chip {{ ($status ?? 'all') === $val ? 'active' : '' }}'>
+                                    @lang('pharmacy.inventory.'.$labelKey)
+                                </a>
+                            @endforeach
+                        </div>
+                        @if(($q ?? '') !== '' || ($status ?? 'all') !== 'all')
+                            <a href='{{ route('pharmacy.inventory.index') }}' class='ph-btn sm outline'>@lang('pharmacy.inventory.clear_filters')</a>
+                        @endif
+                    </form>
+                </div>
                 <div class='ph-card-body ph-table-wrap'>
                     <table class='ph-table'>
                         <thead><tr><th>@lang('pharmacy.inventory.col_medicine')</th><th>@lang('pharmacy.inventory.col_status')</th><th>@lang('pharmacy.inventory.col_current')</th><th>@lang('pharmacy.inventory.col_edit')</th></tr></thead>
@@ -113,6 +132,12 @@
                             @endforelse
                         </tbody>
                     </table>
+                    @if($items->isEmpty() && $all->isNotEmpty())
+                        <div class='ph-empty' style='padding:24px;'>
+                            <i class='fas fa-magnifying-glass'></i>
+                            <h3>@lang('pharmacy.inventory.no_results')</h3>
+                        </div>
+                    @endif
                 </div>
                 @if($items->count())
                     <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>
