@@ -182,9 +182,9 @@ class PharmacyMedicineApiTest extends TestCase
 
         $this->putJson("/api/pharmacy/medicines/{$pm->id}", [
             'medicine_id' => $medicine->id,
-            'trade_name' => 'هدم للكتالوج',
-            'trade_name_ar' => 'اسم خاطئ',
-            'active_ingredient' => 'سيء',
+            'trade_name' => 'Other Brand Name',
+            'trade_name_ar' => 'اسم تجاري آخر',
+            'active_ingredient' => 'مادة مختلفة',
             'price' => 6,
             'quantity' => 11,
         ])->assertOk();

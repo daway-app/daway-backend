@@ -71,7 +71,7 @@ class PharmacyInventoryController extends Controller
             $trendData[] = $all->where('created_at', '<=', now()->subDays($i)->toDateString())->count();
         }
 
-        return view('pharmacy.inventory.index', compact('pharmacy', 'items', 'available', 'out', 'low', 'threshold', 'trendLabels', 'trendData', 'q', 'status'));
+        return view('pharmacy.inventory.index', compact('pharmacy', 'items', 'all', 'available', 'out', 'low', 'threshold', 'trendLabels', 'trendData', 'q', 'status'));
     }
 
     public function update(Request $request)
