@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.simple')
 
 @section('title', __('pharmacy.medicines.index.title'))
 
@@ -7,7 +7,7 @@
     @include('partials.pharmacy-hub-i18n')
 
     @php
-        $total = $pharmacyMedicines->total();
+        $total = $pharmacyMedicines->count();
         $available = $availableCount ?? 0;
         $low = $lowCount ?? 0;
         $out = $outCount ?? 0;
@@ -109,9 +109,8 @@
                     </tbody>
                 </table>
             </div>
-            @if($pharmacyMedicines->hasPages())
-                <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>{{ $pharmacyMedicines->links() }}</div>
-            @endif
-        </div>
+            @if($pharmacyMedicines->count() > 0)
+            </div>
+        @endif
     </div>
 @endsection

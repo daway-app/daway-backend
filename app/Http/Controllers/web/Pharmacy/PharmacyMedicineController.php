@@ -43,7 +43,7 @@ class PharmacyMedicineController extends Controller
         // Get medicines associated with this pharmacy through the pivot table
         $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->with('medicine') // Eager load the Medicine details
-            ->paginate(10);
+            ->get();
 
         $availableCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->where('is_available', true)
