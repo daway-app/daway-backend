@@ -24,9 +24,9 @@ class PharmacyInventoryFilterTest extends TestCase
 
         $panadol = Medicine::factory()->create(['trade_name' => 'Panadol Extra', 'active_ingredient' => 'Paracetamol']);
         $brufen = Medicine::factory()->create(['trade_name' => 'Brufen 400', 'active_ingredient' => 'Ibuprofen']);
-        $parol = Medicine::factory()->create(['trade_name' => 'Parol', 'trade_name_ar' => 'بارول']);
+        $paramol = Medicine::factory()->create(['trade_name' => 'Paramol', 'trade_name_ar' => 'بارامول']);
 
-        foreach ([$panadol, $brufen, $parol] as $m) {
+        foreach ([$panadol, $brufen, $paramol] as $m) {
             PharmacyMedicine::create([
                 'pharmacy_id' => $pharmacy->id,
                 'medicine_id' => $m->id,
@@ -38,7 +38,29 @@ class PharmacyInventoryFilterTest extends TestCase
         $this->actingAs($user)->get('/pharmacy/inventory?q=Para')
             ->assertOk()
             ->assertSee('Panadol Extra')
-            ->assertSee('Parol')
+            ->assertSee('Paramol')
+            ->assertDontSee('Brufen 400');
+    }
+
+    public function test_inventory_search_filters_by_arabic_trade_name(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+
+        $a = Medicine::factory()->create(['trade_name' => 'Panadol Extra', 'trade_name_ar' => 'بنادول اكسترا']);
+        $b = Medicine::factory()->create(['trade_name' => 'Brufen 400', 'trade_name_ar' => 'بروفين']);
+
+        foreach ([$a, $b] as $m) {
+            PharmacyMedicine::create([
+                'pharmacy_id' => $pharmacy->id,
+                'medicine_id' => $m->id,
+                'price' => 5,
+                'quantity' => 20,
+            ]);
+        }
+
+        $this->actingAs($user)->get('/pharmacy/inventory?q='.urlencode('بنادول'))
+            ->assertOk()
+            ->assertSee('Panadol Extra')
             ->assertDontSee('Brufen 400');
     }
 
