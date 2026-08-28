@@ -82,47 +82,41 @@
             </div>
         </div>
 
+        <div class='ph-filters'>
+            <div class='ph-tabs' data-ph-tabs='.ph-inventory-table'>
+                <button type='button' class='ph-tab {{ ($status ?? 'all') === 'all' ? 'active' : '' }}' data-filter='all'>@lang('pharmacy.inventory.status_all')</button>
+                <button type='button' class='ph-tab {{ ($status ?? 'all') === 'ok' ? 'active' : '' }}' data-filter='ok'>@lang('pharmacy.inventory.status_available')</button>
+                <button type='button' class='ph-tab {{ ($status ?? 'all') === 'low' ? 'active' : '' }}' data-filter='low'>@lang('pharmacy.inventory.status_low')</button>
+                <button type='button' class='ph-tab {{ ($status ?? 'all') === 'out' ? 'active' : '' }}' data-filter='out'>@lang('pharmacy.inventory.status_out')</button>
+            </div>
+            <div class='ph-search'>
+                <i class='fas fa-search'></i>
+                <input type='text' placeholder='@lang('pharmacy.inventory.search_placeholder')' data-ph-search='.ph-inventory-table tbody tr' value='{{ $q ?? '' }}'>
+            </div>
+        </div>
+
         <form action='{{ route('pharmacy.inventory.update') }}' method='POST'>
             @csrf
             @method('PUT')
-            <div class='ph-card'>
-                <div class='ph-card-head' style='display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;'>
-                    <h2 style='margin:0;'><i class='fas fa-boxes-stacked'></i> @lang('pharmacy.inventory.update_title')</h2>
-                    <form method='GET' action='{{ route('pharmacy.inventory.index') }}' style='display:flex;gap:8px;flex-wrap:wrap;align-items:center;'>
-                        <input type='search' name='q' value='{{ $q ?? '' }}' placeholder='@lang('pharmacy.inventory.search_placeholder')' class='ph-control' style='min-width:220px;height:38px;'>
-                        <div class='ph-filter-chips' role='tablist'>
-                            @php
-                                $chips = ['all' => 'status_all', 'ok' => 'status_available', 'low' => 'status_low', 'out' => 'status_out'];
-                            @endphp
-                            @foreach($chips as $val => $labelKey)
-                                <a href='{{ route('pharmacy.inventory.index', array_filter(['q' => $q ?? null, 'status' => $val])) }}'
-                                   class='ph-chip {{ ($status ?? 'all') === $val ? 'active' : '' }}'>
-                                    @lang('pharmacy.inventory.'.$labelKey)
-                                </a>
-                            @endforeach
-                        </div>
-                        @if(($q ?? '') !== '' || ($status ?? 'all') !== 'all')
-                            <a href='{{ route('pharmacy.inventory.index') }}' class='ph-btn sm outline'>@lang('pharmacy.inventory.clear_filters')</a>
-                        @endif
-                    </form>
-                </div>
-                <div class='ph-card-body ph-table-wrap'>
+            <div class='ph-card ph-inventory-table'>
+                <div class='ph-card-head'><h2><i class='fas fa-boxes-stacked'></i> @lang('pharmacy.inventory.update_title')</h2></div>
+                <div class='ph-card-body ph-table-wrap' style='padding:0;'>
                     <table class='ph-table'>
                         <thead><tr><th>@lang('pharmacy.inventory.col_medicine')</th><th>@lang('pharmacy.inventory.col_status')</th><th>@lang('pharmacy.inventory.col_current')</th><th>@lang('pharmacy.inventory.col_edit')</th></tr></thead>
                         <tbody>
                             @forelse($items as $item)
                                 @php
-                                    $q = $item->quantity;
-                                    $status = $q <= 0 ? 'out' : ($q <= 10 ? 'low' : 'ok');
+                                    $qty = $item->quantity;
+                                    $status = $qty <= 0 ? 'out' : ($qty <= 10 ? 'low' : 'ok');
                                 @endphp
                                 <tr data-status='{{ $status }}' data-min='10'>
                                     <td><strong>{{ $item->medicine->trade_name }}</strong><br><small style='color:var(--ph-ink-faint);'>{{ $item->medicine->active_ingredient }}</small></td>
                                     <td><span class='ph-badge {{ $status }}'>{{ $statusText($status) }}</span></td>
-                                    <td>{{ $q }}</td>
+                                    <td>{{ $qty }}</td>
                                     <td>
                                         <div class='ph-stepper'>
                                             <button type='button' class='dec'><i class='fas fa-minus'></i></button>
-                                            <input type='number' name='quantities[{{ $item->id }}]' value='{{ $q }}' min='0'>
+                                            <input type='number' name='quantities[{{ $item->id }}]' value='{{ $qty }}' min='0'>
                                             <button type='button' class='inc'><i class='fas fa-plus'></i></button>
                                         </div>
                                     </td>
@@ -132,13 +126,13 @@
                             @endforelse
                         </tbody>
                     </table>
-                    @if($items->isEmpty() && $all->isNotEmpty())
-                        <div class='ph-empty' style='padding:24px;'>
-                            <i class='fas fa-magnifying-glass'></i>
-                            <h3>@lang('pharmacy.inventory.no_results')</h3>
-                        </div>
-                    @endif
                 </div>
+                @if($items->isEmpty() && $all->isNotEmpty())
+                    <div class='ph-empty' style='padding:24px;'>
+                        <i class='fas fa-magnifying-glass'></i>
+                        <h3>@lang('pharmacy.inventory.no_results')</h3>
+                    </div>
+                @endif
                 @if($items->count())
                     <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>
                         <button type='submit' class='ph-btn primary'><i class='fas fa-save'></i> @lang('pharmacy.inventory.save_button')</button>
