@@ -278,6 +278,30 @@ class PharmacyMedicineController extends Controller
             'is_available' => $request->boolean('is_available'),
         ]);
 
+        // إثراء بيانات الكتالوج عند تحديث المخزون: لا نمسح قيمة صحيحة موجودة
+        $medicine->loadMissing('medicine');
+        $catalogMedicine = $medicine->medicine;
+        $catalogDirty = false;
+
+        if (! empty($data['trade_name']) && empty($catalogMedicine->trade_name)) {
+            $catalogMedicine->trade_name = trim($data['trade_name']);
+            $catalogDirty = true;
+        }
+
+        if (! empty($data['trade_name_ar']) && empty($catalogMedicine->trade_name_ar)) {
+            $catalogMedicine->trade_name_ar = trim($data['trade_name_ar']);
+            $catalogDirty = true;
+        }
+
+        if (! empty($data['active_ingredient']) && empty($catalogMedicine->active_ingredient)) {
+            $catalogMedicine->active_ingredient = trim($data['active_ingredient']);
+            $catalogDirty = true;
+        }
+
+        if ($catalogDirty) {
+            $catalogMedicine->save();
+        }
+
         $this->notifyIfLowStock($medicine);
 
         $medicine->load('medicine');

@@ -22,6 +22,20 @@ class PharmacyMedicineRequest extends FormRequest
             'is_available' => 'sometimes|boolean',
             // صورة اختيارية — الموبايل يرفعها على Cloudinary ويرسل الرابط مباشرة
             'image_url' => 'nullable|url|max:2048',
+            // إثراء بيانات الكتالوج: اختياري في التحديث، لا يُمسح قيمة موجودة
+            'trade_name' => [
+                'sometimes',
+                'string',
+                'max:150',
+                'not_regex:/[\x{0600}-\x{06FF}]/u',
+            ],
+            'trade_name_ar' => [
+                'nullable',
+                'string',
+                'max:150',
+                'regex:/[\x{0600}-\x{06FF}]/u',
+            ],
+            'active_ingredient' => ['sometimes', 'string', 'max:255'],
         ];
     }
 }

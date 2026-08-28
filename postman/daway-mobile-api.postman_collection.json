@@ -392,8 +392,8 @@
             "method": "PUT",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/pharmacy/medicines/{{pharmacy_medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "medicines", "{{pharmacy_medicine_id}}"] },
-            "body": { "mode": "raw", "raw": "{\n  \"medicine_id\": {{medicine_id}},\n  \"price\": 14.00,\n  \"quantity\": 3,\n  \"is_available\": true\n}", "options": { "raw": { "language": "json" } } },
-            "description": "`min_stock` removed here as well — alerts use the fixed threshold (10)."
+            "body": { "mode": "raw", "raw": "{\n  \"medicine_id\": {{medicine_id}},\n  \"price\": 14.00,\n  \"quantity\": 3,\n  \"is_available\": true,\n  \"trade_name\": \"Adol 500\",\n  \"trade_name_ar\": \"أدول 500\",\n  \"active_ingredient\": \"Paracetamol\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Updates price/quantity/is_available. Optional fields `trade_name` (English only), `trade_name_ar` (Arabic only), `active_ingredient` enrich the general catalog only when those fields are currently empty (never overwrite correct existing values). `min_stock` removed — alerts use the fixed threshold (10)."
           }
         },
         {

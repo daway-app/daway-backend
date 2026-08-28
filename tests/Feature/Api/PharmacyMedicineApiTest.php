@@ -121,6 +121,103 @@ class PharmacyMedicineApiTest extends TestCase
             ->assertJsonValidationErrors('medicine_id');
     }
 
+    public function test_update_enriches_catalog_with_trade_name_and_active_ingredient(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+
+        // دواء بدون اسم عربي ومادة فعالة فارغة
+        $medicine = Medicine::factory()->create([
+            'trade_name' => 'Brufen 400',
+            'trade_name_ar' => null,
+            'active_ingredient' => '',
+        ]);
+
+        $pm = PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => 5,
+            'quantity' => 10,
+            'is_available' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->putJson("/api/pharmacy/medicines/{$pm->id}", [
+            'medicine_id' => $medicine->id,
+            'trade_name' => 'Brufen 400',         // موجود — لا تغيير
+            'trade_name_ar' => 'بروفين 400',      // فارغ — يُملأ
+            'active_ingredient' => 'Ibuprofen',  // فارغ — يُملأ
+            'price' => 7.5,
+            'quantity' => 12,
+        ]);
+
+        $response->assertOk();
+
+        $medicine->refresh();
+        $this->assertSame('Brufen 400', $medicine->trade_name);
+        $this->assertSame('بروفين 400', $medicine->trade_name_ar);
+        $this->assertSame('Ibuprofen', $medicine->active_ingredient);
+        $this->assertSame(7.5, (float) $pm->fresh()->price);
+    }
+
+    public function test_update_does_not_overwrite_existing_catalog_values(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+
+        $medicine = Medicine::factory()->create([
+            'trade_name' => 'Adol 500',
+            'trade_name_ar' => 'أدول',
+            'active_ingredient' => 'Paracetamol',
+        ]);
+
+        $pm = PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => 5,
+            'quantity' => 10,
+            'is_available' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/pharmacy/medicines/{$pm->id}", [
+            'medicine_id' => $medicine->id,
+            'trade_name' => 'هدم للكتالوج',
+            'trade_name_ar' => 'اسم خاطئ',
+            'active_ingredient' => 'سيء',
+            'price' => 6,
+            'quantity' => 11,
+        ])->assertOk();
+
+        $medicine->refresh();
+        // القيم الصحيحة في الكتالوج لم تتغير
+        $this->assertSame('Adol 500', $medicine->trade_name);
+        $this->assertSame('أدول', $medicine->trade_name_ar);
+        $this->assertSame('Paracetamol', $medicine->active_ingredient);
+    }
+
+    public function test_update_rejects_arabic_characters_in_trade_name(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $medicine = Medicine::factory()->create();
+        $pm = PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => 5,
+            'quantity' => 10,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/pharmacy/medicines/{$pm->id}", [
+            'medicine_id' => $medicine->id,
+            'trade_name' => 'بنادول',  // عربي في حقل إنجليزي
+            'price' => 5,
+            'quantity' => 10,
+        ])->assertStatus(422)
+          ->assertJsonValidationErrors('trade_name');
+    }
+
     public function test_pharmacy_can_update_medicine(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
