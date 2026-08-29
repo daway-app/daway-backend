@@ -100,8 +100,10 @@ class PharmacyProfileCompletionController extends Controller
             'region' => $validated['region'],
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
-            'profile_completed_at' => now(),
         ]);
+        // C1: profile_completed_at غير موجود بـ $fillable (ممنوع mass-assignment).
+        $pharmacy->profile_completed_at = now();
+        $pharmacy->save();
 
         // حفظ ساعات العمل
         foreach ($hoursData as $dayOfWeek => $hourData) {

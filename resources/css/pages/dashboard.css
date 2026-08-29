@@ -10,9 +10,9 @@
 }
 
 body.dark-mode {
-    --card-shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-    --card-shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    --card-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.15);
+    --card-shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --card-shadow-md: 0 8px 24px rgba(6,182,212,.15);
+    --card-shadow-lg: 0 20px 40px -12px rgba(168,85,247,.25);
 }
 
 @keyframes fadeInUp {
@@ -52,7 +52,7 @@ body.dark-mode {
 }
 
 .stat-card {
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid rgba(226, 232, 240, 0.8);
     border-radius: 16px;
     padding: 24px;
@@ -137,7 +137,7 @@ body.dark-mode {
    4. ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¹â€کط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ±ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ¨ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ² (Featured Chart)
    ========================================== */
 .featured-chart-card {
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 20px;
     padding: 26px;
@@ -188,7 +188,7 @@ body.dark-mode {
 .chart-main-title {
     font-size: 18px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     letter-spacing: -0.3px;
     margin: 0;
 }
@@ -216,7 +216,7 @@ body.dark-mode {
 
 .chart-subtitle {
     font-size: 13px;
-    color: #64748b;
+    color: var(--ink-soft);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -242,7 +242,7 @@ body.dark-mode {
 }
 
 .trend-label {
-    color: #94a3b8;
+    color: var(--ink-faint);
     font-size: 12px;
 }
 
@@ -262,19 +262,19 @@ body.dark-mode {
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    color: #64748b;
+    color: var(--ink-soft);
     cursor: pointer;
     transition: all 0.25s ease;
 }
 
 .pill-btn.active {
-    background: #ffffff;
-    color: #0f172a;
+    background: var(--paper);
+    color: var(--ink);
     box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
 .pill-btn:hover:not(.active) {
-    color: #1e293b;
+    color: var(--line);
 }
 
 .chart-container-pro {
@@ -298,7 +298,7 @@ body.dark-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #94a3b8;
+    color: var(--ink-faint);
     font-size: 14px;
     font-weight: 600;
     z-index: 1;
@@ -338,8 +338,8 @@ body.dark-mode {
     top: -34px;
     left: 50%;
     transform: translateX(-50%) translateY(6px);
-    background: #0f172a;
-    color: #ffffff;
+    background: var(--ink);
+    color: var(--paper);
     padding: 4px 10px;
     border-radius: 8px;
     font-size: 11px;
@@ -366,7 +366,7 @@ body.dark-mode {
     display: flex;
     justify-content: space-between;
     margin-top: 12px;
-    color: #64748b;
+    color: var(--ink-soft);
     font-size: 12px;
     font-weight: 600;
 }
@@ -375,7 +375,7 @@ body.dark-mode {
    5. ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¹â€کط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ£ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¢ط¢آ´ط·آ·ط¢آ·ط·آ¢ط¢آ·ط·آ·ط¢آ·ط·آ¢ط¢آ© ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ© (Activity Feed)
    ========================================== */
 .pro-card {
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid rgba(226, 232, 240, 0.8);
     border-radius: 20px;
     padding: 24px;
@@ -420,7 +420,7 @@ body.dark-mode {
 .activity-card:nth-child(5) { animation-delay: 0.73s; }
 
 .activity-card:hover {
-    background-color: #f8fafc;
+    background-color: var(--canvas);
     border-color: #e2e8f0;
     transform: translateX(-4px);
 }
@@ -437,7 +437,7 @@ body.dark-mode {
    6. ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع† ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آµط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ¹ط¢آ¾ (Enterprise Table)
    ========================================== */
 .table-card {
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid rgba(226, 232, 240, 0.8);
     border-radius: 20px;
     overflow: hidden;
@@ -453,7 +453,7 @@ body.dark-mode {
 }
 
 .table-card th {
-    background: #f8fafc;
+    background: var(--canvas);
     color: #475569;
     font-size: 12px;
     font-weight: 600;
@@ -469,7 +469,7 @@ body.dark-mode {
 }
 
 .table-card tbody tr:last-child { border-bottom: none; }
-.table-card tbody tr:hover { background-color: #f8fafc; }
+.table-card tbody tr:hover { background-color: var(--canvas); }
 
 .pharmacy-avatar {
     width: 36px;
@@ -537,7 +537,7 @@ body.dark-mode {
 }
 
 .modal-container {
-    background: #ffffff;
+    background: var(--paper);
     width: 90%;
     max-width: 950px;
     max-height: 85vh;
@@ -560,24 +560,24 @@ body.dark-mode {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #ffffff;
+    background: var(--paper);
 }
 
 .modal-title-group h3 {
     font-size: 18px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     margin-bottom: 2px;
 }
 
 .modal-title-group p {
     font-size: 13px;
-    color: #64748b;
+    color: var(--ink-soft);
 }
 
 /* ط·آ·ط¢آ·ط·آ¢ط¢آ²ط·آ·ط¢آ·ط·آ¢ط¢آ± ط·آ·ط¢آ·ط·آ¢ط¢آ¥ط·آ·ط¢آ·ط·آ·أ¢â‚¬ط›ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¹â€ک ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ±ط·آ·ط¢آ·ط·آ¢ط¢آ¨ط·آ·ط¢آ·ط·آ¢ط¢آ¹ ط·آ·ط¢آ·ط·آ¢ط¢آ¨ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ·ط·آ¢ط¢آ¯ ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ±ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ·ط¥â€™ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ±ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط·آ¸ط¢آ¾ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ© */
 .close-modal-btn {
-    background: #ffffff;
+    background: var(--paper);
     border: 2px solid #ef4444;
     color: #ef4444;
     width: 38px;
@@ -595,7 +595,7 @@ body.dark-mode {
 
 .close-modal-btn:hover {
     background-color: #ef4444;
-    color: #ffffff;
+    color: var(--paper);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
@@ -606,7 +606,7 @@ body.dark-mode {
 
 .modal-controls {
     padding: 16px 28px;
-    background: #f8fafc;
+    background: var(--canvas);
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     gap: 16px;
@@ -648,9 +648,9 @@ body.dark-mode {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #ffffff;
+    background: var(--paper);
     font-size: 13px;
-    color: #64748b;
+    color: var(--ink-soft);
 }
 
 .pagination-btns {
@@ -661,7 +661,7 @@ body.dark-mode {
 .page-btn {
     padding: 6px 12px;
     border: 1px solid #e2e8f0;
-    background: #ffffff;
+    background: var(--paper);
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
@@ -671,7 +671,7 @@ body.dark-mode {
 
 .page-btn:hover:not(:disabled) {
     background: #f1f5f9;
-    color: #0f172a;
+    color: var(--ink);
 }
 
 .page-btn:disabled {
@@ -692,7 +692,7 @@ body.dark-mode {
    ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¹â€کط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ¹ط¢آ¾ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع† ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ·ط·آ¢ط¢آ© ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ±ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط·آ¸ط¢آ¾ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ©
    ========================================== */
 .table-card {
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid #e2e8f0;
     border-radius: 16px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -709,7 +709,7 @@ body.dark-mode {
 
 .table-subtitle {
     font-size: 12px;
-    color: #64748b;
+    color: var(--ink-soft);
     display: block;
     margin-top: 2px;
 }
@@ -738,7 +738,7 @@ body.dark-mode {
 }
 
 .custom-table th {
-    background-color: #f8fafc;
+    background-color: var(--canvas);
     color: #475569;
     font-size: 12px;
     font-weight: 700;
@@ -759,7 +759,7 @@ body.dark-mode {
 }
 
 .custom-table tbody tr:hover {
-    background-color: #f8fafc;
+    background-color: var(--canvas);
 }
 
 .custom-table tbody tr:last-child td {
@@ -793,13 +793,13 @@ body.dark-mode {
 }
 
 .patient-name {
-    color: #0f172a;
+    color: var(--ink);
     font-size: 14px;
     font-weight: 600;
 }
 
 .patient-phone {
-    color: #64748b;
+    color: var(--ink-soft);
     font-size: 12px;
 }
 
@@ -810,14 +810,14 @@ body.dark-mode {
 }
 
 .date-text {
-    color: #64748b;
+    color: var(--ink-soft);
     font-size: 13px;
 }
 
 .empty-table-state {
     text-align: center;
     padding: 32px !important;
-    color: #94a3b8;
+    color: var(--ink-faint);
     font-size: 14px;
 }
 
@@ -853,7 +853,7 @@ body.dark-mode {
 
 .btn-edit:hover {
     background-color: #16a34a;
-    color: #ffffff;
+    color: var(--paper);
     box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
 }
 
@@ -866,7 +866,7 @@ body.dark-mode {
 
 .btn-view:hover {
     background-color: #0284c7;
-    color: #ffffff;
+    color: var(--paper);
     box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
 }
 
@@ -877,7 +877,7 @@ body.dark-mode {
     padding: 8px 16px;
     font-size: 12px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--paper);
     background: linear-gradient(135deg, #0B8FAC, #00657A);
     border: none;
     border-radius: 10px;
@@ -989,7 +989,7 @@ body.dark-mode .btn-edit {
 
 body.dark-mode .btn-edit:hover {
     background-color: #22c55e;
-    color: #ffffff;
+    color: var(--paper);
 }
 
 body.dark-mode .btn-view {
@@ -1000,7 +1000,7 @@ body.dark-mode .btn-view {
 
 body.dark-mode .btn-view:hover {
     background-color: #3b82f6;
-    color: #ffffff;
+    color: var(--paper);
 }
 
 body.dark-mode .modal-header,
@@ -1017,7 +1017,7 @@ body.dark-mode .close-modal-btn {
 
 body.dark-mode .close-modal-btn:hover {
     background-color: #f87171;
-    color: #ffffff;
+    color: var(--paper);
 }
 
 body.dark-mode .modal-controls {

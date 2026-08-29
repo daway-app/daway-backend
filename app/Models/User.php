@@ -17,6 +17,12 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, HasRoles, LogsActivity, Notifiable;
 
+    /**
+     * قائمة بيضاء لـ mass-assignment — C1.
+     * الحقول الحساسة (role, is_active, must_change_password, email_verified_at,
+     * phone_verified_at) غير مشمولة عمداً لمنع التصعيد عبر الـ payload.
+     * اضبطها صراحة عبر methods مخصصة في الـ controller.
+     */
     protected $fillable = [
         'name',
         'email',
@@ -28,8 +34,6 @@ class User extends Authenticatable
         'latitude',
         'longitude',
         'emergency_contact',
-        'pharmacy_id',
-        'must_change_password',
     ];
 
     public function getActivitylogOptions(): LogOptions

@@ -34,3 +34,10 @@ oracle_vm_setup.sh
 # Junk files
 langPath())
 postman/
+
+# OpenCode local files (AGENTS.md, PROJECT_MAP.md, opencode.json, .opencode/)
+/.opencode/
+/AGENTS.md
+/PROJECT_MAP.md
+/opencode.json
+/opencode.jsonc

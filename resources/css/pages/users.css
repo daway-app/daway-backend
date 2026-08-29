@@ -66,7 +66,7 @@ html[dir] body.dark-mode {
 .header-title-section h1 {
     font-size: 1.5rem;
     font-weight: 800;
-    color: #1e293b;
+    color: var(--line);
     margin: 0 0 5px 0;
 }
 
@@ -76,7 +76,7 @@ body.dark-mode .header-title-section h1 {
 
 .header-title-section p {
     font-size: 0.9rem;
-    color: #64748b;
+    color: var(--ink-soft);
     margin: 0;
 }
 
@@ -89,7 +89,7 @@ body.dark-mode .header-title-section h1 {
 .btn-add-pharmacy {
     position: relative;
     background: linear-gradient(135deg, #0B8FAC, #00657A);
-    color: #ffffff;
+    color: var(--paper);
     padding: 12px 22px;
     border-radius: 14px;
     font-weight: 600;
@@ -124,7 +124,7 @@ body.dark-mode .header-title-section h1 {
 .notification-btn {
     width: 42px;
     height: 42px;
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     display: flex;
@@ -155,7 +155,7 @@ body.dark-mode .notification-btn {
     align-items: center;
     gap: 8px;
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--ink-soft);
     margin-bottom: 25px;
     justify-content: flex-start;
 }
@@ -193,7 +193,7 @@ body.dark-mode .breadcrumb-trail .cur {
 }
 
 .card-box {
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid #e2e8f0;
     border-radius: 16px;
     padding: 20px;
@@ -210,7 +210,7 @@ body.dark-mode .card-box {
 .card-title {
     font-size: 15px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     margin: 0 0 16px 0;
     display: flex;
     align-items: center;
@@ -242,7 +242,7 @@ body.dark-mode .card-title {
 .search-input-box input {
     width: 100%;
     padding: 10px 42px 10px 16px;
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid #e2e8f0;
     border-radius: 25px;
     font-size: 13px;
@@ -279,12 +279,12 @@ body.dark-mode .search-input-box input {
 
 .pill-btn {
     border: 1px solid #e2e8f0;
-    background: #ffffff;
+    background: var(--paper);
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
-    color: #64748b;
+    color: var(--ink-soft);
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -295,10 +295,10 @@ body.dark-mode .pill-btn {
     color: #cbd5e1;
 }
 
-.pill-btn:hover { background: #f8fafc; }
+.pill-btn:hover { background: var(--canvas); }
 .pill-btn.active {
     background: #14b8a6;
-    color: #ffffff;
+    color: var(--paper);
     border-color: #14b8a6;
 }
 
@@ -312,7 +312,7 @@ body.dark-mode .pill-btn {
 .user-table-header h3 {
     font-size: 16px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     margin: 0;
 }
 
@@ -322,7 +322,7 @@ body.dark-mode .user-table-header h3 {
 
 .user-table-header span {
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--ink-faint);
 }
 
 .table-responsive {
@@ -339,7 +339,7 @@ body.dark-mode .user-table-header h3 {
 
 .custom-table th {
     background: #fcfcfd;
-    color: #64748b;
+    color: var(--ink-soft);
     font-size: 13px;
     font-weight: 700;
     padding: 10px 8px !important;
@@ -353,7 +353,7 @@ body.dark-mode .custom-table th {
 
 .custom-table td {
     padding: 10px 8px !important;
-    border-bottom: 1px solid #f8fafc;
+    border-bottom: 1px solid var(--canvas);
     font-size: 13px;
     vertical-align: middle;
     color: #334155;
@@ -387,13 +387,13 @@ body.dark-mode .custom-table td {
     justify-content: center;
     font-size: 12px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--paper);
     flex-shrink: 0;
 }
 
 .avatar-blue { background-color: #3b82f6; }
 .avatar-purple { background-color: #a855f7; }
-.avatar-gray { background-color: #94a3b8; }
+.avatar-gray { background-color: var(--ink-faint); }
 .avatar-cyan { background-color: #06b6d4; }
 
 .user-info {
@@ -403,7 +403,7 @@ body.dark-mode .custom-table td {
 
 .user-info strong {
     font-size: 13px;
-    color: #0f172a;
+    color: var(--ink);
 }
 
 body.dark-mode .user-info strong {
@@ -412,7 +412,7 @@ body.dark-mode .user-info strong {
 
 .user-info small {
     font-size: 11px;
-    color: #94a3b8;
+    color: var(--ink-faint);
     direction: ltr;
     text-align: right;
 }
@@ -489,7 +489,7 @@ input:checked + .slider:before { transform: translateX(18px); }
     width: 100% !important;
     margin-top: 24px !important;
     padding: 16px 24px !important;
-    background: #f8fafc !important;
+    background: var(--canvas) !important;
     border-top: 1px solid #e2e8f0 !important;
     box-sizing: border-box !important;
 }
@@ -548,7 +548,7 @@ body.dark-mode .pagination-wrapper {
     min-width: 38px !important;
     height: 38px !important;
     padding: 0 12px !important;
-    background-color: #ffffff !important;
+    background-color: var(--paper) !important;
     border: 1px solid #e2e8f0 !important;
     border-radius: 8px !important;
     color: #475569 !important;
@@ -579,7 +579,7 @@ body.dark-mode .pagination-container span:not([class]) {
 .pagination-wrapper nav a:hover:not(.active) {
     background-color: #f1f5f9 !important;
     border-color: #cbd5e1 !important;
-    color: #0f172a !important;
+    color: var(--ink) !important;
 }
 
 body.dark-mode .pagination-container nav a:hover:not(.active),
@@ -594,7 +594,7 @@ body.dark-mode .pagination-wrapper nav a:hover:not(.active) {
 .pagination-container span[aria-current="page"],
 .pagination-wrapper span[aria-current="page"] {
     background-color: #0B8FAC !important;
-    color: #ffffff !important;
+    color: var(--paper) !important;
     border-color: #0B8FAC !important;
     box-shadow: 0 0 12px rgba(16, 185, 129, 0.6), 0 0 24px rgba(16, 185, 129, 0.3) !important;
 }
@@ -605,7 +605,7 @@ body.dark-mode .pagination-wrapper nav a:hover:not(.active) {
 .pagination-wrapper .disabled {
     opacity: 0.4 !important;
     cursor: not-allowed !important;
-    background-color: #f8fafc !important;
+    background-color: var(--canvas) !important;
 }
 
 /* ==========================================
@@ -629,7 +629,7 @@ body.dark-mode .pagination-wrapper nav a:hover:not(.active) {
 .role-dist-count {
     font-size: 13px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     width: 40px;
     text-align: right;
     flex-shrink: 0;
@@ -667,7 +667,7 @@ body.dark-mode .role-dist-count {
     width: 10px;
     height: 10px;
     background-color: inherit;
-    border: 2px solid #ffffff;
+    border: 2px solid var(--paper);
     border-radius: 50%;
     box-shadow: 0 0 2px rgba(0,0,0,0.2);
     z-index: 2;
@@ -690,7 +690,7 @@ body.dark-mode .role-dist-label {
 .no-results {
     text-align: center;
     padding: 24px;
-    color: #94a3b8;
+    color: var(--ink-faint);
     font-size: 13px;
 }
 
@@ -725,7 +725,7 @@ body.dark-mode .role-dist-label {
 
 .action-btn.edit-btn:hover, .modern-action-btn.edit-action:hover {
     background-color: #16a34a;
-    color: #ffffff;
+    color: var(--paper);
     transform: translateY(-3px) scale(1.05);
     box-shadow: 0 6px 12px rgba(22, 163, 74, 0.2);
 }
@@ -738,7 +738,7 @@ body.dark-mode .role-dist-label {
 
 .action-btn.delete-btn:hover {
     background-color: #dc2626;
-    color: #ffffff;
+    color: var(--paper);
     transform: translateY(-3px) scale(1.05);
     box-shadow: 0 6px 12px rgba(220, 38, 38, 0.2);
 }
@@ -773,7 +773,7 @@ body.dark-mode .role-dist-label {
 }
 
 .stat-card {
-    background: #ffffff;
+    background: var(--paper);
     padding: 22px;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
@@ -805,14 +805,14 @@ body.dark-mode .role-dist-label {
 .stat-content .stat-title {
     display: block;
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--ink-soft);
     margin-bottom: 4px;
     font-weight: 600;
 }
 
 .stat-content .stat-value {
     font-size: 1.5rem;
-    color: #0f172a;
+    color: var(--ink);
     font-weight: 800;
     margin: 0;
 }
@@ -894,13 +894,13 @@ body.dark-mode .role-dist-label {
     margin: 0 0 8px;
     font-size: 17px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--ink);
 }
 
 .confirm-modal-card p {
     margin: 0 0 22px;
     font-size: 14px;
-    color: #64748b;
+    color: var(--ink-soft);
     line-height: 1.6;
 }
 
@@ -915,7 +915,7 @@ body.dark-mode .role-dist-label {
     padding: 10px 16px;
     border-radius: 10px;
     border: 1px solid #cbd5e1;
-    background: #f8fafc;
+    background: var(--canvas);
     color: #334155;
     font-size: 14px;
     font-weight: 600;

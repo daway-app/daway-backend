@@ -26,7 +26,7 @@
 }
 
 html.dark-mode {
-    background-color: #18181B;
+    background-color: transparent;
 }
 
 /* ==========================================================
@@ -45,8 +45,8 @@ html.dark-mode {
 
 body.dark-mode .bg-anim-layer {
     background:
-        radial-gradient(900px 520px at 88% -8%, rgba(79, 209, 197, .04), transparent 60%),
-        radial-gradient(760px 460px at 0% 104%, rgba(11, 143, 172, .05), transparent 55%);
+        radial-gradient(900px 520px at 88% -8%, rgba(6, 182, 212, .08), transparent 60%),
+        radial-gradient(760px 460px at 0% 104%, rgba(168, 85, 247, .08), transparent 55%);
 }
 
 /* انتقال دخول خفيف لمحتوى الصفحة عند التنقل بين الصفحات */
@@ -71,13 +71,13 @@ body {
 
 /* Dark Mode Styles */
 body.dark-mode {
-    --gray-50:  #18181B;
-    --gray-100: #232327;
-    --gray-200: #333338;
-    --gray-400: #71717A;
-    --gray-600: #A1A1AA;
-    --gray-800: #E4E4E7;
-    --white:    #232327;
+    --gray-50:  #050505;
+    --gray-100: rgba(255,255,255,.04);
+    --gray-200: rgba(255,255,255,.1);
+    --gray-400: rgba(255,255,255,.5);
+    --gray-600: rgba(255,255,255,.7);
+    --gray-800: #FAFAFA;
+    --white:    rgba(255,255,255,.04);
     background-color: #18181B;
     color: #E4E4E7;
     --unread-notification-bg: #3F3F46; /* Darker blue for unread in dark mode */

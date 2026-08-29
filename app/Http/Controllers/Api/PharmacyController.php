@@ -55,6 +55,8 @@ class PharmacyController extends Controller
 
     /**
      * تفاصيل صيدلية واحدة: ساعات العمل + التقييمات + الأدوية المتوفرة.
+     * C3: الصيدليات غير النشطة لا تُكشف للموبايل — حماية من تسريب بيانات
+     * صيدليات معطّلة (ToS violation) وعناوين/تقييمات مرتبطة بها.
      */
     public function show(int $id): JsonResponse
     {
@@ -62,7 +64,7 @@ class PharmacyController extends Controller
             'hours',
             'ratings.user',
             'pharmacyMedicines.medicine',
-        ])->find($id);
+        ])->where('is_active', true)->find($id);
 
         if (! $pharmacy) {
             return response()->json([

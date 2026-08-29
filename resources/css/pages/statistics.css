@@ -2,7 +2,7 @@
    8. تنسيقات نماذج التعديل والإدخال (Forms)
    ========================================== */
 .form-card {
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -14,13 +14,13 @@
 .form-card-header {
     padding: 22px 28px;
     border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    background: var(--canvas);
 }
 
 .form-card-header h2 {
     font-size: 18px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     margin: 0;
 }
 
@@ -49,8 +49,8 @@
     border-radius: 12px;
     border: 1px solid #cbd5e1;
     font-size: 14px;
-    color: #0f172a;
-    background: #ffffff;
+    color: var(--ink);
+    background: var(--paper);
     outline: none;
     transition: all 0.2s ease;
     font-family: inherit;
@@ -69,7 +69,7 @@
 
 .btn-pro-primary {
     background: #0B8FAC;
-    color: #ffffff;
+    color: var(--paper);
     border: none;
     padding: 12px 24px;
     border-radius: 12px;
@@ -87,8 +87,8 @@
 }
 
 .btn-pro-secondary {
-    background: #ffffff;
-    color: #64748b;
+    background: var(--paper);
+    color: var(--ink-soft);
     border: 1px solid #cbd5e1;
     padding: 12px 20px;
     border-radius: 12px;
@@ -101,7 +101,7 @@
 
 .btn-pro-secondary:hover {
     background: #f1f5f9;
-    color: #0f172a;
+    color: var(--ink);
 }
 /* ==========================================
    9. تنسيقات صفحة تفاصيل الصيدلية (Pharmacy Details)
@@ -148,7 +148,7 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    color: #64748b;
+    color: var(--ink-soft);
     font-size: 13px;
     padding: 0;
     transition: color 0.2s ease;
@@ -176,7 +176,7 @@
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: #64748b;
+    color: var(--ink-soft);
     margin-bottom: 20px;
 }
 
@@ -191,7 +191,7 @@
 }
 
 .breadcrumb-nav .cur {
-    color: #0f172a;
+    color: var(--ink);
     font-weight: 700;
 }
 
@@ -206,7 +206,7 @@
 }
 
 .btn-secondary-pro {
-    background: #ffffff;
+    background: var(--paper);
     color: #334155;
     border: 1px solid #cbd5e1;
     padding: 10px 16px;
@@ -223,11 +223,11 @@
 
 .btn-secondary-pro:hover {
     background: #f1f5f9;
-    color: #0f172a;
+    color: var(--ink);
 }
 
 .btn-danger-pro {
-    background: #ffffff;
+    background: var(--paper);
     color: #ef4444;
     border: 1px solid #fecaca;
     padding: 10px 16px;
@@ -243,7 +243,7 @@
 
 .btn-danger-pro:hover {
     background: #ef4444;
-    color: #ffffff;
+    color: var(--paper);
     border-color: #ef4444;
 }
 
@@ -253,37 +253,37 @@
 .pharmacy-page-title {
     font-size: 1.25rem;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     margin: 0 0 6px 0;
 }
 
 .info-label {
     font-size: 12px;
-    color: #64748b;
+    color: var(--ink-soft);
     margin-bottom: 4px;
 }
 
 .info-value {
     font-weight: 700;
-    color: #0f172a;
+    color: var(--ink);
 }
 
 .table-card-title {
     font-size: 16px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     margin: 0;
 }
 
 .med-name {
-    color: #0f172a;
+    color: var(--ink);
     font-size: 14px;
     display: block;
 }
 
 .med-ing {
     font-size: 12px;
-    color: #64748b;
+    color: var(--ink-soft);
 }
 
 .qty-text {

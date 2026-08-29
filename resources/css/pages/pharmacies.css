@@ -2,10 +2,10 @@
     --primary: #0B8FAC;
     --primary-dark: #00657A;
     --primary-glow: rgba(11, 143, 172, 0.35);
-    --bg-body: #f8fafc;
+    --bg-body: var(--canvas);
     --border-color: rgba(226, 232, 240, 0.8);
-    --text-main: #0f172a;
-    --text-muted: #64748b;
+    --text-main: var(--ink);
+    --text-muted: var(--ink-soft);
 
     --icon-edit: #16a34a;
     --icon-edit-bg: #f0fdf4;
@@ -90,13 +90,13 @@ body.dark-mode .glass-panel {
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ط£آ¢ط¹â€کط·إ’ ط·آ·ط¢آ¹ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ§ط·آ·ط¢آµط·آ·ط¢آ± ط·آ·ط¢آ£ط·آ·ط¢آ®ط·آ·ط¢آ±ط·آ¸أ¢â‚¬آ° */
-.gradient-text { background: linear-gradient(135deg, #0f172a, #0B8FAC); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.gradient-text { background: linear-gradient(135deg, var(--ink), #0B8FAC); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 body.dark-mode .gradient-text { background: linear-gradient(135deg, #E4E4E7, #A1A1AA); -webkit-background-clip: text; }
 
 .btn-add-pharmacy {
     position: relative;
     background: linear-gradient(135deg, #0B8FAC, #00657A);
-    color: #ffffff;
+    color: var(--paper);
     padding: 12px 22px;
     border-radius: 14px;
     font-weight: 600;
@@ -186,7 +186,7 @@ body.dark-mode .btn-show-map {
 }
 body.dark-mode .btn-show-map:hover {
     background: var(--icon-edit);
-    color: #ffffff;
+    color: var(--paper);
 }
 body.dark-mode .close-btn-secondary,
 body.dark-mode .btn-external-gmaps {
@@ -205,7 +205,7 @@ body.dark-mode .page-link {
 body.dark-mode .page-item.active .page-link {
     background-color: var(--primary) !important;
     border-color: var(--primary) !important;
-    color: #ffffff !important;
+    color: var(--paper) !important;
 }
 body.dark-mode .page-item.disabled .page-link {
     background-color: #333338 !important;

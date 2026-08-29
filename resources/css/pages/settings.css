@@ -17,7 +17,7 @@
 
 .lang-btn.active {
     background-color: #0B8FAC;
-    color: #ffffff;
+    color: var(--paper);
     box-shadow: 0 4px 12px rgba(11, 143, 172, 0.2);
 }
 
@@ -94,7 +94,7 @@ body.dark-mode .lang-btn:not(.active):hover {
 }
 
 .settings-card {
-    background: #ffffff;
+    background: var(--paper);
     border-radius: 0.75rem;
     padding: 1.5rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);

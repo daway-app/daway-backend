@@ -39,9 +39,125 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* ==========================================================
-   خلفية ثابتة هادئة — تدرجات ناعمة بدون عناصر متحركة
-   (تدرجات الجسم معرفة أدناه في قاعدة body)
+   عناصر الخلفية المتحركة التفاعلية (خلف بطاقة الدخول)
    ========================================================== */
+.bg-anim-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.auth-container {
+    z-index: 1;
+}
+
+/* غلاف الحركة: يتحرك مع الماوس (JS) */
+.bg-mover {
+    position: absolute;
+    bottom: -90px;
+    will-change: transform;
+}
+
+/* الشكل الداخلي: يطفو للأعلى باستمرار */
+.bg-shape {
+    display: block;
+    opacity: var(--op, .6);
+    animation: bgFloatUp var(--dur, 22s) linear infinite;
+    animation-delay: var(--delay, 0s);
+}
+
+/* كبسولة دواء */
+.bg-shape--capsule {
+    width: 30px;
+    height: 62px;
+    border-radius: 999px;
+    background: linear-gradient(170deg, #7BC1B7 0%, #0B8FAC 55%, #00657A 100%);
+    position: relative;
+    box-shadow: inset 0 -4px 8px rgba(0, 68, 82, .35), 0 4px 14px rgba(0, 101, 122, .25);
+}
+.bg-shape--capsule::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    inset-inline-start: 50%;
+    width: 4px;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, .6);
+    border-radius: 999px;
+}
+
+/* قرص دواء (نصفان بلونين) */
+.bg-shape--pill {
+    width: 42px;
+    height: 19px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0B8FAC 0%, #0B8FAC 50%, #7BC1B7 50%, #7BC1B7 100%);
+    box-shadow: inset 0 -3px 6px rgba(0, 68, 82, .35), 0 3px 10px rgba(0, 101, 122, .28);
+}
+
+/* علامة + طبية */
+.bg-shape--cross {
+    width: 34px;
+    height: 34px;
+    position: relative;
+    filter: drop-shadow(0 3px 6px rgba(0, 101, 122, .3));
+}
+.bg-shape--cross::before,
+.bg-shape--cross::after {
+    content: '';
+    position: absolute;
+    background: #0B8FAC;
+    border-radius: 7px;
+}
+.bg-shape--cross::before { width: 11px; height: 100%; left: 50%; transform: translateX(-50%); }
+.bg-shape--cross::after { width: 100%; height: 11px; top: 50%; transform: translateY(-50%); }
+
+/* حلقة نبض */
+.bg-shape--ring {
+    width: 36px;
+    height: 36px;
+    border: 4px solid rgba(0, 101, 122, .8);
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 3px 10px rgba(0, 101, 122, .25);
+}
+.bg-shape--ring::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 3px solid rgba(11, 143, 172, .85);
+    border-radius: 50%;
+}
+
+/* التوزيع: الموضع، مدة الحركة، التأخير السالب (تبدأ موزعة على الشاشة) */
+.bg-mover:nth-child(1)  { inset-inline-start: 3%;  --dur: 26s; --delay: -3s;  --sway: 22px; --op: .6;  }
+.bg-mover:nth-child(2)  { inset-inline-start: 12%; --dur: 19s; --delay: -8s;  --sway: 14px; --op: .7;  }
+.bg-mover:nth-child(3)  { inset-inline-start: 21%; --dur: 24s; --delay: -14s; --sway: 26px; --op: .55; }
+.bg-mover:nth-child(4)  { inset-inline-start: 31%; --dur: 17s; --delay: -6s;  --sway: 18px; --op: .62; }
+.bg-mover:nth-child(5)  { inset-inline-start: 41%; --dur: 28s; --delay: -19s; --sway: 20px; --op: .5;  }
+.bg-mover:nth-child(6)  { inset-inline-start: 51%; --dur: 21s; --delay: -11s; --sway: 24px; --op: .65; }
+.bg-mover:nth-child(7)  { inset-inline-start: 61%; --dur: 25s; --delay: -4s;  --sway: 16px; --op: .58; }
+.bg-mover:nth-child(8)  { inset-inline-start: 71%; --dur: 18s; --delay: -16s; --sway: 22px; --op: .68; }
+.bg-mover:nth-child(9)  { inset-inline-start: 81%; --dur: 23s; --delay: -9s;  --sway: 15px; --op: .6;  }
+.bg-mover:nth-child(10) { inset-inline-start: 91%; --dur: 27s; --delay: -1s;  --sway: 25px; --op: .63; }
+.bg-mover:nth-child(11) { inset-inline-start: 8%;  --dur: 20s; --delay: -12s; --sway: 17px; --op: .66; }
+.bg-mover:nth-child(12) { inset-inline-start: 55%; --dur: 29s; --delay: -2s;  --sway: 23px; --op: .57; }
+.bg-mover:nth-child(13) { inset-inline-start: 70%; --dur: 16s; --delay: -8s;  --sway: 19px; --op: .64; }
+
+@keyframes bgFloatUp {
+    0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+    25%  { transform: translate3d(var(--sway, 18px), -26vh, 0) rotate(12deg); }
+    50%  { transform: translate3d(calc(var(--sway, 18px) * -1), -52vh, 0) rotate(-10deg); }
+    75%  { transform: translate3d(var(--sway, 18px), -78vh, 0) rotate(14deg); }
+    100% { transform: translate3d(0, -104vh, 0) rotate(0deg); }
+}
+
+@media (max-width: 900px) {
+    .bg-mover:nth-child(n+6) { display: none; }
+}
 
 body {
     min-height: 100vh;
@@ -109,6 +225,24 @@ body {
     -webkit-mask-image: radial-gradient(560px 460px at 78% 30%, #000 0%, transparent 72%);
             mask-image: radial-gradient(560px 460px at 78% 30%, #000 0%, transparent 72%);
     pointer-events: none;
+}
+
+/* -- فقاعات زخرفية متحركة -- */
+.bubble-shape {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.28), rgba(255,255,255,.06) 55%, transparent 75%);
+    filter: blur(1px);
+    pointer-events: none;
+    z-index: 1;
+}
+.bubble-1 { width: 190px; height: 190px; top: -60px; inset-inline-start: -55px; animation: floatBubble 9s ease-in-out infinite; }
+.bubble-2 { width: 95px; height: 95px; bottom: 110px; inset-inline-end: -30px; animation: floatBubble 7s ease-in-out infinite reverse; }
+.bubble-3 { width: 48px; height: 48px; top: 130px; inset-inline-end: 55px; animation: floatBubble 5.5s ease-in-out 1s infinite; }
+
+@keyframes floatBubble {
+    0%, 100% { transform: translateY(0) translateX(0) scale(1); }
+    50%      { transform: translateY(-18px) translateX(8px) scale(1.07); }
 }
 
 .logo-wrapper {
@@ -511,4 +645,20 @@ body {
 /* إتاحة الوصول: احترام تفضيل تقليل الحركة */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+
+/* عند تقليل الحركة: بدل الاختفاء، توزيع ثابت واضح للعناصر */
+@media (prefers-reduced-motion: reduce) {
+    .bg-mover { animation: none; bottom: auto; }
+    .bg-shape { animation: none; }
+    .bg-mover:nth-child(1) { top: 6%; }
+    .bg-mover:nth-child(2) { top: 20%; }
+    .bg-mover:nth-child(3) { top: 34%; }
+    .bg-mover:nth-child(4) { top: 48%; }
+    .bg-mover:nth-child(5) { top: 62%; }
+    .bg-mover:nth-child(6) { top: 12%; }
+    .bg-mover:nth-child(7) { top: 40%; }
+    .bg-mover:nth-child(8) { top: 70%; }
+    .bg-mover:nth-child(9) { top: 26%; }
+    .bg-mover:nth-child(10) { top: 56%; }
 }
