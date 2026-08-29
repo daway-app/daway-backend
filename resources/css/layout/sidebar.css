@@ -14,12 +14,12 @@
 }
 
 body.dark-mode {
-    --sidebar-bg: rgba(255, 255, 255, 0.04);
-    --sidebar-border: rgba(255, 255, 255, 0.1);
-    --active-bg: rgba(6, 182, 212, 0.12);
-    --active-glow: #06B6D4;
-    --text-muted: #06B6D4;
-    --badge-bg: #06B6D4;
+    --sidebar-bg: #232327;
+    --sidebar-border: #333338;
+    --active-bg: rgba(59, 130, 246, 0.15);
+    --active-glow: #3b82f6;
+    --text-muted: #71717A;
+    --badge-bg: #3b82f6;
 }
 
 @keyframes sidebarSlideIn {

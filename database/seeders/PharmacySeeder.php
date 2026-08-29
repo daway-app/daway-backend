@@ -29,21 +29,20 @@ class PharmacySeeder extends Seeder
         $pharmacyUser->syncRoles(['pharmacy']);
 
         // ✅ استخدام updateOrCreate للصيدلية
-        $pharmacy = Pharmacy::updateOrCreate(
+        Pharmacy::updateOrCreate(
             ['pharmacy_custom_id' => 'PH-1234'],
             [
+                'user_id' => $pharmacyUser->id,
+                'pharmacy_custom_id' => 'PH-1234',
                 'pharmacy_name' => 'صيدلية الأمل',
                 'address' => 'غزة، شارع الوحدة',
                 'latitude' => 31.501600,
                 'longitude' => 34.466800,
                 'phone_number' => '+970591234567',
+                'is_active' => true,
+                'avg_rating' => 0.00,
             ]
         );
-        // الحقول الحساسة تُضبط صراحة بعد الإنشاء (C1: أزيلت من $fillable لمنع التصعيد).
-        $pharmacy->user_id = $pharmacyUser->id;
-        $pharmacy->is_active = true;
-        $pharmacy->avg_rating = 0.00;
-        $pharmacy->save();
 
         // ✅ صيدلية ثانية
         $pharmacyUser2 = User::updateOrCreate(
@@ -62,19 +61,19 @@ class PharmacySeeder extends Seeder
         $pharmacyUser2->save();
         $pharmacyUser2->syncRoles(['pharmacy']);
 
-        $pharmacy2 = Pharmacy::updateOrCreate(
+        Pharmacy::updateOrCreate(
             ['pharmacy_custom_id' => 'PH-5678'],
             [
+                'user_id' => $pharmacyUser2->id,
+                'pharmacy_custom_id' => 'PH-5678',
                 'pharmacy_name' => 'صيدلية الشفاء',
                 'address' => 'نابلس، شارع حطين',
                 'latitude' => 32.223800,
                 'longitude' => 35.262700,
                 'phone_number' => '+970598765432',
+                'is_active' => true,
+                'avg_rating' => 0.00,
             ]
         );
-        $pharmacy2->user_id = $pharmacyUser2->id;
-        $pharmacy2->is_active = true;
-        $pharmacy2->avg_rating = 0.00;
-        $pharmacy2->save();
     }
 }

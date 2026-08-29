@@ -6,12 +6,12 @@
     --primary-glow: rgba(11, 143, 172, 0.2);
     --border-color-light: #e2e8f0;
     --border-color-dark: #334155;
-    --bg-light: var(--paper);
-    --bg-dark: var(--line);
-    --text-main-light: var(--ink);
+    --bg-light: #ffffff;
+    --bg-dark: #1e293b;
+    --text-main-light: #0f172a;
     --text-main-dark: #f1f5f9;
-    --text-muted-light: var(--ink-soft);
-    --text-muted-dark: var(--ink-faint);
+    --text-muted-light: #64748b;
+    --text-muted-dark: #94a3b8;
 }
 
 /* ==========================================
@@ -95,7 +95,7 @@
 }
 
 .inventory-table th {
-    background-color: var(--canvas);
+    background-color: #f8fafc;
     color: var(--text-muted-light);
     font-size: 0.75rem;
     font-weight: 600;
@@ -116,7 +116,7 @@
 }
 
 .inventory-table tbody tr:hover {
-    background-color: var(--canvas);
+    background-color: #f8fafc;
 }
 
 /* ==========================================
@@ -195,7 +195,7 @@
 
 .action-button:hover {
     background-color: var(--primary-color);
-    color: var(--paper);
+    color: #ffffff;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px var(--primary-glow);
 }
@@ -253,6 +253,6 @@ body.dark-mode .action-button {
 
 body.dark-mode .action-button:hover {
     background-color: var(--primary-color);
-    color: var(--paper);
+    color: #ffffff;
     border-color: var(--primary-color);
 }

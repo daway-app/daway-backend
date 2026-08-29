@@ -1,92 +1,65 @@
-# AGENTS.md — Daway backend
+# Daway — Project Brain (AGENTS.md)
 
-Compact instructions for AI agents working in this repo. The repo itself is the source of truth; this file only highlights what is easy to miss.
+This is the central instruction file for AI agents working on the Daway project. It coordinates 14 specialized skills in `.opencode/skills/` and defines what is never to be touched.
 
-## What this is
+## Project at a glance
 
-- **Product**: Daway — Palestinian pharmacy/medicine availability app. Backend = Laravel 13 (PHP 8.4) API + Blade web dashboard. Mobile = Flutter (separate repo, consumes this API).
-- **Stack**: Laravel 13, PHP 8.4, MySQL (Aiven on Render, SSL required), Sanctum tokens, Spatie Permission + ActivityLog, Vite + Tailwind v4 (via `@tailwindcss/vite`), vanilla JS, Blade, custom CSS, Cloudinary uploads.
-- **Locales**: Arabic-first (`ar`); UI is RTL; English supported via `resources/lang/{ar,en}/`. Default font: Cairo (loaded by Vite plugin, not a CDN).
+- **Product**: Daway — Palestinian pharmacy/medicine availability app (Laravel API + Flutter/mobile + Blade web dashboard)
+- **Stack**: Laravel 13 (PHP 8.4 in Docker/CI), MySQL (Aiven on Render), Sanctum, Spatie Permission + ActivityLog, Vite, Blade, vanilla JS, custom CSS
+- **Locales**: Arabic-first (ar), RTL UI, Cairo font; English supported
+- **Deploy**: Render free plan, `php artisan serve` on port 10000, Dockerfile multi-stage
 
-## Layout (only the non-obvious parts)
-
-- `app/Http/Controllers/Api/` — mobile-facing JSON API. `app/Http/Controllers/web/` — Blade dashboard. Both share `app/Http/Controllers/Controller.php`.
-- `app/Models/` — domain models. **There are NO `Category` or `Prescription` models.** Don't invent them.
-- `app/Services/Ai/` — `AiAssistantClient`, `OcrClient`, `MedicineResolver`. Singletons registered in `AppServiceProvider`.
-- `app/Console/Commands/` — `MohImport`, `MohSync`, `GenerateChatbotMapping`. Run via `php artisan moh:import`, `php artisan moh:sync`, `php artisan chatbot:mapping`.
-- `app/Http/Resources/` — exist (`NotificationResource`, `PatientInquiryResource`, `PharmacyMedicineResource`, `RatingResource`) but most controllers return hand-built arrays. Don't add new Resources unless you also rewire the controller.
-- `app/Http/Requests/Api/` — mixed. Some are wired (`PatientProfileRequest`, `PharmacyMedicineRequest`, `RatingRequest`, etc.); the auth stubs (`SendOTP`, `VerifyOTP`, `PharmacyLogin`) are dead — validation is inline in `Api/AuthController`.
-- `database/data/moh_medicines.json` and `database/data/chatbot_medicines.json` are committed seed catalogs for the MoH importer.
-- `database/certs/ca.pem` is committed; the path is wired into `MYSQL_ATTR_SSL_CA` (see `render.yaml` and `.env.example`).
-- `postman/` and `langPath())` are intentionally gitignored; do not commit them.
-
-## Skills (`.opencode/skills/`)
-
-When a task matches a skill, load it with the `skill` tool. Available skills:
+## The 14 skills — when to use which
 
 | Skill | Use when |
 |---|---|
-| `01-laravel-backend` | Any Laravel/Eloquent/controller/model work |
+| `01-laravel-backend` | Any backend/Laravel/Eloquent/controller/model work or review |
 | `02-frontend` | Blade/CSS/JS/RTL/Vite/frontend work |
-| `03-database` | Migrations, queries, indexes, N+1, MySQL |
-| `04-api` | REST endpoints, JSON payloads, Sanctum, mobile API |
-| `05-auth-otp` | OTP, login, tokens, auth security |
-| `06-medicine-pharmacy` | Domain work: medicines, pharmacies, inventory, availability |
+| `03-database` | Migrations, queries, indexes, N+1, schema, MySQL |
+| `04-api` | REST endpoints, JSON payloads, Sanctum, mobile API consumers |
+| `05-auth-otp` | OTP, login, tokens, auth security, abuse prevention |
+| `06-medicine-pharmacy` | Domain work: medicines, pharmacies, inventory, availability, search |
 | `07-maps-location` | Maps, coordinates, distance, nearby search |
-| `08-security` | Security audits/fixes (OWASP, XSS, IDOR, CSRF, secrets) |
-| `09-performance` | Slow queries, caching, latency, cold starts |
-| `10-code-audit` | Full-project audits (read-only — do not modify files) |
+| `08-security` | Security audits and fixes (OWASP, XSS, IDOR, CSRF, secrets) |
+| `09-performance` | Slow queries, caching, loading, latency, cold starts |
+| `10-code-audit` | Full-project audits (read-only), dead code, reports |
 | `11-testing` | PHPUnit tests, coverage, regression |
 | `12-ui-ux` | Design system, RTL UX, accessibility, medical UX |
-| `13-docker-render` | Docker, Render deploy, env vars, health checks |
+| `13-docker-render` | Docker, deployment, env vars, health checks, production issues |
 | `14-git-github` | Git workflow, commits, PRs, CI |
 
 ## Hard rules (never break)
 
-1. **Never commit secrets.** Forbidden in git: `.env`, `*.sql`, `daway_backup.sql`, `notif-test.js`, `oracle_vm_setup.sh`, `langPath())`. Listed in `.gitignore`; keep it that way.
-2. **Never weaken security.** Do not log/return OTPs or tokens. Do not remove rate limits (`throttle:otp`, `throttle:otp-verify`, `throttle:login`, `throttle:30,1`). Do not skip `auth:sanctum` or `role:` middleware.
-3. **Audits are read-only.** During a `10-code-audit` run, produce the report only; do NOT modify files. Stop and wait.
-4. **Dual role system.** `users.role` enum AND Spatie role must both be set. Seeder: `database/seeders/RolePermissionSeeder.php` (`admin`, `pharmacy`, `patient`).
-5. **API response shape.** Hand-built arrays with `success` / `message` / `data` / `pagination` keys. Messages are **English in API responses** (see `Api/AuthController.php`); web UI messages are Arabic from `resources/lang/ar/`. Some controllers use a private `payload()` helper — copy that style in the same controller.
-6. **RTL/UI.** Respect the teal design tokens in `resources/css/app.css`. Do not redesign without being asked.
-7. **Tests must pass.** Run `composer test` (or `php artisan test`) after behavior changes. Never delete tests to make the suite green.
+1. **Project root is the repo itself** — everything here assumes the repo you are working in. Verify paths before acting.
+2. **Never rewrite working code** — prefer small, targeted changes; inspect before modifying; search usages before deleting.
+3. **Never commit secrets** — `.env`, DB passwords, API keys, OTP materials, `*.sql` backups, `daway_backup.sql`, `notif-test.js`, `oracle_vm_setup.sh` are all forbidden.
+4. **Never weaken security** — no logging/returning OTPs or tokens, no removing rate limits, no skipping authorization.
+5. **Audits are read-only** — during a `10-code-audit` run, do NOT modify files; produce the structured report and wait for instructions.
+6. **Don't invent domain entities** — there are NO categories or prescriptions tables/models; no Jobs/Events/Mail/Notifications classes, no repositories, no observers exist. Build on what exists.
+7. **Keep the dual role system in sync** — `users.role` enum AND Spatie roles must both be set (see `RolePermissionSeeder`).
+8. **Respect response conventions** — API payloads are hand-built arrays `success/message/data/pagination` with ARABIC messages; match the existing controllers' `payload()` style.
+9. **Don't redesign the UI without being asked** — respect the teal design tokens in `resources/css/app.css`; incremental improvements only.
+10. **Tests must pass** — run `composer test` after changes affecting behavior; never delete tests to make suites green.
 
-## Dev commands
+## Known issues (from the latest audit findings — treat as facts until fixed)
 
-- `composer setup` — one-shot: install PHP deps, copy `.env`, key, migrate, install Node, build assets.
-- `composer dev` — runs `php artisan serve` + queue listener + pail + Vite concurrently.
-- `composer test` — clears config and runs `php artisan test` (sqlite `:memory:` per `phpunit.xml`).
-- `php artisan route:list` / `php artisan migrate:status` — quick sanity checks.
-- `php artisan moh:import` — import `database/data/moh_medicines.json` into `moh_medicines` table.
-- `php artisan moh:sync` — refresh MoH catalog (uses `MOH_SSL_VERIFY` from `.env`).
-- `php artisan chatbot:mapping` — regenerate `database/data/chatbot_medicines.json`.
-- `npm run build` / `npm run dev` — Vite (input list is in `vite.config.js`, not the default `resources/css/app.css` + `resources/js/app.js`).
+- `render.yaml` healthCheckPath `/up` ≠ actual route `/healthz` — Render health checks likely broken
+- API OTP codes are returned in JSON responses (no SMS gateway) — known trade-off, flag before changing
+- `app/Http/Requests/Api/*` (SendOTP/VerifyOTP/PharmacyLogin) are dead stubs; validation is inline in `Api\AuthController`
+- `app/Http/Resources/*` are stubs; controllers build arrays manually
+- Stale root-level CSS files at `resources/css/` root not in the Vite input list; root `auth.blade.php` references stale asset paths
+- FontAwesome `fas` icons used without a FontAwesome CDN include
+- Junk file named `langPath())` at repo root (PsySH stray) — candidate for deletion/gitignore
+- Only skeleton tests exist — the project has no real coverage yet
 
-## API conventions (mobile API)
+## Full audit sequence (run as one session when asked to audit "everything")
 
-- Public: `POST /api/otp/send`, `POST /api/otp/verify`, `POST /api/login/pharmacy`, `GET /api/medicines*`, `GET /api/pharmacies*`.
-- Protected by `auth:sanctum`. Pharmacy-scoped routes under `/api/pharmacy/*` additionally require `role:pharmacy`.
-- AI/OCR (`/api/chat`, `/api/ocr/medicine`) require `auth:sanctum` and are throttled `30,1`.
-- Token expiry: `SANCTUM_EXPIRATION` (default 10080 min = 7 days). Returned in `data.token`; user payload in `data.user`.
-- Known trade-off: OTP codes are returned in the JSON response because there is no SMS gateway wired up. Flag before changing this.
-- Custom rate limiters defined in `bootstrap/app.php` (`otp`, `otp-verify`, `login`, `api`).
+1. Repository discovery → 2. Architecture audit → 3. Database audit → 4. API audit → 5. Backend audit → 6. Frontend audit → 7. Security audit → 8. Performance audit → 9. Dead code audit → 10. Testing audit → 11. Deployment audit → 12. Final structured report (per `10-code-audit` deliverable format).
 
-## Deploy (Render)
+After the report, STOP and wait for explicit instruction on which issues to fix.
 
-- `render.yaml` is authoritative for prod env vars. **Never put real secrets in `render.yaml`** — set `APP_KEY`, DB password, etc. in the Render Dashboard. `MYSQL_ATTR_SSL_CA` already points to `database/certs/ca.pem` in the repo.
-- `startCommand`: `php artisan serve --host=0.0.0.0 --port=10000`. `healthCheckPath`: `/healthz` (matches `routes/web.php:40`).
-- `Dockerfile` is multi-stage: Node builds Vite assets, then PHP 8.4 CLI runs the app. On boot it runs `config:cache` + `route:cache` + `migrate --force` and starts a keep-alive loop pinging `/api/medicines` every 240s (free-tier sleep prevention).
-- Logging goes to `stderr` in prod so it surfaces in the Render dashboard.
+## Repo hygiene reminders
 
-## CI
-
-- `.github/workflows/laravel.yml` runs on push/PR to `develop`. Uses PHP 8.4, sqlite in-memory, `php artisan test`. Mirrors `phpunit.xml` settings.
-
-## Known issues / quirks
-
-- OTP codes are returned in API responses (no SMS provider). Don't "fix" without coordinating.
-- `bootstrap/app.php` registers Laravel's built-in health route at `/up` **in addition to** the custom `/healthz`; Render uses `/healthz`.
-- `composer.json` requires `^8.3` PHP but CI and Dockerfile use 8.4 — bump the `require` line if you intentionally target 8.4 only.
-- Vite input list is in `vite.config.js` and is extensive; don't add new CSS/JS files without registering them there.
-- Free-tier DB (Aiven MySQL on Render) sleeps after inactivity; the `Dockerfile` keep-alive loop mitigates this.
-- No `opencode.json` exists at the repo root; if you add one, keep it minimal.
+- Feature branches follow `feature/US-XX-slug`; CI (tests on sqlite) runs on push/PR to `develop`
+- Keep `.env.example` in sync when env vars are added
+- Use `composer test` / `npm run build` / `php artisan route:list` / `php artisan migrate:status` to verify changes

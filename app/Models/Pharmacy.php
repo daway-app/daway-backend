@@ -15,24 +15,19 @@ class Pharmacy extends Model
 
     protected $table = 'pharmacies';
 
-    /**
-     * قائمة بيضاء لـ mass-assignment — C1.
-     * الحقول الحساسة (is_active, avg_rating, profile_completed_at, user_id, pharmacy_custom_id)
-     * غير مشمولة عمداً لمنع:
-     *  - تعديل is_active عبر الـ payload (يجب أن يمر عبر admin/web flow).
-     *  - تعديل avg_rating عبر الـ payload (يُحدّث عبر Observer).
-     *  - تخطي إكمال البروفايل عبر ضبط profile_completed_at.
-     *  - ربط الصيدلية بـ user آخر عبر payload.
-     * الحقول المحذوفة تُضبط صراحة عبر methods أو في الـ seeder/admin flow.
-     */
     protected $fillable = [
-        'pharmacy_name',
-        'address',
-        'region',
-        'latitude',
-        'longitude',
-        'phone_number',
-        'logo',
+        'user_id',            // صاحب الصيدلية (مرتبط بجدول users)
+        'pharmacy_custom_id',  // كود مخصص للصيدلية (unique)
+        'pharmacy_name',       // اسم الصيدلية
+        'address',             // العنوان النصي
+        'region',              // المنطقة / الحي
+        'latitude',            // خط العرض (للموقع على الخريطة)
+        'longitude',           // خط الطول (للموقع على الخريطة)
+        'phone_number',        // رقم هاتف الصيدلية
+        'logo',                // مسار صورة الشعار
+        'avg_rating',          // متوسط التقييم (بيتحدث تلقائياً غالباً عبر الكود مش يدوي)
+        'is_active',           // هل الصيدلية شغالة حالياً
+        'profile_completed_at',// وقت إكمال الصيدلي لبياناته عند أول دخول
     ];
 
     protected function casts(): array

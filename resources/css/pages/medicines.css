@@ -6,8 +6,8 @@
     --primary-dark: #00657A;
     --primary-soft: #ccfbf1;
     --blue: #0284c7;
-    --ink: var(--ink);
-    --muted: var(--ink-soft);
+    --ink: #0f172a;
+    --muted: #64748b;
     --line: rgba(148, 163, 184, 0.20);
     --surface: rgba(255, 255, 255, 0.88);
     --shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.05);
@@ -44,7 +44,7 @@ html[dir] body {
     background:
         radial-gradient(circle at 5% 5%, rgba(11, 143, 172, 0.08), transparent 28%),
         radial-gradient(circle at 95% 10%, rgba(2, 132, 199, 0.07), transparent 25%),
-        linear-gradient(135deg, var(--canvas) 0%, #eef5f5 100%);
+        linear-gradient(135deg, #f8fafc 0%, #eef5f5 100%);
 }
 
 html[dir] body.dark-mode,
@@ -92,7 +92,7 @@ html[dir] body.dark-mode {
     font-weight: 800;
     margin: 0 0 4px 0;
     letter-spacing: -0.4px;
-    background: linear-gradient(135deg, var(--ink), #00657A);
+    background: linear-gradient(135deg, #0f172a, #00657A);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -119,7 +119,7 @@ body.dark-mode .header-title-section h1 {
 .btn-add-pharmacy {
     position: relative;
     background: linear-gradient(135deg, #0B8FAC, #00657A);
-    color: var(--paper);
+    color: #ffffff;
     padding: 12px 22px;
     border-radius: 14px;
     font-weight: 600;
@@ -152,7 +152,7 @@ body.dark-mode .header-title-section h1 {
 .notification-btn {
     width: 42px;
     height: 42px;
-    background: var(--paper);
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     display: flex;
@@ -194,7 +194,7 @@ body.dark-mode .notification-btn {
     display: flex;
     gap: 6px;
     font-size: 12px;
-    color: var(--ink-faint);
+    color: #94a3b8;
     margin-bottom: 20px;
 }
 
@@ -391,7 +391,7 @@ body.dark-mode .chart-card {
 .donut-inner-hole {
     width: 130px;
     height: 130px;
-    background: var(--paper);
+    background: #ffffff;
     border-radius: 50%;
     display: flex;
     flex-direction: column;
@@ -434,7 +434,7 @@ body.dark-mode .donut-inner-hole {
 }
 
 .legend-row:hover {
-    background: var(--canvas);
+    background: #f8fafc;
     transform: translateX(-4px);
 }
 
@@ -577,7 +577,7 @@ body.dark-mode .bar-track {
    6. ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸ط¸آ¾ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ±ط·آ·ط¢آ© ط·آ¸ط«â€ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¬ط·آ·ط¢آ¯ط·آ¸ط«â€ ط·آ¸أ¢â‚¬â€چ
    ========================================== */
 .filter-card {
-    background: var(--paper);
+    background: #ffffff;
     border-radius: 16px;
     padding: 14px 20px;
     display: flex;
@@ -602,7 +602,7 @@ body.dark-mode .filter-card {
 .filter-input {
     flex: 1;
     padding: 10px 16px;
-    background: var(--canvas);
+    background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     font-size: 13px;
@@ -621,7 +621,7 @@ body.dark-mode .filter-input {
 }
 
 .filter-select {
-    background: var(--paper);
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 10px 16px;
@@ -639,7 +639,7 @@ body.dark-mode .filter-select {
 }
 
 .main-card {
-    background: var(--paper);
+    background: #ffffff;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
     padding: 24px 0 20px 0;
@@ -667,7 +667,7 @@ body.dark-mode .main-card {
 
 .card-top-bar span {
     font-size: 12px;
-    color: var(--ink-faint);
+    color: #94a3b8;
 }
 
 .custom-table {
@@ -677,7 +677,7 @@ body.dark-mode .main-card {
 }
 
 .custom-table th {
-    background: var(--paper);
+    background: #ffffff;
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
@@ -693,7 +693,7 @@ body.dark-mode .custom-table th {
 
 .custom-table td {
     padding: 16px 24px;
-    border-bottom: 1px solid var(--canvas);
+    border-bottom: 1px solid #f8fafc;
     font-size: 13px;
     vertical-align: middle;
     color: #334155;
@@ -705,7 +705,7 @@ body.dark-mode .custom-table td {
 }
 
 .custom-table tbody tr:hover {
-    background-color: var(--canvas);
+    background-color: #f8fafc;
 }
 
 body.dark-mode .custom-table tbody tr:hover {
@@ -783,7 +783,7 @@ body.dark-mode .custom-table tbody tr:hover {
     align-items: center;
     justify-content: center;
     border: 1px solid #e2e8f0;
-    background: var(--paper);
+    background: #ffffff;
     cursor: pointer;
     transition: all 0.2s ease;
 }

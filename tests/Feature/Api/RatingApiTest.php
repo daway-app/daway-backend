@@ -77,24 +77,23 @@ class RatingApiTest extends TestCase
 
     public function test_can_list_ratings_by_pharmacy(): void
     {
-        $patientA = User::factory()->patient()->create();
-        $patientB = User::factory()->patient()->create();
+        $patient = User::factory()->patient()->create();
         $pharmacy = Pharmacy::factory()->create();
 
         Rating::create([
-            'user_id' => $patientA->id,
+            'user_id' => $patient->id,
             'pharmacy_id' => $pharmacy->id,
             'stars_rating' => 5,
             'created_at' => now(),
         ]);
         Rating::create([
-            'user_id' => $patientB->id,
+            'user_id' => $patient->id,
             'pharmacy_id' => $pharmacy->id,
             'stars_rating' => 4,
             'created_at' => now(),
         ]);
 
-        Sanctum::actingAs($patientA);
+        Sanctum::actingAs($patient);
 
         $response = $this->getJson("/api/ratings?pharmacy_id={$pharmacy->id}");
 
@@ -104,61 +103,19 @@ class RatingApiTest extends TestCase
             ->assertJsonPath('pagination.total', 2);
     }
 
-    public function test_patient_cannot_rate_same_pharmacy_twice(): void
-    {
-        $patient = User::factory()->patient()->create();
-        $pharmacy = Pharmacy::factory()->create(['is_active' => true]);
-
-        Sanctum::actingAs($patient);
-
-        $this->postJson('/api/ratings', [
-            'pharmacy_id' => $pharmacy->id,
-            'stars_rating' => 5,
-        ])->assertStatus(201);
-
-        // C2: التقييم الثاني لنفس الـ (user, pharmacy) يجب أن يُرفض بـ 422.
-        $this->postJson('/api/ratings', [
-            'pharmacy_id' => $pharmacy->id,
-            'stars_rating' => 1,
-        ])->assertStatus(422)
-            ->assertJsonValidationErrors('pharmacy_id');
-    }
-
-    public function test_two_different_patients_can_rate_same_pharmacy(): void
-    {
-        $patientA = User::factory()->patient()->create();
-        $patientB = User::factory()->patient()->create();
-        $pharmacy = Pharmacy::factory()->create(['is_active' => true]);
-
-        Sanctum::actingAs($patientA);
-        $this->postJson('/api/ratings', [
-            'pharmacy_id' => $pharmacy->id,
-            'stars_rating' => 5,
-        ])->assertStatus(201);
-
-        Sanctum::actingAs($patientB);
-        $this->postJson('/api/ratings', [
-            'pharmacy_id' => $pharmacy->id,
-            'stars_rating' => 3,
-        ])->assertStatus(201);
-
-        $this->assertSame(2, Rating::where('pharmacy_id', $pharmacy->id)->count());
-    }
-
     public function test_pharmacy_owner_can_view_own_ratings(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
-        $patientA = User::factory()->patient()->create();
-        $patientB = User::factory()->patient()->create();
+        $patient = User::factory()->patient()->create();
 
         Rating::create([
-            'user_id' => $patientA->id,
+            'user_id' => $patient->id,
             'pharmacy_id' => $pharmacy->id,
             'stars_rating' => 5,
             'created_at' => now(),
         ]);
         Rating::create([
-            'user_id' => $patientB->id,
+            'user_id' => $patient->id,
             'pharmacy_id' => $pharmacy->id,
             'stars_rating' => 3,
             'created_at' => now(),

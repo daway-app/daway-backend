@@ -50,19 +50,13 @@ class RatingController extends Controller
 
         abort_unless($pharmacy->is_active, 403, 'الصيدلية غير نشطة');
 
-        // تقييم واحد لكل (مستخدم، صيدلية) — C2: منع spam.
-        // لو في تقييم سابق، نحدّثه (نفس النجوم/التعليق) بدل إدراج مكرّر.
-        $rating = Rating::updateOrCreate(
-            [
-                'user_id' => $request->user()->id,
-                'pharmacy_id' => $data['pharmacy_id'],
-            ],
-            [
-                'stars_rating' => $data['stars_rating'],
-                'comment' => $data['comment'] ?? null,
-                'created_at' => now(),
-            ]
-        );
+        $rating = Rating::create([
+            'user_id' => $request->user()->id,
+            'pharmacy_id' => $data['pharmacy_id'],
+            'stars_rating' => $data['stars_rating'],
+            'comment' => $data['comment'] ?? null,
+            'created_at' => now(),
+        ]);
 
         $rating->load('user');
 
