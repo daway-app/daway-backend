@@ -20,8 +20,6 @@
         $availablePct = $pct($available);
         $lowPct = $pct($low);
         $outPct = $pct($out);
-        $unclassified = max($total - $available - $low - $out, 0);
-        $unclassifiedPct = $pct($unclassified);
 
         $inquiriesList = $latestInquiries ?? collect();
 
@@ -29,7 +27,6 @@
             __('pharmacy.status.available'),
             __('pharmacy.status.low_stock'),
             __('pharmacy.status.out'),
-            __('pharmacy.status.unclassified'),
         ]);
     @endphp
 
@@ -62,8 +59,8 @@
                     <div class='chart-box'>
                         <canvas data-ph-chart='bar'
                             data-ph-labels='{{ $statusLabels }}'
-                            data-ph-data='[{{ $available }},{{ $low }},{{ $out }},{{ $unclassified }}]'
-                            data-ph-colors='["#16A34A","#CA8A04","#DC2626","#B9C4C3"]'></canvas>
+                            data-ph-data='[{{ $available }},{{ $low }},{{ $out }}]'
+                            data-ph-colors='["#16A34A","#CA8A04","#DC2626"]'></canvas>
                     </div>
                 </div>
             </div>
@@ -79,14 +76,13 @@
                                 data-ph-center-value='{{ $availablePct }}%'
                                 data-ph-center-label='{{ __('pharmacy.status.available') }}'
                                 data-ph-labels='{{ $statusLabels }}'
-                                data-ph-data='[{{ $available }},{{ $low }},{{ $out }},{{ $unclassified }}]'
-                                data-ph-colors='["#16A34A","#CA8A04","#DC2626","#B9C4C3"]'></canvas>
+                                data-ph-data='[{{ $available }},{{ $low }},{{ $out }}]'
+                                data-ph-colors='["#16A34A","#CA8A04","#DC2626"]'></canvas>
                         </div>
                         <ul class='ph-legend'>
                             <li><span class='dot' style='background:#16A34A'></span> @lang('pharmacy.status.available') <b>{{ $availablePct }}%</b></li>
                             <li><span class='dot' style='background:#CA8A04'></span> @lang('pharmacy.status.low_stock') <b>{{ $lowPct }}%</b></li>
                             <li><span class='dot' style='background:#DC2626'></span> @lang('pharmacy.status.out') <b>{{ $outPct }}%</b></li>
-                            <li><span class='dot' style='background:#B9C4C3'></span> @lang('pharmacy.status.unclassified') <b>{{ $unclassifiedPct }}%</b></li>
                         </ul>
                     </div>
                 </div>

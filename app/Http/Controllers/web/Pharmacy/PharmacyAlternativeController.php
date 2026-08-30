@@ -39,7 +39,7 @@ class PharmacyAlternativeController extends Controller
         // Get all medicines that this pharmacy offers
         $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->with(['medicine', 'medicine.alternatives']) // Eager load Medicine and its alternatives
-            ->paginate(10);
+            ->get();
 
         $allMedicines = Medicine::all(['id', 'trade_name', 'active_ingredient']);
         $totalAlternatives = $pharmacyMedicines->pluck('medicine')->sum(fn ($m) => $m->alternatives->count());

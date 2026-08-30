@@ -253,9 +253,9 @@
                                     </span>
                                 </div>
                                 <div class='ph-day-controls' data-controls @if($isClosed) hidden @endif>
-                                    <input type='text' inputmode='numeric' maxlength='5' placeholder='09:00' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $openVal }}' data-from {{ $isClosed || $is24 ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true); refreshDayRow(this)'>
+                                    <input type='time' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $openVal }}' data-from {{ $isClosed || $is24 ? 'disabled' : '' }} onchange='refreshDayRow(this)'>
                                     <span class='ph-day-to'>@lang('pharmacy.profile.to')</span>
-                                    <input type='text' inputmode='numeric' maxlength='5' placeholder='17:00' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $closeVal }}' data-to {{ $isClosed || $is24 ? 'disabled' : '' }} oninput='formatTimeInput(this)' onchange='formatTimeInput(this, true); refreshDayRow(this)'>
+                                    <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control hc-time-input' value='{{ $closeVal }}' data-to {{ $isClosed || $is24 ? 'disabled' : '' }} onchange='refreshDayRow(this)'>
                                     <label class='ph-day-24'>
                                         <input type='checkbox' {{ $is24 ? 'checked' : '' }} onchange='toggle24Day(this)'>
                                         @lang('pharmacy.profile.hours_quick.open_24')
@@ -307,27 +307,6 @@
     </div>
 
     <script>
-        // إجبار صيغة 24 ساعة: أثناء الكتابة أرقام فقط (حد 4 أرقام)، وعند الخروج تُكمل الصيغة HH:MM
-        function formatTimeInput(el, strict) {
-            var d = el.value.replace(/\D/g, '').slice(0, 4);
-            if (!strict) {
-                el.value = d;
-                return;
-            }
-            if (d.length === 0) { el.value = ''; return; }
-            var h, m;
-            if (d.length <= 2) {
-                h = d; m = '00';          // "9" أو "09" → 09:00
-            } else if (d.length === 3) {
-                h = d.slice(0, 1); m = d.slice(1);  // "900" → 09:00
-            } else {
-                h = d.slice(0, 2); m = d.slice(2, 4);  // "0930" → 09:30
-            }
-            var hh = Math.min(parseInt(h, 10) || 0, 23);
-            var mm = Math.min(parseInt(m, 10) || 0, 59);
-            el.value = ('0' + hh).slice(-2) + ':' + ('0' + mm).slice(-2);
-        }
-
         function openModal(id) {
             document.getElementById(id).classList.add('active');
         }
@@ -369,6 +348,24 @@
             img.src = URL.createObjectURL(file);
             img.style.display = 'block';
             if (placeholder) { placeholder.style.display = 'none'; }
+
+            // معاينة فورية للشعار في بطاقة البروفايل الرئيسية أيضاً
+            var banner = document.querySelector('.ph-avatar');
+            if (banner) {
+                if (banner.tagName === 'IMG') {
+                    banner.src = URL.createObjectURL(file);
+                } else {
+                    // تحويل العنصر من حرف إلى صورة
+                    var newImg = document.createElement('img');
+                    newImg.src = URL.createObjectURL(file);
+                    newImg.alt = '';
+                    newImg.className = 'ph-avatar';
+                    newImg.style.cssText = 'cursor:pointer;';
+                    newImg.title = banner.title;
+                    newImg.setAttribute('onclick', 'openModal("logoModal")');
+                    banner.parentNode.replaceChild(newImg, banner);
+                }
+            }
         }
 
         document.addEventListener('keydown', function (e) {

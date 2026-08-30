@@ -105,9 +105,5 @@
         @empty
             <div class='ph-empty'><i class='fas fa-box-open'></i><h3>@lang('pharmacy.alternatives.index.empty_medicines')</h3></div>
         @endforelse
-
-        @if($pharmacyMedicines->hasPages())
-            <div style='margin-block-start:24px;'>{{ $pharmacyMedicines->links() }}</div>
-        @endif
     </div>
 @endsection
