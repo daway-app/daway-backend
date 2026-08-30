@@ -232,7 +232,12 @@ body.dark-mode .card {
 .btn-p, .btn-primary {
     background: linear-gradient(135deg, var(--teal-primary), var(--teal-deep));
     color: #fff;
-    box-shadow: 0 6px 16px -4px rgba(0,101,122,.45);
+    box-shadow: 0 6px 16px -4px rgba(0, 101, 122, .45);
+}
+body.dark-mode .btn-p, body.dark-mode .btn-primary {
+    background: linear-gradient(90deg, #0E97B4, #24D2E8);
+    color: #04141A;
+    box-shadow: 0 6px 18px -4px rgba(18, 180, 214, 0.45);
 }
 .btn-p:hover, .btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
 
@@ -293,6 +298,12 @@ body.dark-mode .badge-info { background: rgba(18, 180, 214, 0.22); border: 1px s
     box-shadow: var(--sh-sm);
 }
 
+body.dark-mode .table-container, body.dark-mode .table-wrapper-card, body.dark-mode .table-card-wrapper {
+    background: linear-gradient(155deg, #112433 0%, #0C1B27 100%);
+    border: 1px solid #1D3A4E;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+
 table { width: 100%; border-collapse: collapse; }
 
 th, td {
@@ -311,8 +322,15 @@ th {
     letter-spacing: .04em;
 }
 
+body.dark-mode th {
+    background: rgba(18, 180, 214, 0.10);
+    color: #5FE0F0;
+    border-bottom: 1px solid #1D3A4E;
+}
+
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover { background: var(--teal-mist-2); }
+body.dark-mode tbody tr:hover { background: rgba(18, 180, 214, 0.06); }
 
 /* -- Breadcrumb -- */
 .breadcrumb-trail, .breadcrumb-nav {
