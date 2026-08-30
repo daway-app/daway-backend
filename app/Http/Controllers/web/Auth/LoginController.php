@@ -34,7 +34,7 @@ class LoginController extends Controller
         if (RateLimiter::tooManyAttempts('login:'.$request->ip(), 5)) {
             return back()->withErrors([
                 'identity' => 'محاولات كثيرة، انتظر قليلاً.',
-            ])->onlyInput(['identity', 'account_type']);
+            ])->onlyInput('identity', 'account_type');
         }
         RateLimiter::hit('login:'.$request->ip(), 60);
 
@@ -57,7 +57,7 @@ class LoginController extends Controller
             if (! $pharmacy) {
                 return back()->withErrors([
                     'identity' => 'بيانات الاعتماد غير صحيحة.',
-                ])->onlyInput(['identity', 'account_type']);
+                ])->onlyInput('identity', 'account_type');
             }
 
             // 2. جلب المستخدم المرتبط بهذه الصيدلية عبر العلاقة user()
@@ -66,21 +66,21 @@ class LoginController extends Controller
             if (! $user) {
                 return back()->withErrors([
                     'identity' => 'بيانات الاعتماد غير صحيحة.',
-                ])->onlyInput(['identity', 'account_type']);
+                ])->onlyInput('identity', 'account_type');
             }
 
             // 3. التحقق من تفعيل الحساب
             if (! $pharmacy->is_active || ! $user->is_active) {
                 return back()->withErrors([
                     'identity' => 'الحساب معطل.',
-                ])->onlyInput(['identity', 'account_type']);
+                ])->onlyInput('identity', 'account_type');
             }
 
             // 4. التحقق من تطابق كلمة المرور وتسجيل الدخول
             if (! Hash::check($password, $user->password)) {
                 return back()->withErrors([
                     'identity' => 'بيانات الاعتماد غير صحيحة.',
-                ])->onlyInput(['identity', 'account_type']); // Keep identity input for convenience
+                ])->onlyInput('identity', 'account_type'); // Keep identity input for convenience
             }
 
             // If all checks pass
@@ -113,7 +113,7 @@ class LoginController extends Controller
 
                     return back()->withErrors([
                         'identity' => 'الحساب معطل.',
-                    ])->onlyInput(['identity', 'account_type']);
+                    ])->onlyInput('identity', 'account_type');
                 }
 
                 // Redirect admin/other users to the general dashboard
@@ -124,7 +124,7 @@ class LoginController extends Controller
         // Generic fallback error for admin/other if Auth::attempt fails
         return back()->withErrors([
             'identity' => 'بيانات الاعتماد غير صحيحة.',
-        ])->onlyInput(['identity', 'account_type']);
+        ])->onlyInput('identity', 'account_type');
     }
 
     /**
