@@ -26,7 +26,7 @@
 }
 
 html.dark-mode {
-    background-color: #18181B;
+    background-color: #070A13;
 }
 
 /* ==========================================================
@@ -71,16 +71,16 @@ body {
 
 /* Dark Mode Styles */
 body.dark-mode {
-    --gray-50:  #18181B;
-    --gray-100: #232327;
-    --gray-200: #333338;
-    --gray-400: #71717A;
-    --gray-600: #A1A1AA;
-    --gray-800: #E4E4E7;
-    --white:    #232327;
-    background-color: #18181B;
-    color: #E4E4E7;
-    --unread-notification-bg: #3F3F46; /* Darker blue for unread in dark mode */
+    --gray-50:  #070A13;
+    --gray-100: #0D1324;
+    --gray-200: #1E293B;
+    --gray-400: #64748B;
+    --gray-600: #94A3B8;
+    --gray-800: #F1F5F9;
+    --white:    #0D1324;
+    background-color: #070A13;
+    color: #F1F5F9;
+    --unread-notification-bg: rgba(59, 130, 246, 0.15); /* Blue tint for unread in dark mode */
 }
 
 /* Main layout container */

@@ -36,7 +36,7 @@
     "src": "_fonts-BJRfngpw.css"
   },
   "resources/css/app.css": {
-    "file": "assets/app-Za1woVm0.css",
+    "file": "assets/app-BdvTWYO0.css",
     "name": "app",
     "names": [
       "app.css"
@@ -72,7 +72,7 @@
     "isEntry": true
   },
   "resources/css/layout/app_layout.css": {
-    "file": "assets/app_layout-CqF724Lc.css",
+    "file": "assets/app_layout-DhBeqYN5.css",
     "name": "app_layout",
     "names": [
       "app_layout.css"
@@ -81,7 +81,7 @@
     "isEntry": true
   },
   "resources/css/layout/sidebar.css": {
-    "file": "assets/sidebar-DU3H24fp.css",
+    "file": "assets/sidebar-5E_0NyJb.css",
     "name": "sidebar",
     "names": [
       "sidebar.css"
@@ -90,7 +90,7 @@
     "isEntry": true
   },
   "resources/css/layout/topbar.css": {
-    "file": "assets/topbar-D7NXpm9I.css",
+    "file": "assets/topbar-DVgs89n-.css",
     "name": "topbar",
     "names": [
       "topbar.css"

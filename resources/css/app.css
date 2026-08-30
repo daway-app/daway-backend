@@ -57,16 +57,32 @@
 
 /* -- ط§ظ„ظˆط¶ط¹ ط§ظ„ظ„ظٹظ„ظٹ: ظ†ظپط³ ط§ظ„طھظˆظƒظگظ†ط²طŒ ظ‚ظٹظ… ظ…ط®طھظ„ظپط© -- */
 body.dark-mode {
-    --teal-mist:    rgba(161,161,170,.10);
-    --teal-mist-2:  #18181B;
+    /* لوحة مستخرجة من NaraRouter: كحلي عميق + أزرق Blue-500 + حدود Slate */
+    --teal-mist:    rgba(59,130,246,.12);   /* لمسة زرقاء للـ hover/tint */
+    --teal-mist-2:  rgba(59,130,246,.06);
 
-    --ink:          #E4E4E7;
-    --ink-soft:     #A1A1AA;
-    --ink-faint:    #71717A;
-    --line:         #333338;
-    --line-soft:    #232327;
-    --paper:        #232327;
-    --canvas:       #18181B;
+    --ink:          #F1F5F9;
+    --ink-soft:     #94A3B8;
+    --ink-faint:    #64748B;
+    --line:         #1E293B;
+    --line-soft:    #16203A;
+    --paper:        #0D1324;
+    --canvas:       #070A13;
+
+    /* درجات دلالية فاتحة للوضع الليلي (نفس منهجية NaraRouter) */
+    --success:      #34D399;
+    --success-bg:   rgba(52,211,153,.15);
+    --warning:      #FBBF24;
+    --warning-bg:   rgba(251,191,36,.15);
+    --danger:       #F87171;
+    --danger-bg:    rgba(248,113,113,.15);
+    --info:         #38BDF8;
+    --info-bg:      rgba(56,189,248,.15);
+
+    /* ظلال أعمق (NaraRouter) */
+    --sh-sm: 0 1px 3px rgba(0,0,0,.40);
+    --sh-md: 0 4px 6px -1px rgba(0,0,0,.40), 0 2px 4px -2px rgba(0,0,0,.30);
+    --sh-lg: 0 20px 25px -5px rgba(0,0,0,.60), 0 8px 10px -6px rgba(0,0,0,.40);
 
     background-color: var(--canvas);
     color: var(--ink);
