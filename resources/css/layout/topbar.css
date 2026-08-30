@@ -20,20 +20,20 @@
 
 /* Dark Mode Colors */
 body.dark-mode {
-    --topbar-bg: #0D1324;
-    --text-primary: #F1F5F9;
-    --text-secondary: #94A3B8;
-    --border-color: #1E293B;
-    --btn-bg: #0C111F;
-    --btn-hover: #1E293B;
-    background-color: #0D1324;
+    --topbar-bg: #081722;
+    --text-primary: #EAF4F8;
+    --text-secondary: #93C5FD;
+    --border-color: #1D3A4E;
+    --btn-bg: #0C2130;
+    --btn-hover: #13293A;
+    background-color: #081722;
     color: var(--text-primary);
-    --notification-bg-green: rgba(52, 211, 153, 0.18);
-    --notification-text-green: #34d399;
-    --notification-bg-blue: rgba(59, 130, 246, 0.18);
-    --notification-text-blue: #60a5fa;
-    --unread-notification-bg: rgba(59, 130, 246, 0.15); /* Blue tint for unread */
-    --read-notification-bg: rgba(255, 255, 255, 0.04); /* Subtle glass for read */
+    --notification-bg-green: rgba(47, 191, 143, 0.18);
+    --notification-text-green: #2FBF8F;
+    --notification-bg-blue: rgba(18, 180, 214, 0.18);
+    --notification-text-blue: #5FE0F0;
+    --unread-notification-bg: rgba(18, 180, 214, 0.15);
+    --read-notification-bg: rgba(255, 255, 255, 0.04);
 }
 
 .topbar {
@@ -46,10 +46,15 @@ body.dark-mode {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     flex-wrap: wrap;
     gap: 16px;
-    transition: background 0.3s ease, border-color 0.3s ease;
+    transition: background .3s, border-color .3s;
     position: sticky;
     top: 0;
     z-index: 1000;
+}
+
+body.dark-mode .topbar {
+    background: linear-gradient(90deg, #081722 0%, #0C2130 100%);
+    border-bottom: 1px solid #1D3A4E;
 }
 
 .topbar-title-group h1 {
@@ -120,6 +125,11 @@ body:not(.dark-mode) .sun-icon {
 
 body.dark-mode .moon-icon {
     display: none;
+}
+
+body.dark-mode .avatar {
+    background: linear-gradient(155deg, #5FE0F0, #12B4D6);
+    box-shadow: 0 2px 6px rgba(18, 180, 214, 0.4);
 }
 
 body.dark-mode .theme-toggle-btn .icon-3d {

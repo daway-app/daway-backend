@@ -14,12 +14,13 @@
 }
 
 body.dark-mode {
-    --sidebar-bg: #0D1324;
-    --sidebar-border: #1E293B;
-    --active-bg: rgba(59, 130, 246, 0.18);
-    --active-glow: #06B6D4;
-    --text-muted: #94A3B8;
-    --badge-bg: #3b82f6;
+    --sidebar-bg: #061019;
+    --sidebar-bg-2: #0A1E2B;
+    --sidebar-border: rgba(56, 189, 248, 0.35);
+    --active-bg: rgba(18, 180, 214, 0.22);
+    --active-glow: #5FE0F0;
+    --text-muted: #82A2B4;
+    --badge-bg: #12B4D6;
 }
 
 @keyframes sidebarSlideIn {
@@ -69,6 +70,10 @@ html[dir="ltr"] .sidebar-pro {
     border-right: 1px solid var(--sidebar-border);
 }
 
+body.dark-mode .sidebar-pro {
+    background: linear-gradient(190deg, #061019 0%, #0A1E2B 55%, #0D2635 100%);
+}
+
 .sidebar-content-wrapper::-webkit-scrollbar {
     width: 4px;
 }
@@ -99,14 +104,14 @@ html[dir="ltr"] .sidebar-pro {
 }
 
 .logo-icon-box {
-    width: 64px;    /* ط·ع¾ط¸â€¦ ط·آ§ط¸â€‍ط·ع¾ط¸ئ’ط·آ¨ط¸ظ¹ط·آ± ط·آ¥ط¸â€‍ط¸â€° 64px */
-    height: 64px;   /* ط·ع¾ط¸â€¦ ط·آ§ط¸â€‍ط·ع¾ط¸ئ’ط·آ¨ط¸ظ¹ط·آ± ط·آ¥ط¸â€‍ط¸â€° 64px */
-    background: #36a5a5;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(155deg, #5FE0F0, #12B4D6);
     border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 16px rgba(18, 180, 214, 0.35);
     transition: transform 0.3s var(--ease-spring);
     cursor: pointer;
     overflow: hidden;
@@ -225,8 +230,9 @@ html[dir="ltr"] .nav-item::before {
 
 .nav-item.active {
     color: #ffffff;
-    background: var(--active-bg);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(90deg, rgba(18,180,214,.22), rgba(18,180,214,0));
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-inline-start: 3px solid #5FE0F0;
 }
 
 .nav-item.active::before {
@@ -286,14 +292,14 @@ html[dir="ltr"] .user-profile-footer .user-info-group {
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: #36a5a5;
+    background: linear-gradient(155deg, #5FE0F0, #12B4D6);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     font-size: 15px;
     color: #ffffff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(18, 180, 214, 0.3);
     transition: transform 0.3s var(--ease-spring);
     background-size: cover;
     background-position: center;
