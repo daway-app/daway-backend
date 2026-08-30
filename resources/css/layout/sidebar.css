@@ -14,11 +14,11 @@
 }
 
 body.dark-mode {
-    --sidebar-bg: #070A13;
-    --sidebar-border: #1E293B;
+    --sidebar-bg: #232327;
+    --sidebar-border: #333338;
     --active-bg: rgba(59, 130, 246, 0.15);
-    --active-glow: #06B6D4;
-    --text-muted: #94A3B8;
+    --active-glow: #3b82f6;
+    --text-muted: #71717A;
     --badge-bg: #3b82f6;
 }
 

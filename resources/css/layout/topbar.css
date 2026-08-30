@@ -18,22 +18,22 @@
     --read-notification-bg: #f1f5f9; /* خلفية مظللة للإشعارات المقروءة */
 }
 
-/* Dark Mode Colors (NaraRouter palette) */
+/* Dark Mode Colors */
 body.dark-mode {
-    --topbar-bg: #0D1324;
-    --text-primary: #F1F5F9;
-    --text-secondary: #94A3B8;
-    --border-color: #1E293B;
-    --btn-bg: #0C111F;
-    --btn-hover: #1E293B;
-    background-color: #0D1324;
+    --topbar-bg: #232327;
+    --text-primary: #E4E4E7;
+    --text-secondary: #A1A1AA;
+    --border-color: #333338;
+    --btn-bg: #18181B;
+    --btn-hover: #333338;
+    background-color: #18181B;
     color: var(--text-primary);
-    --notification-bg-green: rgba(52, 211, 153, 0.15);
+    --notification-bg-green: rgba(6, 185, 129, 0.2);
     --notification-text-green: #34d399;
-    --notification-bg-blue: rgba(59, 130, 246, 0.15);
+    --notification-bg-blue: rgba(59, 130, 246, 0.2);
     --notification-text-blue: #60a5fa;
-    --unread-notification-bg: rgba(59, 130, 246, 0.15); /* Blue tint for unread */
-    --read-notification-bg: rgba(255, 255, 255, 0.05); /* Subtle glass for read */
+    --unread-notification-bg: #3F3F46; /* Darker blue for unread in dark mode */
+    --read-notification-bg: rgba(63, 63, 70, 0.35); /* خلفية مظللة للمقروءة في الوضع الداكن */
 }
 
 .topbar {
