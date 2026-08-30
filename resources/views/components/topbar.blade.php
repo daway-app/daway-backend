@@ -134,6 +134,29 @@
         seconds: "@lang('time.seconds_ago')"
     };
 
+    // إشعارات الموقع (بديل alert المتصفح)
+    function showToast(message, type = 'info', duration = 3500) {
+        let container = document.getElementById('siteToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'siteToastContainer';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const icons = { success: '✓', error: '✕', warning: '!', info: 'i' };
+        const toast = document.createElement('div');
+        toast.className = 'site-toast ' + type;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = '<span class="toast-icon">' + (icons[type] || icons.info) + '</span><span>' + message + '</span>';
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('out');
+            setTimeout(() => toast.remove(), 260);
+        }, duration);
+    }
+
     function toggleDarkMode() {
         const dark = document.body.classList.toggle('dark-mode');
         document.documentElement.classList.toggle('dark-mode', dark);
@@ -321,7 +344,7 @@
     function saveProfileChanges() {
         const newName = document.getElementById('inputName').value.trim();
         if (!newName) {
-            alert("@lang('layout.full_name_label')");
+            showToast("@lang('layout.full_name_label')", 'warning');
             return;
         }
 
@@ -375,11 +398,11 @@
                 }
             }
 
-            alert("@lang('layout.profile_saved')");
+            showToast("@lang('layout.profile_saved')", 'success');
             closeProfileModal();
         })
         .catch(() => {
-            alert("@lang('layout.profile_save_error')");
+            showToast("@lang('layout.profile_save_error')", 'error');
         });
     }
 

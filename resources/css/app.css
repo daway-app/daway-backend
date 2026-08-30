@@ -103,6 +103,22 @@ img { max-width: 100%; display: block; }
 
 ::selection { background: var(--teal-light); color: var(--teal-deeper); }
 
+/* -- شريط التمرير الملون (بألوان الهوية) -- */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--teal-primary) var(--canvas);
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--canvas); }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--teal-primary), var(--teal-deep));
+    border-radius: 999px;
+    border: 2px solid var(--canvas);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--teal-deep); }
+::-webkit-scrollbar-corner { background: var(--canvas); }
+
 /* ==========================================================
    3) ظ…ظƒظˆظ‘ظ†ط§طھ ظ…ط´طھط±ظƒط© (Primitives)
    طھظڈط³طھط®ط¯ظ… ظƒط£ط³ط§ط³ ظپظٹ ظƒظ„ ط§ظ„طµظپط­ط§طھ â€” ط§ظ„طµظپط­ط§طھ ط§ظ„ط®ط§طµط© طھظڈط¶ظٹظپ ظپظˆظ‚ظ‡ط§

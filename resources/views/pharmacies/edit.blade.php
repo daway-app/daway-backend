@@ -175,7 +175,7 @@
             const getLocationBtn = document.getElementById('getCurrentLocationBtn');
             getLocationBtn.addEventListener('click', function() {
                 if (!navigator.geolocation) {
-                    alert("@lang('pharmacies.location_not_supported')");
+                    showToast("@lang('pharmacies.location_not_supported')", 'warning');
                     return;
                 }
 
@@ -193,7 +193,7 @@
                     getLocationBtn.classList.remove('loading');
                     getLocationBtn.disabled = false;
                 }, function(error) {
-                    alert("@lang('pharmacies.location_permission_denied')");
+                    showToast("@lang('pharmacies.location_permission_denied')", 'error');
                     getLocationBtn.classList.remove('loading');
                     getLocationBtn.disabled = false;
                 }, { enableHighAccuracy: true });

@@ -268,7 +268,7 @@
                 label.className = 'status-label ' + (data.is_active ? 'active' : 'inactive');
             } catch (error) {
                 checkbox.checked = !checkbox.checked;
-                alert(error.message);
+                showToast(error.message || 'حدث خطأ، حاول مرة أخرى', 'error');
             }
         }
     </script>
