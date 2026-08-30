@@ -41,11 +41,10 @@ class PharmacyAlternativeController extends Controller
             ->with(['medicine', 'medicine.alternatives']) // Eager load Medicine and its alternatives
             ->get();
 
-        $allMedicines = Medicine::all(['id', 'trade_name', 'active_ingredient']);
         $totalAlternatives = $pharmacyMedicines->pluck('medicine')->sum(fn ($m) => $m->alternatives->count());
         $availableAlternatives = $pharmacyMedicines->filter(fn ($pm) => $pm->medicine->alternatives->isNotEmpty())->count();
 
-        return view('pharmacy.alternatives.index', compact('pharmacyMedicines', 'pharmacy', 'allMedicines', 'totalAlternatives', 'availableAlternatives'));
+        return view('pharmacy.alternatives.index', compact('pharmacyMedicines', 'pharmacy', 'totalAlternatives', 'availableAlternatives'));
     }
 
     /**
@@ -80,39 +79,56 @@ class PharmacyAlternativeController extends Controller
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
 
-        // التحقق من الدواء الأساسي أولاً (يجب أن يكون من مخزون هذه الصيدلية)
-        $request->validate([
+        // C1: merge the two validate calls into one. Errors appear together,
+        // and the alternative field is validated at the same time.
+        $data = $request->validate([
             'base_medicine_id' => [
                 'required',
                 'exists:pharmacy_medicines,id',
-                Rule::exists('pharmacy_medicines')->where(function ($query) use ($pharmacy) {
+                Rule::exists('pharmacy_medicines', 'id')->where(function ($query) use ($pharmacy) {
                     return $query->where('pharmacy_id', $pharmacy->id);
                 }),
             ],
-        ]);
-
-        $basePharmacyMedicine = PharmacyMedicine::findOrFail($request->base_medicine_id);
-        $baseMedicine = $basePharmacyMedicine->medicine; // Get the actual Medicine model
-
-        // التحقق من البديل: يجب أن يكون دواءً فعلياً وليس الدواء الأساسي نفسه
-        // (المقارنة تتم مع medicines.id وليس pharmacy_medicines.id لأن المسافتين مختلفتان)
-        $request->validate([
             'alternative_medicine_id' => [
                 'required',
                 'exists:medicines,id',
-                Rule::notIn([$baseMedicine->id]),
             ],
         ]);
 
-        // Attach the alternative using the many-to-many relationship
-        // Check if the alternative is already attached to prevent duplicates
-        if (! $baseMedicine->alternatives()->where('alternative_id', $request->alternative_medicine_id)->exists()) {
-            $baseMedicine->alternatives()->attach($request->alternative_medicine_id);
+        $basePharmacyMedicine = PharmacyMedicine::findOrFail($data['base_medicine_id']);
+        $baseMedicine = $basePharmacyMedicine->medicine;
 
-            return redirect()->route('pharmacy.alternatives.index')->with('success', __('pharmacy.alternatives.create.success'));
-        } else {
-            return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.create.already_exists'));
+        // C1: self-alternative must be rejected *after* base validation to
+        // avoid accidental inserts. The reverse check is also done:
+        // (base→alt) must not exist while (alt→base) already does.
+        if ((int) $data['alternative_medicine_id'] === (int) $baseMedicine->id) {
+            return redirect()->route('pharmacy.alternatives.index')
+                ->with('error', __('pharmacy.alternatives.create.self_alternative'));
         }
+
+        // C1: detect reverse-pair before attaching. If (alt→base) exists,
+        // adding (base→alt) would create a duplicate semantic edge.
+        // نتحقق في pivot مباشرة: هل يوجد row (medicine_id=alt, alternative_id=base)؟
+        $reverseExists = \DB::table('alternative_medicine')
+            ->where('medicine_id', (int) $data['alternative_medicine_id'])
+            ->where('alternative_id', (int) $baseMedicine->id)
+            ->exists();
+
+        if ($reverseExists) {
+            return redirect()->route('pharmacy.alternatives.index')
+                ->with('error', __('pharmacy.alternatives.create.reverse_exists'));
+        }
+
+        // C1: prevent duplicate edge
+        if ($baseMedicine->alternatives()->where('alternative_id', $data['alternative_medicine_id'])->exists()) {
+            return redirect()->route('pharmacy.alternatives.index')
+                ->with('error', __('pharmacy.alternatives.create.already_exists'));
+        }
+
+        $baseMedicine->alternatives()->attach($data['alternative_medicine_id']);
+
+        return redirect()->route('pharmacy.alternatives.index')
+            ->with('success', __('pharmacy.alternatives.create.success'));
     }
 
     /**
@@ -134,12 +150,13 @@ class PharmacyAlternativeController extends Controller
 
         $baseMedicine = $pharmacyMedicine->medicine;
 
-        // Ensure the alternative link actually exists before detaching
-        if (! $baseMedicine->alternatives()->where('alternative_id', $alternative->id)->exists()) {
+        // C1.3: detach() is atomic and returns the number of rows affected.
+        // Race-condition-safe — no pre-check that can become stale.
+        $deleted = $baseMedicine->alternatives()->detach($alternative->id);
+
+        if ($deleted === 0) {
             return redirect()->route('pharmacy.alternatives.index')->with('error', __('pharmacy.alternatives.destroy.not_found'));
         }
-
-        $baseMedicine->alternatives()->detach($alternative->id);
 
         return redirect()->route('pharmacy.alternatives.index')->with('success', __('pharmacy.alternatives.destroy.success'));
     }

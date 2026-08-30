@@ -215,6 +215,14 @@ Route::middleware(['auth', 'role:pharmacy', 'profile.complete'])->group(function
 
     // ==================== PHARMACY ALTERNATIVES ====================
 
+    // دعم pre-select من صفحة تعديل الدواء: route صريح بـ path param
+    // {pharmacyMedicine?} لازم يسبق الـ resource لأن Laravel يُرجع أول
+    // route بنفس الاسم. هذا يحلّ bug قديم كان يمرر الـ id في query string.
+    Route::get('pharmacy/alternatives/create/{pharmacyMedicine?}', [
+        PharmacyAlternativeController::class,
+        'create',
+    ])->name('pharmacy.alternatives.create');
+
     Route::resource(
         'pharmacy/alternatives',
         PharmacyAlternativeController::class
