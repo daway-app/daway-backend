@@ -261,10 +261,20 @@ img { max-width: 100%; display: block; }
     border-radius: 50%;
 }
 
-.badge-success, .bdg-ok, .status-badge.available { background: var(--success-bg); color: #166534; }
-.badge-warning, .bdg-warn, .status-badge.low-stock { background: var(--warning-bg); color: #854D0E; }
-.badge-danger, .status-badge.out-of-stock { background: var(--danger-bg); color: #991B1B; }
+.badge-success, .bdg-ok, .status-badge.available { background: var(--success-bg); color: var(--success); }
+.badge-warning, .bdg-warn, .status-badge.low-stock { background: var(--warning-bg); color: var(--warning); }
+.badge-danger, .status-badge.out-of-stock { background: var(--danger-bg); color: var(--danger); }
 .badge-info { background: var(--info-bg); color: var(--info); }
+
+/* نصوص أوضح في الوضع الليلي — استبدال الأخضر/البني الداكن بنسخ فاتحة */
+body.dark-mode .badge-success, body.dark-mode .bdg-ok, body.dark-mode .status-badge.available,
+body.dark-mode .badge-warning, body.dark-mode .bdg-warn, body.dark-mode .status-badge.low-stock,
+body.dark-mode .badge-danger, body.dark-mode .status-badge.out-of-stock {
+    color: #F1F5F9;
+}
+body.dark-mode .badge-success, body.dark-mode .bdg-ok, body.dark-mode .status-badge.available { background: rgba(52, 211, 153, 0.22); border: 1px solid rgba(52, 211, 153, 0.5); }
+body.dark-mode .badge-warning, body.dark-mode .bdg-warn, body.dark-mode .status-badge.low-stock { background: rgba(251, 191, 36, 0.22); border: 1px solid rgba(251, 191, 36, 0.5); }
+body.dark-mode .badge-danger, body.dark-mode .status-badge.out-of-stock { background: rgba(248, 113, 113, 0.22); border: 1px solid rgba(248, 113, 113, 0.5); }
 
 /* -- ط§ظ„ط¬ط¯ط§ظˆظ„ -- */
 .table-container, .table-wrapper-card, .table-card-wrapper {

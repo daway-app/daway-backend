@@ -36,7 +36,7 @@
     "src": "_fonts-BJRfngpw.css"
   },
   "resources/css/app.css": {
-    "file": "assets/app-BdvTWYO0.css",
+    "file": "assets/app-BV0-XiWr.css",
     "name": "app",
     "names": [
       "app.css"
@@ -81,7 +81,7 @@
     "isEntry": true
   },
   "resources/css/layout/sidebar.css": {
-    "file": "assets/sidebar-DU3H24fp.css",
+    "file": "assets/sidebar--4WvOUf4.css",
     "name": "sidebar",
     "names": [
       "sidebar.css"
@@ -90,7 +90,7 @@
     "isEntry": true
   },
   "resources/css/layout/topbar.css": {
-    "file": "assets/topbar-D7NXpm9I.css",
+    "file": "assets/topbar-CtVrdhUh.css",
     "name": "topbar",
     "names": [
       "topbar.css"
