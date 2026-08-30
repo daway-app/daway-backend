@@ -151,9 +151,9 @@ img { max-width: 100%; display: block; }
 }
 
 body.dark-mode .card {
-    background: linear-gradient(155deg, #112433 0%, #0C1B27 100%);
-    border: 1px solid #1D3A4E;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(155deg, #1E3A5F 0%, #0A1A2E 100%);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .card-head {
@@ -299,9 +299,9 @@ body.dark-mode .badge-info { background: rgba(18, 180, 214, 0.22); border: 1px s
 }
 
 body.dark-mode .table-container, body.dark-mode .table-wrapper-card, body.dark-mode .table-card-wrapper {
-    background: linear-gradient(155deg, #112433 0%, #0C1B27 100%);
-    border: 1px solid #1D3A4E;
-    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    background: linear-gradient(155deg, #1E3A5F 0%, #0A1A2E 100%);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
 }
 
 table { width: 100%; border-collapse: collapse; }
