@@ -92,17 +92,14 @@ class PharmacyController extends Controller
             $user->syncRoles(['pharmacy']);
 
             // 2. Create the Pharmacy record (only name is set; rest filled by pharmacy on first login)
-            Pharmacy::create([
-                'user_id' => $user->id,
-                'pharmacy_custom_id' => $pharmacyCustomId,
+            // C1: الحقول الحساسة (user_id, pharmacy_custom_id, is_active) تُضبط صراحة بعد الإنشاء.
+            $pharmacy = new Pharmacy([
                 'pharmacy_name' => $request->pharmacy_name,
-                'address' => null,
-                'region' => null,
-                'latitude' => null,
-                'longitude' => null,
-                'phone_number' => null,
-                'is_active' => true, // Default to active
             ]);
+            $pharmacy->user_id = $user->id;
+            $pharmacy->pharmacy_custom_id = $pharmacyCustomId;
+            $pharmacy->is_active = true;
+            $pharmacy->save();
         });
 
         $this->clearPharmaciesIndexCache();

@@ -34,12 +34,15 @@ class PharmacyMedicine extends Model
         'price',            // سعر الدواء بهاي الصيدلية بالتحديد
         'quantity',         // الكمية المتوفرة
         'is_available',     // هل متوفر حالياً أو لأ
+        'min_stock',        // حد المخزون المنخفض المخصص لهذا الدواء
     ];
 
     protected function casts(): array
     {
         return [
             'price' => 'decimal:2',
+            'quantity' => 'integer',
+            'min_stock' => 'integer',
             'is_available' => 'boolean',
         ];
     }

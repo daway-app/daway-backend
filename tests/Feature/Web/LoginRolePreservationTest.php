@@ -20,13 +20,16 @@ class LoginRolePreservationTest extends TestCase
         ]);
 
         // بيانات غلط مع اختيار "صيدلية"
+        // GET أولاً حتى يصبح /login هو الصفحة السابقة — back() يعيد إليها.
+        $this->get(route('login.show'));
+
         $response = $this->post(route('login'), [
             'identity' => 'PH-WRONG1',
             'password' => 'wrong-password',
             'account_type' => 'pharmacy',
         ]);
 
-        $response->assertRedirect();
+        $response->assertRedirect(route('login.show'));
 
         // المتابعة: يجب أن يظل النوع المختار "صيدلية" وليس الأدمن
         $followed = $this->get($response->headers->get('Location'));
@@ -42,13 +45,15 @@ class LoginRolePreservationTest extends TestCase
             'password' => Hash::make('correct-pass'),
         ]);
 
+        $this->get(route('login.show'));
+
         $response = $this->post(route('login'), [
             'identity' => 'admin@example.com',
             'password' => 'wrong-password',
             'account_type' => 'admin',
         ]);
 
-        $response->assertRedirect();
+        $response->assertRedirect(route('login.show'));
 
         $followed = $this->get($response->headers->get('Location'));
         $followed->assertOk()

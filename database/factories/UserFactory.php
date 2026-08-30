@@ -76,4 +76,14 @@ class UserFactory extends Factory
             'role' => 'patient',
         ]);
     }
+
+    /**
+     * Indicate that the user account is inactive.
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
+    }
 }

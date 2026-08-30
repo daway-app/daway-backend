@@ -13,8 +13,30 @@ class RatingObserver
         if (! $pharmacy || ! $pharmacy->user) {
             return;
         }
+        $userId = $pharmacy->user->id;
+
+        // C7: لا تُنشئ إشعار تقييم جديد إن وُجد إشعار تقييم سابق غير مقروء
+        // (يمنع spam من نفس الـ user لو قيّم عدة مرات — يحدث مع updateOrCreate).
+        $existing = Notification::where('user_id', $userId)
+            ->where('type', 'new_rating')
+            ->where('is_read', false)
+            ->where('created_at', '>=', now()->subMinutes(5))
+            ->first();
+
+        if ($existing) {
+            $existing->update([
+                'message' => __('layout.notif_new_rating', [
+                    'stars' => $rating->stars_rating,
+                    'name' => $pharmacy->pharmacy_name,
+                ]),
+                'created_at' => now(),
+            ]);
+
+            return;
+        }
+
         Notification::create([
-            'user_id' => $pharmacy->user->id,
+            'user_id' => $userId,
             'medicine_id' => null,
             'type' => 'new_rating',
             'message' => __('layout.notif_new_rating', [

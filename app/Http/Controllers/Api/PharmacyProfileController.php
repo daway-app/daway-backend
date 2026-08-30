@@ -90,7 +90,15 @@ class PharmacyProfileController extends Controller
             unset($data['working_hours']);
 
             if (! empty($data)) {
-                $pharmacy->update($data);
+                $pharmacy->update(array_intersect_key($data, array_flip([
+                    'pharmacy_name',
+                    'address',
+                    'region',
+                    'latitude',
+                    'longitude',
+                    'phone_number',
+                    'logo',
+                ])));
             }
 
             if (is_array($workingHours)) {

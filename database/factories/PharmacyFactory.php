@@ -33,4 +33,14 @@ class PharmacyFactory extends Factory
             'region' => fake()->city(),
         ];
     }
+
+    /**
+     * Helper state: صيدلية غير نشطة (C3 — للـ tests التي تتحقق من السلوك).
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
+    }
 }

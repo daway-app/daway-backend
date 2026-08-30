@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -17,6 +16,14 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, HasRoles, LogsActivity, Notifiable;
 
+    /**
+     * قائمة بيضاء لـ mass-assignment — C1.
+     * الحقول الحساسة (role, is_active, must_change_password, email_verified_at,
+     * phone_verified_at) غير مشمولة عمداً لمنع التصعيد عبر الـ payload.
+     * اضبطها صراحة عبر methods مخصصة في الـ controller.
+     *
+     * C6: pharmacy_id (string) أزيل — العمود ميت ويُحذف في migration لاحقة.
+     */
     protected $fillable = [
         'name',
         'email',
@@ -28,8 +35,6 @@ class User extends Authenticatable
         'latitude',
         'longitude',
         'emergency_contact',
-        'pharmacy_id',
-        'must_change_password',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -63,11 +68,6 @@ class User extends Authenticatable
     public function pharmacy(): HasOne
     {
         return $this->hasOne(Pharmacy::class);
-    }
-
-    public function pharmacyByCustomId(): BelongsTo
-    {
-        return $this->belongsTo(Pharmacy::class, 'pharmacy_id', 'pharmacy_custom_id');
     }
 
     public function medicalProfile(): HasOne

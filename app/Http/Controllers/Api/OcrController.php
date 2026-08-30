@@ -7,6 +7,7 @@ use App\Services\Ai\MedicineResolver;
 use App\Services\Ai\OcrClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * التعرف على الدواء من صورة العلبة عبر OCR،
@@ -30,33 +31,40 @@ class OcrController extends Controller
 
         $extracted = $this->ocr->extract($request->file('file'));
 
-        $drugName = $extracted['drug_name'];
+        // H8: data_get بدل الوصول المباشر — يحمي من تغيّر شكل الرد.
+        $drugName = data_get($extracted, 'drug_name');
 
         $payload = [
             'ocr' => [
-                'success' => $extracted['ocr_success'],
-                'match_score' => $extracted['match_score'],
-                'message' => $extracted['message'],
+                'success' => (bool) data_get($extracted, 'ocr_success', false),
+                'match_score' => data_get($extracted, 'match_score'),
+                'message' => data_get($extracted, 'message'),
             ],
             'results' => null,
         ];
 
         if ($drugName !== null) {
-            $candidates = $this->resolver->resolveCandidates($drugName);
-            $bestLocalId = $candidates['local']->first()->id ?? null;
+            try {
+                $candidates = $this->resolver->resolveCandidates($drugName);
+                $bestLocalId = $candidates['local']->first()->id ?? null;
 
-            $payload['results'] = [
-                'drug_name' => $drugName,
-                'moh_catalog' => $candidates['moh']->take(5)->values(),
-                'local_catalog' => $candidates['local']->take(5)->values(),
-                'pharmacies' => $this->resolver->pharmaciesFor(
-                    drugName: $drugName,
-                    latitude: isset($data['latitude']) ? (float) $data['latitude'] : null,
-                    longitude: isset($data['longitude']) ? (float) $data['longitude'] : null,
-                    radiusKm: $data['radius_km'] ?? 15,
-                ),
-                'alternatives' => $bestLocalId ? $this->resolver->alternatives($bestLocalId) : [],
-            ];
+                $payload['results'] = [
+                    'drug_name' => $drugName,
+                    'moh_catalog' => $candidates['moh']->take(5)->values(),
+                    'local_catalog' => $candidates['local']->take(5)->values(),
+                    'pharmacies' => $this->resolver->pharmaciesFor(
+                        drugName: $drugName,
+                        latitude: isset($data['latitude']) ? (float) $data['latitude'] : null,
+                        longitude: isset($data['longitude']) ? (float) $data['longitude'] : null,
+                        radiusKm: $data['radius_km'] ?? 15,
+                    ),
+                    'alternatives' => $bestLocalId ? $this->resolver->alternatives($bestLocalId) : [],
+                ];
+            } catch (\Throwable $e) {
+                // H8: خطأ في الـ resolver لا يكسر الرد — نرجع معلومات OCR فقط.
+                Log::warning('OCR resolver failed', ['error' => $e->getMessage()]);
+                $payload['results'] = null;
+            }
         }
 
         return response()->json([

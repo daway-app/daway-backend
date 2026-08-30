@@ -39,7 +39,12 @@ class PharmacyInventoryController extends Controller
         $outCount = (clone $base)->where(function ($query) {
             $query->where('is_available', false)->orWhere('quantity', '<=', 0);
         })->count();
-        $lowCount = (clone $base)->get()->filter(fn ($i) => $i->quantity > 0 && $i->quantity <= PharmacyMedicine::LOW_STOCK_THRESHOLD)->count();
+
+        // H10: عدّ low-stock عبر SQL بدل تحميل كل المخزون إلى الذاكرة.
+        $lowCount = (clone $base)
+            ->where('quantity', '>', 0)
+            ->where('quantity', '<=', PharmacyMedicine::LOW_STOCK_THRESHOLD)
+            ->count();
 
         $items = $base->with('medicine')->orderByDesc('id')->paginate($perPage);
 
@@ -142,6 +147,8 @@ class PharmacyInventoryController extends Controller
 
     /**
      * إنشاء إشعار نقص/نفاد المخزون.
+     * C7: منع الإشعارات المكررة — إن وُجد إشعار غير مقروء من نفس النوع
+     * لنفس الدواء، نُحدّث created_at بدل إنشاء إشعار جديد.
      */
     private function notifyIfLowStock(PharmacyMedicine $pm): void
     {
@@ -151,29 +158,53 @@ class PharmacyInventoryController extends Controller
             return;
         }
         if ($pm->quantity <= 0) {
-            Notification::create([
-                'user_id' => $pharmacyUser->id,
-                'medicine_id' => $pm->medicine_id,
-                'type' => 'out_of_stock',
-                'message' => __('layout.notif_out_of_stock', ['name' => $pm->medicine?->trade_name]),
-                'is_read' => false,
-                'created_at' => now(),
-            ]);
+            $this->upsertNotification(
+                $pharmacyUser->id,
+                $pm->medicine_id,
+                'out_of_stock',
+                __('layout.notif_out_of_stock', ['name' => $pm->medicine?->trade_name])
+            );
 
             return;
         }
         if ($pm->quantity > 0 && $pm->quantity <= $threshold) {
-            Notification::create([
-                'user_id' => $pharmacyUser->id,
-                'medicine_id' => $pm->medicine_id,
-                'type' => 'low_stock',
-                'message' => __('layout.notif_low_stock_pharmacy', [
+            $this->upsertNotification(
+                $pharmacyUser->id,
+                $pm->medicine_id,
+                'low_stock',
+                __('layout.notif_low_stock_pharmacy', [
                     'name' => $pm->medicine?->trade_name,
                     'count' => $pm->quantity,
-                ]),
-                'is_read' => false,
-                'created_at' => now(),
-            ]);
+                ])
+            );
         }
+    }
+
+    /**
+     * إنشاء/تحديث إشعار: إن وُجد إشعار غير مقروء من نفس النوع/الدواء/المستخدم،
+     * نُجدّد created_at بدل إدراج صف جديد. C7.
+     */
+    private function upsertNotification(int $userId, int $medicineId, string $type, string $message): void
+    {
+        $existing = Notification::where('user_id', $userId)
+            ->where('medicine_id', $medicineId)
+            ->where('type', $type)
+            ->where('is_read', false)
+            ->first();
+
+        if ($existing) {
+            $existing->update(['created_at' => now()]);
+
+            return;
+        }
+
+        Notification::create([
+            'user_id' => $userId,
+            'medicine_id' => $medicineId,
+            'type' => $type,
+            'message' => $message,
+            'is_read' => false,
+            'created_at' => now(),
+        ]);
     }
 }

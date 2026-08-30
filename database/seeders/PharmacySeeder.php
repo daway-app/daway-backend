@@ -29,7 +29,7 @@ class PharmacySeeder extends Seeder
         $pharmacyUser->syncRoles(['pharmacy']);
 
         // ✅ استخدام updateOrCreate للصيدلية
-        Pharmacy::updateOrCreate(
+        $pharmacy = Pharmacy::unguarded(fn () => Pharmacy::updateOrCreate(
             ['pharmacy_custom_id' => 'PH-1234'],
             [
                 'user_id' => $pharmacyUser->id,
@@ -42,7 +42,8 @@ class PharmacySeeder extends Seeder
                 'is_active' => true,
                 'avg_rating' => 0.00,
             ]
-        );
+        ));
+        // C1: الحقول الحساسة تُضبط صراحة بعد الإنشاء (أزيلت من $fillable لمنع التصعيد).
 
         // ✅ صيدلية ثانية
         $pharmacyUser2 = User::updateOrCreate(
@@ -61,7 +62,7 @@ class PharmacySeeder extends Seeder
         $pharmacyUser2->save();
         $pharmacyUser2->syncRoles(['pharmacy']);
 
-        Pharmacy::updateOrCreate(
+        Pharmacy::unguarded(fn () => Pharmacy::updateOrCreate(
             ['pharmacy_custom_id' => 'PH-5678'],
             [
                 'user_id' => $pharmacyUser2->id,
@@ -74,6 +75,6 @@ class PharmacySeeder extends Seeder
                 'is_active' => true,
                 'avg_rating' => 0.00,
             ]
-        );
+        ));
     }
 }

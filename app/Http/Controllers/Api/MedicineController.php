@@ -17,6 +17,12 @@ use Illuminate\Support\Facades\DB;
 class MedicineController extends Controller
 {
     /**
+     * H9: أقصى طول لقيمة البحث داخل مفتاح الـ cache — يمنع تضخم المفاتيح
+     * (cache key explosion) عند إرسال استعلامات ضخمة أو تكرارية.
+     */
+    private const MAX_CACHE_QUERY_LENGTH = 100;
+
+    /**
      * عرض كتالوج أدوية وزارة الصحة (مع بحث اختياري).
      */
     public function index(Request $request): JsonResponse
@@ -38,7 +44,7 @@ class MedicineController extends Controller
         $perPage = (int) ($validated['per_page'] ?? 20);
         $page = (int) $request->get('page', 1);
 
-        $items = Cache::remember("api_meds_idx|v{$catVer}|{$q}|{$page}|{$perPage}", 900, function () use ($query, $perPage) {
+        $items = Cache::remember($this->cacheKey("api_meds_idx|v{$catVer}", $q)."|{$page}|{$perPage}", 900, function () use ($query, $perPage) {
             return $query->orderBy('trade_name')->paginate($perPage);
         });
 
@@ -74,7 +80,7 @@ class MedicineController extends Controller
         $medVer = $this->medicinesVersion();
         $catVer = $this->catalogVersion();
 
-        $result = Cache::remember("api_meds_search|v{$medVer}|v{$catVer}|{$q}", 900, function () use ($q) {
+        $result = Cache::remember($this->cacheKey("api_meds_search|v{$medVer}|v{$catVer}", $q), 900, function () use ($q) {
             $medicineQuery = Medicine::query();
             $this->fulltextOrLike($medicineQuery, ['trade_name', 'active_ingredient'], $q);
             $medicines = $medicineQuery->limit(10)->get();
@@ -170,6 +176,21 @@ class MedicineController extends Controller
     private function medicinesVersion(): int
     {
         return (int) Cache::get('med_medicines_version', 1);
+    }
+
+    /**
+     * H9: يبني مفتاح cache آمن من مدخلات المستخدم:
+     *  - يحذف المسافات الزائدة ويوحّد الـ whitespace.
+     *  - يقصّ الطول إلى MAX_CACHE_QUERY_LENGTH.
+     *  - يستبدل فاصل المفتاح (|) لمنع تصادم/تلاعب بمفاتيح الـ cache.
+     */
+    private function cacheKey(string $prefix, string $query): string
+    {
+        $normalized = preg_replace('/\s+/u', ' ', trim($query)) ?? '';
+        $normalized = mb_substr($normalized, 0, self::MAX_CACHE_QUERY_LENGTH);
+        $normalized = str_replace('|', ' ', $normalized);
+
+        return $prefix.'|'.$normalized;
     }
 
     /**

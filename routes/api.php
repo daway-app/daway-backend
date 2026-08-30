@@ -44,7 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
 // ✅ Routes Protected
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/refresh-token', [AuthController::class, 'refreshToken']);
+    // H4: rate-limit على تجديد الـ token (30 طلب/دقيقة) لمنع إطالة عمر token مسروق.
+    Route::post('/refresh-token', [AuthController::class, 'refreshToken'])->middleware('throttle:30,1');
 
     Route::get('/profile/patient', [PatientProfileController::class, 'show']);
     Route::post('/profile/patient', [PatientProfileController::class, 'update']);

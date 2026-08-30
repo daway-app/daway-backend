@@ -20,8 +20,8 @@ class PharmacyMedicineRequest extends FormRequest
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
             'is_available' => 'sometimes|boolean',
-            // صورة اختيارية — الموبايل يرفعها على Cloudinary ويرسل الرابط مباشرة
-            'image_url' => 'nullable|url|max:2048',
+            // C4: SecureImageUrl rule تستبعد javascript:/data: و http://
+            'image_url' => ['nullable', 'string', 'max:2048', new \App\Rules\SecureImageUrl],
             // إثراء بيانات الكتالوج: اختياري في التحديث، لا يُمسح قيمة موجودة
             'trade_name' => [
                 'sometimes',

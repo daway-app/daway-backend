@@ -15,9 +15,11 @@ class Pharmacy extends Model
 
     protected $table = 'pharmacies';
 
+    /**
+     * Public/profile fields only. Ownership, moderation, rating and completion
+     * fields are assigned explicitly by trusted application flows.
+     */
     protected $fillable = [
-        'user_id',            // صاحب الصيدلية (مرتبط بجدول users)
-        'pharmacy_custom_id',  // كود مخصص للصيدلية (unique)
         'pharmacy_name',       // اسم الصيدلية
         'address',             // العنوان النصي
         'region',              // المنطقة / الحي
@@ -25,9 +27,6 @@ class Pharmacy extends Model
         'longitude',           // خط الطول (للموقع على الخريطة)
         'phone_number',        // رقم هاتف الصيدلية
         'logo',                // مسار صورة الشعار
-        'avg_rating',          // متوسط التقييم (بيتحدث تلقائياً غالباً عبر الكود مش يدوي)
-        'is_active',           // هل الصيدلية شغالة حالياً
-        'profile_completed_at',// وقت إكمال الصيدلي لبياناته عند أول دخول
     ];
 
     protected function casts(): array
@@ -95,4 +94,3 @@ class Pharmacy extends Model
         return $this->profile_completed_at !== null;
     }
 }
-

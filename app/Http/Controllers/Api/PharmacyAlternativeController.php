@@ -109,6 +109,17 @@ class PharmacyAlternativeController extends Controller
             return response()->json(['success' => false, 'message' => 'الدواء البديل مضاف مسبقاً'], 409);
         }
 
+        // H6: منع الزوج المعكوس — إذا (بديل ← أساس) مسجلة، لا تُضف (أساس ← بديل)
+        // لتجنب التكرار في نتائج alternatives().
+        $reverseExists = DB::table('alternative_medicine')
+            ->where('medicine_id', $data['alternative_id'])
+            ->where('alternative_id', $baseMedicine->id)
+            ->exists();
+
+        if ($reverseExists) {
+            return response()->json(['success' => false, 'message' => 'هذا الدواء مسجل مسبقاً كأساس لهذا البديل'], 409);
+        }
+
         $baseMedicine->alternatives()->attach($data['alternative_id']);
 
         return response()->json([

@@ -12,12 +12,14 @@ class AvailabilityNotification extends Model
         'medicine_id',
         'pharmacy_id',
         'is_notified',
+        'notified_at',
     ];
 
     protected function casts(): array
     {
         return [
             'is_notified' => 'boolean',
+            'notified_at' => 'datetime',
         ];
     }
 

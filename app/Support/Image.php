@@ -8,8 +8,12 @@ class Image
 {
     /**
      * يعيد رابط الصورة كما هو إن كان رابطاً خارجياً (Cloudinary)،
-     * وإلا يبنيه من رابط القرص العام إن وُجد الملف (storage/app/public)،
-     * أو من asset() للصور المخزنة محلياً بالطريقة القديمة (uploads/).
+     * وإلا يبنيه من رابط القرص العام إن وُجد الملف،
+     * أو من asset() للمسارات الأخرى.
+     *
+     * ملاحظة H2: القرص 'public' في config/filesystems.php جذرُه
+     * public/uploads مباشرة (وليس storage/app/public)، لذا الرفع
+     * المحلي يُقدَّم عبر web server دون الحاجة إلى storage:link.
      */
     public static function url(?string $path): ?string
     {

@@ -49,7 +49,7 @@ class PharmacyLoginTest extends TestCase
 
     public function test_pharmacy_login_rejects_inactive_user(): void
     {
-        $user = User::factory()->pharmacy()->create(['is_active' => false]);
+        $user = User::factory()->pharmacy()->inactive()->create();
         Pharmacy::factory()->create([
             'user_id' => $user->id,
             'pharmacy_custom_id' => 'PH-LOGIN3',

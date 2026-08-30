@@ -18,7 +18,8 @@ class PatientProfileRequest extends FormRequest
         return [
             'name' => 'sometimes|string|max:255',
             'phone' => 'sometimes|string|max:20|unique:users,phone,'.$userId,
-            'avatar_url' => 'sometimes|nullable|url|max:2048',
+            // C4: SecureImageUrl rule تستبعد javascript:/data: و http://
+            'avatar_url' => ['sometimes', 'nullable', 'string', 'max:2048', new \App\Rules\SecureImageUrl],
             'birth_date' => 'sometimes|nullable|date',
             'address' => 'sometimes|nullable|string|max:500',
             'latitude' => 'sometimes|nullable|numeric|between:-90,90',

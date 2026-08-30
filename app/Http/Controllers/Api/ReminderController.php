@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Reminder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReminderController extends Controller
 {
@@ -77,16 +78,27 @@ class ReminderController extends Controller
     {
         $this->authorizeOwner($request, $reminder);
 
-        $remaining = max(0, ((int) $reminder->quantity_remaining) - 1);
-        $reminder->update([
-            'quantity_remaining' => $remaining,
-            'is_active' => $remaining > 0,
-        ]);
+        // H7: تحديث ذري — يمنع السباق عند طلبين متزامنين (قراءة قديمة ثم كتابة).
+        // يخفض quantity_remaining بشرط > 0، ويحدّث is_active بناءً على القيمة الجديدة.
+        $affected = Reminder::where('id', $reminder->id)
+            ->where('quantity_remaining', '>', 0)
+            ->update([
+                'quantity_remaining' => DB::raw('quantity_remaining - 1'),
+                // الحالة الجديدة: هل بقيت جرعات بعد الخصم؟ (القيمة القديمة - 1 > 0)
+                'is_active' => DB::raw('CASE WHEN quantity_remaining - 1 > 0 THEN 1 ELSE 0 END'),
+            ]);
+
+        if ($affected === 0) {
+            // لم يُخصم شيء: إما quantity_remaining = 0 أصلاً
+            Reminder::where('id', $reminder->id)->where('is_active', true)->update(['is_active' => false]);
+        }
+
+        $reminder->refresh();
 
         return response()->json([
             'success' => true,
             'message' => 'تم تسجيل الجرعة كتذكير مأخوذ',
-            'data' => $reminder->fresh(),
+            'data' => $reminder,
         ]);
     }
 

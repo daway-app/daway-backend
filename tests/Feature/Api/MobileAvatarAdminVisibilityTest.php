@@ -12,7 +12,8 @@ class MobileAvatarAdminVisibilityTest extends TestCase
     public function test_patient_avatar_url_shows_in_admin_users_and_patients_pages(): void
     {
         $patient = User::factory()->patient()->create();
-        $avatarUrl = 'https://example.com/photos/patient-avatar.jpg';
+        // C4: الـ avatar URL يجب أن يكون رابط Cloudinary فقط.
+        $avatarUrl = 'https://res.cloudinary.com/demo/image/upload/v1/patient-avatar.jpg';
 
         Sanctum::actingAs($patient, ['*']);
         $this->postJson('/api/profile/patient', ['avatar_url' => $avatarUrl])
@@ -36,7 +37,8 @@ class MobileAvatarAdminVisibilityTest extends TestCase
     {
         $pharmacyUser = User::factory()->pharmacy()->create();
         Pharmacy::factory()->create(['user_id' => $pharmacyUser->id]);
-        $logoUrl = 'https://example.com/logos/pharmacy-logo.jpg';
+        // C4: الـ logo URL يجب أن يكون رابط Cloudinary فقط.
+        $logoUrl = 'https://res.cloudinary.com/demo/image/upload/v1/pharmacy-logo.jpg';
 
         Sanctum::actingAs($pharmacyUser, ['*']);
         $this->postJson('/api/profile/pharmacy', ['logo_url' => $logoUrl])
@@ -44,5 +46,35 @@ class MobileAvatarAdminVisibilityTest extends TestCase
             ->assertJsonPath('data.logo_url', $logoUrl);
 
         $this->assertSame($logoUrl, Pharmacy::where('user_id', $pharmacyUser->id)->first()->logo);
+    }
+
+    public function test_avatar_url_rejects_non_https(): void
+    {
+        // C4: http:// و javascript: و data: يجب أن تُرفض.
+        $patient = User::factory()->patient()->create();
+        Sanctum::actingAs($patient, ['*']);
+
+        $this->postJson('/api/profile/patient', ['avatar_url' => 'http://example.com/x.jpg'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('avatar_url');
+
+        $this->postJson('/api/profile/patient', ['avatar_url' => 'javascript:alert(1)'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('avatar_url');
+
+        $this->postJson('/api/profile/patient', ['avatar_url' => 'data:text/html,<script>alert(1)</script>'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('avatar_url');
+    }
+
+    public function test_avatar_url_rejects_non_cloudinary_https(): void
+    {
+        // C4: https://example.com يُرفض لأنه ليس من Cloudinary.
+        $patient = User::factory()->patient()->create();
+        Sanctum::actingAs($patient, ['*']);
+
+        $this->postJson('/api/profile/patient', ['avatar_url' => 'https://example.com/avatar.jpg'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('avatar_url');
     }
 }

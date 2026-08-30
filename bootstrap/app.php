@@ -38,6 +38,11 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetAppLocale::class,
         ]);
+
+        // H3: locale middleware على API أيضاً — للـ mobile requests.
+        $middleware->api(prepend: [
+            SetAppLocale::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(fn (NotFoundHttpException $e, Request $request) => $request->expectsJson()

@@ -104,28 +104,52 @@ class PharmacyInventoryController extends Controller
             return;
         }
         if ($pm->quantity <= 0) {
-            Notification::create([
-                'user_id' => $pharmacyUser->id,
-                'medicine_id' => $pm->medicine_id,
-                'type' => 'out_of_stock',
-                'message' => __('layout.notif_out_of_stock', ['name' => $pm->medicine?->trade_name]),
-                'is_read' => false,
-                'created_at' => now(),
-            ]);
+            $this->upsertLowStockNotification(
+                $pharmacyUser->id,
+                $pm->medicine_id,
+                'out_of_stock',
+                __('layout.notif_out_of_stock', ['name' => $pm->medicine?->trade_name])
+            );
+
             return;
         }
         if ($pm->quantity > 0 && $pm->quantity <= $threshold) {
-            Notification::create([
-                'user_id' => $pharmacyUser->id,
-                'medicine_id' => $pm->medicine_id,
-                'type' => 'low_stock',
-                'message' => __('layout.notif_low_stock_pharmacy', [
+            $this->upsertLowStockNotification(
+                $pharmacyUser->id,
+                $pm->medicine_id,
+                'low_stock',
+                __('layout.notif_low_stock_pharmacy', [
                     'name' => $pm->medicine?->trade_name,
                     'count' => $pm->quantity,
-                ]),
-                'is_read' => false,
-                'created_at' => now(),
-            ]);
+                ])
+            );
         }
+    }
+
+    /**
+     * C7: تجنّب الإشعارات المكررة.
+     */
+    private function upsertLowStockNotification(int $userId, int $medicineId, string $type, string $message): void
+    {
+        $existing = Notification::where('user_id', $userId)
+            ->where('medicine_id', $medicineId)
+            ->where('type', $type)
+            ->where('is_read', false)
+            ->first();
+
+        if ($existing) {
+            $existing->update(['created_at' => now()]);
+
+            return;
+        }
+
+        Notification::create([
+            'user_id' => $userId,
+            'medicine_id' => $medicineId,
+            'type' => $type,
+            'message' => $message,
+            'is_read' => false,
+            'created_at' => now(),
+        ]);
     }
 }

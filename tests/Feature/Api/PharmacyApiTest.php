@@ -11,8 +11,8 @@ class PharmacyApiTest extends TestCase
 {
     public function test_index_excludes_inactive_pharmacies(): void
     {
-        Pharmacy::factory()->create(['is_active' => true, 'pharmacy_name' => 'Active Pharmacy']);
-        Pharmacy::factory()->create(['is_active' => false, 'pharmacy_name' => 'Inactive Pharmacy']);
+        Pharmacy::factory()->create(['pharmacy_name' => 'Active Pharmacy']);
+        Pharmacy::factory()->inactive()->create(['pharmacy_name' => 'Inactive Pharmacy']);
 
         $response = $this->getJson('/api/pharmacies');
 
@@ -56,5 +56,25 @@ class PharmacyApiTest extends TestCase
         $response->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.pharmacy_name', 'Has Stock');
+    }
+
+    public function test_show_returns_404_for_inactive_pharmacy(): void
+    {
+        // C3: الصيدليات غير النشطة لا تُكشف للموبايل.
+        $pharmacy = Pharmacy::factory()->inactive()->create();
+
+        $this->getJson('/api/pharmacies/'.$pharmacy->id)
+            ->assertStatus(404)
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_show_returns_pharmacy_for_active(): void
+    {
+        $pharmacy = Pharmacy::factory()->create();
+
+        $this->getJson('/api/pharmacies/'.$pharmacy->id)
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.id', $pharmacy->id);
     }
 }

@@ -24,6 +24,7 @@ class PharmacyMedicineFactory extends Factory
             'medicine_id' => Medicine::factory(),
             'price' => fake()->randomFloat(2, 1, 100),
             'quantity' => 20,
+            'min_stock' => 5,
             'is_available' => true,
         ];
     }
