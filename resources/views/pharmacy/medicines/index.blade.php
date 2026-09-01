@@ -34,10 +34,10 @@
         @endif
 
         <div class='ph-stats'>
-            <div class='ph-stat'><i class='fas fa-xmark red'></i><div><strong>{{ $out }}</strong><span>@lang('pharmacy.status.out')</span></div></div>
-            <div class='ph-stat'><i class='fas fa-triangle-exclamation orange'></i><div><strong>{{ $low }}</strong><span>@lang('pharmacy.status.low_stock')</span></div></div>
-            <div class='ph-stat'><i class='fas fa-check green'></i><div><strong>{{ $available }}</strong><span>@lang('pharmacy.status.available')</span></div></div>
-            <div class='ph-stat'><i class='fas fa-pills teal'></i><div><strong>{{ $total }}</strong><span>@lang('pharmacy.dashboard.stat_total')</span></div></div>
+            <div class='ph-stat'><i class='fas fa-xmark red'></i><div><strong>{{ $out }}</strong><span>@lang('pharmacy.status.out')</span></div><span class='ph-stat-progress'></span></div>
+            <div class='ph-stat'><i class='fas fa-triangle-exclamation orange'></i><div><strong>{{ $low }}</strong><span>@lang('pharmacy.status.low_stock')</span></div><span class='ph-stat-progress'></span></div>
+            <div class='ph-stat'><i class='fas fa-check green'></i><div><strong>{{ $available }}</strong><span>@lang('pharmacy.status.available')</span></div><span class='ph-stat-progress'></span></div>
+            <div class='ph-stat'><i class='fas fa-pills teal'></i><div><strong>{{ $total }}</strong><span>@lang('pharmacy.dashboard.stat_total')</span></div><span class='ph-stat-progress'></span></div>
         </div>
 
         <div class='ph-filters'>

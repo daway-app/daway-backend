@@ -219,3 +219,285 @@ body.ph-modal-open{overflow:hidden;}
 .chart-box{position:relative;height:260px;}
 .chart-sm{height:220px;}
 @media(max-width:768px){.ph-stats{grid-template-columns:repeat(2,1fr);}.ph-grid{grid-template-columns:1fr;}.ph-hours .day-row{grid-template-columns:1fr;gap:10px;}.ph-head{flex-direction:column;align-items:flex-start;}.ph-filters{flex-direction:column;align-items:stretch;}.ph-search{min-width:auto;width:100%;}.chart-box{height:220px;}}
+
+/* ==========================================================
+   تفاعلية المربعات والأزرار (pharmacy views)
+   - تدرجات غامقة + إضاءة حدود + hover lift + glow
+   ========================================================== */
+.ph-stat {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--ph-paper) 0%, var(--ph-canvas) 100%);
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    position: relative;
+}
+.ph-stat::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--ph-r-lg);
+    padding: 1.5px;
+    background: linear-gradient(135deg, var(--ph-teal-mist) 0%, transparent 50%, var(--ph-teal-mist) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.6;
+    transition: opacity .3s var(--ease);
+}
+.ph-stat:hover::before { opacity: 1; }
+.ph-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -8px rgba(11,143,172,.25);
+}
+body.dark-mode .ph-stat {
+    background: linear-gradient(155deg, #1E3A5F 0%, #0A1A2E 100%);
+    border: 1px solid rgba(56,189,248,.35);
+    box-shadow: 0 8px 20px rgba(0,0,0,.45);
+}
+body.dark-mode .ph-stat:hover {
+    box-shadow: 0 12px 28px -6px rgba(18,180,214,.45);
+    border-color: rgba(95,224,240,.6);
+}
+body.dark-mode .ph-stat::before {
+    background: linear-gradient(135deg, #5FE0F0 0%, transparent 50%, #5FE0F0 100%);
+    opacity: .35;
+}
+body.dark-mode .ph-stat:hover::before { opacity: .85; }
+
+/* progress strip أسفل المربعات - يضيف إحساس متفاعل */
+.ph-stat-progress {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--ph-teal) 0%, var(--ph-teal-deep) 100%);
+    transform: scaleX(0);
+    transform-origin: start;
+    transition: transform .4s var(--ease);
+}
+.ph-stat:hover .ph-stat-progress { transform: scaleX(1); }
+body.dark-mode .ph-stat-progress {
+    background: linear-gradient(90deg, #12B4D6 0%, #5FE0F0 100%);
+    box-shadow: 0 0 12px #5FE0F0;
+}
+
+/* ----- أزرار (primary / outline / ghost) ----- */
+.ph-btn {
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+}
+.ph-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.25) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform .6s ease;
+    pointer-events: none;
+}
+.ph-btn:hover::after { transform: translateX(100%); }
+.ph-btn:active { transform: translateY(1px); }
+
+.ph-btn.primary {
+    background: linear-gradient(135deg, var(--ph-teal) 0%, var(--ph-teal-deep) 100%);
+    color: #fff;
+    box-shadow: 0 6px 16px -4px rgba(11,143,172,.45);
+}
+.ph-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px -4px rgba(11,143,172,.6);
+    filter: brightness(1.05);
+}
+body.dark-mode .ph-btn.primary {
+    background: linear-gradient(90deg, #0E97B4 0%, #24D2E8 100%);
+    color: #04141A;
+    box-shadow: 0 6px 18px -4px rgba(18,180,214,.45);
+}
+body.dark-mode .ph-btn.primary:hover {
+    box-shadow: 0 10px 26px -4px rgba(95,224,240,.7);
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.ph-btn.outline {
+    background: transparent;
+    color: var(--ph-teal);
+    border-color: var(--ph-teal);
+}
+.ph-btn.outline:hover { background: var(--ph-teal-mist); }
+body.dark-mode .ph-btn.outline {
+    color: #5FE0F0;
+    border-color: rgba(95,224,240,.5);
+    background: rgba(18,180,214,.08);
+}
+body.dark-mode .ph-btn.outline:hover {
+    background: rgba(18,180,214,.2);
+    border-color: #5FE0F0;
+    box-shadow: 0 0 16px rgba(95,224,240,.3);
+}
+
+.ph-btn.ghost { background: transparent; color: var(--ph-ink-soft); border-color: var(--ph-line); }
+.ph-btn.ghost:hover { background: var(--ph-canvas); }
+body.dark-mode .ph-btn.ghost {
+    color: #EAF4F8;
+    background: rgba(255,255,255,.04);
+    border-color: rgba(255,255,255,.12);
+}
+body.dark-mode .ph-btn.ghost:hover {
+    background: rgba(56,189,248,.15);
+    border-color: rgba(95,224,240,.4);
+    color: #5FE0F0;
+}
+
+/* ----- جدول: hover متفاعل + status badges ----- */
+.ph-table tr { transition: background .2s var(--ease); }
+.ph-table tr:hover td { background: rgba(11,143,172,.06); }
+body.dark-mode .ph-table tr:hover td { background: rgba(18,180,214,.10); }
+body.dark-mode .ph-table th { background: rgba(18,180,214,.10); color: #5FE0F0; border-bottom: 1px solid #1D3A4E; }
+
+/* stepper أزرار + - */
+.ph-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--ph-canvas);
+    border: 1px solid var(--ph-line);
+    border-radius: var(--ph-r-md);
+    padding: 2px;
+    transition: border-color .2s var(--ease);
+}
+.ph-stepper:focus-within { border-color: var(--ph-teal); box-shadow: 0 0 0 3px rgba(11,143,172,.15); }
+.ph-stepper button {
+    width: 28px; height: 28px;
+    border: none; background: var(--ph-paper);
+    color: var(--ph-teal);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s var(--ease), transform .15s var(--ease);
+}
+.ph-stepper button:hover { background: var(--ph-teal-mist); }
+.ph-stepper button:active { transform: scale(.92); }
+.ph-stepper input {
+    width: 70px; text-align: center;
+    border: none; background: transparent;
+    font-weight: 700; color: var(--ph-ink);
+    outline: none;
+    -moz-appearance: textfield;
+}
+.ph-stepper input::-webkit-outer-spin-button,
+.ph-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+body.dark-mode .ph-stepper { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.12); }
+body.dark-mode .ph-stepper:focus-within { border-color: #5FE0F0; box-shadow: 0 0 0 3px rgba(18,180,214,.2); }
+body.dark-mode .ph-stepper button { background: rgba(255,255,255,.06); color: #5FE0F0; }
+body.dark-mode .ph-stepper button:hover { background: rgba(18,180,214,.25); }
+body.dark-mode .ph-stepper input { color: #EAF4F8; }
+
+/* ----- empty state أنيق ----- */
+.ph-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ph-ink-faint);
+}
+.ph-empty i {
+    font-size: 3rem;
+    color: var(--ph-teal);
+    opacity: .4;
+    margin-block-end: 10px;
+}
+.ph-empty h3 { font-size: 1rem; margin-block-end: 4px; }
+body.dark-mode .ph-empty i { color: #5FE0F0; opacity: .5; }
+
+/* ----- فلاتر (search + pills) - شفافية متفاعلة ----- */
+.ph-filters {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; margin-block-end: 20px; flex-wrap: wrap;
+}
+.ph-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.ph-pill {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    border: 1.5px solid var(--ph-line);
+    background: var(--ph-paper);
+    color: var(--ph-ink-soft);
+    cursor: pointer;
+    transition: var(--ph-tr);
+}
+.ph-pill:hover { color: var(--ph-teal); border-color: var(--ph-teal); transform: translateY(-1px); }
+.ph-pill.active {
+    background: linear-gradient(135deg, var(--ph-teal) 0%, var(--ph-teal-deep) 100%);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 4px 12px -2px rgba(11,143,172,.4);
+}
+body.dark-mode .ph-pill { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.12); color: #93C5FD; }
+body.dark-mode .ph-pill:hover { color: #5FE0F0; border-color: rgba(95,224,240,.5); background: rgba(18,180,214,.1); }
+body.dark-mode .ph-pill.active {
+    background: linear-gradient(90deg, #0E97B4 0%, #24D2E8 100%);
+    color: #04141A; border-color: transparent;
+    box-shadow: 0 4px 12px -2px rgba(95,224,240,.5);
+}
+
+.ph-search { position: relative; min-width: 260px; }
+.ph-search input {
+    width: 100%;
+    padding: 9px 14px 9px 38px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ph-line);
+    background: var(--ph-paper);
+    color: var(--ph-ink);
+    font-size: 13px;
+    outline: none;
+    transition: var(--ph-tr);
+}
+.ph-search input:focus { border-color: var(--ph-teal); box-shadow: 0 0 0 3px rgba(11,143,172,.15); }
+.ph-search input::placeholder { color: var(--ph-ink-faint); }
+.ph-search i {
+    position: absolute;
+    inset-inline-start: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--ph-ink-faint);
+    pointer-events: none;
+    transition: color .2s var(--ease);
+}
+.ph-search input:focus + i,
+.ph-search:focus-within i { color: var(--ph-teal); }
+
+body.dark-mode .ph-search input {
+    background: rgba(255,255,255,.04);
+    border-color: rgba(255,255,255,.15);
+    color: #EAF4F8;
+}
+body.dark-mode .ph-search input:focus {
+    border-color: #5FE0F0;
+    box-shadow: 0 0 0 3px rgba(18,180,214,.25);
+}
+body.dark-mode .ph-search i { color: #93C5FD; }
+body.dark-mode .ph-search input:focus + i,
+body.dark-mode .ph-search:focus-within i { color: #5FE0F0; }
+
+/* ----- Status badges / pills - gradient + outline ----- */
+.ph-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .01em;
+    transition: var(--ph-tr);
+}
+.ph-badge.ok, body.dark-mode .ph-badge.ok {
+    background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
+    color: #166534; border: 1px solid #86EFAC;
+}
+.ph-badge.low, body.dark-mode .ph-badge.low {
+    background: linear-gradient(135deg, #FEF9C3 0%, #FDE68A 100%);
+    color: #854D0E; border: 1px solid #FDE047;
+}
+.ph-badge.out, body.dark-mode .ph-badge.out {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+    color: #991B1B; border: 1px solid #FCA5A5;
+}
+body.dark-mode .ph-badge.ok { background: rgba(47,191,143,.18); color: #2FBF8F; border-color: rgba(47,191,143,.5); }
+body.dark-mode .ph-badge.low { background: rgba(224,168,62,.18); color: #E0A83E; border-color: rgba(224,168,62,.5); }
+body.dark-mode .ph-badge.out { background: rgba(225,92,92,.18); color: #E15C5C; border-color: rgba(225,92,92,.5); }

@@ -44,9 +44,10 @@
         @endif
 
         <div class='ph-stats'>
-            <div class='ph-stat'><i class='fas fa-xmark red'></i><div><strong>{{ $out }}</strong><span>@lang('pharmacy.inventory.stat_out')</span></div></div>
-            <div class='ph-stat'><i class='fas fa-triangle-exclamation orange'></i><div><strong>{{ $low }}</strong><span>@lang('pharmacy.inventory.stat_low')</span></div></div>
-            <div class='ph-stat'><i class='fas fa-check green'></i><div><strong>{{ $available }}</strong><span>@lang('pharmacy.inventory.stat_available')</span></div></div>
+            <div class='ph-stat'><i class='fas fa-pills teal'></i><div><strong>{{ $total }}</strong><span>@lang('pharmacy.dashboard.stat_total')</span></div><span class='ph-stat-progress'></span></div>
+            <div class='ph-stat'><i class='fas fa-xmark red'></i><div><strong>{{ $out }}</strong><span>@lang('pharmacy.inventory.stat_out')</span></div><span class='ph-stat-progress'></span></div>
+            <div class='ph-stat'><i class='fas fa-triangle-exclamation orange'></i><div><strong>{{ $low }}</strong><span>@lang('pharmacy.inventory.stat_low')</span></div><span class='ph-stat-progress'></span></div>
+            <div class='ph-stat'><i class='fas fa-check green'></i><div><strong>{{ $available }}</strong><span>@lang('pharmacy.inventory.stat_available')</span></div><span class='ph-stat-progress'></span></div>
         </div>
 
         <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-block-end:20px;'>
@@ -82,18 +83,24 @@
             </div>
         </div>
 
-        <div class='ph-filters'>
+        <form method='GET' action='{{ route('pharmacy.inventory.index') }}' class='ph-filters'>
+            @if(($q ?? '') !== '')
+                <input type='hidden' name='q' value='{{ $q }}'>
+            @endif
             <div class='ph-tabs' data-ph-tabs='.ph-inventory-table'>
-                <button type='button' class='ph-tab {{ ($status ?? 'all') === 'all' ? 'active' : '' }}' data-filter='all'>@lang('pharmacy.inventory.status_all')</button>
-                <button type='button' class='ph-tab {{ ($status ?? 'all') === 'ok' ? 'active' : '' }}' data-filter='ok'>@lang('pharmacy.inventory.status_available')</button>
-                <button type='button' class='ph-tab {{ ($status ?? 'all') === 'low' ? 'active' : '' }}' data-filter='low'>@lang('pharmacy.inventory.status_low')</button>
-                <button type='button' class='ph-tab {{ ($status ?? 'all') === 'out' ? 'active' : '' }}' data-filter='out'>@lang('pharmacy.inventory.status_out')</button>
+                <button type='submit' name='status' value='all' class='ph-tab {{ ($status ?? 'all') === 'all' ? 'active' : '' }}' data-filter='all'>@lang('pharmacy.inventory.status_all')</button>
+                <button type='submit' name='status' value='ok' class='ph-tab {{ ($status ?? 'all') === 'ok' ? 'active' : '' }}' data-filter='ok'>@lang('pharmacy.inventory.status_available')</button>
+                <button type='submit' name='status' value='low' class='ph-tab {{ ($status ?? 'all') === 'low' ? 'active' : '' }}' data-filter='low'>@lang('pharmacy.inventory.status_low')</button>
+                <button type='submit' name='status' value='out' class='ph-tab {{ ($status ?? 'all') === 'out' ? 'active' : '' }}' data-filter='out'>@lang('pharmacy.inventory.status_out')</button>
             </div>
-            <div class='ph-search'>
+            <div class='ph-search' style='flex:1;max-width:340px;'>
                 <i class='fas fa-search'></i>
-                <input type='text' placeholder='@lang('pharmacy.inventory.search_placeholder')' data-ph-search='.ph-inventory-table tbody tr' value='{{ $q ?? '' }}'>
+                <input type='text' name='q' value='{{ $q ?? '' }}' placeholder='@lang('pharmacy.inventory.search_placeholder')' autocomplete='off'>
             </div>
-        </div>
+            @if(($q ?? '') !== '' || ($status ?? 'all') !== 'all')
+                <a href='{{ route('pharmacy.inventory.index') }}' class='ph-btn ghost'><i class='fas fa-xmark'></i> @lang('pharmacy.inventory.clear_filters')</a>
+            @endif
+        </form>
 
         <form action='{{ route('pharmacy.inventory.update') }}' method='POST'>
             @csrf
