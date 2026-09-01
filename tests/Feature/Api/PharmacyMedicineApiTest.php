@@ -160,8 +160,10 @@ class PharmacyMedicineApiTest extends TestCase
         $this->assertSame(7.5, (float) $pm->fresh()->price);
     }
 
-    public function test_update_does_not_overwrite_existing_catalog_values(): void
+    public function test_update_changes_catalog_when_medicine_is_only_in_this_pharmacy(): void
     {
+        // السلوك: الـ catalog يُحدّث دائماً إذا كانت الصيدلية الحالية هي الوحيدة
+        // التي تستخدم الـ medicine. هذا يحلّ bug الـ "تعديل الاسم لا يظهر".
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
 
         $medicine = Medicine::factory()->create([
@@ -190,10 +192,10 @@ class PharmacyMedicineApiTest extends TestCase
         ])->assertOk();
 
         $medicine->refresh();
-        // القيم الصحيحة في الكتالوج لم تتغير
-        $this->assertSame('Adol 500', $medicine->trade_name);
-        $this->assertSame('أدول', $medicine->trade_name_ar);
-        $this->assertSame('Paracetamol', $medicine->active_ingredient);
+        // الـ catalog الآن يحتوي القيم المُرسلة (catalog فريد لصيدلية واحدة)
+        $this->assertSame('Other Brand Name', $medicine->trade_name);
+        $this->assertSame('اسم تجاري آخر', $medicine->trade_name_ar);
+        $this->assertSame('مادة مختلفة', $medicine->active_ingredient);
     }
 
     public function test_update_rejects_arabic_characters_in_trade_name(): void

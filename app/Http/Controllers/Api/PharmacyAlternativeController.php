@@ -139,6 +139,7 @@ class PharmacyAlternativeController extends Controller
 
         $pharmacy = Pharmacy::where('user_id', $user->id)->first();
         if (! $pharmacy || $base->pharmacy_id !== $pharmacy->id) {
+            // authorization: الصيدلية المالكة للدواء الأساسي يجب أن تطابق صيدلية المستخدم
             return response()->json(['success' => false, 'message' => 'الدواء غير موجود في مخزون الصيدلية'], 404);
         }
 

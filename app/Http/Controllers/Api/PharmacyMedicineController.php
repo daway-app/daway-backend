@@ -278,24 +278,30 @@ class PharmacyMedicineController extends Controller
             'is_available' => $request->boolean('is_available'),
         ]);
 
-        // إثراء بيانات الكتالوج عند تحديث المخزون: لا نمسح قيمة صحيحة موجودة
+        // إثراء بيانات الكتالوج عند تحديث المخزون.
+        // القاعدة: اسمح بالتحديث فقط إذا لم تستخدم صيدلية أخرى نفس الدواء
+        // (الـ catalog منفرد لصيدلية هذه). وإلا فالـ catalog ملك عام.
         $medicine->loadMissing('medicine');
         $catalogMedicine = $medicine->medicine;
         $catalogDirty = false;
 
-        if (! empty($data['trade_name']) && empty($catalogMedicine->trade_name)) {
-            $catalogMedicine->trade_name = trim($data['trade_name']);
-            $catalogDirty = true;
-        }
+        $otherPharmaciesUsingSame = PharmacyMedicine::where('medicine_id', $catalogMedicine->id)
+            ->where('pharmacy_id', '!=', $pharmacy->id)
+            ->exists();
 
-        if (! empty($data['trade_name_ar']) && empty($catalogMedicine->trade_name_ar)) {
-            $catalogMedicine->trade_name_ar = trim($data['trade_name_ar']);
-            $catalogDirty = true;
-        }
-
-        if (! empty($data['active_ingredient']) && empty($catalogMedicine->active_ingredient)) {
-            $catalogMedicine->active_ingredient = trim($data['active_ingredient']);
-            $catalogDirty = true;
+        if (! $otherPharmaciesUsingSame) {
+            if (! empty($data['trade_name'])) {
+                $catalogMedicine->trade_name = trim($data['trade_name']);
+                $catalogDirty = true;
+            }
+            if (! empty($data['trade_name_ar'])) {
+                $catalogMedicine->trade_name_ar = trim($data['trade_name_ar']);
+                $catalogDirty = true;
+            }
+            if (! empty($data['active_ingredient'])) {
+                $catalogMedicine->active_ingredient = trim($data['active_ingredient']);
+                $catalogDirty = true;
+            }
         }
 
         if ($catalogDirty) {
