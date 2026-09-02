@@ -90,6 +90,11 @@ class User extends Authenticatable
         return $this->hasMany(Favorite::class);
     }
 
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
     public function availabilityNotifications(): HasMany
     {
         return $this->hasMany(AvailabilityNotification::class);

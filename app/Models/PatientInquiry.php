@@ -16,13 +16,25 @@ class PatientInquiry extends Model
 
     public const STATUSES = ['new', 'answered', 'closed'];
 
+    public const AVAILABILITY_STATUSES = ['available', 'unavailable', 'low_stock'];
+
     protected $fillable = [
         'user_id',
         'pharmacy_id',
         'medicine_id',
         'message',
         'status',
+        'reply',
+        'availability_status',
+        'replied_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'replied_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {
