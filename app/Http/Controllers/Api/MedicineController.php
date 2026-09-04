@@ -223,11 +223,11 @@ class MedicineController extends Controller
         $alternatives = Medicine::alternativesByActiveIngredient(
             $medicine->active_ingredient,
             $medicine->id,
-        )->get();
+        );
 
         $payload = $alternatives->map(function (Medicine $alt) use ($lat, $lng, $radius) {
             $nearestPharmacy = $lat !== null && $lng !== null
-                ? $this->nearestPharmacyFor($alt, $lat, $lng, $radius)
+                ? $this->nearestPharmacyFor($alt->id, $lat, $lng, $radius ?? 15)
                 : null;
 
             $row = $this->medicinePayload($alt);

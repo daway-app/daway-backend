@@ -64,6 +64,7 @@ class MedicineApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data', []);
+            ->assertJsonPath('data.medicines', [])
+            ->assertJsonPath('data.moh_catalog', []);
     }
 }

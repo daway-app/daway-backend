@@ -71,7 +71,7 @@ class MedicineDetailTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.pharmacy_id', $availablePharmacy->id)
-            ->assertJsonPath('data.0.pharmacy_name', $availablePharmacy->pharmacy_name)
+            ->assertJsonPath('data.0.name', $availablePharmacy->pharmacy_name)
             ->assertJsonPath('data.0.price', (float) $available->price)
             ->assertJsonPath('data.0.quantity', 5);
     }

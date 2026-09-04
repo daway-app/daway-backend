@@ -16,27 +16,31 @@ class PharmacyMedicineObserver
      * للمشتركين عبر AvailabilityNotification.
      *
      * القاعدة الصارمة (SRS):
-     *  لا نُرسل إشعار عند مجرد تعديل كمية دواء متوفر أصلاً.
-     *  فقط عندما ينتقل السطر من حالة "غير متوفر" إلى "متوفر":
-     *      old: (quantity <= 0) OR (is_available === false)
-     *      new: (quantity >  0) AND (is_available === true)
+     *  لا نُرسل إشعار عند مجرد تعديل كمية دواء متوفر أصلاً (is_available=true).
+     *  فقط عندما ينتقل الحقل is_available من false إلى true (انتقال صريح للحالة):
+     *      old.is_available === false
+     *      new.is_available === true && quantity > 0
+     *
+     *  ملاحظة: كمية صفر مع is_available=true (مثل data-entry خاطئ) لا تُعتبر "غير متوفر"
+     *  لأن الفلاغ الصريح يقول إن الدواء متاح. الزيادة في quantity لا تطلق إشعاراً.
      */
     public function updated(PharmacyMedicine $pm): void
     {
-        // 1) لا نُفعّل المنطق إلا إذا تغيّر أحد الحقلين المؤثرين في التوفر.
-        if (! $pm->wasChanged('quantity') && ! $pm->wasChanged('is_available')) {
+        $oldIsAvailable = $pm->getOriginal('is_available');
+        $newIsAvailable = $pm->is_available;
+
+        // لا نُفعّل إلا إذا تغيّر الحقل من false إلى true.
+        if ($oldIsAvailable === $newIsAvailable) {
             return;
         }
 
-        // 2) الحالة النهائية يجب أن تكون "متوفر".
-        $nowAvailable = $pm->is_available === true && (int) $pm->quantity > 0;
+        // 2) الحالة النهائية يجب أن تكون "متوفر" (is_available=true وكمية > 0).
+        $nowAvailable = $newIsAvailable === true && (int) $pm->quantity > 0;
 
-        // 3) الحالة السابقة يجب أن تكون "غير متوفر".
-        $oldQuantity = (int) $pm->getOriginal('quantity');
-        $oldIsAvailable = $pm->getOriginal('is_available');
-        $wasUnavailable = $oldQuantity <= 0 || $oldIsAvailable === false || $oldIsAvailable === 0 || $oldIsAvailable === null;
+        // 3) الحالة السابقة يجب أن تكون "غير متوفر" (is_available=false).
+        $wasUnavailable = $oldIsAvailable === false || $oldIsAvailable === 0 || $oldIsAvailable === null;
 
-        // شرط الانتقال الحقيقي: unavailable -> available.
+        // شرط الانتقال الحقيقي: is_available false -> true.
         if (! ($nowAvailable && $wasUnavailable)) {
             return;
         }

@@ -77,9 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // ملاحظة: `pharmacies` على MedicineController يعيد قائمة الصيدليات التي يتوفر بها الدواء —
         // وهذا نفس دلالياً معنى "availability" في SRS للمريض.
         Route::get('medicines/{medicine}/availability', [MedicineController::class, 'pharmacies']);
-        // بدائل الدواء: تُربط بـ `pharmacies` كحلّ مؤقت — لإضافة منطق البدائل الحقيقي
-        // نحتاج method `alternatives` على MedicineController (Phase 9.1 مستقبلي).
-        Route::get('medicines/{medicine}/alternatives', [MedicineController::class, 'pharmacies']);
+        Route::get('medicines/{medicine}/alternatives', [MedicineController::class, 'alternatives']);
 
         Route::get('favorites/medicines', [FavoriteController::class, 'medicines']);
         Route::post('favorites/medicines/{medicine}', [FavoriteController::class, 'storeMedicine']);

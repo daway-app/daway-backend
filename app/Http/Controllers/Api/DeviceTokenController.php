@@ -19,6 +19,22 @@ class DeviceTokenController extends Controller
 
         $data = $request->validated();
 
+        $existingForUserDevice = DeviceToken::where('user_id', $user->id)
+            ->where('device_id', $data['device_id'])
+            ->first();
+
+        $takenByAnotherUser = DeviceToken::where('token', $data['token'])
+            ->where('user_id', '!=', $user->id)
+            ->exists();
+
+        if ($takenByAnotherUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'رمز الجهاز مستخدم من قبل مستخدم آخر',
+                'errors' => ['token' => ['هذا الرمز مسجل لمستخدم آخر']],
+            ], 422);
+        }
+
         $token = DeviceToken::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -31,9 +47,13 @@ class DeviceTokenController extends Controller
             ]
         );
 
+        $wasCreated = $existingForUserDevice === null;
+
         return response()->json([
             'success' => true,
-            'message' => 'تم تسجيل رمز الجهاز بنجاح',
+            'message' => $wasCreated
+                ? 'تم تسجيل رمز الجهاز بنجاح'
+                : 'تم تحديث رمز الجهاز بنجاح',
             'data' => [
                 'id' => $token->id,
                 'user_id' => $token->user_id,
@@ -43,7 +63,7 @@ class DeviceTokenController extends Controller
                 'created_at' => $token->created_at,
                 'updated_at' => $token->updated_at,
             ],
-        ], 201);
+        ], $wasCreated ? 201 : 200);
     }
 
     public function destroy(DeleteDeviceTokenRequest $request): JsonResponse

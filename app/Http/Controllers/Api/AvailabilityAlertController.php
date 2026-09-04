@@ -62,17 +62,32 @@ class AvailabilityAlertController extends Controller
 
         $data = $request->validated();
 
-        $alert = AvailabilityNotification::firstOrCreate([
-            'user_id' => $user->id,
-            'medicine_id' => $data['medicine_id'],
-            'pharmacy_id' => $data['pharmacy_id'] ?? null,
-        ]);
+        $existing = AvailabilityNotification::where('user_id', $user->id)
+            ->where('medicine_id', $data['medicine_id'])
+            ->where('pharmacy_id', $data['pharmacy_id'] ?? null)
+            ->first();
+
+        $wasCreated = false;
+
+        if (! $existing) {
+            $alert = AvailabilityNotification::create([
+                'user_id' => $user->id,
+                'medicine_id' => $data['medicine_id'],
+                'pharmacy_id' => $data['pharmacy_id'] ?? null,
+                'is_notified' => false,
+            ]);
+            $wasCreated = true;
+        } else {
+            $alert = $existing;
+        }
 
         $alert->load(['medicine', 'pharmacy']);
 
         return response()->json([
             'success' => true,
-            'message' => 'تم الاشتراك في تنبيه التوفر بنجاح',
+            'message' => $wasCreated
+                ? 'تم الاشتراك في تنبيه التوفر بنجاح'
+                : 'الاشتراك موجود مسبقاً',
             'data' => [
                 'id' => $alert->id,
                 'medicine_id' => $alert->medicine_id,
@@ -81,7 +96,7 @@ class AvailabilityAlertController extends Controller
                 'notified_at' => $alert->notified_at,
                 'created_at' => $alert->created_at,
             ],
-        ], 201);
+        ], $wasCreated ? 201 : 200);
     }
 
     public function destroy(Request $request, AvailabilityNotification $alert): JsonResponse

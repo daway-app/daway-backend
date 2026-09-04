@@ -14,7 +14,7 @@ class DeviceTokenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token' => 'required|string|max:512|unique:device_tokens,token',
+            'token' => 'required|string|max:512',
             'platform' => 'required|in:android,ios',
             'device_id' => 'required|string|max:191',
         ];

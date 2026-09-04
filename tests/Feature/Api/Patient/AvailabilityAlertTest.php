@@ -154,11 +154,14 @@ class AvailabilityAlertTest extends TestCase
     {
         $patient = User::factory()->patient()->create();
         $medicine = Medicine::factory()->create();
+        $medicine2 = Medicine::factory()->create();
+        $medicine3 = Medicine::factory()->create();
         $pharmacy = Pharmacy::factory()->create();
 
         Sanctum::actingAs($patient);
+        // اشترك في تنبيه توفر medicine3 عند pharmacy — هذا هو الذي سيُفعَّل الإشعار له.
         $this->postJson('/api/patient/availability-alerts', [
-            'medicine_id' => $medicine->id,
+            'medicine_id' => $medicine3->id,
             'pharmacy_id' => $pharmacy->id,
         ])->assertStatus(201);
 
@@ -175,7 +178,7 @@ class AvailabilityAlertTest extends TestCase
 
         $pm2 = PharmacyMedicine::factory()->create([
             'pharmacy_id' => $pharmacy->id,
-            'medicine_id' => $medicine->id,
+            'medicine_id' => $medicine2->id,
             'quantity' => 5,
             'is_available' => true,
         ]);
@@ -185,7 +188,7 @@ class AvailabilityAlertTest extends TestCase
 
         $pm3 = PharmacyMedicine::factory()->create([
             'pharmacy_id' => $pharmacy->id,
-            'medicine_id' => $medicine->id,
+            'medicine_id' => $medicine3->id,
             'quantity' => 0,
             'is_available' => false,
         ]);

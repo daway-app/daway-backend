@@ -9,6 +9,7 @@ use App\Support\Image;
 use App\Support\PharmacyAvailability;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PharmacyController extends Controller
 {
@@ -49,23 +50,53 @@ class PharmacyController extends Controller
         }
 
         $items = $query
-            ->when($hasGeo, fn ($q) => $q->selectRaw('*, (6371 * acos(least(1.0, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))) AS distance_km', [$lat, $lng, $lat]))
-            ->when($hasGeo, fn ($q) => $q->having('distance_km', '<=', $radiusKm))
-            ->when($hasGeo, fn ($q) => $q->orderBy('distance_km'))
+            ->when($hasGeo && DB::connection()->getDriverName() === 'mysql', function ($q) use ($lat, $lng) {
+                // MySQL: استخدم SQL للترتيب/الفلترة حسب distance (أداء أفضل).
+                return $q->selectRaw(
+                    '*, (6371 * acos(least(1.0, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))) AS distance_km',
+                    [$lat, $lng, $lat]
+                )
+                    ->having('distance_km', '<=', $radiusKm)
+                    ->orderBy('distance_km');
+            })
+            ->when($hasGeo && DB::connection()->getDriverName() !== 'mysql', function ($q) use ($lat, $lng, $radiusKm) {
+                // SQLite/drivers آخرون بدون math SQL: فلترة بسيطة على NOT NULL lat/lng.
+                return $q->whereNotNull('latitude')
+                    ->whereNotNull('longitude');
+            })
             ->when(! $hasGeo, fn ($q) => $q->orderBy('pharmacy_name'))
             ->paginate($perPage);
 
-        $rows = collect($items->items())->map(function (Pharmacy $pharmacy) use ($hasGeo) {
+        $rows = collect($items->items())->map(function (Pharmacy $pharmacy) use ($hasGeo, $lat, $lng) {
             $pharmacy->loadMissing('hours');
-            $distance = $hasGeo && isset($pharmacy->getAttributes()['distance_km'])
-                ? round((float) $pharmacy->getAttributes()['distance_km'], 3)
-                : null;
+
+            $distance = null;
+            if ($hasGeo) {
+                if (isset($pharmacy->getAttributes()['distance_km'])) {
+                    $distance = round((float) $pharmacy->getAttributes()['distance_km'], 3);
+                } elseif ($lat !== null && $lng !== null
+                    && $pharmacy->latitude !== null && $pharmacy->longitude !== null) {
+                    // SQLite وغيره: احسب في PHP باستخدام Haversine.
+                    $distance = round(
+                        Haversine::kmBetween($lat, $lng, (float) $pharmacy->latitude, (float) $pharmacy->longitude),
+                        3
+                    );
+                }
+            }
+
             return [
                 ...$this->payload($pharmacy),
                 'distance_km' => $distance,
                 'is_open_now' => PharmacyAvailability::isOpenNow($pharmacy),
             ];
         });
+
+        // للـ drivers غير MySQL مع geo: فلترة/ترتيب في PHP بعد الجلب.
+        if ($hasGeo && DB::connection()->getDriverName() !== 'mysql') {
+            $rows = $rows->filter(fn ($r) => $r['distance_km'] === null || $r['distance_km'] <= $radiusKm)
+                ->sortBy('distance_km')
+                ->values();
+        }
 
         return response()->json([
             'success' => true,

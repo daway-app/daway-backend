@@ -47,10 +47,26 @@ class MedicalProfileController extends Controller
 
     private function payload(MedicalProfile $profile): array
     {
+        $allergies = $profile->allergies;
+        if (is_string($allergies)) {
+            $decoded = json_decode($allergies, true);
+            $allergies = is_array($decoded) ? $decoded : [];
+        } elseif (! is_array($allergies)) {
+            $allergies = [];
+        }
+
+        $chronic = $profile->chronic_diseases;
+        if (is_string($chronic)) {
+            $decoded = json_decode($chronic, true);
+            $chronic = is_array($decoded) ? $decoded : [];
+        } elseif (! is_array($chronic)) {
+            $chronic = [];
+        }
+
         return [
             'user_id' => $profile->user_id,
-            'allergies' => $profile->allergies ?? [],
-            'chronic_diseases' => $profile->chronic_diseases ?? [],
+            'allergies' => $allergies,
+            'chronic_diseases' => $chronic,
             'blood_type' => $profile->blood_type,
             'notes' => $profile->notes,
             'updated_at' => $profile->updated_at,

@@ -22,6 +22,19 @@ class MedicalProfile extends Model
         'notes',               // ملاحظات إضافية
     ];
 
+    protected $attributes = [
+        'allergies' => '[]',
+        'chronic_diseases' => '[]',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'allergies' => 'array',
+            'chronic_diseases' => 'array',
+        ];
+    }
+
     /**
      * علاقة عكسية: هاد الملف الطبي تبع مستخدم وحيد بالضبط.
      */

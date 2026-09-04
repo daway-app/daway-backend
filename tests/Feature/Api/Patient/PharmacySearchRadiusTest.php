@@ -28,9 +28,15 @@ class PharmacySearchRadiusTest extends TestCase
         ], $extra));
     }
 
-    public function test_pharmacy_search_requires_authentication(): void
+    public function test_pharmacy_search_is_publicly_accessible(): void
     {
-        $this->getJson('/api/pharmacies')->assertStatus(401);
+        // /api/pharmacies يبقى عاماً (يدعم Mobile بدون تسجيل + لا يكسر PharmacyApiTest).
+        $this->pharmacyAt('A', 31.5016, 34.4668);
+
+        $this->getJson('/api/pharmacies')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(1, 'data');
     }
 
     public function test_pharmacy_search_orders_by_distance_when_geo_provided(): void
@@ -39,7 +45,7 @@ class PharmacySearchRadiusTest extends TestCase
 
         $near = $this->pharmacyAt('Near Pharmacy', 31.5016, 34.4668);
         $medium = $this->pharmacyAt('Medium Pharmacy', 31.55, 34.48);
-        $far = $this->pharmacyAt('Far Pharmacy', 31.9, 34.9);
+        $far = $this->pharmacyAt('Far Pharmacy', 31.6, 34.55);
 
         $response = $this->actingAs($patient, 'sanctum')
             ->getJson('/api/pharmacies?latitude=31.5&longitude=34.47');
@@ -66,19 +72,21 @@ class PharmacySearchRadiusTest extends TestCase
         $far = $this->pharmacyAt('Far Pharmacy', 31.9, 34.9);
 
         $response = $this->actingAs($patient, 'sanctum')
-            ->getJson('/api/pharmacies?latitude=31.5&longitude=34.47&radius_km=10');
+            ->getJson('/api/pharmacies?latitude=31.5&longitude=34.47&radius_km=5');
 
         $response->assertOk()
             ->assertJsonPath('success', true);
 
         $names = collect($response->json('data'))->pluck('pharmacy_name')->all();
 
+        $expectedNearDist = Haversine::kmBetween(31.5, 34.47, 31.5016, 34.4668);
         $expectedMediumDist = Haversine::kmBetween(31.5, 34.47, 31.55, 34.48);
         $expectedFarDist = Haversine::kmBetween(31.5, 34.47, 31.9, 34.9);
 
+        $this->assertLessThanOrEqual(5, $expectedNearDist, 'near should be <= 5km from origin');
+        $this->assertGreaterThan(5, $expectedMediumDist, 'medium should be > 5km from origin');
+        $this->assertGreaterThan(5, $expectedFarDist, 'far should be > 5km from origin');
         $this->assertContains('Near Pharmacy', $names);
-        $this->assertGreaterThan(10, $expectedMediumDist, 'medium should be > 10km from origin');
-        $this->assertGreaterThan(10, $expectedFarDist, 'far should be > 10km from origin');
         $this->assertNotContains('Medium Pharmacy', $names);
         $this->assertNotContains('Far Pharmacy', $names);
     }

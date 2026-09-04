@@ -29,6 +29,8 @@ class FavoriteController extends Controller
 
             return [
                 'id' => $favorite->id,
+                'favoritable_type' => $favorite->favoritable_type,
+                'favoritable_id' => $favorite->favoritable_id,
                 'medicine_id' => $medicine?->id,
                 'trade_name' => $medicine?->trade_name,
                 'trade_name_ar' => $medicine?->trade_name_ar,
@@ -115,6 +117,8 @@ class FavoriteController extends Controller
 
             return [
                 'id' => $favorite->id,
+                'favoritable_type' => $favorite->favoritable_type,
+                'favoritable_id' => $favorite->favoritable_id,
                 'pharmacy_id' => $pharmacy?->id,
                 'pharmacy_name' => $pharmacy?->pharmacy_name,
                 'address' => $pharmacy?->address,
