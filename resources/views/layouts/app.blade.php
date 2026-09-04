@@ -25,7 +25,7 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
-    @vite(['resources/css/layout/app_layout.css', 'resources/css/layout/topbar.css', 'resources/css/layout/sidebar.css'])
+    @vite(['resources/css/layout/app_layout.css', 'resources/css/layout/topbar.css', 'resources/css/layout/sidebar.css', 'resources/js/offline/index.js'])
 </head>
 <body>
 <script>

@@ -3,7 +3,7 @@
 @section('title', __('pharmacy.medicines.create.title'))
 
 @section('content')
-    @vite(['resources/css/pages/medicines_edit.css', 'resources/css/pages/pharmacy_medicine_create.css', 'resources/js/offline/index.js'])
+    @vite(['resources/css/pages/medicines_edit.css', 'resources/css/pages/pharmacy_medicine_create.css'])
     <div class="edit-medicine-page-wrapper">
         <div class="page-heading">
             <div class="page-heading-icon">

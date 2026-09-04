@@ -3,7 +3,7 @@
 @section('title', __('pharmacy.inventory.title'))
 
 @section('content')
-    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js', 'resources/js/offline/index.js'])
+    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
     @include('partials.pharmacy-hub-i18n')
 
     @push('scripts')
