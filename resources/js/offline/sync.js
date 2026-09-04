@@ -22,20 +22,40 @@ function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
 export const sync = {
     attempts: {},
     timer: null,
+    serverUp: null,      // آخر نتيجة heartbeat حقيقية (navigator.onLine يكذب)
+    lastCheckAt: 0,
 
     init() {
         window.addEventListener('online', () => this.checkThenSync());
-        window.addEventListener('offline', () => setBanner('offline'));
+        window.addEventListener('offline', () => {
+            this.serverUp = false;
+            this.lastCheckAt = Date.now();
+            setBanner('offline');
+        });
         // heartbeat: navigator.onLine lies on captive portals
         this.timer = setInterval(() => this.checkThenSync(), 30000);
         if (navigator.onLine) this.checkThenSync();
-        else setBanner('offline');
+        else { this.serverUp = false; this.lastCheckAt = Date.now(); setBanner('offline'); }
+    },
+
+    /* null = غير معروف (heartbeat قديم) — true/false = نتيجة حديثة (خلال 20 ثانية) */
+    isServerReachable() {
+        if (Date.now() - this.lastCheckAt > 20000) return null;
+        return this.serverUp;
     },
 
     checkThenSync() {
         fetchWithTimeout('/healthz', { method: 'HEAD' }, 5000)
-            .then(() => this.runSync())
-            .catch(() => { /* still offline */ });
+            .then(() => {
+                this.serverUp = true;
+                this.lastCheckAt = Date.now();
+                return this.runSync();
+            })
+            .catch(() => {
+                this.serverUp = false;
+                this.lastCheckAt = Date.now();
+                /* still offline */
+            });
     },
 
     ensureToken() {

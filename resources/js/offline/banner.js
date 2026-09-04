@@ -4,6 +4,7 @@ const STYLES = `
 .daway-sync-banner.show{display:flex;}
 .daway-sync-banner.online{background:var(--ph-green-bg,#DCFCE7);color:var(--ph-green,#16A34A);}
 .daway-sync-banner.offline{background:var(--ph-orange-bg,#FEF9C3);color:var(--ph-orange,#CA8A04);}
+.daway-sync-banner.queued{background:var(--ph-teal-mist,#EAF5F4);color:var(--ph-teal,#0B8FAC);border-bottom:2px solid var(--ph-teal,#0B8FAC);}
 .daway-sync-banner.syncing{background:var(--ph-teal-mist,#EAF5F4);color:var(--ph-teal,#0B8FAC);}
 .daway-sync-banner.synced{background:var(--ph-green-bg,#DCFCE7);color:var(--ph-green,#16A34A);}
 .daway-sync-banner.failed{background:var(--ph-red-bg,#FEE2E2);color:var(--ph-red,#DC2626);}
@@ -30,6 +31,8 @@ function setState(state, detail = {}) {
     let text = MESSAGES[state] || '';
     if (state === 'syncing') text = 'جارٍ المزامنة (' + (detail.count || 0) + ' عملية...)';
     if (state === 'failed') text = 'فشلت مزامنة ' + (detail.count || 0) + ' عملية — ستتم إعادة المحاولة';
+    if (state === 'queued') text = 'تم الحفظ محلياً ✓ — سيُزامن تلقائياً عند عودة الاتصال'
+        + (detail.count ? ' (' + detail.count + ' عملية بانتظار المزامنة)' : '');
     bannerEl.innerHTML = '';
     const span = document.createElement('span');
     span.textContent = text;
@@ -46,8 +49,8 @@ function setState(state, detail = {}) {
         });
         bannerEl.appendChild(btn);
     }
-    if (state === 'online' || state === 'synced') {
-        hideTimer = setTimeout(() => bannerEl.classList.remove('show'), 2000);
+    if (state === 'online' || state === 'synced' || state === 'queued') {
+        hideTimer = setTimeout(() => bannerEl.classList.remove('show'), 3500);
     }
 }
 
