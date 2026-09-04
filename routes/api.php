@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\PharmacyProfileController;
 use App\Http\Controllers\Api\PharmacyRatingController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\ReminderController;
+use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Route;
 
 // ✅ Routes Public
@@ -128,4 +129,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Ratings
     Route::apiResource('ratings', RatingController::class)->only(['index', 'store']);
+});
+
+// Offline-first Sync (Pharmacy web PWA)
+Route::middleware('auth')->post('/sync/token', [SyncController::class, 'issueToken']);
+
+Route::middleware(['auth:sanctum', 'role:pharmacy'])->prefix('sync')->group(function () {
+    Route::post('push', [SyncController::class, 'push']);
+    Route::get('pull', [SyncController::class, 'pull']);
 });

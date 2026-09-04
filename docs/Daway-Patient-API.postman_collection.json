@@ -1,0 +1,1103 @@
+{
+	"info": {
+		"_postman_id": "d4a7f1e2-3b5c-4d6e-9f8a-1b2c3d4e5f6a",
+		"name": "دواي — واجهة المريض API",
+		"description": "مجموعة طلبات Postman كاملة لتطبيق دواي — تطبيق توفر الأدوية والصيدليات الفلسطينية — واجهة المريض.\n\n## طريقة تسجيل الدخول\n1. `POST /api/otp/send` أرسل رقم الهاتف → يُعاد كود الـ OTP في الرد (لا يوجد مزود SMS بعد — للحجم التجريبي/التطوير فقط).\n2. `POST /api/otp/verify` أرسل الهاتف + الكود → يُعاد الـ token، ويُحفظ تلقائياً في المتغير `{{token}}`.\n3. كل الطلبات المحمية تستخدم `Authorization: Bearer {{token}}` (Sanctum).\n\n## ملاحظات\n- الرابط الافتراضي `{{base_url}}` = `http://localhost:8000/api` — غيّره من متغيرات المجموعة للستيجرينغ أو الإنتاج.\n- عند تشغيل «إرسال OTP» يُحفظ الكود تلقائياً في المتغير `{{otp}}`، وعند تشغيل «تأكيد OTP» يُحفظ التوكن تلقائياً — لا حاجة للنسخ اليدوي.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "daway-backend"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "phone",
+			"value": "0599000000",
+			"type": "string"
+		},
+		{
+			"key": "otp",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "latitude",
+			"value": "31.5016",
+			"type": "string"
+		},
+		{
+			"key": "longitude",
+			"value": "34.4668",
+			"type": "string"
+		},
+		{
+			"key": "radius_km",
+			"value": "15",
+			"type": "string"
+		},
+		{
+			"key": "medicine_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "pharmacy_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "device_id",
+			"value": "unique-device-uuid",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "١. المصادقة",
+			"item": [
+				{
+					"name": "إرسال كود OTP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const json = pm.response.json();",
+									"if (json.otp) {",
+									"    pm.collectionVariables.set('otp', json.otp);",
+									"    console.log('تم حفظ كود OTP تلقائياً (وضع التطوير فقط)');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone\": \"{{phone}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/otp/send",
+							"host": ["{{base_url}}"],
+							"path": ["otp", "send"]
+						},
+						"description": "عام — بدون تسجيل دخول. محمي بحد معدل `throttle:otp`.\n\n• النص: `{\"phone\": \"رقم الهاتف\"}` — مطلوب، حتى 20 حرف.\n• يُعيد كود OTP في الرد JSON مباشرة (لا يوجد بوابة SMS بعد).\n• الكود صالح 10 دقائق ويُحفظ مشفراً في قاعدة البيانات."
+					},
+					"response": []
+				},
+				{
+					"name": "تأكيد OTP (تسجيل دخول / إنشاء حساب)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set('token', json.data.token);",
+									"    console.log('تم حفظ التوكن. مستخدم جديد؟ ' + json.data.user.is_new);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone\": \"{{phone}}\",\n    \"otp\": \"{{otp}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/otp/verify",
+							"host": ["{{base_url}}"],
+							"path": ["otp", "verify"]
+						},
+						"description": "عام — محمي بحد معدل، ويُسمح بـ 5 محاولات فاشلة فقط لكل 15 دقيقة.\n\n• النص: `{\"phone\", \"otp\"}` — الكود 6 أرقام.\n• إذا كان الرقم جديداً يُنشأ حساب مريض تلقائياً (`is_new: true`).\n• حسابات الصيدليات لا تدخل بهذه الطريقة (403).\n• يُعيد: بيانات المستخدم + `token` — يُحفظ تلقائياً في `{{token}}`."
+					},
+					"response": []
+				},
+				{
+					"name": "تجديد التوكن",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/refresh-token",
+							"host": ["{{base_url}}"],
+							"path": ["refresh-token"]
+						},
+						"description": "محمي. حد معدل 30 طلب/دقيقة.\n\n• يحذف التوكن الحالي ويُصدر توكناً جديداً.\n• استخدمه لمنع انتهاء صلاحية جلسة المريض دون إعادة إدخال OTP."
+					},
+					"response": []
+				},
+				{
+					"name": "تسجيل الخروج",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/logout",
+							"host": ["{{base_url}}"],
+							"path": ["logout"]
+						},
+						"description": "محمي. يحذف توكن الجهاز الحالي فقط (بقية الأجهزة تبقى مسجلة)."
+					},
+					"response": []
+				},
+				{
+					"name": "تسجيل دخول الصيدلية (للتطبيق الصيدلي فقط)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pharmacy_id\": \"PH-001\",\n    \"password\": \"كلمة المرور\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login/pharmacy",
+							"host": ["{{base_url}}"],
+							"path": ["login", "pharmacy"]
+						},
+						"description": "ليست من مسار المريض — موجودة هنا للاختبار فقط. تُستخدم من تطبيق الصيدلية بالمعرّف المخصص (`pharmacy_custom_id`) وكلمة المرور."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "٢. الأدوية (عام)",
+			"item": [
+				{
+					"name": "قائمة الأدوية (كتالوج وزارة الصحة)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/medicines?q=&page=1&per_page=20",
+							"host": ["{{base_url}}"],
+							"path": ["medicines"],
+							"query": [
+								{ "key": "q", "value": "", "description": "بحث اختياري — حرفان على الأقل" },
+								{ "key": "page", "value": "1" },
+								{ "key": "per_page", "value": "20", "description": "من 1 إلى 100 — الافتراضي 20" }
+							]
+						},
+						"description": "عام. كتالوج وزارة الصحة مع بحث اختياري (اسم تجاري/عام/شركة) — النتيجة مخزنة 15 دقيقة.\n\n• يُعيد كل دواء: id، الاسم التجاري، الاسم العام، الشركة، الشكل الدوائي، السعر الرسمي، حالة التوفر."
+					},
+					"response": []
+				},
+				{
+					"name": "بحث دواء (كتالوج + صيدليات متوفرة)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/medicines/search?q=بنادول&latitude={{latitude}}&longitude={{longitude}}&radius_km={{radius_km}}",
+							"host": ["{{base_url}}"],
+							"path": ["medicines", "search"],
+							"query": [
+								{ "key": "q", "value": "بنادول", "description": "مطلوب — حرفان على الأقل" },
+								{ "key": "latitude", "value": "{{latitude}}", "description": "اختياري — يفعّل ميزات الموقع" },
+								{ "key": "longitude", "value": "{{longitude}}" },
+								{ "key": "radius_km", "value": "{{radius_km}}", "description": "من 1 إلى 50 كم — الافتراضي 15" }
+							]
+						},
+						"description": "عام. بحث موحّد يُعيد:\n\n• `medicines` — الكتالوج المحلي مع `available_pharmacies_count` (عدد الصيدليات المتوفرة) و `nearest_pharmacy` (أقرب صيدلية) عند تمرير الإحداثيات.\n• `moh_catalog` — نتائج كتالوج وزارة الصحة."
+					},
+					"response": []
+				},
+				{
+					"name": "تفاصيل دواء",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/medicines/{{medicine_id}}?latitude={{latitude}}&longitude={{longitude}}",
+							"host": ["{{base_url}}"],
+							"path": ["medicines", "{{medicine_id}}"],
+							"query": [
+								{ "key": "latitude", "value": "{{latitude}}", "description": "اختياري — يُعيد nearest_pharmacy" },
+								{ "key": "longitude", "value": "{{longitude}}" }
+							]
+						},
+						"description": "عام. تفاصيل دواء من الكتالوج المحلي مع قائمة الصيدليات المتوفرة (اسم، سعر، كمية) وأقرب صيدلية عند تمرير الموقع.\n\n• 404 إذا الدواء غير موجود."
+					},
+					"response": []
+				},
+				{
+					"name": "أدوية حسب المادة الفعّالة",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/medicines/active-ingredient/Paracetamol",
+							"host": ["{{base_url}}"],
+							"path": ["medicines", "active-ingredient", "Paracetamol"]
+						},
+						"description": "عام. يُعيد حتى 20 دواءً تحتوي نفس المادة الفعّالة — مفيد للبحث بالاسم العلمي."
+					},
+					"response": []
+				},
+				{
+					"name": "صيدليات يتوفر فيها الدواء (التوفر)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/medicines/{{medicine_id}}/pharmacies?latitude={{latitude}}&longitude={{longitude}}&radius_km={{radius_km}}",
+							"host": ["{{base_url}}"],
+							"path": ["medicines", "{{medicine_id}}", "pharmacies"],
+							"query": [
+								{ "key": "latitude", "value": "{{latitude}}", "description": "اختياري — يفعّل المسافة والترتيب" },
+								{ "key": "longitude", "value": "{{longitude}}" },
+								{ "key": "radius_km", "value": "{{radius_km}}", "description": "من 1 إلى 50 كم — الافتراضي 15" }
+							]
+						},
+						"description": "عام. قائمة الصيدليات التي يتوفر بها الدواء فعلياً في المخزون.\n\nكل صف يحتوي: `pharmacy_id`, `name`, `price`, `quantity`, `availability_status` (available / low_stock / out_of_stock), `distance_km`, `phone`, `latitude`, `longitude`, `working_hours`, `rating`.\n\n• مرتبة بالمسافة عند تمرير الإحداثيات."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "٣. الصيدليات (عام)",
+			"item": [
+				{
+					"name": "قائمة الصيدليات",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/pharmacies?latitude={{latitude}}&longitude={{longitude}}&radius_km={{radius_km}}&page=1&per_page=20",
+							"host": ["{{base_url}}"],
+							"path": ["pharmacies"],
+							"query": [
+								{ "key": "latitude", "value": "{{latitude}}", "description": "اختياري — ترتيب وفلترة حسب المسافة" },
+								{ "key": "longitude", "value": "{{longitude}}" },
+								{ "key": "radius_km", "value": "{{radius_km}}", "description": "من 1 إلى 50 كم — الافتراضي 15" },
+								{ "key": "pharmacy_name", "value": "", "description": "بحث بالاسم — اختياري", "disabled": true },
+								{ "key": "medicine_id", "value": "", "description": "اختياري — الصيدليات التي تملك هذا الدواء فقط", "disabled": true },
+								{ "key": "page", "value": "1" },
+								{ "key": "per_page", "value": "20" }
+							]
+						},
+						"description": "عام. الصيدليات النشطة فقط. كل صف يشمل `distance_km` و `is_open_now` (هل مفتوحة الآن حسب ساعات العمل).\n\n• ترتيب حسب المسافة عند تمرير الإحداثيات، أو حسب الاسم بدونها."
+					},
+					"response": []
+				},
+				{
+					"name": "تفاصيل صيدلية",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/pharmacies/{{pharmacy_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["pharmacies", "{{pharmacy_id}}"]
+						},
+						"description": "عام. تفاصيل صيدلية واحدة: ساعات العمل، التقييمات مع أسماء المستخدمين، والأدوية المتوفرة فيها مع الأسعار.\n\n• 404 إذا كانت الصيدلية غير نشطة أو غير موجودة."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "٤. المريض — الأدوية",
+			"item": [
+				{
+					"name": "بحث الأدوية (نطاق المريض)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/medicines/search?q=بنادول&latitude={{latitude}}&longitude={{longitude}}&radius_km={{radius_km}}",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "medicines", "search"],
+							"query": [
+								{ "key": "q", "value": "بنادول", "description": "مطلوب — حرفان على الأقل" },
+								{ "key": "latitude", "value": "{{latitude}}" },
+								{ "key": "longitude", "value": "{{longitude}}" },
+								{ "key": "radius_km", "value": "{{radius_km}}" }
+							]
+						},
+						"description": "محمي. نفس منطق البحث العام لكن ضمن نقاط SRS الخاصة بالمريض (تتطلب تسجيل دخول). يُعيد `medicines` + `moh_catalog`."
+					},
+					"response": []
+				},
+				{
+					"name": "تفاصيل دواء (نطاق المريض)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/medicines/{{medicine_id}}?latitude={{latitude}}&longitude={{longitude}}",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "medicines", "{{medicine_id}}"],
+							"query": [
+								{ "key": "latitude", "value": "{{latitude}}" },
+								{ "key": "longitude", "value": "{{longitude}}" }
+							]
+						},
+						"description": "محمي. تفاصيل الدواء + أقرب صيدلية عند تمرير الإحداثيات.\n\n• 401 بدون توكن، 404 إذا الدواء غير موجود."
+					},
+					"response": []
+				},
+				{
+					"name": "حالة توفر الدواء",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/medicines/{{medicine_id}}/availability?latitude={{latitude}}&longitude={{longitude}}&radius_km={{radius_km}}",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "medicines", "{{medicine_id}}", "availability"],
+							"query": [
+								{ "key": "latitude", "value": "{{latitude}}" },
+								{ "key": "longitude", "value": "{{longitude}}" },
+								{ "key": "radius_km", "value": "{{radius_km}}" }
+							]
+						},
+						"description": "محمي. نقطة SRS الرسمية لحالة التوفر — قائمة الصيدليات مع `availability_status` لكل صف: `available` / `low_stock` / `out_of_stock` (وفق عتبة المخزون = 10)."
+					},
+					"response": []
+				},
+				{
+					"name": "بدائل الدواء",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/medicines/{{medicine_id}}/alternatives?latitude={{latitude}}&longitude={{longitude}}",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "medicines", "{{medicine_id}}", "alternatives"],
+							"query": [
+								{ "key": "latitude", "value": "{{latitude}}", "description": "اختياري — يضيف nearest_pharmacy لكل بديل" },
+								{ "key": "longitude", "value": "{{longitude}}" }
+							]
+						},
+						"description": "محمي. أدوية بنفس المادة الفعّالة (حتى 10، مستثنىً منها الدواء الأصلي). يُعيد مصفوفة فارغة إذا لم تُسجَّل مادة فعّالة."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "٥. المريض — الملف الشخصي",
+			"item": [
+				{
+					"name": "عرض الملف الشخصي",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/profile/patient",
+							"host": ["{{base_url}}"],
+							"path": ["profile", "patient"]
+						},
+						"description": "محمي (للمرضى فقط — 403 لغيرهم). يُعيد: الاسم، الهاتف، رابط الصورة، تاريخ الميلاد، الإحداثيات، العنوان."
+					},
+					"response": []
+				},
+				{
+					"name": "تحديث الملف الشخصي",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"أحمد محمد\",\n    \"avatar_url\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\",\n    \"birth_date\": \"1995-06-15\",\n    \"address\": \"غزة - الرمال\",\n    \"latitude\": 31.5016,\n    \"longitude\": 34.4668\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/profile/patient",
+							"host": ["{{base_url}}"],
+							"path": ["profile", "patient"]
+						},
+						"description": "محمي. كل الحقول اختيارية (sometimes).\n\n• `avatar_url`: رابط آمن https فقط (قاعدة SecureImageUrl ترفض http:// و data: و javascript:).\n• `phone`: فريد (unique) — 422 إذا مستخدم من حساب آخر.\n• `latitude`/`longitude`: بين -90/90 و -180/180."
+					},
+					"response": []
+				},
+				{
+					"name": "عرض الملف الصحي",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/health-profile",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "health-profile"]
+						},
+						"description": "محمي (للمرضى فقط). يُنشئ ملفاً فارغاً تلقائياً إذا لم يوجد: الحساسيات، الأمراض المزمنة، فصيلة الدم، ملاحظات."
+					},
+					"response": []
+				},
+				{
+					"name": "تحديث الملف الصحي",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"allergies\": [\"بنسلين\"],\n    \"chronic_diseases\": [\"السكري\"],\n    \"blood_type\": \"O+\",\n    \"notes\": \"ملاحظات طبية\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/patient/health-profile",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "health-profile"]
+						},
+						"description": "محمي. مصفوفات نصوص (حتى 100 حرف لكل عنصر)، فصيلة الدم حتى 10 أحرف، الملاحظات حتى 1000 حرف.\n\n• الحقل `last_local_update` يُقبل لكنه يُتجاهل (للمزامنة المحلية من الموبايل فقط)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "٦. المريض — المفضلة",
+			"item": [
+				{
+					"name": "قائمة الأدوية المفضلة",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/favorites/medicines?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "favorites", "medicines"],
+							"query": [{ "key": "page", "value": "1" }]
+						},
+						"description": "محمي (مرضى فقط). قائمة مفضلة مرقمة (20 بالصفحة) — كل صف: favoritable_id، medicine_id، الأسماء، رابط الصورة، تاريخ الإضافة."
+					},
+					"response": []
+				},
+				{
+					"name": "إضافة دواء للمفضلة",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/favorites/medicines/{{medicine_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "favorites", "medicines", "{{medicine_id}}"]
+						},
+						"description": "محمي. 201 إذا أُضيف حديثاً — 200 إذا كان موجوداً مسبقاً (بدون تكرار)."
+					},
+					"response": []
+				},
+				{
+					"name": "حذف دواء من المفضلة",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/favorites/medicines/{{medicine_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "favorites", "medicines", "{{medicine_id}}"]
+						},
+						"description": "محمي. يُحذف من مفضلة المستخدم الحالي فقط."
+					},
+					"response": []
+				},
+				{
+					"name": "قائمة الصيدليات المفضلة",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/favorites/pharmacies?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "favorites", "pharmacies"],
+							"query": [{ "key": "page", "value": "1" }]
+						},
+						"description": "محمي (مرضى فقط). كل صف: favoritable_id، pharmacy_id، الاسم، العنوان، المنطقة، رابط الشعار."
+					},
+					"response": []
+				},
+				{
+					"name": "إضافة صيدلية للمفضلة",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/favorites/pharmacies/{{pharmacy_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "favorites", "pharmacies", "{{pharmacy_id}}"]
+						},
+						"description": "محمي. 201 إذا أُضيفت حديثاً — 200 إذا كانت موجودة مسبقاً."
+					},
+					"response": []
+				},
+				{
+					"name": "حذف صيدلية من المفضلة",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/favorites/pharmacies/{{pharmacy_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "favorites", "pharmacies", "{{pharmacy_id}}"]
+						},
+						"description": "محمي. يُحذف من مفضلة المستخدم الحالي فقط."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "٧. المريض — تنبيهات التوفر",
+			"item": [
+				{
+					"name": "قائمة الاشتراكات",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/availability-alerts?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "availability-alerts"],
+							"query": [{ "key": "page", "value": "1" }]
+						},
+						"description": "محمي (مرضى فقط). اشتراكات المستخدم الحالي فقط مع بيانات الدواء والصيدلية وحالة الإشعار (`is_notified`, `notified_at`)."
+					},
+					"response": []
+				},
+				{
+					"name": "الاشتراك في تنبيه توفر",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"medicine_id\": {{medicine_id}},\n    \"pharmacy_id\": {{pharmacy_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/patient/availability-alerts",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "availability-alerts"]
+						},
+						"description": "محمي. `medicine_id` مطلوب، `pharmacy_id` اختياري:\n\n• مع pharmacy_id → تنبيه توفر الدواء في هذه الصيدلية تحديداً.\n• بدون pharmacy_id → تنبيه عند توفر الدواء في أي صيدلية.\n• 201 إذا أُنشئ — 200 إذا الاشتراك موجود مسبقاً.\n• 422 إذا الدواء أو الصيدلية غير موجودة.\n• عند عودة الدواء للمخزون يُرسل إشعار تلقائي لكل المشتركين (Observer)."
+					},
+					"response": []
+				},
+				{
+					"name": "إلغاء اشتراك",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/availability-alerts/1",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "availability-alerts", "1"]
+						},
+						"description": "محمي. محمي من IDOR — محاولة حذف اشتراك مستخدم آخر تُرجع 403."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "٨. المريض — الاستفسارات",
+			"item": [
+				{
+					"name": "قائمة استفساراتي",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/patient/inquiries?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "inquiries"],
+							"query": [{ "key": "page", "value": "1" }]
+						},
+						"description": "محمي. استفسارات المستخدم الحالي فقط — كل صف يشمل: `reply` (رد الصيدلية)، `availability_status` (available/unavailable/low_stock)، `replied_at`، الحالة، بيانات الصيدلية والدواء."
+					},
+					"response": []
+				},
+				{
+					"name": "إرسال استفسار جديد",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pharmacy_id\": {{pharmacy_id}},\n    \"medicine_id\": {{medicine_id}},\n    \"message\": \"هل الدواء متوفر حالياً؟\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/patient/inquiries",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "inquiries"]
+						},
+						"description": "محمي. يُنشئ استفساراً بحالة `new` ويُرسل إشعاراً فورياً لمستخدم الصيدلية.\n\n• 201 عند النجاح — 404 إذا الصيدلية غير موجودة."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "٩. الإشعارات",
+			"item": [
+				{
+					"name": "قائمة الإشعارات",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications?page=1",
+							"host": ["{{base_url}}"],
+							"path": ["notifications"],
+							"query": [{ "key": "page", "value": "1" }]
+						},
+						"description": "محمي. إشعارات المستخدم الحالي فقط — يشمل `unread_count` وعدد الإشعارات غير المقروءة.\n\nأنواع الإشعارات: `new_inquiry`, `low_stock`, `out_of_stock`, `medicine_available`."
+					},
+					"response": []
+				},
+				{
+					"name": "عدد الإشعارات غير المقروءة",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/count",
+							"host": ["{{base_url}}"],
+							"path": ["notifications", "count"]
+						},
+						"description": "محمي. خفيف — لعرض شارة العدد (badge) في تطبيق الموبايل."
+					},
+					"response": []
+				},
+				{
+					"name": "تحديد إشعار كمقروء",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/1/read",
+							"host": ["{{base_url}}"],
+							"path": ["notifications", "1", "read"]
+						},
+						"description": "محمي. محمي من IDOR — 403 إذا الإشعار يخص مستخدماً آخر."
+					},
+					"response": []
+				},
+				{
+					"name": "تحديد جميع الإشعارات كمقروءة",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/mark-all-as-read",
+							"host": ["{{base_url}}"],
+							"path": ["notifications", "mark-all-as-read"]
+						},
+						"description": "محمي. يحدّث كل إشعارات المستخدم غير المقروءة دفعة واحدة."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "١٠. التذكيرات",
+			"item": [
+				{
+					"name": "قائمة التذكيرات",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/reminders",
+							"host": ["{{base_url}}"],
+							"path": ["reminders"]
+						},
+						"description": "محمي. تذكيرات المستخدم الحالي مرتبة بالتاريخ ثم الوقت (الأحدث أولاً)."
+					},
+					"response": []
+				},
+				{
+					"name": "إنشاء تذكير",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"medicine_name\": \"بنادول إكسترا\",\n    \"dosage\": \"حبة كل 8 ساعات\",\n    \"reminder_date\": \"2026-09-05\",\n    \"reminder_time\": \"08:00\",\n    \"frequency\": \"daily\",\n    \"quantity_remaining\": 30\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reminders",
+							"host": ["{{base_url}}"],
+							"path": ["reminders"]
+						},
+						"description": "محمي. الحقول المطلوبة: `medicine_name` (150)، `dosage` (100)، `reminder_date` (تاريخ)، `reminder_time` بصيغة H:i، `quantity_remaining` (عدد صحيح ≥ 0).\n\n• يقبل أيضاً `remaining_doses` أو `dose_count` كأسماء بديلة.\n• `frequency` اختياري — الافتراضي `once`. `is_active` اختياري — الافتراضي true."
+					},
+					"response": []
+				},
+				{
+					"name": "عرض تذكير",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/reminders/1",
+							"host": ["{{base_url}}"],
+							"path": ["reminders", "1"]
+						},
+						"description": "محمي. تذكير المستخدم الحالي فقط — تذكير مستخدم آخر يُرجع 404 (وليس 403 — لإخفاء وجوده)."
+					},
+					"response": []
+				},
+				{
+					"name": "تحديث تذكير",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reminder_time\": \"09:00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reminders/1",
+							"host": ["{{base_url}}"],
+							"path": ["reminders", "1"]
+						},
+						"description": "محمي. تحديث جزئي — أرسل الحقول التي تريد تغييرها فقط (sometimes)."
+					},
+					"response": []
+				},
+				{
+					"name": "حذف تذكير",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/reminders/1",
+							"host": ["{{base_url}}"],
+							"path": ["reminders", "1"]
+						},
+						"description": "محمي. تذكير المستخدم الحالي فقط — 404 لغير المالك."
+					},
+					"response": []
+				},
+				{
+					"name": "تسجيل جرعة كمأخوذة",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/reminders/1/taken",
+							"host": ["{{base_url}}"],
+							"path": ["reminders", "1", "taken"]
+						},
+						"description": "محمي. خصم ذري (atomic) للكمية المتبقية — يمنع سباق الطلبات المتزامنة.\n\n• عند وصول الكمية إلى 0 يُفعَّل `is_active: false` تلقائياً."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "١١. التقييمات",
+			"item": [
+				{
+					"name": "قائمة التقييمات",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"url": {
+							"raw": "{{base_url}}/ratings?pharmacy_id=&page=1&per_page=20",
+							"host": ["{{base_url}}"],
+							"path": ["ratings"],
+							"query": [
+								{ "key": "pharmacy_id", "value": "", "description": "اختياري — بدونها تُعاد تقييماتي أنا" },
+								{ "key": "page", "value": "1" },
+								{ "key": "per_page", "value": "20" }
+							]
+						},
+						"description": "محمي.\n\n• مع `pharmacy_id` → كل تقييمات هذه الصيدلية.\n• بدون → تقييمات المستخدم الحالي فقط."
+					},
+					"response": []
+				},
+				{
+					"name": "إضافة تقييم",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pharmacy_id\": {{pharmacy_id}},\n    \"stars_rating\": 5,\n    \"comment\": \"خدمة ممتازة\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ratings",
+							"host": ["{{base_url}}"],
+							"path": ["ratings"]
+						},
+						"description": "محمي. `pharmacy_id` مطلوب موجود، `stars_rating` مطلوب، `comment` اختياري.\n\n• 403 إذا الصيدلية غير نشطة — 201 عند النجاح."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "١٢. المساعد الذكي والقارئ الضوئي",
+			"item": [
+				{
+					"name": "محادثة المساعد الذكي",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"وين ألقى بنادول قريب مني؟\",\n    \"latitude\": {{latitude}},\n    \"longitude\": {{longitude}},\n    \"radius_km\": {{radius_km}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": ["{{base_url}}"],
+							"path": ["chat"]
+						},
+						"description": "محمي. حد معدل 30 طلب/دقيقة.\n\n• `message` مطلوب (حتى 500 حرف)، الإحداثيات اختيارية.\n• يُعيد `analysis` (نية البحث + اسم الدواء) و `results` (كتالوج وزارة الصحة + الكتالوج المحلي + الصيدليات القريبة + البدائل).\n• `requires_location: true` معناه أعد الإرسال مع الإحداثيات."
+					},
+					"response": []
+				},
+				{
+					"name": "تحليل نصي بدون موقع",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"أحتاج بديل للبنادول\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/patient/assistant/analyze",
+							"host": ["{{base_url}}"],
+							"path": ["patient", "assistant", "analyze"]
+						},
+						"description": "محمي. تحليل الذكاء الاصطناعي فقط — `message` مطلوب (حتى 500 حرف)، لا يوجد بحث جغرافي هنا (مصفوفة `pharmacies` فارغة دائماً)."
+					},
+					"response": []
+				},
+				{
+					"name": "OCR — التعرف على الدواء من صورة",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"description": "صورة العلبة — jpg/jpeg/png/webp حتى 8 ميجابايت"
+								},
+								{ "key": "latitude", "value": "{{latitude}}", "type": "text" },
+								{ "key": "longitude", "value": "{{longitude}}", "type": "text" },
+								{ "key": "radius_km", "value": "{{radius_km}}", "type": "text" }
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/ocr/medicine",
+							"host": ["{{base_url}}"],
+							"path": ["ocr", "medicine"]
+						},
+						"description": "محمي. حد معدل 30 طلب/دقيقة.\n\n• ارفع صورة علبة الدواء (form-data، الحقل `file`).\n• يُعيد: نتيجة الـ OCR (نجاح/درجة التطابق) + المرشحون من الكتالوجين + الصيدليات القريبة المتوفرة + البدائل.\n• إذا لم يُتعرف على الدواء تُعاد معلومات الـ OCR فقط مع رسالة مناسبة."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "١٣. توكنات الأجهزة (إشعارات FCM)",
+			"item": [
+				{
+					"name": "تسجيل توكن الجهاز",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const json = pm.response.json();",
+									"if (json.data && json.data.device_id) {",
+									"    pm.collectionVariables.set('device_id', json.data.device_id);",
+									"    console.log('تم حفظ device_id: ' + json.data.device_id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"توكن-FCM-من-التطبيق\",\n    \"platform\": \"android\",\n    \"device_id\": \"معرّف-الجهاز-الفريد\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/device-tokens",
+							"host": ["{{base_url}}"],
+							"path": ["device-tokens"]
+						},
+						"description": "محمي (مرضى فقط). تسجيل جهاز لاستقبال إشعارات FCM.\n\n• `token`: توكن FCM (حتى 512 حرف).\n• `platform`: `android` أو `ios` فقط — 422 لغيرهما.\n• `device_id`: معرّف فريد للجهاز (حتى 191 حرف) — التحديث يعمل كـ upsert على (user_id, device_id): 201 إنشاء / 200 تحديث.\n• 422 إذا التوكن مسجل لمستخدم آخر."
+					},
+					"response": []
+				},
+				{
+					"name": "حذف توكن الجهاز",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"device_id\": \"معرّف-الجهاز-الفريد\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/device-tokens/current",
+							"host": ["{{base_url}}"],
+							"path": ["device-tokens", "current"]
+						},
+						"description": "محمي. `device_id` مطلوب في النص (422 بدونه).\n\n• يحذف فقط توكنات المستخدم الحالي — توكنات باقي المستخدمين تبقى سليمة."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

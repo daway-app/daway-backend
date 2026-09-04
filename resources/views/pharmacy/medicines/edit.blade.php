@@ -3,7 +3,7 @@
 @section('title', __('pharmacy.medicines.edit.title'))
 
 @section('content')
-    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
+    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js', 'resources/js/offline/index.js'])
     @include('partials.pharmacy-hub-i18n')
 
     <div class='ph-page'>
@@ -32,7 +32,7 @@
         <div class='ph-card'>
             <div class='ph-card-head'><h2><i class='fas fa-pills'></i> @lang('pharmacy.medicines.edit.info_section')</h2></div>
             <div class='ph-card-body'>
-                <form action='{{ route('pharmacy.medicines.update', $pharmacyMedicine->id) }}' method='POST'>
+                <form action='{{ route('pharmacy.medicines.update', $pharmacyMedicine->id) }}' method='POST' data-offline-form='medicine-edit' data-pharmacy-medicine-id='{{ $pharmacyMedicine->id }}'>
                     @csrf
                     @method('PUT')
 

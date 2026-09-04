@@ -39,6 +39,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/healthz', [HealthController::class, 'index']);
 
+// ==================== PWA OFFLINE FALLBACK ====================
+
+Route::view('/offline', 'offline')->name('offline');
+
 // ==================== LOCALE ====================
 
 Route::get('locale/{locale}', [

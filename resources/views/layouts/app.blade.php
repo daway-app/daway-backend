@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}"> {{-- Added CSRF token meta tag --}}
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#0B8FAC">
+    <script>
+        if ('serviceWorker' in navigator && (window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+            navigator.serviceWorker.register('/sw.js').catch(function () {});
+        }
+    </script>
     <script>
         (function () {
             try {
@@ -40,6 +47,8 @@
     <div class="main-wrapper">
         {{-- الشريط العلوي --}}
         @include('components.topbar')
+
+        @include('partials.sync-banner')
 
         {{-- المحتوى الرئيسي --}}
         <main class="main-content">

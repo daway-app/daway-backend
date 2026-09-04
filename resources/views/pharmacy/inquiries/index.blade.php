@@ -3,7 +3,7 @@
 @section('title', __('pharmacy.inquiries.title'))
 
 @section('content')
-    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
+    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js', 'resources/js/offline/index.js'])
     @include('partials.pharmacy-hub-i18n')
 
     @php
@@ -44,7 +44,7 @@
             </div>
         </div>
 
-        <div class='ph-card ph-inquiry-table'>
+        <div class='ph-card ph-inquiry-table' data-offline-page='inquiries'>
             <div class='ph-card-body ph-table-wrap' style='padding:0;'>
                 <table class='ph-table'>
                     <thead>
@@ -84,20 +84,20 @@
                                 <td>
                                     <div style='display:flex;gap:8px;'>
                                         @if($status === 'new')
-                                            <form action='{{ route('pharmacy.inquiries.update', $inquiry) }}' method='POST'>
+                                            <form action='{{ route('pharmacy.inquiries.update', $inquiry) }}' method='POST' data-offline-form='inquiry-status' data-inquiry-id='{{ $inquiry->id }}'>
                                                 @csrf
                                                 @method('PUT')
                                                 <input type='hidden' name='status' value='answered'>
                                                 <button type='submit' class='ph-btn sm primary'>@lang('pharmacy.inquiries.answer_button')</button>
                                             </form>
-                                            <form action='{{ route('pharmacy.inquiries.update', $inquiry) }}' method='POST'>
+                                            <form action='{{ route('pharmacy.inquiries.update', $inquiry) }}' method='POST' data-offline-form='inquiry-status' data-inquiry-id='{{ $inquiry->id }}'>
                                                 @csrf
                                                 @method('PUT')
                                                 <input type='hidden' name='status' value='closed'>
                                                 <button type='submit' class='ph-btn sm ghost'>@lang('pharmacy.inquiries.close_button')</button>
                                             </form>
                                         @elseif($status === 'answered')
-                                            <form action='{{ route('pharmacy.inquiries.update', $inquiry) }}' method='POST'>
+                                            <form action='{{ route('pharmacy.inquiries.update', $inquiry) }}' method='POST' data-offline-form='inquiry-status' data-inquiry-id='{{ $inquiry->id }}'>
                                                 @csrf
                                                 @method('PUT')
                                                 <input type='hidden' name='status' value='closed'>
@@ -118,4 +118,17 @@
             @endif
         </div>
     </div>
+
+    {{-- بيانات الاستفسارات للعمل بدون اتصال (offline hydration payload) --}}
+    @php
+        $offlineInquiries = $inquiries->getCollection()->map(fn ($inquiry) => [
+            'id' => $inquiry->id,
+            'status' => $inquiry->status ?? 'new',
+            'message' => $inquiry->message ?? '',
+            'created_at' => optional($inquiry->created_at)->toIso8601String(),
+            'user' => ['name' => $inquiry->user->name ?? __('pharmacy.inquiries.patient_fallback')],
+            'medicine' => ['trade_name' => $inquiry->medicine->trade_name ?? __('pharmacy.inquiries.medicine_fallback')],
+        ])->values()->all();
+    @endphp
+    <script id='daway-offline-inquiries' type='application/json'>@json($offlineInquiries)</script>
 @endsection

@@ -242,6 +242,12 @@
     "src": "resources/css/pages/users_create.css",
     "isEntry": true
   },
+  "resources/js/offline/index.js": {
+    "file": "assets/index-W1OeO_0y.js",
+    "name": "index",
+    "src": "resources/js/offline/index.js",
+    "isEntry": true
+  },
   "resources/js/pharmacy_dashboard.js": {
     "file": "assets/pharmacy_dashboard-vDHEUI5G.js",
     "name": "pharmacy_dashboard",

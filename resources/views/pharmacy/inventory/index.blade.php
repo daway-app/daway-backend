@@ -3,7 +3,7 @@
 @section('title', __('pharmacy.inventory.title'))
 
 @section('content')
-    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
+    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js', 'resources/js/offline/index.js'])
     @include('partials.pharmacy-hub-i18n')
 
     @push('scripts')
@@ -102,10 +102,10 @@
             @endif
         </form>
 
-        <form action='{{ route('pharmacy.inventory.update') }}' method='POST'>
+        <form action='{{ route('pharmacy.inventory.update') }}' method='POST' data-offline-form='inventory'>
             @csrf
             @method('PUT')
-            <div class='ph-card ph-inventory-table'>
+            <div class='ph-card ph-inventory-table' data-offline-page='inventory'>
                 <div class='ph-card-head'><h2><i class='fas fa-boxes-stacked'></i> @lang('pharmacy.inventory.update_title')</h2></div>
                 <div class='ph-card-body ph-table-wrap' style='padding:0;'>
                     <table class='ph-table'>
@@ -148,4 +148,17 @@
             </div>
         </form>
     </div>
+
+    {{-- بيانات المخزون للعمل بدون اتصال (offline hydration payload) --}}
+    @php
+        $offlineInventory = collect($items ?? collect())->map(fn ($item) => [
+            'id' => $item->id,
+            'medicine_id' => $item->medicine_id,
+            'quantity' => $item->quantity,
+            'trade_name' => $item->medicine->trade_name ?? '',
+            'active_ingredient' => $item->medicine->active_ingredient ?? '',
+            'updated_at' => optional($item->updated_at)->toIso8601String(),
+        ])->values()->all();
+    @endphp
+    <script id='daway-offline-inventory' type='application/json'>@json($offlineInventory)</script>
 @endsection

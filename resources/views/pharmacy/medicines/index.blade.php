@@ -3,7 +3,7 @@
 @section('title', __('pharmacy.medicines.index.title'))
 
 @section('content')
-    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
+    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js', 'resources/js/offline/index.js'])
     @include('partials.pharmacy-hub-i18n')
 
     @php
@@ -53,7 +53,7 @@
             </div>
         </div>
 
-        <div class='ph-card ph-medicine-table'>
+        <div class='ph-card ph-medicine-table' data-offline-page='medicines'>
             <div class='ph-card-body ph-table-wrap' style='padding:0;'>
                 <table class='ph-table'>
                     <thead>
@@ -113,4 +113,23 @@
             </div>
         @endif
     </div>
+
+    {{-- بيانات أدوية الصيدلية للعمل بدون اتصال (offline hydration payload) --}}
+    @php
+        $offlineMedicines = $pharmacyMedicines->map(fn ($pm) => [
+            'id' => $pm->id,
+            'price' => (float) $pm->price,
+            'quantity' => $pm->quantity,
+            'is_available' => (bool) $pm->is_available,
+            'updated_at' => optional($pm->updated_at)->toIso8601String(),
+            'medicine' => [
+                'id' => $pm->medicine->id ?? null,
+                'trade_name' => $pm->medicine->trade_name ?? '',
+                'trade_name_ar' => $pm->medicine->trade_name_ar ?? '',
+                'active_ingredient' => $pm->medicine->active_ingredient ?? '',
+                'strength' => $pm->medicine->strength ?? '',
+            ],
+        ])->values()->all();
+    @endphp
+    <script id='daway-offline-medicines' type='application/json'>@json($offlineMedicines)</script>
 @endsection
