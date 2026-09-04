@@ -1,5 +1,5 @@
 /* Daway service worker — offline shell for pharmacy dashboard. */
-const VERSION = 'daway-v2';
+const VERSION = 'daway-v3';
 const PRECACHE_URLS = [
     '/offline',
     '/vendor/chart.umd.js',
@@ -7,6 +7,33 @@ const PRECACHE_URLS = [
     '/icons/icon-192.png',
     '/icons/icon-512.png',
 ];
+
+// صفحات الصيدلية — تُخزَّن تلقائياً لحل مشكلة "الزيارة الأولى".
+// الـ fetch داخل الـ SW يرسل كوكيز الجلسة تلقائياً (same-origin)،
+// وإذا المستخدم غير مسجل يرجع السيرفر 302 → response غير ok → لا يُخزَّن شيء.
+const PHARMACY_PAGES = [
+    '/pharmacy/dashboard',
+    '/pharmacy/inventory',
+    '/pharmacy/medicines',
+    '/pharmacy/medicines/create',
+    '/pharmacy/inquiries',
+    '/pharmacy/alternatives',
+    '/pharmacy/ratings',
+    '/profile',
+];
+
+async function precachePharmacyPages() {
+    const cache = await caches.open(VERSION);
+    await Promise.allSettled(PHARMACY_PAGES.map(async (url) => {
+        try {
+            if (await cache.match(url)) return; // مخزّنة مسبقاً
+            const response = await fetch(url, { credentials: 'same-origin', redirect: 'follow' });
+            if (response && response.ok && response.type === 'basic') {
+                await cache.put(url, response);
+            }
+        } catch (e) { /* offline أو فشل شبكة — ستُجرّب لاحقاً عبر DAWAY_PREFETCH */ }
+    }));
+}
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -21,7 +48,15 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((keys) =>
             Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k)))
         ).then(() => self.clients.claim())
+        .then(() => precachePharmacyPages())
     );
+});
+
+// إعادة محاولة التخزين عند طلب الصفحة (بعد كل مزامنة ناجحة / تسجيل دخول)
+self.addEventListener('message', (event) => {
+    if (event.data === 'DAWAY_PREFETCH') {
+        event.waitUntil(precachePharmacyPages());
+    }
 });
 
 const STATIC_PREFIXES = ['/build/', '/icons/', '/vendor/', '/css/', '/js/', '/images/'];
