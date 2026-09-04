@@ -39,7 +39,16 @@ document.addEventListener('DOMContentLoaded', () => {
     seedFromPage();
     hydrateFromCache();
     window.addEventListener('daway:synced', () => {
-        if (!navigator.onLine) hydrateFromCache();
+        if (!navigator.onLine) {
+            hydrateFromCache();
+            return;
+        }
+        // الصفحة قد تكون مخدومة من كاش الـ SW (SWR) — بعد مزامنة ناجحة
+        // نُعيد التحميل مرة واحدة لعرض أحدث بيانات السيرفر (Source of Truth).
+        if (!window.__dawayReloadedAfterSync) {
+            window.__dawayReloadedAfterSync = true;
+            window.location.reload();
+        }
     });
 });
 
