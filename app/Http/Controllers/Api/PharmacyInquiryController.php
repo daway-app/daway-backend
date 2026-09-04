@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\InquiryStatusRequest;
 use App\Http\Resources\PatientInquiryResource;
+use App\Models\Notification;
 use App\Models\PatientInquiry;
 use App\Models\Pharmacy;
 use Illuminate\Http\JsonResponse;
@@ -74,8 +75,36 @@ class PharmacyInquiryController extends Controller
         $pharmacy = Pharmacy::where('user_id', $user->id)->first();
         abort_unless($pharmacy && $inquiry->pharmacy_id === $pharmacy->id, 403);
 
-        $inquiry->update(['status' => $request->string('status')->toString()]);
+        $data = $request->only(['status', 'reply', 'availability_status']);
+
+        $hasReply = array_key_exists('reply', $data) && $data['reply'] !== null;
+
+        if ($hasReply || (($data['status'] ?? null) === 'answered')) {
+            $data['replied_at'] = now();
+        }
+
+        $shouldNotify = ($data['status'] ?? null) === 'answered'
+            || $hasReply
+            || array_key_exists('availability_status', $data);
+
+        $inquiry->update($data);
         $inquiry->load(['user', 'medicine']);
+
+        if ($shouldNotify && $inquiry->user_id) {
+            $messageKey = 'layout.notif_inquiry_answered';
+            $message = trans()->has($messageKey)
+                ? __($messageKey, ['pharmacy' => $pharmacy->pharmacy_name])
+                : 'تم الرد على استفسارك من صيدلية '.$pharmacy->pharmacy_name;
+
+            Notification::create([
+                'user_id' => $inquiry->user_id,
+                'medicine_id' => $inquiry->medicine_id,
+                'type' => 'inquiry_answered',
+                'message' => $message,
+                'is_read' => false,
+                'created_at' => now(),
+            ]);
+        }
 
         return response()->json([
             'success' => true,

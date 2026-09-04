@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
+use App\Support\Haversine;
 use App\Support\Image;
+use App\Support\PharmacyAvailability;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,9 +18,17 @@ class PharmacyController extends Controller
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'radius_km' => 'nullable|integer|min:1|max:50',
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
+
+        $hasGeo = $request->filled('latitude') && $request->filled('longitude');
+        $lat = $hasGeo ? (float) $validated['latitude'] : null;
+        $lng = $hasGeo ? (float) $validated['longitude'] : null;
+        $radiusKm = (int) ($validated['radius_km'] ?? 15);
 
         $query = Pharmacy::query()
             ->where('is_active', true)
@@ -38,12 +48,29 @@ class PharmacyController extends Controller
             });
         }
 
-        $items = $query->orderBy('pharmacy_name')->paginate($perPage);
+        $items = $query
+            ->when($hasGeo, fn ($q) => $q->selectRaw('*, (6371 * acos(least(1.0, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))) AS distance_km', [$lat, $lng, $lat]))
+            ->when($hasGeo, fn ($q) => $q->having('distance_km', '<=', $radiusKm))
+            ->when($hasGeo, fn ($q) => $q->orderBy('distance_km'))
+            ->when(! $hasGeo, fn ($q) => $q->orderBy('pharmacy_name'))
+            ->paginate($perPage);
+
+        $rows = collect($items->items())->map(function (Pharmacy $pharmacy) use ($hasGeo) {
+            $pharmacy->loadMissing('hours');
+            $distance = $hasGeo && isset($pharmacy->getAttributes()['distance_km'])
+                ? round((float) $pharmacy->getAttributes()['distance_km'], 3)
+                : null;
+            return [
+                ...$this->payload($pharmacy),
+                'distance_km' => $distance,
+                'is_open_now' => PharmacyAvailability::isOpenNow($pharmacy),
+            ];
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'تم جلب الصيدليات بنجاح',
-            'data' => collect($items->items())->map(fn (Pharmacy $pharmacy) => $this->payload($pharmacy)),
+            'data' => $rows,
             'pagination' => [
                 'total' => $items->total(),
                 'per_page' => $items->perPage(),
@@ -78,6 +105,7 @@ class PharmacyController extends Controller
             'message' => 'تم جلب تفاصيل الصيدلية بنجاح',
             'data' => [
                 ...$this->payload($pharmacy),
+                'is_open_now' => PharmacyAvailability::isOpenNow($pharmacy),
                 'hours' => $pharmacy->hours->map(fn ($hour) => [
                     'day_of_week' => $hour->day_of_week,
                     'open_time' => $hour->open_time?->format('H:i'),

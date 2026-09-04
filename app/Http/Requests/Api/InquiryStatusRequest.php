@@ -15,7 +15,9 @@ class InquiryStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|in:'.implode(',', PatientInquiry::STATUSES),
+            'status' => 'sometimes|in:'.implode(',', PatientInquiry::STATUSES),
+            'reply' => 'sometimes|nullable|string|max:1000',
+            'availability_status' => 'sometimes|nullable|in:'.implode(',', PatientInquiry::AVAILABILITY_STATUSES),
         ];
     }
 }

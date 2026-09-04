@@ -15,6 +15,9 @@ class PatientInquiryResource extends JsonResource
             'id' => $this->id,
             'status' => $this->status,
             'message' => $this->message,
+            'reply' => $this->reply,
+            'availability_status' => $this->availability_status,
+            'replied_at' => $this->replied_at?->toDateTimeString(),
             'created_at' => $this->created_at?->toDateTimeString(),
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user->id,

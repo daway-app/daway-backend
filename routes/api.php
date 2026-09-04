@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AvailabilityAlertController;
 use App\Http\Controllers\Api\ChatAssistantController;
+use App\Http\Controllers\Api\DeviceTokenController;
+use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\MedicalProfileController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OcrController;
@@ -63,6 +67,40 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Patient inquiries
     Route::apiResource('patient/inquiries', PatientInquiryController::class)->only(['index', 'store']);
+
+    // Patient-scoped routes (Phase 9 — SRS endpoints).
+    // ملاحظة على ترتيب المسارات: `medicines/search` يجب أن يسبق `medicines/{medicine}`
+    // وإلا فسيلتقط Laravel الـ wildcard أولاً ويفشل في مطابقة "search" كقيمة.
+    Route::prefix('patient')->group(function () {
+        Route::get('medicines/search', [MedicineController::class, 'search']);
+        Route::get('medicines/{medicine}', [MedicineController::class, 'show']);
+        // ملاحظة: `pharmacies` على MedicineController يعيد قائمة الصيدليات التي يتوفر بها الدواء —
+        // وهذا نفس دلالياً معنى "availability" في SRS للمريض.
+        Route::get('medicines/{medicine}/availability', [MedicineController::class, 'pharmacies']);
+        // بدائل الدواء: تُربط بـ `pharmacies` كحلّ مؤقت — لإضافة منطق البدائل الحقيقي
+        // نحتاج method `alternatives` على MedicineController (Phase 9.1 مستقبلي).
+        Route::get('medicines/{medicine}/alternatives', [MedicineController::class, 'pharmacies']);
+
+        Route::get('favorites/medicines', [FavoriteController::class, 'medicines']);
+        Route::post('favorites/medicines/{medicine}', [FavoriteController::class, 'storeMedicine']);
+        Route::delete('favorites/medicines/{medicine}', [FavoriteController::class, 'destroyMedicine']);
+        Route::get('favorites/pharmacies', [FavoriteController::class, 'pharmacies']);
+        Route::post('favorites/pharmacies/{pharmacy}', [FavoriteController::class, 'storePharmacy']);
+        Route::delete('favorites/pharmacies/{pharmacy}', [FavoriteController::class, 'destroyPharmacy']);
+
+        Route::get('availability-alerts', [AvailabilityAlertController::class, 'index']);
+        Route::post('availability-alerts', [AvailabilityAlertController::class, 'store']);
+        Route::delete('availability-alerts/{alert}', [AvailabilityAlertController::class, 'destroy']);
+
+        Route::get('health-profile', [MedicalProfileController::class, 'show']);
+        Route::put('health-profile', [MedicalProfileController::class, 'update']);
+
+        Route::post('assistant/analyze', [ChatAssistantController::class, 'analyze']);
+    });
+
+    // Device tokens (FCM) — خارج prefix('patient') لأن كلا الـ roles (patient/pharmacy) قد يسجّلان جهازاً.
+    Route::post('device-tokens', [DeviceTokenController::class, 'store']);
+    Route::delete('device-tokens/current', [DeviceTokenController::class, 'destroy']);
 
     // Pharmacy inquiries (role-checked)
     Route::middleware('role:pharmacy')->prefix('pharmacy')->group(function () {

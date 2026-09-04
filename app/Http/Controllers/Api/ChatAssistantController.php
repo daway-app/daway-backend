@@ -88,4 +88,48 @@ class ChatAssistantController extends Controller
             'data' => $payload,
         ]);
     }
+
+    /**
+     * Phase 9: تحليل رسالة المريض بدون بحث جغرافي.
+     * thin endpoint فوق الـ AI الموجود — يعيد استخدام AiAssistantClient + MedicineResolver
+     * (بدون إنشاء Gemini service أو منطق مكرر). الـ SRS لا يطلب lat/lng هنا، فقط `message`.
+     */
+    public function analyze(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'message' => ['required', 'string', 'max:500'],
+        ]);
+
+        $analysis = $this->ai->analyze($data['message']);
+
+        $payload = ['analysis' => $analysis, 'results' => null];
+
+        if (data_get($analysis, 'intent') === 'search_medicine' && data_get($analysis, 'drug_name') !== null) {
+            $drugName = $analysis['drug_name'];
+            try {
+                $candidates  = $this->resolver->resolveCandidates($drugName);
+                $bestLocalId = $candidates['local']->first()->id ?? null;
+
+                $payload['results'] = [
+                    'drug_name'     => $drugName,
+                    'moh_catalog'   => $candidates['moh']->values(),
+                    'local_catalog' => $candidates['local']->values(),
+                    // SRS لا يطلب الصيدليات في /analyze — نتركها فارغة للحفاظ على نفس شكل payload.
+                    'pharmacies'    => [],
+                    'alternatives'  => $bestLocalId ? $this->resolver->alternatives($bestLocalId) : [],
+                ];
+            } catch (\Throwable $e) {
+                Log::warning('assistant analyze resolver failed', ['error' => $e->getMessage()]);
+                $payload['results'] = null;
+            }
+        }
+
+        \App\Models\SearchLog::track($data['message'], 'ai');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تمت معالجة طلبك بنجاح.',
+            'data' => $payload,
+        ]);
+    }
 }

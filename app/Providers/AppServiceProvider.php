@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\PharmacyMedicine;
 use App\Models\Rating;
+use App\Observers\PharmacyMedicineObserver;
 use App\Observers\RatingObserver;
 use App\Services\Ai\AiAssistantClient;
 use App\Services\Ai\MedicineResolver;
@@ -45,5 +47,6 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         Rating::observe(RatingObserver::class);
+        PharmacyMedicine::observe(PharmacyMedicineObserver::class);
     }
 }
