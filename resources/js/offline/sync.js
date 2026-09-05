@@ -83,9 +83,11 @@ export const sync = {
             if (!response.ok) throw new Error('token request failed');
             return response.json();
         }).then((body) => {
-            if (!body || !body.success || !body.token) throw new Error('bad token payload');
-            sessionStorage.setItem(TOKEN_KEY, body.token);
-            return body.token;
+            // السيرفر قد يُعيد الشكلين: {token} أو {data:{token}} — نقبل كليهما
+            const issued = body && (body.token || (body.data && body.data.token));
+            if (!body || !body.success || !issued) throw new Error('bad token payload');
+            sessionStorage.setItem(TOKEN_KEY, issued);
+            return issued;
         });
     },
 
@@ -102,8 +104,11 @@ export const sync = {
         return db.queueAll().then((queue) => {
             if (!queue.length) return this.pull().catch(() => {});
             setBanner('syncing', { count: queue.length });
-            return this.ensureToken().then((token) => this.push(token, queue))
-                .then(() => this.pull(token))
+            let issued;
+            return this.ensureToken().then((token) => {
+                issued = token;
+                return this.push(token, queue);
+            }).then(() => this.pull(issued))
                 .catch((error) => {
                     // فشل الـ push/pull — لا نعلق على «جارٍ المزامنة»: نعرض الفشل مع إعادة محاولة
                     // والـ queue يبقى كما هو (لا تضيع أي عملية).
