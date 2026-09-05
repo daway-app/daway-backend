@@ -81,10 +81,42 @@ function renderInquiries(items) {
     }).join('');
 }
 
+/* إعادة ربط أزرار +/− بعد إعادة بناء الجدول من الكاش —
+   innerHTML ينشئ عناصر جديدة بلا مستمعين (pharmacy_hub ربط القديمة فقط). */
+function attachSteppers(scope) {
+    scope.querySelectorAll('.ph-stepper').forEach((s) => {
+        const input = s.querySelector('input');
+        const dec = s.querySelector('.dec');
+        const inc = s.querySelector('.inc');
+        if (!input || input.dataset.stepperInit) return;
+        input.dataset.stepperInit = '1';
+        const update = () => {
+            let v = parseInt(input.value, 10) || 0;
+            if (v < 0) v = 0;
+            input.value = v;
+            const row = s.closest('[data-status]');
+            if (!row) return;
+            const min = parseInt(row.dataset.min || 0);
+            const status = v === 0 ? 'out' : (v <= min ? 'low' : 'ok');
+            row.dataset.status = status;
+            const badgeEl = row.querySelector('.ph-badge');
+            if (badgeEl) {
+                badgeEl.className = 'ph-badge ' + status;
+                const i18n = (window.phHubI18n && window.phHubI18n.status) || {};
+                badgeEl.textContent = status === 'ok' ? (i18n.available || 'متوفر')
+                    : (status === 'low' ? (i18n.low || 'منخفض') : (i18n.out || 'غير متوفر'));
+            }
+        };
+        if (dec) dec.addEventListener('click', () => { input.value = (parseInt(input.value, 10) || 0) - 1; update(); });
+        if (inc) inc.addEventListener('click', () => { input.value = (parseInt(input.value, 10) || 0) + 1; update(); });
+        input.addEventListener('input', update);
+    });
+}
+
 export const render = {
     renderFromCache() {
         return Promise.all([
-            db.getAll('inventory').then((rows) => renderInventory(rows)),
+            db.getAll('inventory').then((rows) => { renderInventory(rows); attachSteppers(document); }),
             db.getAll('medicines').then((rows) => renderMedicines(rows)),
             db.getAll('inquiries').then((rows) => renderInquiries(rows)),
         ]);

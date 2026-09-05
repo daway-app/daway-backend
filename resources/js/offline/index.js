@@ -17,13 +17,14 @@ function seedFromPage() {
     Object.entries(PAYLOAD_IDS).forEach(([elementId, store]) => {
         const el = document.getElementById(elementId);
         if (!el) return;
-        db.count(store).then((count) => {
-            if (count > 0) return;
-            try {
-                const rows = JSON.parse(el.textContent);
-                if (Array.isArray(rows) && rows.length) return db.putAll(store, rows);
-            } catch (e) { /* invalid payload — ignore */ }
-        }).catch(() => {});
+        try {
+            const rows = JSON.parse(el.textContent);
+            if (Array.isArray(rows) && rows.length) {
+                // دمج دائم: يُحدّث صفوف الصفحة الحالية في الكاش ويُعيد بناء
+                // أي صفوف فقدوها سابقاً (delta-bulkReplace القديم) — بلا حذف.
+                db.putAll(store, rows).catch(() => {});
+            }
+        } catch (e) { /* invalid payload — ignore */ }
     });
 }
 

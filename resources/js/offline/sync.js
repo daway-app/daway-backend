@@ -188,8 +188,12 @@ export const sync = {
         }).then((body) => {
             const data = (body && body.data) || {};
             const replace = [];
-            if (data.inventory && data.inventory.length) replace.push(db.bulkReplace('inventory', data.inventory));
-            if (data.inquiries && data.inquiries.length) replace.push(db.bulkReplace('inquiries', data.inquiries));
+            // ⚠️ الـ pull يعيد DELTA (التغييرات فقط منذ آخر مزامنة) — نستخدم putAll
+            // (تحديث/إدراج فقط). bulkReplace كان يحذف كل الصفوف غير الموجودة في
+            // الرد → الكاش المحلي يفقد أدوية سليمة («الدواء ناقص» offline).
+            // الحذف الفعلي يُدار عبر deleted_pharmacy_medicine_ids فقط.
+            if (data.inventory && data.inventory.length) replace.push(db.putAll('inventory', data.inventory));
+            if (data.inquiries && data.inquiries.length) replace.push(db.putAll('inquiries', data.inquiries));
             if (data.deleted_pharmacy_medicine_ids && data.deleted_pharmacy_medicine_ids.length) {
                 replace.push(Promise.all(
                     data.deleted_pharmacy_medicine_ids.map((id) => db.delete('medicines', id))
