@@ -41,6 +41,9 @@ $app = Application::configure(basePath: dirname(__DIR__))
 
         // H3: locale middleware على API أيضاً — للـ mobile requests.
         $middleware->api(prepend: [
+            // Sanctum: يسمح بكوكيز جلسة الويب على /api/* — مطلوب لـ /api/sync/token
+            // (إصدار توكن مزامنة من جلسة الصيدلية على الويب).
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             SetAppLocale::class,
         ]);
     })
