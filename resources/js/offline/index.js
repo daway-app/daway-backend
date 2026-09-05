@@ -52,4 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+/* تعريض الوحدات للـ window: زر «إعادة المحاولة» في الـ Banner
+   وقرار الاعتراض يعتمدان عليه. */
+window.DawayOffline = { db, queueAddOp, sync, banner, intercept, render };
+
 export { db, queueAddOp, sync, banner, intercept, render };

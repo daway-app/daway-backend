@@ -24,9 +24,13 @@ export const sync = {
     timer: null,
     serverUp: null,      // آخر نتيجة heartbeat حقيقية (navigator.onLine يكذب)
     lastCheckAt: 0,
+    failStreak: 0,       // عدد الفشلات المتتالية — لا نعتبر Offline قبل فشلين
 
     init() {
-        window.addEventListener('online', () => this.checkThenSync());
+        window.addEventListener('online', () => {
+            this.failStreak = 0;
+            this.checkThenSync();
+        });
         window.addEventListener('offline', () => {
             this.serverUp = false;
             this.lastCheckAt = Date.now();
@@ -45,23 +49,29 @@ export const sync = {
     },
 
     checkThenSync() {
-        fetchWithTimeout('/healthz', { method: 'HEAD' }, 5000)
+        // GET بدل HEAD — Render يقطع بعض طلبات HEAD بشكل متقطع
+        fetchWithTimeout('/healthz', { method: 'GET', cache: 'no-store' }, 5000)
             .then(() => {
+                this.failStreak = 0;
                 this.serverUp = true;
                 this.lastCheckAt = Date.now();
                 return this.runSync();
             })
             .catch(() => {
-                this.serverUp = false;
-                this.lastCheckAt = Date.now();
-                /* still offline */
+                // فشل واحد متقطع لا يعني Offline — نحتاج فشلين متتاليين
+                this.failStreak = (this.failStreak || 0) + 1;
+                if (this.failStreak >= 2) {
+                    this.serverUp = false;
+                    this.lastCheckAt = Date.now();
+                }
+                /* still offline (أو فشل متقطع واحد — نحافظ على الحالة السابقة) */
             });
     },
 
     ensureToken() {
         const cached = sessionStorage.getItem(TOKEN_KEY);
         if (cached) return Promise.resolve(cached);
-        return fetch('/sync/token', {
+        return fetch('/api/sync/token', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
@@ -93,7 +103,13 @@ export const sync = {
             if (!queue.length) return this.pull().catch(() => {});
             setBanner('syncing', { count: queue.length });
             return this.ensureToken().then((token) => this.push(token, queue))
-                .then(() => this.pull(token));
+                .then(() => this.pull(token))
+                .catch((error) => {
+                    // فشل الـ push/pull — لا نعلق على «جارٍ المزامنة»: نعرض الفشل مع إعادة محاولة
+                    // والـ queue يبقى كما هو (لا تضيع أي عملية).
+                    setBanner('failed', { count: queue.length });
+                    throw error;
+                });
         });
     },
 
@@ -108,7 +124,7 @@ export const sync = {
     push(token, queue) {
         const batch = queue.slice(0, PUSH_BATCH);
         if (!batch.length) return Promise.resolve();
-        return fetch('/sync/push', {
+        return fetch('/api/sync/push', {
             method: 'POST',
             headers: this.authHeaders(token),
             body: JSON.stringify({
@@ -150,7 +166,7 @@ export const sync = {
     pull(token) {
         return this.ensureToken().then((t) => {
             const since = db.metaGet('last_pulled_at').then((value) => value || '');
-            return since.then((sinceValue) => fetch('/sync/pull?since=' + encodeURIComponent(sinceValue), {
+            return since.then((sinceValue) => fetch('/api/sync/pull?since=' + encodeURIComponent(sinceValue), {
                 headers: this.authHeaders(token || t),
             }));
         }).then((response) => {

@@ -156,18 +156,29 @@ const HANDLERS = {
     'inquiry-status': handleInquiryStatus,
 };
 
-/* قرار الحفظ: navigator.onLine وحده يكذب (VPN/sيرفر متوقف) —
-   نعتمد heartbeat الـ sync، وعند الغموض نفحص /healthz سريعاً. */
+/* قرار الحفظ: navigator.onLine وحده يكذب (VPN/سيرفر متوقف) —
+   نعتمد heartbeat الـ sync، وعند الغموض أو فشل واحد نفحص /healthz (GET) مرتين
+   قبل وضع mutation في الـ queue — فشل متقطع واحد لا يخفي حفظاً طبيعياً. */
+function probeOnce() {
+    return Promise.race([
+        fetch('/healthz', { method: 'GET', cache: 'no-store' })
+            .then(() => true)   // السيرفر متاح
+            .catch(() => false),
+        new Promise((resolve) => setTimeout(() => resolve(false), 4000)),
+    ]);
+}
+
 function shouldQueue() {
     if (!navigator.onLine) return Promise.resolve(true);
     const sync = (window.DawayOffline && window.DawayOffline.sync) || null;
     const reachable = sync && sync.isServerReachable ? sync.isServerReachable() : null;
     if (reachable === true) return Promise.resolve(false);
-    if (reachable === false) return Promise.resolve(true);
-    return Promise.race([
-        fetch('/healthz', { method: 'HEAD', cache: 'no-store' }).then(() => false).catch(() => true),
-        new Promise((resolve) => setTimeout(() => resolve(true), 4000)),
-    ]);
+    if (reachable === false) {
+        // الـ heartbeat يقول offline — نعيد المحاولة مرة قبل الـ queue (تجنّب false-offline)
+        return probeOnce().then((up) => !up);
+    }
+    // غير معروف: probe — وإن فشل نعيد المحاولة مرة ثانية قبل القرار
+    return probeOnce().then((up) => up ? Promise.resolve(false) : probeOnce().then((up2) => !up2));
 }
 
 function interceptForm(form, kind) {
