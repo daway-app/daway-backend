@@ -43,12 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
             hydrateFromCache();
             return;
         }
-        // الصفحة قد تكون مخدومة من كاش الـ SW (SWR) — بعد مزامنة ناجحة
-        // نُعيد التحميل مرة واحدة لعرض أحدث بيانات السيرفر (Source of Truth).
-        if (!window.__dawayReloadedAfterSync) {
-            window.__dawayReloadedAfterSync = true;
-            window.location.reload();
-        }
+        // نُعيد التحميل فقط إذا كانت هناك عمليات queue حقيقية تمت مزامنتها الآن
+        // (meta flag يبقى عبر الـ reload — يمنع حلقة reload عند pull-only sync).
+        db.metaGet('sync_had_pending').then((had) => {
+            if (!had) return;
+            db.metaSet('sync_had_pending', false);
+            if (!window.__dawayReloadedAfterSync) {
+                window.__dawayReloadedAfterSync = true;
+                window.location.reload();
+            }
+        });
     });
 });
 

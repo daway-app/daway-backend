@@ -104,6 +104,9 @@ export const sync = {
         return db.queueAll().then((queue) => {
             if (!queue.length) return this.pull().catch(() => {});
             setBanner('syncing', { count: queue.length });
+            // علِمنا أن عمليات حقيقية تُزامن الآن — index.js يعيد التحميل مرة واحدة
+            // بعدها فقط (بدون هذا، كل pull ناجح يطلق reload = حلقة لا نهائية).
+            db.metaSet('sync_had_pending', true);
             let issued;
             return this.ensureToken().then((token) => {
                 issued = token;
