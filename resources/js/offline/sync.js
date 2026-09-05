@@ -198,9 +198,13 @@ export const sync = {
             return Promise.all(replace).then(() => {
                 if (data.server_time) return db.metaSet('last_pulled_at', data.server_time);
             }).then(() => {
-                setBanner('synced');
-                emit('daway:synced', data);
-                this.requestPrefetch();
+                // «تمت المزامنة» تُعرض فقط عندما كانت هناك عمليات queue حقيقية
+                // تمت مزامنتها للتو — الـ pull الدوري الصامت لا يُظهر شيئاً.
+                db.metaGet('sync_had_pending').then((had) => {
+                    if (had) setBanner('synced');
+                    emit('daway:synced', data);
+                    this.requestPrefetch();
+                });
             });
         });
     },

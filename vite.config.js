@@ -4,6 +4,12 @@ import { bunny } from 'laravel-vite-plugin/fonts';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+    // لا تُفرَّغ public/build عند كل build — الصفحات المخزنة في كاش الـ Service
+    // Worker (SWR) تشير لحمولات hash قديمة؛ حذفها يكسر الـ JS في الصفحات
+    // القديمة المخزنة (steppers/الأزرار تموت). الملفات القديمة تبقى متاحة.
+    build: {
+        emptyOutDir: false,
+    },
     plugins: [
         laravel({
             input: [

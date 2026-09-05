@@ -45,10 +45,11 @@
     @include('components.sidebar')
 
     <div class="main-wrapper">
+        {{-- شريط حالة المزامنة — فوق الشريط العلوي في تدفق الصفحة (يدفعه للأسفل عند العرض) --}}
+        @include('partials.sync-banner')
+
         {{-- الشريط العلوي --}}
         @include('components.topbar')
-
-        @include('partials.sync-banner')
 
         {{-- المحتوى الرئيسي --}}
         <main class="main-content">

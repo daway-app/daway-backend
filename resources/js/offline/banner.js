@@ -1,6 +1,6 @@
 /* Daway offline — sync status banner (RTL, Arabic) using pharmacy_hub design tokens. */
 const STYLES = `
-.daway-sync-banner{position:fixed;top:0;left:0;right:0;z-index:9999;display:none;align-items:center;justify-content:center;gap:10px;padding:10px 18px;font-size:.88rem;font-weight:600;font-family:inherit;box-shadow:0 1px 3px rgba(12,34,36,.06);}
+.daway-sync-banner{position:relative;width:100%;display:none;align-items:center;justify-content:center;gap:10px;padding:10px 18px;font-size:.88rem;font-weight:600;font-family:inherit;box-shadow:0 1px 3px rgba(12,34,36,.06);}
 .daway-sync-banner.show{display:flex;}
 .daway-sync-banner.online{background:var(--ph-green-bg,#DCFCE7);color:var(--ph-green,#16A34A);}
 .daway-sync-banner.offline{background:var(--ph-orange-bg,#FEF9C3);color:var(--ph-orange,#CA8A04);}
@@ -63,8 +63,6 @@ export const banner = {
             bannerEl = document.createElement('div');
             bannerEl.className = 'daway-sync-banner';
             const root = document.getElementById('daway-sync-banner-root');
-            root.style.position = 'relative';
-            root.style.zIndex = '9999';
             root.appendChild(bannerEl);
             window.addEventListener('daway:banner', (event) => {
                 const d = event.detail || {};

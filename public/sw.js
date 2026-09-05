@@ -1,5 +1,5 @@
 /* Daway service worker — offline shell for pharmacy dashboard. */
-const VERSION = 'daway-v3';
+const VERSION = 'daway-v4';
 const PRECACHE_URLS = [
     '/offline',
     '/vendor/chart.umd.js',
@@ -21,6 +21,25 @@ const PHARMACY_PAGES = [
     '/pharmacy/ratings',
     '/profile',
 ];
+
+// تخزين مسبق لأصول الـ build الحالية من الـ manifest — يضمن أن الصفحات
+// الجديدة تجد CSS/JS حتى قبل أول زيارة، وoffline تماماً.
+async function precacheBuildAssets() {
+    try {
+        const manifestResponse = await fetch('/build/manifest.json', { cache: 'no-store' });
+        if (!manifestResponse.ok) return;
+        const manifest = await manifestResponse.json();
+        const files = Object.values(manifest)
+            .flatMap((entry) => [entry.file, ...(entry.css || [])])
+            .filter((f) => typeof f === 'string' && f.startsWith('/build/'));
+        const cache = await caches.open(VERSION);
+        await Promise.allSettled(files.map(async (file) => {
+            if (await cache.match(file)) return;
+            const response = await fetch(file);
+            if (response && response.ok) await cache.put(file, response);
+        }));
+    } catch (e) { /* الأصول تُخزَّن لاحقاً عند التصفح العادي */ }
+}
 
 async function precachePharmacyPages() {
     const cache = await caches.open(VERSION);
@@ -48,6 +67,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((keys) =>
             Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k)))
         ).then(() => self.clients.claim())
+        .then(() => precacheBuildAssets())
         .then(() => precachePharmacyPages())
     );
 });
