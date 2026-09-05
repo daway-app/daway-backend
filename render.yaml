@@ -40,6 +40,10 @@ services:
         value: "*"
       # عيّن القيمة من Render Dashboard (مثل https://daway-backend.onrender.com)
       - key: APP_URL
+      # Sanctum: النطاق الذي تُقبل منه كوكيز الجلسة على /api/*
+      # مطلوب لـ /api/sync/token (إصدار توكن المزامنة من جلسة الويب)
+      - key: SANCTUM_STATEFUL_DOMAINS
+        value: daway-backend-zlh2.onrender.com
       # تخزين الصور على Cloudinary (قيم عامة — الرفع غير الموقّع عبر preset)
       - key: CLOUDINARY_CLOUD_NAME
         value: dmvzcwm3g
