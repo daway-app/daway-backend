@@ -103,35 +103,37 @@ self.addEventListener('fetch', (event) => {
     if (url.pathname.startsWith('/api/')) return; // never touch API
     if (url.pathname === '/login' || url.pathname.startsWith('/logout')) return;
     if (url.pathname === '/offline') return;
+    if (url.pathname === '/firebase-messaging-sw.js') return; // FCM worker بمساره الخاص
 
     // Navigations (HTML):
-    //  - صفحات الصيدلية/الملف الشخصي: stale-while-revalidate — تُخدم من الكاش فوراً
-    //    وتُحدَّث بالخلفية عند توفر الشبكة. بدون كاش → شبكة → /offline كحل أخير.
+    //  - صفحات الصيدلية/الملف الشخصي: NETWORK-FIRST مع fallback للكاش.
+    //    أونلاين → HTML طازج دائماً (يُصلح زر اللغة /locale/* — كان SWR يخدم
+    //    النسخة القديمة بعد الـ redirect فيبدو أن التبديل لا يعمل).
+    //    offline → الكاش فوراً (fetch يفشل فوراً)، وبلا كاش → /offline.
     //  - بقية الصفحات: network-only مع fallback.
     if (request.mode === 'navigate') {
         if (isOfflinePage(url)) {
             event.respondWith(
-                caches.open(VERSION).then(async (cache) => {
-                    const cached = await cache.match(request, { ignoreSearch: false });
-                    const network = fetch(request).then((response) => {
-                        if (response && response.ok && response.type === 'basic') {
-                            cache.put(request, response.clone());
+                (async () => {
+                    try {
+                        const controller = new AbortController();
+                        const timer = setTimeout(() => controller.abort(), 3000);
+                        const fresh = await fetch(request, { signal: controller.signal, credentials: 'same-origin' });
+                        clearTimeout(timer);
+                        if (fresh && fresh.ok && fresh.type === 'basic') {
+                            const cache = await caches.open(VERSION);
+                            cache.put(request, fresh.clone());
                         }
-                        return response;
-                    }).catch(() => null);
-
-                    if (cached) {
-                        network.catch(() => {});
-                        return cached;
+                        return fresh;
+                    } catch (e) {
+                        // offline (أو timeout نادر) — من الكاش
+                        const cached = await caches.match(request, { ignoreSearch: false });
+                        if (cached) return cached;
+                        return caches.match('/offline').then((resp) =>
+                            resp || new Response('offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+                        );
                     }
-
-                    const fresh = await network;
-                    if (fresh) return fresh;
-
-                    return caches.match('/offline').then((resp) =>
-                        resp || new Response('offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
-                    );
-                })
+                })()
             );
             return;
         }
