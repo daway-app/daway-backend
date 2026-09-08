@@ -165,15 +165,6 @@ final class MedicineResolver
         $needle = self::normalizeArabic($query);
         $needleSkel = self::skeletonOf($needle);
 
-        // تشخيص مؤقت لفشل CI — يحذف بعد معرفة السبب
-        if ($query === 'أوجمنتين') {
-            $step1 = MedicineNameMapper::clean($query);
-            $step2 = strtr($step1, ['أ' => 'ا', 'إ' => 'ا', 'آ' => 'ا', 'ؤ' => 'و', 'ئ' => 'ي', 'ى' => 'ي']);
-            $step3 = mb_strtolower($step2);
-            fwrite(STDERR, "\nRESOLVER needle_hex=".bin2hex($needle));
-            fwrite(STDERR, "\nRESOLVER needle_is_equal_to_alias=".var_export($needle === 'اوجمنتين', true));
-        }
-
         if (mb_strlen($needle) < 2) {
             return [];
         }
@@ -260,22 +251,13 @@ final class MedicineResolver
 
         $aliases = array_values(array_filter($record['aliases'] ?? [], 'is_string'));
 
-        $dbg = $needle === 'اوجمنتين';
-
         // المرحلة 1: مطابقة مباشرة
         foreach ($aliases as $alias) {
             if (str_contains($normalize($alias), $needle)) {
-                if ($dbg) {
-                    fwrite(STDERR, "\nSTAGE1 HIT record=".(string) ($record['name_en'] ?? '?')." alias_hex=".bin2hex($alias));
-                }
                 $hits[] = $this->mappingHitPayload($record);
 
                 return;
             }
-        }
-
-        if ($dbg) {
-            fwrite(STDERR, "\nSTAGE1 MISS record=".(string) ($record['name_en'] ?? '?')." alias_count=".count($aliases)." first_alias_hex=".bin2hex((string) ($aliases[0] ?? '')));
         }
 
         // المرحلة 2: استعلام ملزوق طويل — نلصق الـ aliases متعددة الكلمات ونقارن الهياكل
