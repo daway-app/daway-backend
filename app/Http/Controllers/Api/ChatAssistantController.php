@@ -62,6 +62,8 @@ class ChatAssistantController extends Controller
                         latitude: $latitude,
                         longitude: $longitude,
                         radiusKm: $radiusKm,
+                        // مفاتيح إنجليزية من الـ mapping — الاسم العربي الخام لا يطابق الكتالوج
+                        names: $candidates['search_keys'] ?? null,
                     ),
                     'alternatives' => $bestLocalId ? $this->resolver->alternatives($bestLocalId) : [],
                     'requires_location' => data_get($analysis, 'requires_location', false) && $latitude === null,

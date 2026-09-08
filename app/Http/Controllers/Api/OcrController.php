@@ -57,6 +57,8 @@ class OcrController extends Controller
                         latitude: isset($data['latitude']) ? (float) $data['latitude'] : null,
                         longitude: isset($data['longitude']) ? (float) $data['longitude'] : null,
                         radiusKm: $data['radius_km'] ?? 15,
+                        // مفاتيح إنجليزية من الـ mapping — الاسم العربي الخام لا يطابق الكتالوج
+                        names: $candidates['search_keys'] ?? null,
                     ),
                     'alternatives' => $bestLocalId ? $this->resolver->alternatives($bestLocalId) : [],
                 ];

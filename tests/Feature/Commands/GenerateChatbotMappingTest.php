@@ -133,8 +133,11 @@ class GenerateChatbotMappingTest extends TestCase
         $this->assertLessThanOrEqual(10, count($variants));
         $this->assertContains('بنادول', $variants);
         $this->assertContains('بنادول اكسترا', $variants);
-        $this->assertContains('بنادولاكسترا', $variants);
         $this->assertContains('بنادول و اكسترا', $variants);
+        // لا نسخ ملزوقة (بدون مسافات) — تُبنى وقت المطابقة في MedicineResolver
+        // لأن المطابقة المباشرة عليها تعبر حدود الكلمات وتسبب تطابقات كاذبة
+        $this->assertNotContains('بنادولاكسترا', $variants);
+        $this->assertNotContains('بنادولاكسترا500مج', $variants);
 
         // كلمة واحدة → variant واحد فقط
         $this->assertSame(['بنادول'], MedicineNameMapper::arabicVariants('بنادول'));

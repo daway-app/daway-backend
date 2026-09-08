@@ -41,13 +41,18 @@ final class MedicineResolver
         $name = trim((string) $drugName);
 
         if (mb_strlen($name) < 2) {
-            return ['local' => collect(), 'moh' => collect()];
+            return ['local' => collect(), 'moh' => collect(), 'search_keys' => []];
         }
 
+        $hits = $this->lookupMapping($name);
+
+        // الاستعلام العربي "اكمول" بيترجم عبر الـ mapping لاسم إنجليزي (ACAMOL) —
+        // نستخدم الأسماء الإنجليزية كمفاتيح بحث للكتالوج المحلي والصيدليات
+        $searchKeys = $this->searchKeysFromHits($hits);
+
         $local = Medicine::query()
-            ->where(function ($q) use ($name) {
-                $q->where('trade_name', 'like', "%{$name}%")
-                    ->orWhere('active_ingredient', 'like', "%{$name}%");
+            ->where(function ($q) use ($name, $searchKeys) {
+                $this->applyNameKeys($q, array_merge([$name], $searchKeys));
             })
             ->orderBy('trade_name')
             ->limit(10)
@@ -63,9 +68,76 @@ final class MedicineResolver
             ->get(['id', 'trade_name', 'generic_name', 'manufacturer', 'official_price', 'availability']);
 
         // دمج نتائج الـ mapping العربي (استعلام عربي ↔ اسم إنجليزي بالكتالوج)
-        $moh = $this->mergeMappingHits($moh, $name);
+        $moh = $this->mergeMappingHits($moh, $name, $hits);
 
-        return ['local' => $local, 'moh' => $moh];
+        // الأدوية الحقيقية (قائمة الأسعار — لها مادة فعالة) أولاً، ثم قصّ الضجيج
+        $moh = $moh
+            ->sortByDesc(fn ($row) => $row->generic_name !== null ? 1 : 0)
+            ->values()
+            ->take(12);
+
+        return ['local' => $local, 'moh' => $moh, 'search_keys' => $searchKeys];
+    }
+
+    /**
+     * يبني مفاتيح بحث إنجليزية من نتائج الـ mapping:
+     * الاسم الكامل + الاسم بدون جرعة + الكلمة الأولى (البراند).
+     * مثال: "ACAMOL CAP 500MG" → ["acamol cap 500mg", "acamol cap", "acamol"].
+     */
+    private function searchKeysFromHits(array $hits): array
+    {
+        $keys = [];
+
+        foreach ($hits as $hit) {
+            $nameEn = trim((string) ($hit['name_en'] ?? ''));
+            if ($nameEn === '') {
+                continue;
+            }
+
+            $keys[] = mb_strtolower($nameEn);
+
+            $base = mb_strtolower(MedicineNameMapper::stripDosage($nameEn));
+            if ($base !== '' && ! in_array($base, $keys, true)) {
+                $keys[] = $base;
+            }
+
+            $words = preg_split('/\s+/u', $base, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            if ($words !== [] && mb_strlen($words[0]) >= 3 && ! in_array($words[0], $keys, true)) {
+                $keys[] = $words[0];
+            }
+        }
+
+        return array_slice(array_values(array_unique($keys)), 0, 8);
+    }
+
+    /** يطبّق قائمة مفاتيح بحث على trade_name/active_ingredient بـ OR */
+    private function applyNameKeys($query, array $keys): void
+    {
+        $applied = false;
+        foreach ($keys as $key) {
+            $key = trim((string) $key);
+            if (mb_strlen($key) < 2) {
+                continue;
+            }
+
+            $like = "%{$key}%";
+            if ($applied) {
+                $query->orWhere(function ($w) use ($like) {
+                    $w->where('trade_name', 'like', $like)
+                        ->orWhere('active_ingredient', 'like', $like);
+                });
+            } else {
+                $query->where(function ($w) use ($like) {
+                    $w->where('trade_name', 'like', $like)
+                        ->orWhere('active_ingredient', 'like', $like);
+                });
+                $applied = true;
+            }
+        }
+
+        if (! $applied) {
+            $query->whereRaw('1 = 0');
+        }
     }
 
     /**
@@ -154,12 +226,14 @@ final class MedicineResolver
 
     /**
      * يفحص سجل mapping واحداً ويضيفه للنتائج إن طابق الاستعلام عبر aliases.
-     * مرحلتان:
+     * الملف لا يحتوي نسخاً ملزوقة (بدون مسافات) — تُبنى وقت المطابقة من الـ
+     * aliases متعددة الكلمات حتى تضمن حدود الكلمات ولا تسبب تطابقات كاذبة.
+     *
+     * المراحل:
      *  1) مطابقة مباشرة بعد التطبيع (همزات/تشكيل/مسافات).
-     *  2) مطابقة هيكلية احتياطية تحذف الألف غير الأولى من كل كلمة —
-     *     توحّد الكتابات مثل "بنادول" ↔ "بانادول" و"اسبرين" ↔ "اسبيرين".
-     * الـ alias يُطبَّع بنفس قواعد الـ needle، مع مسار سريع للأسماء الخالية
-     * من الحروف القابلة للتطبيع.
+     *  2) استعلام ملزوق (بدون مسافات، ≥ 8 أحرف): نلصق الـ aliases متعددة الكلمات
+     *     ونقارن الهياكل — "بنادولتابليت" ↔ لصق "بانادول تابليت".
+     *  3) مطابقة هيكلية كلمة-بكلمة تحذف الألف — "بنادول" ↔ "بانادول".
      */
     private function collectMappingHit(array $record, string $needle, string $needleSkel, array &$hits, int $limit): void
     {
@@ -174,31 +248,69 @@ final class MedicineResolver
         $aliases = array_values(array_filter($record['aliases'] ?? [], 'is_string'));
 
         // المرحلة 1: مطابقة مباشرة
-        $matched = false;
         foreach ($aliases as $alias) {
             if (str_contains($normalize($alias), $needle)) {
                 $hits[] = $this->mappingHitPayload($record);
-                $matched = true;
-                break;
+
+                return;
             }
         }
 
-        if ($matched || count($hits) >= $limit) {
-            return;
-        }
-
-        // المرحلة 2: الهيكل الصوتي (يفيد فقط إذا حذف الهيكل ألفاً من الـ needle)
-        if ($needleSkel !== $needle) {
+        // المرحلة 2: استعلام ملزوق طويل — نلصق الـ aliases متعددة الكلمات ونقارن الهياكل
+        $needleHasSpace = str_contains($needle, ' ');
+        if (! $needleHasSpace && mb_strlen($needle) >= 8) {
             foreach ($aliases as $alias) {
                 $normalized = $normalize($alias);
 
-                if (! str_contains($normalized, 'ا')) {
-                    continue;
+                if (! str_contains($normalized, ' ')) {
+                    continue; // كلمة واحدة أصلاً — الالتحاق لا يغيرها
                 }
 
-                if (str_contains(self::skeletonOf($normalized), $needleSkel)) {
+                if (str_contains(skeletonOf(str_replace(' ', '', $normalized)), $needleSkel)) {
                     $hits[] = $this->mappingHitPayload($record);
-                    break;
+
+                    return;
+                }
+            }
+
+            return; // استعلام ملزوق لم يطابق — المطابقة الكلمية عليه بلا معنى
+        }
+
+        // المرحلة 3: الهيكل الصوتي — كلمة بكلمة، بحدود كلمات
+        if ($needleSkel !== $needle) {
+            $needleWords = preg_split('/\s+/u', $needleSkel, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+            if ($needleWords !== []) {
+                foreach ($aliases as $alias) {
+                    $normalized = $normalize($alias);
+
+                    if (! str_contains($normalized, 'ا')) {
+                        continue;
+                    }
+
+                    $aliasWords = preg_split('/\s+/u', self::skeletonOf($normalized), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+                    // كل كلمة من الـ needle لازم تُحتوى داخل كلمة من الـ alias
+                    $allWordsMatched = true;
+                    foreach ($needleWords as $needleWord) {
+                        $wordHit = false;
+                        foreach ($aliasWords as $aliasWord) {
+                            if (str_contains($aliasWord, $needleWord)) {
+                                $wordHit = true;
+                                break;
+                            }
+                        }
+                        if (! $wordHit) {
+                            $allWordsMatched = false;
+                            break;
+                        }
+                    }
+
+                    if ($allWordsMatched) {
+                        $hits[] = $this->mappingHitPayload($record);
+
+                        return;
+                    }
                 }
             }
         }
@@ -244,9 +356,9 @@ final class MedicineResolver
     }
 
     /** يدمج سجلات كتالوج وزارة الصحة المطابقة عبر الـ mapping مع نتائج LIKE العادية */
-    private function mergeMappingHits(Collection $moh, string $name): Collection
+    private function mergeMappingHits(Collection $moh, string $name, ?array $hits = null): Collection
     {
-        $hits = $this->lookupMapping($name);
+        $hits ??= $this->lookupMapping($name);
 
         if ($hits === []) {
             return $moh;
@@ -295,6 +407,9 @@ final class MedicineResolver
     /**
      * الصيدليات التي توفّر الدواء (بالاسم أو المعرّف)، مرتبة بالأقرب ثم الأرخص.
      *
+     * @param array<int, string>|null $names مفاتيح بحث إنجليزية من الـ mapping —
+     *                                       تُستخدم بدل الاسم العربي الخام الذي لا يطابق
+     *                                       أسماء الكتالوج الإنجليزية
      * @return array<int, array<string, mixed>>
      */
     public function pharmaciesFor(
@@ -304,6 +419,7 @@ final class MedicineResolver
         ?float $longitude = null,
         int $radiusKm = 15,
         int $limit = 20,
+        ?array $names = null,
     ): array {
         $query = PharmacyMedicine::query()
             ->with('pharmacy:id,pharmacy_name,address,region,latitude,longitude,phone_number,is_active')
@@ -313,6 +429,35 @@ final class MedicineResolver
 
         if ($medicineId !== null) {
             $query->where('medicine_id', $medicineId);
+        } elseif ($names !== null && $names !== []) {
+            // استعلام عربي مترجم عبر الـ mapping — نبحث بمفاتيح إنجليزية
+            $query->whereHas('medicine', function ($m) use ($names) {
+                $applied = false;
+                foreach ($names as $key) {
+                    $key = trim((string) $key);
+                    if (mb_strlen($key) < 2) {
+                        continue;
+                    }
+
+                    $like = "%{$key}%";
+                    if ($applied) {
+                        $m->orWhere(function ($w) use ($like) {
+                            $w->where('trade_name', 'like', $like)
+                                ->orWhere('active_ingredient', 'like', $like);
+                        });
+                    } else {
+                        $m->where(function ($w) use ($like) {
+                            $w->where('trade_name', 'like', $like)
+                                ->orWhere('active_ingredient', 'like', $like);
+                        });
+                        $applied = true;
+                    }
+                }
+
+                if (! $applied) {
+                    $m->whereRaw('1 = 0');
+                }
+            });
         } else {
             $name = trim((string) $drugName);
             if (mb_strlen($name) < 2) {

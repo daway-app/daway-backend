@@ -129,6 +129,8 @@ class MedicineController extends Controller
                     latitude: $lat,
                     longitude: $lng,
                     radiusKm: $radiusKm,
+                    // مفاتيح إنجليزية من الـ mapping — الاسم العربي الخام لا يطابق الكتالوج
+                    names: $candidates['search_keys'] ?? null,
                 );
             }
         } catch (\Throwable $e) {

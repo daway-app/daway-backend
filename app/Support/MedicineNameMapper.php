@@ -247,15 +247,11 @@ class MedicineNameMapper
             $joined = implode(' و ', $words);
             $add($joined);
             $add(self::dropMedialAlif($joined));
-            // 4) بدون مسافات
-            $glued = implode('', $words);
-            $add($glued);
-            $add(self::dropMedialAlif($glued));
-            // 5) آخر كلمتين
+            // 4) آخر كلمتين
             $add(implode(' ', array_slice($words, -2)));
-            // 6) جميع الكلمات عدا الأخيرة
+            // 5) جميع الكلمات عدا الأخيرة
             $add(implode(' ', array_slice($words, 0, -1)));
-            // 7) أول كلمتين
+            // 6) أول كلمتين
             $add(implode(' ', array_slice($words, 0, 2)));
         }
 
