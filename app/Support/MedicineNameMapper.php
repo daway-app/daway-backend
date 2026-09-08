@@ -369,9 +369,9 @@ class MedicineNameMapper
 
     private static function transliterateWord(string $word): string
     {
-        // القاموس أولاً — يُطبّق فقط على الكلمة المكتوبة بأحرف كبيرة كاملة (PANADOL، AUGMENTIN)
-        // الكتابة العادية (Panadol) تمر عبر القواعد الصوتية
-        if (ctype_upper($word) && isset(self::KNOWN_WORDS[strtolower($word)])) {
+        // القاموس أولاً — غير حساس لحالة الأحرف: PANADOL وAugmentin وparacetamol
+        // كلها تُطابق القاموس. بيانات MoH الحقيقية مختلطة الحالة.
+        if (isset(self::KNOWN_WORDS[strtolower($word)])) {
             return self::KNOWN_WORDS[strtolower($word)];
         }
 

@@ -75,14 +75,14 @@ class GenerateChatbotMappingTest extends TestCase
         $this->assertSame(1, $panadol['id']);
         $this->assertSame('Panadol Extra 500 mg', $panadol['name_en']);
         $this->assertSame(200, $panadol['moh_drug_id']);
-        // التحويل الصوتي يشمل الجرعة أيضاً (مطابقة تقريبية مقصودة) — بمسافات موحّدة
-        $this->assertSame('بانادول اكسترا 500 مج', $panadol['name_ar']);
+        // القاموس يشمل كل حالات الأحرف — Panadol وPANADOL بنفس الناتج
+        $this->assertSame('بنادول اكسترا 500 مج', $panadol['name_ar']);
         $this->assertContains('paracetamol', $panadol['aliases']);
         $this->assertContains('panadol extra', $panadol['aliases']);
         $this->assertNotContains('500 mg', $panadol['aliases']);
 
         $this->assertSame(2, $augmentin['id']);
-        $this->assertTrue(str_starts_with((string) $augmentin['name_ar'], 'اوجمينتين'));
+        $this->assertTrue(str_starts_with((string) $augmentin['name_ar'], 'اوجمنتين'));
         // aliases[0] هو الاسم الكامل lowercase — والاسم الأساسي المنظف موجود ضمن القائمة
         $this->assertSame('augmentin 1g', $augmentin['aliases'][0]);
         $this->assertContains('augmentin', $augmentin['aliases']);
@@ -102,13 +102,13 @@ class GenerateChatbotMappingTest extends TestCase
 
     public function test_transliteration_of_known_brand_names(): void
     {
-        $this->assertSame('بانادول', MedicineNameMapper::toArabic('Panadol'));
+        $this->assertSame('بنادول', MedicineNameMapper::toArabic('Panadol'));
         $this->assertSame('فولتارين', MedicineNameMapper::toArabic('Voltaren'));
         $this->assertSame('ايبوبروفين', MedicineNameMapper::toArabic('Ibuprofen'));
-        $this->assertSame('اسبيرين', MedicineNameMapper::toArabic('Aspirin'));
+        $this->assertSame('اسبرين', MedicineNameMapper::toArabic('Aspirin'));
 
         // النص العربي الموجود مسبقاً يبقى كما هو
-        $this->assertSame('بانادول اكسترا بنادول', MedicineNameMapper::toArabic('Panadol Extra بنادول'));
+        $this->assertSame('بنادول اكسترا بنادول', MedicineNameMapper::toArabic('Panadol Extra بنادول'));
     }
 
     public function test_known_words_dictionary_overrides_transliteration(): void
@@ -121,7 +121,7 @@ class GenerateChatbotMappingTest extends TestCase
         $this->assertSame('ديكلوفيناك', MedicineNameMapper::toArabic('DICLOFENAC'));
 
         // كلمات غير معروفة تمر عبر القواعد الحرفية كالمعتاد
-        $this->assertSame('بانادول', MedicineNameMapper::toArabic('Panadol'));
+        $this->assertSame('بنادول', MedicineNameMapper::toArabic('Panadol'));
         $this->assertSame('فينتولين', MedicineNameMapper::toArabic('Ventolin'));
     }
 
