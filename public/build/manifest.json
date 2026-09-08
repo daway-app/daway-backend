@@ -35,6 +35,28 @@
     "file": "assets/fonts-BJRfngpw.css",
     "src": "_fonts-BJRfngpw.css"
   },
+  "_index.esm-DRF2KiTp.js": {
+    "file": "assets/index.esm-DRF2KiTp.js",
+    "name": "index.esm"
+  },
+  "node_modules/firebase/app/dist/esm/index.esm.js": {
+    "file": "assets/index.esm-Bk6RMNmA.js",
+    "name": "index.esm",
+    "src": "node_modules/firebase/app/dist/esm/index.esm.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index.esm-DRF2KiTp.js"
+    ]
+  },
+  "node_modules/firebase/messaging/dist/esm/index.esm.js": {
+    "file": "assets/index.esm-B7x7R-Gg.js",
+    "name": "index.esm",
+    "src": "node_modules/firebase/messaging/dist/esm/index.esm.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index.esm-DRF2KiTp.js"
+    ]
+  },
   "resources/css/app.css": {
     "file": "assets/app-CJw8FDo4.css",
     "name": "app",
@@ -243,10 +265,14 @@
     "isEntry": true
   },
   "resources/js/offline/index.js": {
-    "file": "assets/index-ALd2wk8y.js",
+    "file": "assets/index-XIlbe8Sm.js",
     "name": "index",
     "src": "resources/js/offline/index.js",
-    "isEntry": true
+    "isEntry": true,
+    "dynamicImports": [
+      "node_modules/firebase/app/dist/esm/index.esm.js",
+      "node_modules/firebase/messaging/dist/esm/index.esm.js"
+    ]
   },
   "resources/js/pharmacy_dashboard.js": {
     "file": "assets/pharmacy_dashboard-vDHEUI5G.js",

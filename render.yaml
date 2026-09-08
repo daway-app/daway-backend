@@ -44,6 +44,26 @@ services:
       # مطلوب لـ /api/sync/token (إصدار توكن المزامنة من جلسة الويب)
       - key: SANCTUM_STATEFUL_DOMAINS
         value: daway-backend-zlh2.onrender.com
+      # Firebase Web Push (FCM):
+      # - حساب الخدمة: Secret File من Render Dashboard (بلا secret في الريبو)
+      #   اسم الملف: firebase-service-account.json → المسار /etc/secrets/firebase-service-account.json
+      - key: FIREBASE_CREDENTIALS
+        value: /etc/secrets/firebase-service-account.json
+      # قيم العميل العامة (تُؤخذ من Firebase Console — Project Settings)
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: FIREBASE_APP_ID
+        sync: false
+      - key: FIREBASE_VAPID_KEY
+        sync: false
       # تخزين الصور على Cloudinary (قيم عامة — الرفع غير الموقّع عبر preset)
       - key: CLOUDINARY_CLOUD_NAME
         value: dmvzcwm3g

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\web\Patient;
 
+use App\Contracts\FcmSender;
 use App\Http\Controllers\Controller;
 use App\Http\Requests;
 use App\Models\Medicine;
@@ -36,7 +37,7 @@ class PatientInquiryController extends Controller
         ]);
 
         if ($pharmacy->user) {
-            \App\Models\Notification::create([
+            $notification = \App\Models\Notification::create([
                 'user_id' => $pharmacy->user->id,
                 'medicine_id' => $data['medicine_id'],
                 'type' => 'new_inquiry',
@@ -44,6 +45,9 @@ class PatientInquiryController extends Controller
                 'is_read' => false,
                 'created_at' => now(),
             ]);
+
+            // FCM push بعد نجاح الإنشاء
+            app(FcmSender::class)->fromNotification($notification);
         }
 
         return redirect()->back()->with('success', 'تم إرسال الاستفسار للصيدلية بنجاح');

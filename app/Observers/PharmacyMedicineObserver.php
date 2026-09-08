@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Contracts\FcmSender;
 use App\Models\AvailabilityNotification;
 use App\Models\Notification;
 use App\Models\PharmacyMedicine;
@@ -58,10 +59,11 @@ class PharmacyMedicineObserver
         $medicineName = $pm->medicine?->trade_name_ar ?: $pm->medicine?->trade_name;
 
         // 5 + 6 + 7: في معاملة واحدة: إنشاء Notification لكل مشترك ثم تعليم الطلب بأنه تمّ الإعلام.
+        $created = [];
         try {
-            DB::transaction(function () use ($subscribers, $pm, $medicineName) {
+            DB::transaction(function () use (&$created, $subscribers, $pm, $medicineName) {
                 foreach ($subscribers as $sub) {
-                    Notification::create([
+                    $created[] = Notification::create([
                         'user_id' => $sub->user_id,
                         'medicine_id' => $pm->medicine_id,
                         'type' => 'medicine_available',
@@ -85,6 +87,13 @@ class PharmacyMedicineObserver
                 'medicine_id' => $pm->medicine_id,
                 'error' => $e->getMessage(),
             ]);
+
+            return;
+        }
+
+        // FCM push بعد نجاح الـ transaction كاملةً — وليس داخلها.
+        foreach ($created as $notification) {
+            app(FcmSender::class)->fromNotification($notification);
         }
     }
 }

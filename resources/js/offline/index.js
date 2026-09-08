@@ -5,6 +5,7 @@ import { sync } from './sync.js';
 import { banner } from './banner.js';
 import { intercept } from './intercept.js';
 import { render } from './render.js';
+import { fcm } from './fcm.js';
 
 /* Seed IndexedDB from the inline @json payloads the first time (only if store is empty). */
 const PAYLOAD_IDS = {
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sync.init();
     seedFromPage();
     hydrateFromCache();
+    fcm.initFcm();
     window.addEventListener('daway:synced', () => {
         if (!navigator.onLine) {
             hydrateFromCache();
@@ -59,6 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* تعريض الوحدات للـ window: زر «إعادة المحاولة» في الـ Banner
    وقرار الاعتراض يعتمدان عليه. */
-window.DawayOffline = { db, queueAddOp, sync, banner, intercept, render };
+window.DawayOffline = { db, queueAddOp, sync, banner, intercept, render, fcm };
 
-export { db, queueAddOp, sync, banner, intercept, render };
+export { db, queueAddOp, sync, banner, intercept, render, fcm };

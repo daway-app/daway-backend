@@ -23,11 +23,27 @@
     </script>
     <title>{{ __('layout.app_title') }} - @yield('title', __('dashboard.title'))</title>
 
+    {{-- Firebase Web Push config — قيم عامة للعميل فقط، تُضبط من env على السيرفر --}}
+    @php
+        $fcmConfig = env('FIREBASE_API_KEY') ? [
+            'apiKey' => env('FIREBASE_API_KEY'),
+            'authDomain' => env('FIREBASE_AUTH_DOMAIN'),
+            'projectId' => env('FIREBASE_PROJECT_ID'),
+            'storageBucket' => env('FIREBASE_STORAGE_BUCKET'),
+            'messagingSenderId' => env('FIREBASE_MESSAGING_SENDER_ID'),
+            'appId' => env('FIREBASE_APP_ID'),
+        ] : null;
+    @endphp
+    <script>
+        window.DAWAY_FIREBASE_CONFIG = @js($fcmConfig);
+        window.DAWAY_FCM_VAPID_KEY = @js(env('FIREBASE_VAPID_KEY'));
+    </script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
     @vite(['resources/css/layout/app_layout.css', 'resources/css/layout/topbar.css', 'resources/css/layout/sidebar.css', 'resources/js/offline/index.js'])
 </head>
-<body>
+<body @if(auth()->check()) class="authed-user" @endif>
 <script>
     (function () {
         try {

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\FcmSender;
 use App\Models\PharmacyMedicine;
 use App\Models\Rating;
 use App\Observers\PharmacyMedicineObserver;
@@ -9,6 +10,7 @@ use App\Observers\RatingObserver;
 use App\Services\Ai\AiAssistantClient;
 use App\Services\Ai\MedicineResolver;
 use App\Services\Ai\OcrClient;
+use App\Services\Fcm\FcmPushService;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
@@ -33,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(MedicineResolver::class);
+
+        // FCM: الإرسال عبر واجهة قابلة للاستبدال في الاختبارات (Fake sender).
+        $this->app->singleton(FcmSender::class, FcmPushService::class);
     }
 
     public function boot(): void

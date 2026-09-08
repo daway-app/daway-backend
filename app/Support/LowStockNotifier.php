@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Contracts\FcmSender;
 use App\Models\Notification;
 use App\Models\PharmacyMedicine;
 
@@ -59,12 +60,13 @@ class LowStockNotifier
             ->first();
 
         if ($existing) {
+            // C7 dedup: تحديث إشعار قائم — لا push إضافي (منع duplicate push)
             $existing->update(['created_at' => now()]);
 
             return;
         }
 
-        Notification::create([
+        $notification = Notification::create([
             'user_id' => $userId,
             'medicine_id' => $medicineId,
             'type' => $type,
@@ -72,5 +74,8 @@ class LowStockNotifier
             'is_read' => false,
             'created_at' => now(),
         ]);
+
+        // FCM push فقط عند إنشاء إشعار جديد — بعد نجاح الإنشاء
+        app(FcmSender::class)->fromNotification($notification);
     }
 }
