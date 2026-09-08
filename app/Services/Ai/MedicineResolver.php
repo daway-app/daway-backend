@@ -165,6 +165,20 @@ final class MedicineResolver
         $needle = self::normalizeArabic($query);
         $needleSkel = self::skeletonOf($needle);
 
+        // تشخيص مؤقت لفشل CI — يحذف بعد معرفة السبب
+        if (! str_contains($query, 'augmentin') && $query === 'أوجمنتين') {
+            $step1 = MedicineNameMapper::clean($query);
+            $step2 = strtr($step1, ['أ' => 'ا', 'إ' => 'ا', 'آ' => 'ا', 'ؤ' => 'و', 'ئ' => 'ي', 'ى' => 'ي']);
+            $step3 = mb_strtolower($step2);
+            fwrite(STDERR, "\nRESOLVER query_hex=".bin2hex($query));
+            fwrite(STDERR, "\nRESOLVER step1_clean_hex=".bin2hex($step1));
+            fwrite(STDERR, "\nRESOLVER step2_strtr_hex=".bin2hex($step2));
+            fwrite(STDERR, "\nRESOLVER step3_lower_hex=".bin2hex($step3));
+            fwrite(STDERR, "\nRESOLVER needle_hex=".bin2hex($needle));
+            fwrite(STDERR, "\nRESOLVER needle_is_equal_to_alias=".var_export($needle === 'اوجمنتين', true));
+            fwrite(STDERR, "\n");
+        }
+
         if (mb_strlen($needle) < 2) {
             return [];
         }
