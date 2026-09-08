@@ -111,33 +111,24 @@ class AuthController extends Controller
         // يحدد تدفق الطلب: تسجيل دخول (رقم موجود) أو تسجيل حساب جديد (رقم غير موجود)
         $userExists = User::where('phone', $request->phone)->exists();
 
-        $rules = [
+        // المرحلة 1: صحة صيغة الهاتف وOTP — عقد OTP القديم (400) للمستخدم الموجود،
+        // و422 بعلامة registration_required للرقم الجديد
+        $validator = Validator::make($request->all(), [
             'phone' => 'required|string|max:20',
             'otp' => 'required|digits:6',
-        ];
-
-        // بيانات التسجيل مطلوبة فقط لإنشاء حساب جديد — الموقع إجباري (إحداثيات GPS من Flutter)
-        if (! $userExists) {
-            $rules += [
-                'name' => 'required|string|max:255',
-                'birth_date' => 'required|date|before_or_equal:today',
-                'latitude' => 'required|numeric|between:-90,90',
-                'longitude' => 'required|numeric|between:-180,180',
-                'notifications_enabled' => 'nullable|boolean',
-            ];
-        }
-
-        $validator = Validator::make($request->all(), $rules);
+        ]);
 
         if ($validator->fails()) {
+            if ($userExists) {
+                return response()->json(['message' => 'Invalid OTP format'], 400);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => $userExists
-                    ? 'Invalid OTP format'
-                    : 'بيانات التسجيل مطلوبة لإنشاء حساب جديد',
+                'message' => 'بيانات التسجيل مطلوبة لإنشاء حساب جديد',
                 'errors' => $validator->errors(),
-                'registration_required' => ! $userExists,
-            ], $userExists ? 400 : 422);
+                'registration_required' => true,
+            ], 422);
         }
 
         $limiterKey = $request->ip().'|'.$request->phone;
@@ -168,6 +159,28 @@ class AuthController extends Controller
             RateLimiter::hit($limiterKey, 15 * 60);
 
             return response()->json(['message' => 'Invalid or expired OTP'], 400);
+        }
+
+        // المرحلة 2: بعد نجاح OTP فقط — بيانات التسجيل مطلوبة لإنشاء حساب جديد
+        // الموقع إجباري (إحداثيات GPS من Flutter)
+        if (! $userExists) {
+            $regValidator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'birth_date' => 'required|date|before_or_equal:today',
+                'latitude' => 'required|numeric|between:-90,90',
+                'longitude' => 'required|numeric|between:-180,180',
+                'notifications_enabled' => 'nullable|boolean',
+            ]);
+
+            if ($regValidator->fails()) {
+                // بدون حذف سجل OTP وبدون ضرب الـ rate limiter — Flutter يعيد الإرسال بنفس الكود
+                return response()->json([
+                    'success' => false,
+                    'message' => 'بيانات التسجيل مطلوبة لإنشاء حساب جديد',
+                    'errors' => $regValidator->errors(),
+                    'registration_required' => true,
+                ], 422);
+            }
         }
 
         $isNew = false;

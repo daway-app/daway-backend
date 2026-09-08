@@ -25,7 +25,7 @@ class PatientRegistrationTest extends TestCase
         ], $overrides);
     }
 
-    private function sendOtpAndGetCode(string $phone = null): string
+    private function sendOtpAndGetCode(?string $phone = null): string
     {
         $response = $this->postJson('/api/otp/send', ['phone' => $phone ?? $this->phone]);
 
