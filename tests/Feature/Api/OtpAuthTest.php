@@ -17,7 +17,8 @@ class OtpAuthTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('otp', fn ($otp) => is_string($otp) && strlen($otp) === 6);
+            ->assertJsonPath('otp', fn ($otp) => is_string($otp) && strlen($otp) === 6)
+            ->assertJsonPath('is_registered', false);
 
         $plain = $response->json('otp');
         $row = OtpCode::where('phone', $phone)->first();
@@ -27,7 +28,7 @@ class OtpAuthTest extends TestCase
         $this->assertTrue(Hash::check($plain, $row->otp));
     }
 
-    public function test_verify_otp_creates_new_patient_with_is_new_true(): void
+    public function test_verify_otp_new_user_without_registration_data_is_rejected(): void
     {
         $phone = '05990000002';
 
@@ -35,13 +36,20 @@ class OtpAuthTest extends TestCase
 
         $response = $this->postJson('/api/otp/verify', ['phone' => $phone, 'otp' => $otp]);
 
-        $response->assertStatus(200)
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('data.user.is_new', true)
-            ->assertJsonPath('data.user.role', 'patient');
+        $response->assertStatus(422)
+            ->assertJsonPath('registration_required', true);
 
-        $this->assertNotEmpty($response->json('data.token'));
-        $this->assertDatabaseHas('users', ['phone' => $phone, 'role' => 'patient']);
+        $this->assertDatabaseMissing('users', ['phone' => $phone]);
+        $this->assertDatabaseMissing('users', ['name' => 'New User']);
+    }
+
+    public function test_send_otp_reports_is_registered_true_for_existing_user(): void
+    {
+        $patient = User::factory()->patient()->create();
+
+        $this->postJson('/api/otp/send', ['phone' => $patient->phone])
+            ->assertStatus(200)
+            ->assertJsonPath('is_registered', true);
     }
 
     public function test_verify_otp_existing_patient_returns_is_new_false(): void

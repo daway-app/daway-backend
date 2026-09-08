@@ -75,7 +75,7 @@
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/otp/send", "host": ["{{base_url}}"], "path": ["api", "otp", "send"] },
             "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\"\n}", "options": { "raw": { "language": "json" } } },
-            "description": "Send a 6-digit OTP to a phone number. Response includes the OTP (intentional — no SMS gateway yet)."
+            "description": "Send a 6-digit OTP to a phone number. Response includes the OTP (intentional — no SMS gateway yet) plus `is_registered` (true = existing user, false = new user that requires registration data on verify)."
           }
         },
         {
@@ -101,7 +101,32 @@
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/otp/verify", "host": ["{{base_url}}"], "path": ["api", "otp", "verify"] },
             "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"otp\": \"123456\"\n}", "options": { "raw": { "language": "json" } } },
-            "description": "Verify OTP. Returns Sanctum token (auto-captured) and `is_new` flag."
+            "description": "Verify OTP for an EXISTING user. Returns Sanctum token (auto-captured) and `is_new: false`."
+          }
+        },
+        {
+          "name": "Register Patient (OTP verify with registration data)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json && json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "  pm.environment.set('token', json.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/otp/verify", "host": ["{{base_url}}"], "path": ["api", "otp", "verify"] },
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"otp\": \"123456\",\n  \"name\": \"عبدالرحمن\",\n  \"birth_date\": \"2005-08-15\",\n  \"latitude\": 31.9522,\n  \"longitude\": 35.2332,\n  \"notifications_enabled\": true\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Create a NEW patient account. Required: phone, otp, name, birth_date (<= today), latitude, longitude (GPS from Flutter — mandatory), notifications_enabled (optional boolean). Calling without registration data for an unregistered phone returns 422 with `registration_required: true`; the OTP stays valid, resend it with the full body. Location/notifications permission prompts are handled by Flutter."
           }
         },
         {

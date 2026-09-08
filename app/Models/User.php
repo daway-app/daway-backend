@@ -31,6 +31,7 @@ class User extends Authenticatable
         'password',
         'address',
         'birth_date',
+        'notifications_enabled',
         'avatar',
         'latitude',
         'longitude',
@@ -54,6 +55,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
+            'notifications_enabled' => 'boolean',
+            'birth_date' => 'date',
         ];
     }
 

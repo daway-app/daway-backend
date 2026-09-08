@@ -59,6 +59,7 @@ class PatientProfileController extends Controller
             'phone' => $user->phone,
             'avatar_url' => Image::url($user->avatar),
             'birth_date' => $user->birth_date ? Carbon::parse($user->birth_date)->toDateString() : null,
+            'notifications_enabled' => (bool) $user->notifications_enabled,
             'latitude' => $user->latitude !== null ? (float) $user->latitude : null,
             'longitude' => $user->longitude !== null ? (float) $user->longitude : null,
             'address' => $user->address,

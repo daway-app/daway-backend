@@ -102,18 +102,42 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'OTP sent successfully',
             'otp' => $otp,
+            'is_registered' => User::where('phone', $request->phone)->exists(),
         ]);
     }
 
     public function verifyOtp(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        // يحدد تدفق الطلب: تسجيل دخول (رقم موجود) أو تسجيل حساب جديد (رقم غير موجود)
+        $userExists = User::where('phone', $request->phone)->exists();
+
+        $rules = [
             'phone' => 'required|string|max:20',
             'otp' => 'required|digits:6',
-        ]);
+        ];
+
+        // بيانات التسجيل مطلوبة فقط لإنشاء حساب جديد — الموقع إجباري (إحداثيات GPS من Flutter)
+        if (! $userExists) {
+            $rules += [
+                'name' => 'required|string|max:255',
+                'birth_date' => 'required|date|before_or_equal:today',
+                'latitude' => 'required|numeric|between:-90,90',
+                'longitude' => 'required|numeric|between:-180,180',
+                'notifications_enabled' => 'nullable|boolean',
+            ];
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'Invalid OTP format'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => $userExists
+                    ? 'Invalid OTP format'
+                    : 'بيانات التسجيل مطلوبة لإنشاء حساب جديد',
+                'errors' => $validator->errors(),
+                'registration_required' => ! $userExists,
+            ], $userExists ? 400 : 422);
         }
 
         $limiterKey = $request->ip().'|'.$request->phone;
@@ -133,16 +157,20 @@ class AuthController extends Controller
 
         $isNew = false;
 
-        $result = DB::transaction(function () use ($request, $otpRecord, &$isNew) {
+        $result = DB::transaction(function () use ($request, $otpRecord, $userExists, &$isNew) {
             $user = User::where('phone', $request->phone)->first();
 
             if (! $user) {
-
+                // لا يوجد إنشاء تلقائي — الحساب يُنشأ فقط بعد استلام بيانات التسجيل الكاملة
                 $user = User::create([
-                    'name' => 'New User',
+                    'name' => $request->string('name')->trim()->toString(),
                     'email' => null,
                     'phone' => $request->phone,
                     'password' => Hash::make(Str::random(32)),
+                    'birth_date' => $request->birth_date,
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
+                    'notifications_enabled' => $request->boolean('notifications_enabled'),
                 ]);
                 $isNew = $user->wasRecentlyCreated;
                 $user->role = 'patient';
