@@ -47,8 +47,12 @@ final class MedicineResolver
         $hits = $this->lookupMapping($name);
 
         // الاستعلام العربي "اكمول" بيترجم عبر الـ mapping لاسم إنجليزي (ACAMOL) —
-        // نستخدم الأسماء الإنجليزية كمفاتيح بحث للكتالوج المحلي والصيدليات
-        $searchKeys = $this->searchKeysFromHits($hits);
+        // نستخدم الأسماء الإنجليزية كمفاتيح بحث للكتالوج المحلي والصيدليات.
+        // الاسم الأصلي يبقى أول مفتاح — أدوية بالكتالوج المحلي قد تكون مسجلة بالعربي أصلاً
+        $searchKeys = array_values(array_unique(array_merge(
+            [$name],
+            $this->searchKeysFromHits($hits)
+        )));
 
         $local = Medicine::query()
             ->where(function ($q) use ($name, $searchKeys) {
