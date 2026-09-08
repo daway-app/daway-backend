@@ -65,6 +65,11 @@ class GenerateChatbotMappingTest extends TestCase
         // السجل بدون trade_name يُتخطى
         $this->assertCount(2, $entries);
 
+        // لا توجد IDs مكررة
+        $ids = array_column($entries, 'id');
+        $this->assertCount(count($ids), array_unique($ids));
+        $this->assertSame([1, 2], $ids);
+
         [$panadol, $augmentin] = $entries;
 
         $this->assertSame(1, $panadol['id']);
@@ -81,6 +86,12 @@ class GenerateChatbotMappingTest extends TestCase
         // aliases[0] هو الاسم الكامل lowercase — والاسم الأساسي المنظف موجود ضمن القائمة
         $this->assertSame('augmentin 1g', $augmentin['aliases'][0]);
         $this->assertContains('augmentin', $augmentin['aliases']);
+
+        // المتغيرات العربية الإضافية للبحث التقريبي
+        $this->assertGreaterThanOrEqual(5, count($panadol['aliases']));
+        $this->assertContains('بنادول اكسترا', $panadol['aliases']);
+        $this->assertContains('بنادول', $panadol['aliases']);
+        $this->assertContains('بنادول و اكسترا', $panadol['aliases']);
     }
 
     public function test_fails_when_source_file_missing(): void
@@ -98,5 +109,38 @@ class GenerateChatbotMappingTest extends TestCase
 
         // النص العربي الموجود مسبقاً يبقى كما هو
         $this->assertSame('بانادول اكسترا بنادول', MedicineNameMapper::toArabic('Panadol Extra بنادول'));
+    }
+
+    public function test_known_words_dictionary_overrides_transliteration(): void
+    {
+        // القاموس يُطبق على الكلمة الكاملة قبل القواعد الحرفية
+        $this->assertSame('باراسيتامول', MedicineNameMapper::toArabic('PARACETAMOL'));
+        $this->assertSame('اموكسيسيلين', MedicineNameMapper::toArabic('AMOXICILLIN'));
+        $this->assertSame('اوجمنتين', MedicineNameMapper::toArabic('AUGMENTIN'));
+        $this->assertSame('بنادول اكسترا', MedicineNameMapper::toArabic('PANADOL EXTRA'));
+        $this->assertSame('ديكلوفيناك', MedicineNameMapper::toArabic('DICLOFENAC'));
+
+        // كلمات غير معروفة تمر عبر القواعد الحرفية كالمعتاد
+        $this->assertSame('بانادول', MedicineNameMapper::toArabic('Panadol'));
+        $this->assertSame('فينتولين', MedicineNameMapper::toArabic('Ventolin'));
+    }
+
+    public function test_arabic_variants_generates_fuzzy_matching_aliases(): void
+    {
+        // أسماء مركّبة (Panadol Extra 500mg) → يجب أن تُولّد عدة متغيرات بما فيها الكلمة الأولى
+        $variants = MedicineNameMapper::arabicVariants('بنادول اكسترا 500 مج');
+        $this->assertNotEmpty($variants);
+        $this->assertLessThanOrEqual(10, count($variants));
+        $this->assertContains('بنادول', $variants);
+        $this->assertContains('بنادول اكسترا', $variants);
+        $this->assertContains('بنادولاكسترا', $variants);
+        $this->assertContains('بنادول و اكسترا', $variants);
+
+        // كلمة واحدة → variant واحد فقط
+        $this->assertSame(['بنادول'], MedicineNameMapper::arabicVariants('بنادول'));
+
+        // قيمة فارغة أو null
+        $this->assertSame([], MedicineNameMapper::arabicVariants(null));
+        $this->assertSame([], MedicineNameMapper::arabicVariants(''));
     }
 }

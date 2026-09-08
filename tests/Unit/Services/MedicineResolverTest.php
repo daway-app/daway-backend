@@ -221,4 +221,38 @@ class MedicineResolverTest extends TestCase
         $this->assertIsArray($candidates);
         $this->assertInstanceOf(Collection::class, $candidates['moh']);
     }
+
+    public function test_hamza_normalized_query_matches_plain_alef_alias(): void
+    {
+        // الـ aliases مخزّنة بألف مجردة — الاستعلام بهمزات لازم يطابق بعد التطبيع
+        $fixturePath = storage_path('app/private/resolver_mapping_fixture3.json');
+        @mkdir(dirname($fixturePath), 0775, true);
+        file_put_contents($fixturePath, "[\n".
+            json_encode(['id' => 1, 'moh_product_id' => 10, 'moh_drug_id' => null, 'product_class' => 'Human Drug', 'name_en' => 'PANADOL TABLET', 'name_ar' => 'بانادول تابليت', 'aliases' => ['panadol tablet', 'panadol', 'بانادول تابليت', 'بانادول']], JSON_UNESCAPED_UNICODE).",\n".
+            json_encode(['id' => 2, 'moh_product_id' => 11, 'moh_drug_id' => 77, 'product_class' => 'Human Drug', 'name_en' => 'AUGMENTIN 1G', 'name_ar' => 'اوجمنتين 1ج', 'aliases' => ['augmentin 1g', 'augmentin', 'اوجمنتين']], JSON_UNESCAPED_UNICODE)."\n]\n");
+
+        try {
+            $resolver = (new MedicineResolver)->setMappingPath($fixturePath);
+
+            // آ → ا (تطبيع الهمزات)
+            $hits = $resolver->lookupMapping('بنآدول');
+            $this->assertCount(1, $hits);
+            $this->assertSame('PANADOL TABLET', $hits[0]['name_en']);
+
+            // أ → ا
+            $hits = $resolver->lookupMapping('أوجمنتين');
+            $this->assertCount(1, $hits);
+            $this->assertSame(77, $hits[0]['moh_drug_id']);
+
+            // حذف الألف الواصلة (بنادول ↔ بانادول) — مطابقة الهيكل الاحتياطية
+            $hits = $resolver->lookupMapping('بنادول');
+            $this->assertCount(1, $hits);
+            $this->assertSame('PANADOL TABLET', $hits[0]['name_en']);
+            // مفتاح الربط: moh_drug_id إن وُجد، وإلا moh_product_id
+            $this->assertSame(10, $hits[0]['moh_product_id']);
+            $this->assertNull($hits[0]['moh_drug_id']);
+        } finally {
+            @unlink($fixturePath);
+        }
+    }
 }

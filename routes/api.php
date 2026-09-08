@@ -36,6 +36,10 @@ Route::get('/medicines/active-ingredient/{ingredient}', [MedicineController::cla
 Route::get('/medicines/{id}', [MedicineController::class, 'show']);
 Route::get('/medicines/{id}/pharmacies', [MedicineController::class, 'pharmacies']);
 
+// حلّ اسم الدواء مباشرة عبر MedicineResolver (بدون انتظار خدمة AI)
+// مفيد للبحث الفوري والتطبيقات التي تريد نتائج فورية بالعربية/الإنجليزية
+Route::post('/medicines/resolve', [MedicineController::class, 'resolve'])->middleware('auth:sanctum')->middleware('throttle:30,1');
+
 // Pharmacies Routes Public
 Route::get('/pharmacies', [PharmacyController::class, 'index']);
 Route::get('/pharmacies/{id}', [PharmacyController::class, 'show']);

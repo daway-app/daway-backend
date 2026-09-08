@@ -8,6 +8,7 @@ use App\Models\MohMedicine;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
+use App\Services\Ai\MedicineResolver;
 use App\Support\Haversine;
 use App\Support\Image;
 use App\Support\PharmacyAvailability;
@@ -16,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MedicineController extends Controller
 {
@@ -24,6 +26,10 @@ class MedicineController extends Controller
      * (cache key explosion) عند إرسال استعلامات ضخمة أو تكرارية.
      */
     private const MAX_CACHE_QUERY_LENGTH = 100;
+
+    public function __construct(private readonly MedicineResolver $resolver)
+    {
+    }
 
     /**
      * عرض كتالوج أدوية وزارة الصحة (مع بحث اختياري).
@@ -61,6 +67,80 @@ class MedicineController extends Controller
                 'current_page' => $items->currentPage(),
                 'last_page' => $items->lastPage(),
             ],
+        ]);
+    }
+
+    /**
+     * بحث مباشر عبر MedicineResolver بدون انتظار خدمة AI الخارجية.
+     * يحوّل اسم الدواء (عربي/إنجليزي) إلى مرشحين في الكتالوج + صيدليات قريبة.
+     * مفيد للبحث الفوري (autocomplete) وللتطبيقات التي لا تمر بـ /api/chat.
+     */
+    public function resolve(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:200'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'radius_km' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
+
+        $name = trim($data['name']);
+        if (mb_strlen($name) < 2) {
+            return response()->json([
+                'success' => true,
+                'message' => 'اسم قصير جداً',
+                'data' => [
+                    'name' => $name,
+                    'moh_catalog' => [],
+                    'local_catalog' => [],
+                    'pharmacies' => [],
+                    'alternatives' => [],
+                    'requires_location' => false,
+                ],
+            ]);
+        }
+
+        $lat = isset($data['latitude']) ? (float) $data['latitude'] : null;
+        $lng = isset($data['longitude']) ? (float) $data['longitude'] : null;
+        $radiusKm = (int) ($data['radius_km'] ?? 15);
+
+        $payload = [
+            'name' => $name,
+            'moh_catalog' => [],
+            'local_catalog' => [],
+            'pharmacies' => [],
+            'alternatives' => [],
+            'requires_location' => $lat === null,
+        ];
+
+        try {
+            $candidates = $this->resolver->resolveCandidates($name);
+            $payload['moh_catalog'] = $candidates['moh']->values();
+            $payload['local_catalog'] = $candidates['local']->values();
+
+            $bestLocalId = $candidates['local']->first()->id ?? null;
+            if ($bestLocalId) {
+                $payload['alternatives'] = $this->resolver->alternatives($bestLocalId);
+            }
+
+            if ($lat !== null && $lng !== null) {
+                $payload['pharmacies'] = $this->resolver->pharmaciesFor(
+                    drugName: $name,
+                    latitude: $lat,
+                    longitude: $lng,
+                    radiusKm: $radiusKm,
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('resolve endpoint failed', ['error' => $e->getMessage(), 'name' => $name]);
+        }
+
+        \App\Models\SearchLog::track($name, 'resolve');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حل اسم الدواء بنجاح.',
+            'data' => $payload,
         ]);
     }
 

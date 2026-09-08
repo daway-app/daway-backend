@@ -72,11 +72,22 @@ final class MedicineResolver
      * يبحث في ملف chatbot_medicines.json عن سجلات تطابق الاستعلام (عربي أو إنجليزي)
      * عبر aliases كل دواء. قراءة تدفقية سطراً بسطر لتوفير الذاكرة.
      *
+     * ترتيب المطابقة: aliases → name_ar → name_en → generic_name.
+     * (name_ar وname_en lowercase وgeneric_name كلهم أعضاء ضمن aliases،
+     * لذا مسح الـ aliases يغطي الترتيب كاملاً — أول alias مطابق يفوز بالسجل).
+     *
+     * تطبيع الاستعلام: أ/إ/آ → ا، ؤ → و، ئ/ى → ي، إزالة التشكيل، توحيد المسافات، lowercase.
+     * الأسماء المطبّقة بنفس القواعد حتى يطابق "بنآدول" alias "بانادول".
+     *
+     * مفتاح الربط مع كتالوج الوزارة: moh_drug_id أساسياً،
+     * وmoh_product_id احتياطاً (أغلب سجلات المنتجات بالكتالوج الفعلي لا تحمل moh_drug_id).
+     *
      * @return array<int, array{moh_product_id:?int, moh_drug_id:?int, name_en:string, name_ar:?string}>
      */
     public function lookupMapping(string $query, int $limit = 10): array
     {
-        $needle = mb_strtolower(MedicineNameMapper::clean($query));
+        $needle = self::normalizeArabic($query);
+        $needleSkel = self::skeletonOf($needle);
 
         if (mb_strlen($needle) < 2) {
             return [];
@@ -85,7 +96,7 @@ final class MedicineResolver
         $path = $this->mappingPath ?? base_path('database/data/chatbot_medicines.json');
         $cacheKey = 'ai_mapping_lookup|'.md5($needle.'|'.$limit.'|'.$path);
 
-        return Cache::remember($cacheKey, 600, function () use ($needle, $limit, $path) {
+        return Cache::remember($cacheKey, 600, function () use ($needle, $needleSkel, $limit, $path) {
             if (! is_file($path)) {
                 return [];
             }
@@ -116,7 +127,7 @@ final class MedicineResolver
                     if (array_is_list($record)) {
                         foreach ($record as $subRecord) {
                             if (is_array($subRecord)) {
-                                $this->collectMappingHit($subRecord, $needle, $hits, $limit);
+                                $this->collectMappingHit($subRecord, $needle, $needleSkel, $hits, $limit);
                             }
 
                             if (count($hits) >= $limit) {
@@ -127,7 +138,7 @@ final class MedicineResolver
                         continue;
                     }
 
-                    $this->collectMappingHit($record, $needle, $hits, $limit);
+                    $this->collectMappingHit($record, $needle, $needleSkel, $hits, $limit);
                 }
 
                 fclose($handle);
@@ -141,28 +152,95 @@ final class MedicineResolver
         });
     }
 
-    /** يفحص سجل mapping واحداً ويضيفه للنتائج إن طابق الاستعلام عبر aliases */
-    private function collectMappingHit(array $record, string $needle, array &$hits, int $limit): void
+    /**
+     * يفحص سجل mapping واحداً ويضيفه للنتائج إن طابق الاستعلام عبر aliases.
+     * مرحلتان:
+     *  1) مطابقة مباشرة بعد التطبيع (همزات/تشكيل/مسافات).
+     *  2) مطابقة هيكلية احتياطية تحذف الألف غير الأولى من كل كلمة —
+     *     توحّد الكتابات مثل "بنادول" ↔ "بانادول" و"اسبرين" ↔ "اسبيرين".
+     * الـ alias يُطبَّع بنفس قواعد الـ needle، مع مسار سريع للأسماء الخالية
+     * من الحروف القابلة للتطبيع.
+     */
+    private function collectMappingHit(array $record, string $needle, string $needleSkel, array &$hits, int $limit): void
     {
         if (count($hits) >= $limit) {
             return;
         }
 
-        foreach (($record['aliases'] ?? []) as $alias) {
-            if (! is_string($alias)) {
-                continue;
-            }
+        $normalize = static fn (string $a): string => strpbrk($a, 'أإآؤئى') === false
+            ? mb_strtolower($a)
+            : self::normalizeArabic($a);
 
-            if (str_contains(mb_strtolower($alias), $needle)) {
-                $hits[] = [
-                    'moh_product_id' => isset($record['moh_product_id']) ? (int) $record['moh_product_id'] : null,
-                    'moh_drug_id' => isset($record['moh_drug_id']) ? (int) $record['moh_drug_id'] : null,
-                    'name_en' => (string) ($record['name_en'] ?? ''),
-                    'name_ar' => isset($record['name_ar']) ? (string) $record['name_ar'] : null,
-                ];
+        $aliases = array_values(array_filter($record['aliases'] ?? [], 'is_string'));
+
+        // المرحلة 1: مطابقة مباشرة
+        $matched = false;
+        foreach ($aliases as $alias) {
+            if (str_contains($normalize($alias), $needle)) {
+                $hits[] = $this->mappingHitPayload($record);
+                $matched = true;
                 break;
             }
         }
+
+        if ($matched || count($hits) >= $limit) {
+            return;
+        }
+
+        // المرحلة 2: الهيكل الصوتي (يفيد فقط إذا حذف الهيكل ألفاً من الـ needle)
+        if ($needleSkel !== $needle) {
+            foreach ($aliases as $alias) {
+                $normalized = $normalize($alias);
+
+                if (! str_contains($normalized, 'ا')) {
+                    continue;
+                }
+
+                if (str_contains(self::skeletonOf($normalized), $needleSkel)) {
+                    $hits[] = $this->mappingHitPayload($record);
+                    break;
+                }
+            }
+        }
+    }
+
+    private function mappingHitPayload(array $record): array
+    {
+        return [
+            'moh_product_id' => isset($record['moh_product_id']) ? (int) $record['moh_product_id'] : null,
+            'moh_drug_id' => isset($record['moh_drug_id']) ? (int) $record['moh_drug_id'] : null,
+            'name_en' => (string) ($record['name_en'] ?? ''),
+            'name_ar' => isset($record['name_ar']) ? (string) $record['name_ar'] : null,
+        ];
+    }
+
+    /**
+     * تطبيع الاستعلام العربي للمطابقة:
+     * أ/إ/آ → ا، ؤ → و، ئ/ى → ي + إزالة التشكيل + توحيد المسافات + lowercase.
+     */
+    private static function normalizeArabic(string $s): string
+    {
+        $s = MedicineNameMapper::clean($s);
+        $s = strtr($s, [
+            'أ' => 'ا',
+            'إ' => 'ا',
+            'آ' => 'ا',
+            'ؤ' => 'و',
+            'ئ' => 'ي',
+            'ى' => 'ي',
+        ]);
+
+        return mb_strtolower($s);
+    }
+
+    /**
+     * الهيكل الصوتي: يحذف كل الألف من النص.
+     * "بانادول" و"بنادول" و"أبنآدول" كلاهما → "بندول" — يوحّد كتابات المستخدم.
+     * يُطبق على الطرفين (needle والـ alias) كمطابقة احتياطية بعد فشل المطابقة المباشرة.
+     */
+    private static function skeletonOf(string $s): string
+    {
+        return str_replace('ا', '', $s);
     }
 
     /** يدمج سجلات كتالوج وزارة الصحة المطابقة عبر الـ mapping مع نتائج LIKE العادية */
@@ -192,6 +270,24 @@ final class MedicineResolver
             })
             ->limit(20)
             ->get(['id', 'trade_name', 'generic_name', 'manufacturer', 'official_price', 'availability']);
+
+        // fallback إضافي: الاستعلام العربي طابق mapping لكن المعرفات ما وجدت بالكتالوج —
+        // نستخدم الاسم الإنجليزي من الـ mapping (أول كلمة أساسية) لمطابقة trade_name
+        foreach ($hits as $hit) {
+            $base = MedicineNameMapper::stripDosage((string) ($hit['name_en'] ?? ''));
+            $first = $base === '' ? '' : explode(' ', $base)[0];
+
+            if (mb_strlen($first) < 3) {
+                continue;
+            }
+
+            $nameRows = MohMedicine::query()
+                ->where('trade_name', 'like', "%{$first}%")
+                ->limit(10)
+                ->get(['id', 'trade_name', 'generic_name', 'manufacturer', 'official_price', 'availability']);
+
+            $extra = $extra->merge($nameRows);
+        }
 
         return $moh->merge($extra)->unique('id')->values();
     }

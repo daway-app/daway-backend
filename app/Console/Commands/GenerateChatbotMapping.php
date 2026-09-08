@@ -61,9 +61,12 @@ class GenerateChatbotMapping extends Command
 
         $entries = [];
         $id = 0;
+        $skipped = 0;
         foreach ($rows as $row) {
             $tradeName = MedicineNameMapper::clean((string) ($row['trade_name'] ?? ''));
             if ($tradeName === '') {
+                $skipped++;
+
                 continue;
             }
             $id++;
@@ -99,8 +102,21 @@ class GenerateChatbotMapping extends Command
         }
 
         $sizeMb = round(strlen($output) / 1024 / 1024, 2);
-        $this->info("تم توليد الملف بنجاح: {$id} دواء في {$outPath} ({$sizeMb} MB).");
-        Log::info('chatbot:mapping انتهى', ['count' => $id, 'path' => $outPath, 'mb' => $sizeMb]);
+        $aliasTotal = array_sum(array_map(fn (array $entry): int => count($entry['aliases']), $entries));
+
+        $this->info('Loaded: '.number_format($total).' medicines');
+        $this->info('Generated: '.number_format(count($entries)).' mappings');
+        $this->info('Skipped: '.number_format($skipped));
+        $this->info('Aliases generated: '.number_format($aliasTotal));
+        $this->info("Output: {$outPath} ({$sizeMb} MB)");
+        Log::info('chatbot:mapping انتهى', [
+            'loaded' => $total,
+            'generated' => count($entries),
+            'skipped' => $skipped,
+            'aliases' => $aliasTotal,
+            'path' => $outPath,
+            'mb' => $sizeMb,
+        ]);
 
         return self::SUCCESS;
     }

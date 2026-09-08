@@ -10,6 +10,58 @@ namespace App\Support;
  */
 class MedicineNameMapper
 {
+    /**
+     * قاموس كلمات شائعة (علامات تجارية ومواد فعالة) — يُفحص قبل التحويل الحرف-بحرف
+     * لأنه أدق من القواعد العامة. المفتاح lowercase للكلمة الإنجليزية الكاملة.
+     *
+     * ملاحظة: هذه مطابقة صوتية للمبحث وليست ترجمة طبية رسمية.
+     */
+    private const KNOWN_WORDS = [
+        // علامات تجارية شائعة في السوق الفلسطيني
+        'panadol' => 'بنادول',
+        'extra' => 'اكسترا',
+        'augmentin' => 'اوجمنتين',
+        'brufen' => 'بروفين',
+        'voltaren' => 'فولتارين',
+        'ventolin' => 'فينتولين',
+        'aspirin' => 'اسبرين',
+        'adol' => 'ادول',
+        'buscopan' => 'بوسكوبان',
+        'flagyl' => 'فلاجيل',
+        'amoxil' => 'اموكسيل',
+        'glucophage' => 'جلوكوفاج',
+        'concor' => 'كونكور',
+        'nurofen' => 'نيوروفين',
+        'advil' => 'ادفيل',
+        'dolgit' => 'دولجيت',
+        // مواد فعالة شائعة
+        'paracetamol' => 'باراسيتامول',
+        'ibuprofen' => 'ايبوبروفين',
+        'amoxicillin' => 'اموكسيسيلين',
+        'diclofenac' => 'ديكلوفيناك',
+        'omeprazole' => 'اوميبرازول',
+        'metformin' => 'ميتفورمين',
+        'azithromycin' => 'ازيترومايسين',
+        'ciprofloxacin' => 'سيبروفلوكساسين',
+        'cetirizine' => 'سيتيريزين',
+        'loratadine' => 'لوراتادين',
+        'salbutamol' => 'سالبوتامول',
+        'prednisolone' => 'بريدنيزولون',
+        'cephalexin' => 'سيفالكسين',
+        'clavulanic' => 'كلافولانيك',
+        'tramadol' => 'ترامادول',
+        'amlodipine' => 'املوديبين',
+        'valsartan' => 'فالسارتان',
+        'losartan' => 'لوسارتان',
+        'atenolol' => 'اتينولول',
+        'gabapentin' => 'جابابنتين',
+        'pregabalin' => 'بريجابالين',
+        'fluconazole' => 'فلوكونازول',
+        'vitamin' => 'فيتامين',
+        'calcium' => 'كالسيوم',
+        'folic' => 'فوليك',
+    ];
+
     /** ثنائيات الحروف — يجب فحصها قبل الحروف المفردة */
     private const DIGRAPHS = [
         'sh' => 'ش',
@@ -136,20 +188,141 @@ class MedicineNameMapper
     }
 
     /**
-     * يولّد قائمة aliases: الاسم كاملاً + الاسم بدون جرعة/شكل دوائي + المادة الفعالة + العربي.
+     * يولّد قائمة aliases: الاسم كاملاً + الاسم بدون جرعة/شكل دوائي + المادة الفعالة + العربي
+     * + ~10 متغيرات عربية (بدون مسافات، كلمة أولى/أخيرة، إلخ) للبحث التقريبي.
      */
     public static function buildAliases(?string $nameEn, ?string $genericName, ?string $nameAr): array
     {
         $aliases = [];
-
-        foreach ([$nameEn, self::stripDosage((string) $nameEn), $genericName, $nameAr] as $candidate) {
-            $candidate = mb_strtolower(trim((string) $candidate));
-            if (mb_strlen($candidate) >= 2) {
-                $aliases[] = $candidate;
+        $add = function (?string $v) use (&$aliases): void {
+            $v = mb_strtolower(trim((string) $v));
+            if (mb_strlen($v) >= 2) {
+                $aliases[] = $v;
             }
+        };
+
+        // الأساسي (موجود مسبقاً — لا تغيير على الـ API للمستهلكين)
+        $add($nameEn);
+        $add(self::stripDosage((string) $nameEn));
+        $add($genericName);
+        $add($nameAr);
+
+        // متغيرات عربية إضافية لمساعدة المطابقة التقريبية
+        foreach (self::arabicVariants($nameAr) as $variant) {
+            $add($variant);
         }
 
         return array_values(array_unique($aliases));
+    }
+
+    /**
+     * يولّد حتى 10 متغيرات عربية من اسم_عربي:
+     * الكامل، بدون جرعات/شكل، بدون مسافات، كلمة أولى/أخيرة/آخر كلمتين/بدون آخر كلمة.
+     */
+    public static function arabicVariants(?string $nameAr, int $max = 10): array
+    {
+        if ($nameAr === null || trim($nameAr) === '') {
+            return [];
+        }
+
+        $variants = [];
+        $add = function (string $v) use (&$variants): void {
+            $v = mb_strtolower(trim($v));
+            if (mb_strlen($v) >= 2) {
+                $variants[] = $v;
+            }
+        };
+
+        // 1) الاسم بعد إزالة الجرعات والأشكال الدوائية بالعربية + نسخته بدون الألف الواصلة
+        $stripped = self::stripArabicDosage($nameAr);
+        $add($stripped);
+        $add(self::dropMedialAlif($stripped));
+
+        $words = self::splitWords($stripped);
+        if (count($words) >= 2) {
+            // 2) الكلمة الأولى فقط (بحث جزئي) + نسختها بدون الألف
+            $add($words[0]);
+            $add(self::dropMedialAlif($words[0]));
+            // 3) الكلمات مع "و" بين كل اثنين (بحث مرن: "بنادول و اكسترا")
+            $joined = implode(' و ', $words);
+            $add($joined);
+            $add(self::dropMedialAlif($joined));
+            // 4) بدون مسافات
+            $glued = implode('', $words);
+            $add($glued);
+            $add(self::dropMedialAlif($glued));
+            // 5) آخر كلمتين
+            $add(implode(' ', array_slice($words, -2)));
+            // 6) جميع الكلمات عدا الأخيرة
+            $add(implode(' ', array_slice($words, 0, -1)));
+            // 7) أول كلمتين
+            $add(implode(' ', array_slice($words, 0, 2)));
+        }
+
+        // 8) الاسم الكامل كما هو + نسخته بدون الألف
+        $add($nameAr);
+        $add(self::dropMedialAlif($nameAr));
+
+        $variants = array_values(array_unique($variants));
+
+        return array_slice($variants, 0, $max);
+    }
+
+    /**
+     * يولّد الكتابة الشائعة البديلة بحذف الألف الواصلة بعد الحرف الأول
+     * (بانادول → بنادول، اوجمينتين → وجمينتين...).
+     */
+    public static function dropMedialAlif(string $phrase): string
+    {
+        $words = self::splitWords($phrase);
+        $out = [];
+        foreach ($words as $word) {
+            if (mb_strlen($word) >= 3 && mb_substr($word, 1, 1) === 'ا') {
+                $word = mb_substr($word, 0, 1).mb_substr($word, 2);
+            }
+            $out[] = $word;
+        }
+
+        return implode(' ', $out);
+    }
+
+    /**
+     * يقطّع النص إلى كلمات حسب المسافات (يتجاهل الفراغات الزائدة).
+     */
+    private static function splitWords(string $s): array
+    {
+        $s = trim(preg_replace('/\s+/u', ' ', $s) ?? '');
+
+        return $s === '' ? [] : explode(' ', $s);
+    }
+
+    /**
+     * يزيل الجرعات والأشكال الدوائية من اسم عربي (أرقام + مج/ملغ/قرص/كبسولة/...).
+     */
+    private static function stripArabicDosage(string $name): string
+    {
+        $name = self::clean($name);
+        if ($name === '') {
+            return '';
+        }
+
+        $previous = null;
+        while ($previous !== $name) {
+            $previous = $name;
+            // أرقام مع وحدة عربية (500 مج، 100 مل...)
+            $name = preg_replace('/\b\d+(?:[.,]\d+)?\s*(?:مج|ملغ|مل|غرام|كغم|كبسولات?|كبس|اقراص|قرص|حبوب|امبولات?|امبول|شراب|سيروب|مرهم|كريم|جل|قطرات?|بخاخ|تحاميل|اكياس|كيس|تحميلة|ف|ف ام)\b/u', ' ', $name) ?? $name;
+            // وحدات لاتينية
+            $name = preg_replace('/\b(?:mg|mcg|µg|ug|g|ml|l|iu|meq|%)\b/i', ' ', $name) ?? $name;
+            // أرقام منفردة متبقية
+            $name = preg_replace('/\b\d+(?:[.,]\d+)?\b/u', ' ', $name) ?? $name;
+            // أقواس بمحتوى
+            $name = preg_replace('/\([^)]*\)/u', ' ', $name) ?? $name;
+            // رموز/ترقيم
+            $name = preg_replace('/[^\p{Arabic}\p{L}\s]/u', ' ', $name) ?? $name;
+            $name = preg_replace('/\s+/u', ' ', trim($name));
+        }
+
+        return $name;
     }
 
     /**
@@ -179,10 +352,9 @@ class MedicineNameMapper
     /** يحوّل مقطعاً لاتينياً واحداً مع الحفاظ على الفواصل الأصلية (مسافات، شرطات، أرقام). */
     private static function transliterateSegment(string $segment): string
     {
-        $segment = strtolower($segment);
         $out = '';
 
-        foreach (preg_split('/([^a-z]+)/', $segment, -1, PREG_SPLIT_DELIM_CAPTURE) as $chunk) {
+        foreach (preg_split('/([^a-zA-Z]+)/', $segment, -1, PREG_SPLIT_DELIM_CAPTURE) as $chunk) {
             if ($chunk === '' || $chunk === false) {
                 continue;
             }
@@ -201,6 +373,14 @@ class MedicineNameMapper
 
     private static function transliterateWord(string $word): string
     {
+        // القاموس أولاً — يُطبّق فقط على الكلمة المكتوبة بأحرف كبيرة كاملة (PANADOL، AUGMENTIN)
+        // الكتابة العادية (Panadol) تمر عبر القواعد الصوتية
+        if (ctype_upper($word) && isset(self::KNOWN_WORDS[strtolower($word)])) {
+            return self::KNOWN_WORDS[strtolower($word)];
+        }
+
+        $word = strtolower($word);
+
         $length = strlen($word);
         $i = 0;
         $out = '';
