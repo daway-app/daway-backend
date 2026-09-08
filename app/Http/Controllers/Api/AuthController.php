@@ -149,7 +149,22 @@ class AuthController extends Controller
             ->where('expires_at', '>', now())
             ->first();
 
-        if (! $otpRecord || ! Hash::check($request->otp, $otpRecord->otp)) {
+        if (! $otpRecord) {
+            RateLimiter::hit($limiterKey, 15 * 60);
+
+            return response()->json(['message' => 'Invalid or expired OTP'], 400);
+        }
+
+        $stored = (string) $otpRecord->otp;
+
+        // سجل OTP فاسد/معدّل يدوياً — لا تقارن bcrypt بقيمة ليست hash
+        if (! Hash::isHashed($stored)) {
+            RateLimiter::hit($limiterKey, 15 * 60);
+
+            return response()->json(['message' => 'Invalid or expired OTP'], 400);
+        }
+
+        if (! Hash::check($request->otp, $stored)) {
             RateLimiter::hit($limiterKey, 15 * 60);
 
             return response()->json(['message' => 'Invalid or expired OTP'], 400);

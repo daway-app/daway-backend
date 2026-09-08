@@ -250,9 +250,11 @@ class PatientRegistrationTest extends TestCase
     {
         $this->postJson('/api/otp/send', ['phone' => $this->phone]);
 
-        // بيانات كاملة لكن بدون OTP إطلاقاً
+        // بيانات كاملة لكن بدون OTP إطلاقاً → validation failure بعقد التسجيل الجديد
         $this->postJson('/api/otp/verify', $this->validRegistrationData())
-            ->assertStatus(400);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['otp'])
+            ->assertJsonPath('registration_required', true);
 
         // بيانات كاملة مع OTP خاطئ
         $this->postJson('/api/otp/verify', $this->validRegistrationData(['otp' => '000000']))
