@@ -25,9 +25,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $proxies = env('TRUSTED_PROXIES');
-        $middleware->trustProxies(at: $proxies ? explode(',', $proxies) : []);
-
+        // C-1/H-3: البروكسي الموثوق يُقرأ وقت الطلب من config('trustedproxy.proxies')
+        // (يرسله middleware الـ TrustProxies المدمج) — آمن بعد config:cache ولا يُنفَّذ هنا أبداً.
         $middleware->throttleApi();
 
         $middleware->alias([
