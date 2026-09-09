@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\PharmacyInventoryBulkRequest;
 use App\Http\Resources\PharmacyMedicineResource;
-use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
+use App\Services\PharmacyContext;
 use App\Support\LowStockNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,7 +27,7 @@ class PharmacyInventoryController extends Controller
         ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }
@@ -76,7 +76,7 @@ class PharmacyInventoryController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy || $medicine->pharmacy_id !== $pharmacy->id) {
             return response()->json(['success' => false, 'message' => 'الدواء غير موجود في مخزون الصيدلية'], 404);
         }
@@ -111,7 +111,7 @@ class PharmacyInventoryController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }

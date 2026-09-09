@@ -7,6 +7,7 @@ use App\Http\Requests\Api\PharmacyChangePasswordRequest;
 use App\Http\Requests\Api\PharmacyProfileRequest;
 use App\Models\Pharmacy;
 use App\Models\PharmacyHour;
+use App\Services\PharmacyContext;
 use App\Support\Image;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ class PharmacyProfileController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::with('hours')->where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user, ['hours']);
 
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
@@ -55,7 +56,7 @@ class PharmacyProfileController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::with('hours')->where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user, ['hours']);
 
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);

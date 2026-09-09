@@ -7,7 +7,7 @@ use App\Http\Requests\Api\InquiryStatusRequest;
 use App\Http\Resources\PatientInquiryResource;
 use App\Models\Notification;
 use App\Models\PatientInquiry;
-use App\Models\Pharmacy;
+use App\Services\PharmacyContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +18,7 @@ class PharmacyInquiryController extends Controller
         $user = $request->user();
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         abort_unless($pharmacy, 403);
 
         $inquiries = PatientInquiry::with(['user', 'medicine'])
@@ -55,7 +55,7 @@ class PharmacyInquiryController extends Controller
         $user = $request->user();
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         abort_unless($pharmacy && $inquiry->pharmacy_id === $pharmacy->id, 403);
 
         $inquiry->load(['user', 'medicine']);
@@ -72,7 +72,7 @@ class PharmacyInquiryController extends Controller
         $user = $request->user();
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         abort_unless($pharmacy && $inquiry->pharmacy_id === $pharmacy->id, 403);
 
         $data = $request->only(['status', 'reply', 'availability_status']);
