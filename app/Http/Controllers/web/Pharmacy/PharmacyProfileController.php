@@ -67,7 +67,7 @@ class PharmacyProfileController extends Controller
             'region' => ['nullable', 'string', 'max:150'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'logo' => ['nullable', 'image', 'max:2048'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'max:2048'],
             // صيغة 24 ساعة إجبارية حتى لو تم تجاوز تحقق الجافاسكريبت
             'hours.*.open_time' => ['nullable', 'date_format:H:i'],
             'hours.*.close_time' => ['nullable', 'date_format:H:i'],
@@ -108,6 +108,9 @@ class PharmacyProfileController extends Controller
             }
 
             $user->update(['password' => Hash::make($newPassword)]);
+
+            // H-13: إبطال توكنات API الصادرة للحساب بعد تغيير كلمة المرور
+            $user->tokens()->delete();
         }
 
         // حفظ ساعات العمل بدون قواعد تحقق معقدة

@@ -83,6 +83,21 @@ $app->booted(function () {
     RateLimiter::for('otp-verify', fn (Request $request) => Limit::perMinutes(15, 5)->by($request->ip().'|'.$request->string('phone')));
 
     RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+
+    // M-3: حد معدل لكل حساب (وليس لكل IP فقط) — يحمي حساب صيدلية محدداً من هجوم
+    // موزع من عناوين متعددة. pharmacy_id للـ API وidentity للويب؛ فارغ = بلا حد.
+    RateLimiter::for('login-account', function (Request $request) {
+        $account = strtolower(trim((string) ($request->input('pharmacy_id') ?? $request->input('identity'))));
+
+        if ($account === '') {
+            return Limit::none();
+        }
+
+        return Limit::perMinute(5)->by('acct|'.$account);
+    });
+
+    // M-9: حد مخصص لنقاط الكتابة المعرضة للإساءة (استفسارات، تقييمات، مزامنة، مخزون)
+    RateLimiter::for('writes', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()));
 });
 
 return $app;

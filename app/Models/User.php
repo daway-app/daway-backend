@@ -61,6 +61,30 @@ class User extends Authenticatable
     }
 
     /**
+     * H-13: إنشاء توكن مع تتبّع بداية سلسلة الـ refresh.
+     * عمود chain_started_at يورَّث عبر الـ rotations حتى يبقى الحد المطلق
+     * (MAX_TOKEN_AGE_DAYS في AuthController) مفعّلاً رغم تجديد التوكن.
+     */
+    public function createToken(string $name, array $abilities = ['*'])
+    {
+        $current = $this->currentAccessToken();
+
+        $chainStartedAt = ($current && $current->chain_started_at)
+            ? $current->chain_started_at
+            : now();
+
+        // forceCreate: chain_started_at ليس بـ $fillable الخاص بـ Sanctum (الـ create يُسقطه بصمت)
+        $token = $this->tokens()->forceCreate([
+            'name' => $name,
+            'token' => hash('sha256', $plain = \Illuminate\Support\Str::random(40)),
+            'abilities' => $abilities,
+            'chain_started_at' => $chainStartedAt,
+        ]);
+
+        return new \Laravel\Sanctum\NewAccessToken($token, $token->getKey().'|'.$plain);
+    }
+
+    /**
      * Get the notifications for the user.
      */
     public function notifications(): HasMany

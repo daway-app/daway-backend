@@ -74,20 +74,36 @@ class PharmacyController extends Controller
             'pharmacy_name' => 'required|string|max:255',
         ]);
 
-        // كلمة المرور الافتراضية = معرّف الصيدلية (PH-XXXX)
-        $pharmacyCustomId = 'PH-'.Str::upper(Str::random(4));
+        // M-43: توليد معرّف الصيدلية مع إعادة المحاولة عند تصادم الـ unique (نادر: 36^4)
+        $pharmacyCustomId = null;
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $candidate = 'PH-'.Str::upper(Str::random(4));
+
+            if (! Pharmacy::where('pharmacy_custom_id', $candidate)->exists()) {
+                $pharmacyCustomId = $candidate;
+                break;
+            }
+        }
+
+        if ($pharmacyCustomId === null) {
+            return back()->withErrors(['pharmacy_name' => 'تعذر توليد معرّف صيدلية فريد، حاول مجدداً.'])->withInput();
+        }
+
+        // M-4: كلمة مرور عشوائية مستقلة عن المعرّف العام (لم تعد = pharmacy_custom_id)
+        // ويُطلب من الصيدلية تغييرها (must_change_password)
+        $plainPassword = Str::password(12, symbols: false);
 
         // إنشاء حساب المستخدم + سجل الصيدلية في معاملة واحدة (فشل أحدهما يلغي الآخر)
-        DB::transaction(function () use ($request, $pharmacyCustomId) {
+        DB::transaction(function () use ($request, $pharmacyCustomId, $plainPassword) {
             // 1. Create the User account for the pharmacy
             $user = User::create([
                 'name' => $request->pharmacy_name, // Use pharmacy name as user name
                 'email' => null,
-                'password' => Hash::make($pharmacyCustomId),
+                'password' => Hash::make($plainPassword),
             ]);
             $user->role = 'pharmacy'; // Assign 'pharmacy' role
             $user->is_active = true;
-            $user->must_change_password = false; // no longer used for profile completion
+            $user->must_change_password = true;
             $user->save();
             $user->syncRoles(['pharmacy']);
 
@@ -104,7 +120,11 @@ class PharmacyController extends Controller
 
         $this->clearPharmaciesIndexCache();
 
-        return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_added_success'));
+        // M-4: بيانات الدخول لمرة واحدة — تظهر للأدمن لإيصالها للصيدلية (لا تُعرض ثانية)
+        return redirect()->route('pharmacies.index')
+            ->with('success', __('pharmacies.pharmacy_added_success'))
+            ->with('initial_pharmacy_id', $pharmacyCustomId)
+            ->with('initial_password', $plainPassword);
     }
 
     public function show(string $id)
@@ -162,6 +182,9 @@ class PharmacyController extends Controller
             $pharmacy->user->update([
                 'password' => Hash::make($request->password),
             ]);
+
+            // H-13: إبطال توكنات API للصيدلية بعد تغيير كلمة المرور من لوحة الأدمن
+            $pharmacy->user->tokens()->delete();
         }
 
         // 2. Update the Pharmacy record

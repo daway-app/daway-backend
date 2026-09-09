@@ -35,17 +35,35 @@ class DeviceTokenController extends Controller
             ], 422);
         }
 
-        $token = DeviceToken::updateOrCreate(
-            [
-                'user_id' => $user->id,
-                'device_id' => $data['device_id'],
-            ],
-            [
+        // M-12: سباق تسجيل مزدوج لنفس (user_id, device_id) — الـ unique يرفض الخاسر
+        // بـ 500؛ نلتقطها ونعيد الجلب لنجعل العملية idempotent (200)
+        try {
+            $token = DeviceToken::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'device_id' => $data['device_id'],
+                ],
+                [
+                    'token' => $data['token'],
+                    'platform' => $data['platform'],
+                    'last_seen_at' => now(),
+                ]
+            );
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            $token = DeviceToken::where('user_id', $user->id)
+                ->where('device_id', $data['device_id'])
+                ->first();
+
+            if (! $token) {
+                throw $e;
+            }
+
+            $token->update([
                 'token' => $data['token'],
                 'platform' => $data['platform'],
                 'last_seen_at' => now(),
-            ]
-        );
+            ]);
+        }
 
         $wasCreated = $existingForUserDevice === null;
 

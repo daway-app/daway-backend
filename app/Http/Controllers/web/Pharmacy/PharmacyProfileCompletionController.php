@@ -93,6 +93,9 @@ class PharmacyProfileCompletionController extends Controller
             'email' => ! empty($validated['email']) ? $validated['email'] : $user->email,
         ]);
 
+        // H-13: إبطال توكنات API الصادرة للحساب بعد تعيين كلمة المرور
+        $user->tokens()->delete();
+
         // تحديث بيانات الصيدلية
         $pharmacy->update([
             'phone_number' => $validated['phone_number'],

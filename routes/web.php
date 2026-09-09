@@ -62,7 +62,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [
         LoginController::class,
         'login',
-    ])->middleware('throttle:login')->name('login');
+    ])->middleware(['throttle:login', 'throttle:login-account'])->name('login');
 });
 
 // ==================== ADMIN ONLY ====================

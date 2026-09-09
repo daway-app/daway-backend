@@ -126,9 +126,12 @@ class PharmacyProfileController extends Controller
         $user->must_change_password = false;
         $user->save();
 
+        // H-13: إبطال كل التوكنات القديمة (بما فيها الحالي) — يتوقع التطبيق إعادة تسجيل دخول
+        $user->tokens()->delete();
+
         return response()->json([
             'success' => true,
-            'message' => 'تم تغيير كلمة المرور بنجاح',
+            'message' => 'تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى',
         ]);
     }
 
