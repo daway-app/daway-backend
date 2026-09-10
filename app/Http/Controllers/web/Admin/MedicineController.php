@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\web\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Favorite;
 use App\Models\Medicine;
 use App\Support\Cloudinary;
 use Illuminate\Http\Request;
@@ -199,6 +200,11 @@ class MedicineController extends Controller
      */
     public function destroy(string $id)
     {
+        // M-25: favorites polymorphic — لا FK ممكن، تنظيف يدوي قبل الحذف
+        Favorite::where('favoritable_type', Medicine::class)
+            ->where('favoritable_id', $id)
+            ->delete();
+
         Medicine::destroy($id);
         $this->clearMedicinesIndexCache();
 

@@ -53,7 +53,7 @@ class PharmacyDashboardController extends Controller
         $averageRating = $pharmacy->ratings()->avg('stars_rating');
 
         // 3. حالة الصيدلية (مفتوحة/مغلقة)
-        $isPharmacyOpen = $this->checkIfPharmacyIsOpen($pharmacy);
+        $isPharmacyOpen = \App\Support\PharmacyAvailability::isOpenNow($pharmacy);
 
         // 4. جدول أدوية صيدليته
         $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
@@ -113,44 +113,5 @@ class PharmacyDashboardController extends Controller
             'lowStockItems',
             'latestInquiries'
         ));
-    }
-
-    /**
-     * Helper function to check if the pharmacy is currently open.
-     */
-    private function checkIfPharmacyIsOpen(Pharmacy $pharmacy): bool
-    {
-        $now = Carbon::now();
-        $today = $now->dayName; // e.g., "Monday", "Tuesday"
-
-        // Map Carbon's day names to your stored day_of_week keys (e.g., 'Monday' to 'Monday')
-        // Ensure your PharmacyHour model stores day_of_week in English or adjust mapping
-        $dayOfWeekMap = [
-            'Sunday' => 'Sunday',
-            'Monday' => 'Monday',
-            'Tuesday' => 'Tuesday',
-            'Wednesday' => 'Wednesday',
-            'Thursday' => 'Thursday',
-            'Friday' => 'Friday',
-            'Saturday' => 'Saturday',
-        ];
-
-        $currentDayKey = $dayOfWeekMap[$today] ?? null;
-
-        if (! $currentDayKey) {
-            return false; // Could not determine current day
-        }
-
-        $todayHours = $pharmacy->hours->firstWhere('day_of_week', $currentDayKey);
-
-        if (! $todayHours || $todayHours->is_closed) {
-            return false; // Pharmacy is closed today or no hours set
-        }
-
-        $openTime = Carbon::parse($todayHours->open_time);
-        $closeTime = Carbon::parse($todayHours->close_time);
-
-        // Check if current time is between open and close times
-        return $now->between($openTime, $closeTime);
     }
 }

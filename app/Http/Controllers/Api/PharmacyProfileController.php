@@ -7,6 +7,7 @@ use App\Http\Requests\Api\PharmacyChangePasswordRequest;
 use App\Http\Requests\Api\PharmacyProfileRequest;
 use App\Models\Pharmacy;
 use App\Models\PharmacyHour;
+use App\Services\PharmacyContext;
 use App\Support\Image;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ class PharmacyProfileController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::with('hours')->where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user, ['hours']);
 
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
@@ -55,7 +56,7 @@ class PharmacyProfileController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::with('hours')->where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user, ['hours']);
 
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
@@ -126,9 +127,12 @@ class PharmacyProfileController extends Controller
         $user->must_change_password = false;
         $user->save();
 
+        // H-13: إبطال كل التوكنات القديمة (بما فيها الحالي) — يتوقع التطبيق إعادة تسجيل دخول
+        $user->tokens()->delete();
+
         return response()->json([
             'success' => true,
-            'message' => 'تم تغيير كلمة المرور بنجاح',
+            'message' => 'تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى',
         ]);
     }
 

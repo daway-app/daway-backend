@@ -82,6 +82,10 @@ class ProfileController extends Controller
         $user->password = Hash::make($request->input('password'));
         $user->save();
 
+        // H-13: إبطال الجلسات الأخرى على الويب + أي توكنات API صادرة للحساب
+        Auth::logoutOtherDevices($request->input('password'));
+        $user->tokens()->delete();
+
         return back()->with('password_success', __('layout.password_updated'));
     }
 

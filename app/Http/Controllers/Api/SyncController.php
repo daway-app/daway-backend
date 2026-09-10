@@ -26,6 +26,9 @@ class SyncController extends Controller
             return response()->json(['success' => false, 'message' => 'غير مصرح'], 403);
         }
 
+        // M-30: توكن واحد نشط لكل مستخدم — الإصدار الجديد يبطل القديم (بلا نمو بلا حدود)
+        $user->tokens()->where('name', 'sync')->delete();
+
         $token = $user->createToken('sync')->plainTextToken;
 
         return response()->json([

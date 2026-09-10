@@ -7,9 +7,11 @@ use App\Http\Requests\Api\PharmacyMedicineRequest;
 use App\Http\Resources\PharmacyMedicineResource;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
-use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
+use App\Services\MedicineCatalogService;
+use App\Services\PharmacyContext;
+use App\Models\SyncTombstone;
 use App\Support\Cloudinary;
 use App\Support\LowStockNotifier;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +20,9 @@ use Illuminate\Validation\ValidationException;
 
 class PharmacyMedicineController extends Controller
 {
+    public function __construct(private readonly MedicineCatalogService $catalog)
+    {
+    }
     /**
      * قائمة أدوية الصيدلية الحالية مع pagination.
      */
@@ -32,7 +37,7 @@ class PharmacyMedicineController extends Controller
         ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }
@@ -64,7 +69,7 @@ class PharmacyMedicineController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy || $medicine->pharmacy_id !== $pharmacy->id) {
             return response()->json(['success' => false, 'message' => 'الدواء غير موجود في مخزون الصيدلية'], 404);
         }
@@ -87,7 +92,7 @@ class PharmacyMedicineController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }
@@ -100,12 +105,7 @@ class PharmacyMedicineController extends Controller
             $medicine = Medicine::findOrFail($data['medicine_id']);
         } else {
             $moh = MohMedicine::findOrFail($data['moh_medicine_id']);
-            $medicine = Medicine::where('trade_name', $moh->trade_name)->first()
-                ?? Medicine::create([
-                    'trade_name' => $moh->trade_name,
-                    'active_ingredient' => $moh->generic_name ?? $moh->trade_name,
-                    'description' => $moh->manufacturer ?? $moh->company,
-                ]);
+            $medicine = $this->catalog->findOrCreateFromMoh($moh);
         }
 
         $exists = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
@@ -160,7 +160,7 @@ class PharmacyMedicineController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }
@@ -193,31 +193,28 @@ class PharmacyMedicineController extends Controller
 
         // الحل بالأسماء فقط بدون أي معرّف:
         // 1) الاسم الإنجليزي في الكتالوج العام، وإلا الاسم العربي إن أُرسل
-        $medicine = Medicine::where('trade_name', $name)->first()
-            ?? ($nameAr ? Medicine::where('trade_name_ar', $nameAr)->first() : null);
+        // ملاحظة D-1: البحث في كتالوج الوزارة هنا يُستخدم للوصف فقط (وليس للنسخ)
+        // لأن الإنشاء يكون من أسماء المدخلات — يُحفظ السلوك حرفياً
+        $medicine = $this->catalog->resolveByName($name, $nameAr, lookupMoh: false);
 
         if (! $medicine) {
-            // 2) كتالوج وزارة الصحة بالاسم الإنجليزي — يُنسخ للكتالوج العام عند الحاجة
+            // 2) كتالوج وزارة الصحة بالاسم الإنجليزي — يُشتق منه الوصف فقط
             $moh = MohMedicine::where('trade_name', $name)->first();
 
             // 3) لا وجود بالكتالوجين — إنشاء دواء جديد (المادة الفعالة إجبارية من الموبايل)
-            $medicine = Medicine::create([
-                'trade_name' => $name,
-                'trade_name_ar' => $nameAr,
-                'active_ingredient' => trim($data['active_ingredient']),
-                'description' => $moh->manufacturer ?? ($moh->company ?? null),
-            ]);
+            $medicine = $this->catalog->createFromNames(
+                $name,
+                $nameAr,
+                trim($data['active_ingredient']),
+                $moh
+            );
         } else {
-            // إثراء الكتالوج: دواء موجود بمادة فعالة فارغة + الموبايل أرسلها → تُكمّل
-            if (empty($medicine->active_ingredient)) {
-                $medicine->active_ingredient = trim($data['active_ingredient']);
-                $medicine->save();
-            }
-
-            if ($nameAr && empty($medicine->trade_name_ar)) {
-                $medicine->trade_name_ar = $nameAr;
-                $medicine->save();
-            }
+            // إثراء الكتالوج: دواء موجود بفراغات → تُكمَّل (أبداً لا تستبدل)
+            $this->catalog->fillMissingAttributes(
+                $medicine,
+                $nameAr,
+                trim($data['active_ingredient'])
+            );
         }
 
         $exists = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
@@ -265,7 +262,7 @@ class PharmacyMedicineController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy || $medicine->pharmacy_id !== $pharmacy->id) {
             return response()->json(['success' => false, 'message' => 'الدواء غير موجود في مخزون الصيدلية'], 404);
         }
@@ -282,31 +279,15 @@ class PharmacyMedicineController extends Controller
         // القاعدة: اسمح بالتحديث فقط إذا لم تستخدم صيدلية أخرى نفس الدواء
         // (الـ catalog منفرد لصيدلية هذه). وإلا فالـ catalog ملك عام.
         $medicine->loadMissing('medicine');
-        $catalogMedicine = $medicine->medicine;
-        $catalogDirty = false;
-
-        $otherPharmaciesUsingSame = PharmacyMedicine::where('medicine_id', $catalogMedicine->id)
-            ->where('pharmacy_id', '!=', $pharmacy->id)
-            ->exists();
-
-        if (! $otherPharmaciesUsingSame) {
-            if (! empty($data['trade_name'])) {
-                $catalogMedicine->trade_name = trim($data['trade_name']);
-                $catalogDirty = true;
-            }
-            if (! empty($data['trade_name_ar'])) {
-                $catalogMedicine->trade_name_ar = trim($data['trade_name_ar']);
-                $catalogDirty = true;
-            }
-            if (! empty($data['active_ingredient'])) {
-                $catalogMedicine->active_ingredient = trim($data['active_ingredient']);
-                $catalogDirty = true;
-            }
-        }
-
-        if ($catalogDirty) {
-            $catalogMedicine->save();
-        }
+        $this->catalog->applySoleOwnerEdits(
+            $medicine->medicine,
+            $pharmacy->id,
+            [
+                'trade_name' => $data['trade_name'] ?? null,
+                'trade_name_ar' => $data['trade_name_ar'] ?? null,
+                'active_ingredient' => $data['active_ingredient'] ?? null,
+            ]
+        );
 
         LowStockNotifier::notifyIfLowStock($medicine);
 
@@ -328,12 +309,19 @@ class PharmacyMedicineController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy || $medicine->pharmacy_id !== $pharmacy->id) {
             return response()->json(['success' => false, 'message' => 'الدواء غير موجود في مخزون الصيدلية'], 404);
         }
 
         $medicine->delete();
+
+        // M-16: tombstone — حتى يعرف الـ PWA بالحذف عند الـ pull
+        SyncTombstone::create([
+            'pharmacy_id' => $pharmacy->id,
+            'pharmacy_medicine_id' => $medicine->id,
+            'deleted_at' => now(),
+        ]);
 
         return response()->json([
             'success' => true,
@@ -403,7 +391,7 @@ class PharmacyMedicineController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy || $medicine->pharmacy_id !== $pharmacy->id) {
             return response()->json(['success' => false, 'message' => 'الدواء غير موجود في مخزون الصيدلية'], 404);
         }

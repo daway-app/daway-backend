@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\PharmacyInventoryBulkRequest;
 use App\Http\Resources\PharmacyMedicineResource;
-use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
+use App\Services\PharmacyContext;
 use App\Support\LowStockNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,7 +27,7 @@ class PharmacyInventoryController extends Controller
         ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }
@@ -76,7 +76,7 @@ class PharmacyInventoryController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy || $medicine->pharmacy_id !== $pharmacy->id) {
             return response()->json(['success' => false, 'message' => 'الدواء غير موجود في مخزون الصيدلية'], 404);
         }
@@ -111,18 +111,23 @@ class PharmacyInventoryController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }
 
         $items = $request->validated()['items'];
         $updated = 0;
+        $affectedIds = [];
+
+        // M-11: batched — استعلام واحد بدل SELECT لكل عنصر (N+1)
+        $rows = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->whereIn('id', collect($items)->pluck('id')->all())
+            ->get()
+            ->keyBy('id');
 
         foreach ($items as $item) {
-            $pm = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-                ->where('id', $item['id'])
-                ->first();
+            $pm = $rows->get($item['id']);
 
             if (! $pm) {
                 continue;
@@ -134,9 +139,16 @@ class PharmacyInventoryController extends Controller
             }
 
             $pm->update($payload);
-            LowStockNotifier::notifyIfLowStock($pm);
+            $affectedIds[] = $pm->id;
             $updated++;
         }
+
+        // إشعار واحد مجمّع (نفس نمط SyncService::notifyAffected) بدل إشعار لكل صف
+        $affected = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->whereIn('id', $affectedIds)
+            ->with('medicine', 'pharmacy.user')
+            ->get()
+            ->each(fn (PharmacyMedicine $pm) => LowStockNotifier::notifyIfLowStock($pm));
 
         return response()->json([
             'success' => true,

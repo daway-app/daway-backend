@@ -1,10 +1,10 @@
 services:
   - type: web
     name: daway-backend
-    runtime: php
+    # H-5: مسار النشر الفعلي هو Dockerfile متعدد المراحل — يُبنى تلقائياً من Dockerfile
+    # (لا buildCommand/startCommand: التشغيل والهجرات داخل CMD في الـ Dockerfile)
+    runtime: docker
     plan: free
-    buildCommand: composer install --no-dev
-    startCommand: php artisan serve --host=0.0.0.0 --port=10000
     healthCheckPath: /healthz
     envVars:
       - key: APP_ENV
@@ -23,9 +23,9 @@ services:
       - key: DB_USERNAME
         value: avnadmin
       # كلمة مرور القاعدة تُضاف من Render Dashboard (Environment) — لا تُرفع للمستودع
-      # مسار الشهادة لـ php runtime؛ في Docker runtime (Dockerfile) المسار هو /app/database/certs/ca.pem
+      # مسار شهادة SSL داخل حاوية Docker (runtime: docker) — انظر database/certs/ca.pem
       - key: MYSQL_ATTR_SSL_CA
-        value: /opt/render/project/src/database/certs/ca.pem
+        value: /app/database/certs/ca.pem
       - key: DB_POOL
         value: "3"
       - key: CACHE_STORE
@@ -35,9 +35,12 @@ services:
       # سجل الأخطاء على stderr حتى يظهر في لوحة تحكم Render (ملفات السجل غير مرئية)
       - key: LOG_CHANNEL
         value: stderr
-      # البروكسي الموثوق — يُضيَّق لاحقاً على نطاقات Render الرسمية إذا عُرفت
+      # البروكسي الموثوق — يُترك فارغاً عمداً: نطاقات موازن التحميل في Render غير معلنة وغير مستقرة،
+      # لذا لا نثق بأي وكيل: IP العميل يُحتسب من REMOTE_ADDR (IP الـ LB).
+      # تنبيه: تحديد المعدل لكل IP يتحول إلى دلو مشترك لكل LB (تضعيف الحماية لكل IP) —
+      # المعالجة: إضافة تحديد معدل لكل حساب (rate limiting per-account) — مهمة لوكيل الأمان/الـ API.
       - key: TRUSTED_PROXIES
-        value: "*"
+        value: ""
       # عيّن القيمة من Render Dashboard (مثل https://daway-backend.onrender.com)
       - key: APP_URL
       # Sanctum: النطاق الذي تُقبل منه كوكيز الجلسة على /api/*
@@ -71,3 +74,17 @@ services:
         value: daway_medicines
       - key: CLOUDINARY_FOLDER
         value: daway
+      # H-15: مساعد الذكاء الاصطناعي وخدمة OCR — تُضبط من Render Dashboard (Environment)
+      # المهلة الافتراضية في config/services.php هي 8 ثوانٍ (C-1)
+      - key: DAWAY_AI_BASE_URL
+        sync: false
+      - key: DAWAY_AI_KEY
+        sync: false
+      - key: DAWAY_AI_TIMEOUT
+        value: "8"
+      - key: DAWAY_OCR_BASE_URL
+        sync: false
+      - key: DAWAY_OCR_KEY
+        sync: false
+      - key: DAWAY_OCR_TIMEOUT
+        value: "8"

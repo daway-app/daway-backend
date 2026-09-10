@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\Rating;
+use App\Services\PharmacyContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -20,7 +20,7 @@ class PharmacyDashboardController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }

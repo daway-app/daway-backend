@@ -21,6 +21,7 @@ function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
 
 export const sync = {
     attempts: {},
+    MAX_ATTEMPTS: 5,     // M-29: سقف المحاولات — لا حلقة إعادة للأبد
     timer: null,
     serverUp: null,      // آخر نتيجة heartbeat حقيقية (navigator.onLine يكذب)
     lastCheckAt: 0,
@@ -37,7 +38,15 @@ export const sync = {
             setBanner('offline');
         });
         // heartbeat: navigator.onLine lies on captive portals
-        this.timer = setInterval(() => this.checkThenSync(), 30000);
+        this.timer = setInterval(() => {
+            // H-10: تاب مخفي = إيقاف الـ heartbeat (المتصفح يستأنف عند العودة)
+            if (document.hidden) return;
+            this.checkThenSync();
+        }, 30000);
+        // H-10: عند إعادة ظهور التاب نفحص فوراً بعد الغياب الطويل
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) this.checkThenSync();
+        });
         if (navigator.onLine) this.checkThenSync();
         else { this.serverUp = false; this.lastCheckAt = Date.now(); setBanner('offline'); }
     },
@@ -163,9 +172,19 @@ export const sync = {
                     this.attempts[result.uuid] = (this.attempts[result.uuid] || 0) + 1;
                 }
             });
-            return Promise.all(appliedUuids.map((uuid) => db.queueDelete(uuid)))
+            // M-29: العمليات التي تجاوزت السقف تُحذف من الطابور (dead-letter محلي) —
+            // منع retry storm للأبد؛ يظهر banner واحد يذكر عدد العمليات المتروكة
+            const deadUuids = appliedUuids.length ? [] : [];
+            queue.forEach((op) => {
+                if (!appliedUuids.includes(op.uuid) && (this.attempts[op.uuid] || 0) >= this.MAX_ATTEMPTS) {
+                    deadUuids.push(op.uuid);
+                }
+            });
+            return Promise.all(appliedUuids.concat(deadUuids).map((uuid) => db.queueDelete(uuid)))
                 .then(() => {
-                    if (failures > 0) setBanner('failed', { count: failures });
+                    const remaining = failures - deadUuids.length;
+                    if (deadUuids.length > 0) setBanner('failed', { count: remaining, dropped: deadUuids.length });
+                    else if (remaining > 0) setBanner('failed', { count: remaining });
                     return this.push(token, queue.slice(PUSH_BATCH));
                 });
         });

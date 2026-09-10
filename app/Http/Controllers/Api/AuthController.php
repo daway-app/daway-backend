@@ -17,6 +17,11 @@ use Illuminate\Support\Str;
 class AuthController extends Controller
 {
     /**
+     * H-13: العمر المطلق الأقصى لسلسلة توكنات الـ refresh (بداية السلسلة، لا آخر دوران)
+     */
+    private const MAX_TOKEN_AGE_DAYS = 30;
+
+    /**
      * تسجيل دخول الصيدلية باستخدام Pharmacy ID وكلمة المرور.
      */
     public function pharmacyLogin(Request $request)
@@ -90,13 +95,20 @@ class AuthController extends Controller
 
         $otp = (string) random_int(100000, 999999);
 
-        OtpCode::updateOrCreate(
-            ['phone' => $request->phone],
-            [
-                'otp' => Hash::make($otp),
-                'expires_at' => now()->addMinutes(10),
-            ]
-        );
+        // M-12: سباق إرسال مزدوج لنفس الرقم — القيد unique(phone) يرفض الخاسر
+        // بـ QueryException (500)؛ نلتقطها ونعيد المحاولة مرة واحدة (الصف أصبح موجوداً → تحديث)
+        try {
+            OtpCode::updateOrCreate(
+                ['phone' => $request->phone],
+                [
+                    'otp' => Hash::make($otp),
+                    'expires_at' => now()->addMinutes(10),
+                ]
+            );
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            OtpCode::where('phone', $request->phone)
+                ->update(['otp' => Hash::make($otp), 'expires_at' => now()->addMinutes(10)]);
+        }
 
         return response()->json([
             'success' => true,
@@ -190,16 +202,26 @@ class AuthController extends Controller
 
             if (! $user) {
                 // لا يوجد إنشاء تلقائي — الحساب يُنشأ فقط بعد استلام بيانات التسجيل الكاملة
-                $user = User::create([
-                    'name' => $request->string('name')->trim()->toString(),
-                    'email' => null,
-                    'phone' => $request->phone,
-                    'password' => Hash::make(Str::random(32)),
-                    'birth_date' => $request->birth_date,
-                    'latitude' => $request->latitude,
-                    'longitude' => $request->longitude,
-                    'notifications_enabled' => $request->boolean('notifications_enabled'),
-                ]);
+                // M-12: سباق أول دخول متزامن لنفس الرقم — users.phone unique يرفض الخاسر
+                // بـ 500؛ نلتقطها ونعيد الجلب ونكمل كدخول مستخدم موجود
+                try {
+                    $user = User::create([
+                        'name' => $request->string('name')->trim()->toString(),
+                        'email' => null,
+                        'phone' => $request->phone,
+                        'password' => Hash::make(Str::random(32)),
+                        'birth_date' => $request->birth_date,
+                        'latitude' => $request->latitude,
+                        'longitude' => $request->longitude,
+                        'notifications_enabled' => $request->boolean('notifications_enabled'),
+                    ]);
+                } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                    $user = User::where('phone', $request->phone)->first();
+
+                    if (! $user) {
+                        throw $e;
+                    }
+                }
                 $isNew = $user->wasRecentlyCreated;
                 $user->role = 'patient';
                 $user->is_active = true;
@@ -253,8 +275,27 @@ class AuthController extends Controller
     public function refreshToken(Request $request)
     {
         $user = $request->user();
-        $user->currentAccessToken()?->delete();
+        $currentToken = $user->currentAccessToken();
+
+        // H-13: سقف مطلق — بداية سلسلة الـ refresh (وليس created_at الخاص بالتوكن الحالي
+        // الذي يتجدد مع كل دوران)؛ للصفوف القديمة قبل الـ migration نستخدم created_at.
+        // chain_started_at عمود مخصص خارج casts الـ Sanctum → يُحلّل يدوياً
+        $chainStartRaw = $currentToken?->chain_started_at ?? $currentToken?->created_at;
+        $chainStart = $chainStartRaw ? \Illuminate\Support\Carbon::parse($chainStartRaw) : null;
+
+        if ($currentToken && $chainStart && $chainStart->lt(now()->subDays(self::MAX_TOKEN_AGE_DAYS))) {
+            $user->tokens()->delete();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'انتهت صلاحية الجلسة نهائياً، يرجى تسجيل الدخول من جديد',
+            ], 401);
+        }
+
+        // H-13: الإنشاء أولاً ثم الحذف — لو انقطعت العملية بينهما يبقى توكن صالح
+        // (بدل قفل الحساب بين حذف القديم وإنشاء الجديد)
         $token = $user->createToken('auth_token')->plainTextToken;
+        $currentToken?->delete();
 
         return response()->json([
             'success' => true,

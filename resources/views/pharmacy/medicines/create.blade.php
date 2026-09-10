@@ -231,12 +231,24 @@
 
     function runSearch(q) {
         const url = searchUrl + '?q=' + encodeURIComponent(q);
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        // M-27: إلغاء الطلب السابق — استجابة قديمة لا تتغلب على الأحدث
+        if (window._mohSearchAbort) window._mohSearchAbort.abort();
+        const controller = new AbortController();
+        window._mohSearchAbort = controller;
+        const seq = ++window._mohSearchSeq;
+
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            signal: controller.signal,
+        })
             .then(function (r) { return r.json(); })
             .then(function (items) {
+                if (seq !== window._mohSearchSeq) return; // وصلت متأخرة — تجاهُل
                 renderResults(items);
             })
-            .catch(function () {
+            .catch(function (err) {
+                if (err && err.name === 'AbortError') return;
+                if (seq !== window._mohSearchSeq) return;
                 resultsBox.innerHTML = '<div class="moh-search-empty">' + i18n.search_error + '</div>';
                 resultsBox.style.display = 'block';
             });

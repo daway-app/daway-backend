@@ -23,20 +23,21 @@
     </script>
     <title>{{ __('layout.app_title') }} - @yield('title', __('dashboard.title'))</title>
 
-    {{-- Firebase Web Push config — قيم عامة للعميل فقط، تُضبط من env على السيرفر --}}
+    {{-- Firebase Web Push config — قيم عامة للعميل فقط، تُقرأ من config/services.php --}}
+    {{-- H-3: config() بدل env() — env() يعيد null بعد php artisan config:cache --}}
     @php
-        $fcmConfig = env('FIREBASE_API_KEY') ? [
-            'apiKey' => env('FIREBASE_API_KEY'),
-            'authDomain' => env('FIREBASE_AUTH_DOMAIN'),
-            'projectId' => env('FIREBASE_PROJECT_ID'),
-            'storageBucket' => env('FIREBASE_STORAGE_BUCKET'),
-            'messagingSenderId' => env('FIREBASE_MESSAGING_SENDER_ID'),
-            'appId' => env('FIREBASE_APP_ID'),
+        $fcmConfig = config('services.firebase.api_key') ? [
+            'apiKey' => config('services.firebase.api_key'),
+            'authDomain' => config('services.firebase.auth_domain'),
+            'projectId' => config('services.firebase.project_id'),
+            'storageBucket' => config('services.firebase.storage_bucket'),
+            'messagingSenderId' => config('services.firebase.messaging_sender_id'),
+            'appId' => config('services.firebase.app_id'),
         ] : null;
     @endphp
     <script>
         window.DAWAY_FIREBASE_CONFIG = @js($fcmConfig);
-        window.DAWAY_FCM_VAPID_KEY = @js(env('FIREBASE_VAPID_KEY'));
+        window.DAWAY_FCM_VAPID_KEY = @js(config('services.firebase.vapid_key'));
     </script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">

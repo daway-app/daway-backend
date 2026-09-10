@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class PharmacyPasswordChangeTest extends TestCase
 {
-    public function test_pharmacy_created_by_admin_has_default_password_equal_to_id(): void
+    public function test_pharmacy_created_by_admin_gets_independent_random_password(): void
     {
         $admin = User::factory()->admin()->create();
 
@@ -25,10 +25,19 @@ class PharmacyPasswordChangeTest extends TestCase
         $this->assertNull($pharmacy->address);
         $this->assertNull($pharmacy->profile_completed_at);
 
+        // M-4: بيانات الدخول لمرة واحدة تُفلاش للجلسة
+        $initialPassword = session('initial_password');
+        $initialId = session('initial_pharmacy_id');
+        $this->assertNotEmpty($initialPassword);
+        $this->assertSame($pharmacy->pharmacy_custom_id, $initialId);
+
         $user = $pharmacy->user;
         $this->assertNull($user->email);
-        $this->assertFalse($user->must_change_password);
-        $this->assertTrue(Hash::check($pharmacy->pharmacy_custom_id, $user->password));
+
+        // M-4: كلمة المرور مستقلة عن المعرّف العام (لم تعد = pharmacy_custom_id)
+        $this->assertNotSame($pharmacy->pharmacy_custom_id, $initialPassword);
+        $this->assertTrue(Hash::check($initialPassword, $user->password));
+        $this->assertTrue($user->must_change_password);
     }
 
     public function test_pharmacy_login_returns_must_change_password_flag(): void

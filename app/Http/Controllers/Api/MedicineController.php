@@ -22,6 +22,84 @@ use Illuminate\Support\Facades\Log;
 class MedicineController extends Controller
 {
     /**
+     * H-9: تغطية الصيدليات لأكثر من دواء في استعلام واحد.
+     * يعيد خريطة [medicine_id => ['count' => int, 'nearest' => ?array]].
+     * مع الـ geo: prefilter بصندوق إحاطة بالـ SQL ثم فلترة Haversine بالـ PHP على المجموعة الصغيرة.
+     */
+    private function pharmacyCoverageForMedicines(
+        array $medicineIds,
+        ?float $lat,
+        ?float $lng,
+        int $radiusKm,
+        bool $hasGeo
+    ): array {
+        if ($medicineIds === []) {
+            return [];
+        }
+
+        $query = DB::table('pharmacy_medicines as pm')
+            ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
+            ->whereIn('pm.medicine_id', $medicineIds)
+            ->where('pm.is_available', true)
+            ->where('pm.quantity', '>', 0)
+            ->where('p.is_active', true);
+
+        if ($hasGeo) {
+            $query->whereNotNull('p.latitude')
+                ->whereNotNull('p.longitude');
+
+            // صندوق إحاطة خشن (~1 درجة ≈ 111كم) يقلّص الصفوف قبل الحساب الدقيق
+            $query->whereBetween('p.latitude', [$lat - 1, $lat + 1])
+                ->whereBetween('p.longitude', [$lng - 1, $lng + 1]);
+        }
+
+        $rows = $query->select(
+            'pm.medicine_id',
+            'p.id',
+            'p.pharmacy_name',
+            'p.latitude as lat',
+            'p.longitude as lng'
+        )->get();
+
+        $coverage = [];
+
+        foreach ($rows as $r) {
+            $mid = (int) $r->medicine_id;
+
+            if (! isset($coverage[$mid])) {
+                $coverage[$mid] = ['count' => 0, 'nearest' => null];
+            }
+
+            if ($hasGeo) {
+                if ($r->lat === null || $r->lng === null) {
+                    continue;
+                }
+
+                $d = Haversine::kmBetween($lat, $lng, (float) $r->lat, (float) $r->lng);
+                if ($d > $radiusKm) {
+                    continue;
+                }
+
+                $coverage[$mid]['count']++;
+
+                $currentNearest = $coverage[$mid]['nearest'];
+                if ($currentNearest === null || $d < $currentNearest['distance_km']) {
+                    $coverage[$mid]['nearest'] = [
+                        'id' => (int) $r->id,
+                        'name' => $r->pharmacy_name,
+                        'distance_km' => round($d, 2),
+                        'availability_status' => 'available',
+                    ];
+                }
+            } else {
+                $coverage[$mid]['count']++;
+            }
+        }
+
+        return $coverage;
+    }
+
+    /**
      * H9: أقصى طول لقيمة البحث داخل مفتاح الـ cache — يمنع تضخم المفاتيح
      * (cache key explosion) عند إرسال استعلامات ضخمة أو تكرارية.
      */
@@ -180,8 +258,9 @@ class MedicineController extends Controller
         $medVer = $this->medicinesVersion();
         $catVer = $this->catalogVersion();
 
+        // H-9: دقة 3 منازل (~110م) بدل 4 — مفتاح كاش يصيب فعلاً بدل مفتاح جديد كل خطوة
         $geoTag = $hasGeo
-            ? sprintf('|geo|%.4f|%.4f|%d', $lat, $lng, $radiusKm)
+            ? sprintf('|geo|%.3f|%.3f|%d', $lat, $lng, $radiusKm)
             : '|geo|none';
 
         $result = Cache::remember($this->cacheKey("api_meds_search|v{$medVer}|v{$catVer}{$geoTag}", $q), 900, function () use ($q, $lat, $lng, $radiusKm, $hasGeo) {
@@ -193,12 +272,19 @@ class MedicineController extends Controller
             $this->fulltextOrLike($mohQuery, ['trade_name', 'generic_name'], $q);
             $mohMedicines = $mohQuery->limit(20)->get();
 
-            $medicinesPayload = $medicines->map(function (Medicine $m) use ($lat, $lng, $radiusKm, $hasGeo) {
+            // H-9: استعلام مجمّع واحد لكل الأدوية (بدل 2 query لكل دواء = 20 query)
+            $coverage = $this->pharmacyCoverageForMedicines(
+                $medicines->pluck('id')->all(),
+                $lat,
+                $lng,
+                $radiusKm,
+                $hasGeo
+            );
+
+            $medicinesPayload = $medicines->map(function (Medicine $m) use ($coverage) {
                 $payload = $this->medicinePayload($m);
-                $payload['available_pharmacies_count'] = $this->availablePharmaciesCount($m->id, $lat, $lng, $radiusKm, $hasGeo);
-                $payload['nearest_pharmacy'] = $hasGeo
-                    ? $this->nearestPharmacyFor($m->id, $lat, $lng, $radiusKm)
-                    : null;
+                $payload['available_pharmacies_count'] = $coverage[$m->id]['count'] ?? 0;
+                $payload['nearest_pharmacy'] = $coverage[$m->id]['nearest'] ?? null;
 
                 return $payload;
             })->all();

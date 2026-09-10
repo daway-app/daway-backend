@@ -5,11 +5,12 @@ namespace App\Http\Controllers\web\Pharmacy;
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
-use App\Models\Notification;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine; // Assuming this model exists for pivot table
 use App\Models\SearchLog;
+use App\Services\MedicineCatalogService;
 use App\Support\Cloudinary;
+use App\Support\LowStockNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Auth;
 
 class PharmacyMedicineController extends Controller
 {
-    public function __construct()
+    public function __construct(private readonly MedicineCatalogService $catalog)
     {
         $this->middleware('auth'); // Ensure user is authenticated
         // Add middleware to check if the user is a pharmacy
@@ -150,12 +151,7 @@ class PharmacyMedicineController extends Controller
             $medicine = Medicine::findOrFail($request->medicine_id);
         } elseif ($request->filled('moh_medicine_id')) {
             $moh = MohMedicine::findOrFail($request->moh_medicine_id);
-            $medicine = Medicine::where('trade_name', $moh->trade_name)->first()
-                ?? Medicine::create([
-                    'trade_name' => $moh->trade_name,
-                    'active_ingredient' => $moh->generic_name ?? $moh->trade_name,
-                    'description' => $moh->manufacturer ?? $moh->company,
-                ]);
+            $medicine = $this->catalog->findOrCreateFromMoh($moh);
         } else {
             $request->validate([
                 // الاسم الإنجليزي إلزامي — يُرفض أي اسم يحتوي حروفاً عربية
@@ -182,20 +178,25 @@ class PharmacyMedicineController extends Controller
 
             $nameAr = trim((string) $request->input('trade_name_ar'));
 
-            $medicine = Medicine::where('trade_name', $request->trade_name)->first();
+            // D-WEB1/D-WEB2: مسار الويب اليدوي يبقى كما هو عمداً — بدون بحث بالاسم
+            // العربي وبدون بحث بكتالوج الوزارة وبدون إثراء المادة الفعالة
+            // (توحيد هذه السلوكيات قرار منفصل؛ انظر docblock الخدمة)
+            $medicine = $this->catalog->resolveByName(
+                (string) $request->trade_name,
+                null,
+                lookupAr: false,
+                lookupMoh: false
+            );
 
             if ($medicine) {
-                // إثراء الكتالوج: دواء موجود بلا اسم عربي + الصيدلية أدخله
-                if ($nameAr !== '' && empty($medicine->trade_name_ar)) {
-                    $medicine->trade_name_ar = $nameAr;
-                    $medicine->save();
-                }
+                // إثراء محدود: الاسم العربي فقط عند الفراغ (لا مادة فعالة)
+                $this->catalog->fillMissingAttributes($medicine, $nameAr, null, fillIngredient: false);
             } else {
-                $medicine = Medicine::create([
-                    'trade_name' => $request->trade_name,
-                    'trade_name_ar' => $nameAr !== '' ? $nameAr : null,
-                    'active_ingredient' => $request->active_ingredient,
-                ]);
+                $medicine = $this->catalog->createFromNames(
+                    (string) $request->trade_name,
+                    $nameAr !== '' ? $nameAr : null,
+                    (string) $request->active_ingredient
+                );
             }
         }
 
@@ -224,7 +225,9 @@ class PharmacyMedicineController extends Controller
             'is_available' => $request->boolean('is_available'),
         ]);
 
-        $this->notifyIfLowStock($pharmacyMedicine);
+        // D-FCM: توحيد مع LowStockNotifier — النسخة الخاصة المحذوفة كانت تُنشئ
+        // الإشعار بدون FCM؛ الآن الويب أيضاً يرسل push مثل API والـ sync
+        LowStockNotifier::notifyIfLowStock($pharmacyMedicine);
 
         return redirect()->route('pharmacy.medicines.index')->with('success', __('pharmacy.medicines.create.success'));
     }
@@ -279,7 +282,8 @@ class PharmacyMedicineController extends Controller
             'is_available' => $request->boolean('is_available'),
         ]);
 
-        $this->notifyIfLowStock($pharmacyMedicine);
+        // D-FCM: توحيد مع LowStockNotifier (بالإرسال)
+        LowStockNotifier::notifyIfLowStock($pharmacyMedicine);
 
         return redirect()->route('pharmacy.medicines.index')->with('success', __('pharmacy.medicines.edit.success'));
     }
@@ -302,63 +306,5 @@ class PharmacyMedicineController extends Controller
         $pharmacyMedicine->delete();
 
         return redirect()->route('pharmacy.medicines.index')->with('success', __('pharmacy.medicines.destroy.success'));
-    }
-
-    private function notifyIfLowStock(PharmacyMedicine $pm): void
-    {
-        $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
-        $pharmacyUser = $pm->pharmacy?->user;
-        if (! $pharmacyUser) {
-            return;
-        }
-        if ($pm->quantity <= 0) {
-            $this->upsertLowStockNotification(
-                $pharmacyUser->id,
-                $pm->medicine_id,
-                'out_of_stock',
-                __('layout.notif_out_of_stock', ['name' => $pm->medicine?->trade_name])
-            );
-
-            return;
-        }
-        if ($pm->quantity > 0 && $pm->quantity <= $threshold) {
-            $this->upsertLowStockNotification(
-                $pharmacyUser->id,
-                $pm->medicine_id,
-                'low_stock',
-                __('layout.notif_low_stock_pharmacy', [
-                    'name' => $pm->medicine?->trade_name,
-                    'count' => $pm->quantity,
-                ])
-            );
-        }
-    }
-
-    /**
-     * C7: تجنّب الإشعارات المكررة. إن وُجد إشعار غير مقروء من نفس النوع/الدواء،
-     * نُجدّد created_at بدل إدراج صف جديد.
-     */
-    private function upsertLowStockNotification(int $userId, int $medicineId, string $type, string $message): void
-    {
-        $existing = Notification::where('user_id', $userId)
-            ->where('medicine_id', $medicineId)
-            ->where('type', $type)
-            ->where('is_read', false)
-            ->first();
-
-        if ($existing) {
-            $existing->update(['created_at' => now()]);
-
-            return;
-        }
-
-        Notification::create([
-            'user_id' => $userId,
-            'medicine_id' => $medicineId,
-            'type' => $type,
-            'message' => $message,
-            'is_read' => false,
-            'created_at' => now(),
-        ]);
     }
 }

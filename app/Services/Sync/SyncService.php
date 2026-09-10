@@ -9,13 +9,21 @@ use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\SyncOperation;
 use App\Models\SyncState;
+use App\Models\SyncTombstone;
 use App\Models\User;
+use App\Services\InquiryService;
+use App\Services\MedicineCatalogService;
 use App\Support\LowStockNotifier;
 use Illuminate\Support\Carbon;
 use Throwable;
 
 class SyncService
 {
+    public function __construct(
+        private readonly MedicineCatalogService $catalog,
+        private readonly InquiryService $inquiries,
+    ) {
+    }
     /**
      * معالجة دفعة عمليات مزامنة من العميل (offline queue).
      * كل عملية idempotent عبر الـ uuid؛ فشل عملية واحدة لا يوقف الدفعة.
@@ -111,6 +119,7 @@ class SyncService
 
         $inventory = [];
         $inquiries = [];
+        $deletedIds = [];
 
         if ($pharmacy) {
             $inventory = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
@@ -150,6 +159,29 @@ class SyncService
                 ])
                 ->values()
                 ->all();
+
+            // M-16: tombstones — الصفوف المحذوفة منذ آخر مزامنة
+            $deletedIds = SyncTombstone::where('pharmacy_id', $pharmacy->id)
+                ->where('deleted_at', '>', $since)
+                ->pluck('pharmacy_medicine_id')
+                ->values()
+                ->all();
+        }
+
+        // M-15: watermark آمن — بداية السلسلة الجديدة = أقصى updated_at مرصود فعلياً،
+        // وليس وقت بداية الاستعلام (الصفوف المكتوبة أثناء الاستعلام لا تضيع بعد الآن)
+        $seenWatermarks = collect($inventory)->pluck('updated_at')
+            ->merge(collect($inquiries)->pluck('updated_at'))
+            ->filter()
+            ->push($since->toISOString());
+
+        $nextSince = Carbon::parse($seenWatermarks->max());
+
+        // M-16: تنظيف الأ知乎ات الأقدم من 30 يوماً (استكمال دورة حياة القبور)
+        if ($pharmacy) {
+            SyncTombstone::where('pharmacy_id', $pharmacy->id)
+                ->where('deleted_at', '<', now()->subDays(30))
+                ->delete();
         }
 
         SyncState::updateOrCreate(
@@ -165,7 +197,7 @@ class SyncService
                 'server_time' => $now->toISOString(),
                 'inventory' => $inventory,
                 'inquiries' => $inquiries,
-                'deleted_pharmacy_medicine_ids' => [],
+                'deleted_pharmacy_medicine_ids' => $deletedIds,
             ],
         ];
     }
@@ -197,6 +229,12 @@ class SyncService
             $clientTs = ! empty($item['client_updated_at'])
                 ? Carbon::parse($item['client_updated_at'])
                 : $opClientUpdatedAt;
+
+            // M-17: clamp على ساعة السيرفر — عميل بساعة متقدمة لا يتجاوز التعديلات
+            // التي حدثت فعلياً بعد لحظته على السيرفر
+            if ($clientTs !== null && $clientTs->gt(now())) {
+                $clientTs = now();
+            }
 
             if ($clientTs !== null && $pm->updated_at !== null && $clientTs->lt($pm->updated_at)) {
                 $applied[] = ['id' => $pm->id, 'status' => 'conflict', 'quantity' => (int) $pm->quantity];
@@ -240,31 +278,14 @@ class SyncService
         }
 
         // 1) الاسم الإنجليزي في الكتالوج العام، وإلا الاسم العربي إن أُرسل
-        $medicine = Medicine::where('trade_name', $tradeName)->first()
-            ?? ($tradeNameAr ? Medicine::where('trade_name_ar', $tradeNameAr)->first() : null);
+        // 2) كتالوج الوزارة يُستخدم للوصف فقط (ليس للنسخ) — نفس storeByName بالـ API
+        $medicine = $this->catalog->resolveByName($tradeName, $tradeNameAr, lookupMoh: false);
 
         if (! $medicine) {
-            // 2) كتالوج وزارة الصحة بالاسم الإنجليزي — يُنسخ للكتالوج العام عند الحاجة
             $moh = MohMedicine::where('trade_name', $tradeName)->first();
-
-            // 3) إنشاء دواء جديد
-            $medicine = Medicine::create([
-                'trade_name' => $tradeName,
-                'trade_name_ar' => $tradeNameAr,
-                'active_ingredient' => $activeIngredient,
-                'description' => $moh->manufacturer ?? ($moh->company ?? null),
-            ]);
+            $medicine = $this->catalog->createFromNames($tradeName, $tradeNameAr, $activeIngredient, $moh);
         } else {
-            // إثراء الكتالوج: دواء موجود بمادة فعالة فارغة → تُكمّل
-            if (empty($medicine->active_ingredient) && $activeIngredient !== '') {
-                $medicine->active_ingredient = $activeIngredient;
-                $medicine->save();
-            }
-
-            if ($tradeNameAr && empty($medicine->trade_name_ar)) {
-                $medicine->trade_name_ar = $tradeNameAr;
-                $medicine->save();
-            }
+            $this->catalog->fillMissingAttributes($medicine, $tradeNameAr, $activeIngredient);
         }
 
         $existing = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
@@ -322,6 +343,11 @@ class SyncService
                 ? Carbon::parse($payload['client_updated_at'])
                 : $opClientUpdatedAt;
 
+            // M-17: clamp على ساعة السيرفر (نفس قاعدة inventory.update)
+            if ($clientTs !== null && $clientTs->gt(now())) {
+                $clientTs = now();
+            }
+
             if ($clientTs !== null && $pm->updated_at !== null && $clientTs->lt($pm->updated_at)) {
                 // تعارض على الكمية — نتخطى الكمية لكن نكمل بقية الحقول
             } else {
@@ -343,32 +369,16 @@ class SyncService
         }
 
         // إثراء بيانات الكتالوج: فقط إذا لم تستخدم صيدلية أخرى نفس الدواء.
-        $catalogDirty = false;
         $pm->loadMissing('medicine');
-        $catalogMedicine = $pm->medicine;
-
-        $otherPharmaciesUsingSame = PharmacyMedicine::where('medicine_id', $catalogMedicine->id)
-            ->where('pharmacy_id', '!=', $pharmacy->id)
-            ->exists();
-
-        if (! $otherPharmaciesUsingSame) {
-            if (! empty($payload['trade_name'])) {
-                $catalogMedicine->trade_name = trim((string) $payload['trade_name']);
-                $catalogDirty = true;
-            }
-            if (! empty($payload['trade_name_ar'])) {
-                $catalogMedicine->trade_name_ar = trim((string) $payload['trade_name_ar']);
-                $catalogDirty = true;
-            }
-            if (! empty($payload['active_ingredient'])) {
-                $catalogMedicine->active_ingredient = trim((string) $payload['active_ingredient']);
-                $catalogDirty = true;
-            }
-        }
-
-        if ($catalogDirty) {
-            $catalogMedicine->save();
-        }
+        $this->catalog->applySoleOwnerEdits(
+            $pm->medicine,
+            $pharmacy->id,
+            [
+                'trade_name' => $payload['trade_name'] ?? null,
+                'trade_name_ar' => $payload['trade_name_ar'] ?? null,
+                'active_ingredient' => $payload['active_ingredient'] ?? null,
+            ]
+        );
 
         LowStockNotifier::notifyIfLowStock($pm->loadMissing('medicine', 'pharmacy.user'));
 
@@ -400,7 +410,9 @@ class SyncService
             return ['status' => SyncOperation::STATUS_FAILED, 'error' => 'الاستفسار غير موجود لهذه الصيدلية'];
         }
 
-        $inquiry->update(['status' => $status]);
+        // M-10: المنطق الموحد عبر InquiryService — sync answered يُشعر المريض الآن
+        // (كان يحديث الحالة صامتاً)
+        $this->inquiries->answer($inquiry, $pharmacy, ['status' => $status]);
 
         return [
             'status' => SyncOperation::STATUS_APPLIED,

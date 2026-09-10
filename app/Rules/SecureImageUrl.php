@@ -37,15 +37,11 @@ class SecureImageUrl implements ValidationRule
             return;
         }
 
-        // قائمة بيضاء: Cloudinary فقط (يمكن توسيعها لاحقاً).
-        $allowed = ['res.cloudinary.com', 'cloudinary.com'];
-        $isAllowed = false;
-        foreach ($allowed as $allowedHost) {
-            if (str_ends_with(strtolower($host), strtolower($allowedHost))) {
-                $isAllowed = true;
-                break;
-            }
-        }
+        // M-5: مطابقة تامة للمضيف (بدون suffix match) — evilcloudinary.com / notcloudinary.com
+        // يجب أن تُرفض؛ يُسمح فقط بـ res.cloudinary.com و subdomain cloud-name فيه
+        $host = strtolower((string) $host);
+        $isAllowed = $host === 'res.cloudinary.com'
+            || preg_match('#^[a-z0-9-]+\.res\.cloudinary\.com$#', $host) === 1;
 
         if (! $isAllowed) {
             $fail("حقل {$attribute} يجب أن يكون رابط Cloudinary (https://res.cloudinary.com/...).");

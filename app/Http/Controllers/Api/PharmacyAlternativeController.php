@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
-use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
+use App\Services\PharmacyContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +21,7 @@ class PharmacyAlternativeController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }
@@ -77,7 +77,7 @@ class PharmacyAlternativeController extends Controller
             'alternative_id' => 'required|integer|exists:medicines,id',
         ]);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy) {
             return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
         }
@@ -137,7 +137,7 @@ class PharmacyAlternativeController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403);
 
-        $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+        $pharmacy = PharmacyContext::forUser($user);
         if (! $pharmacy || $base->pharmacy_id !== $pharmacy->id) {
             // authorization: الصيدلية المالكة للدواء الأساسي يجب أن تطابق صيدلية المستخدم
             return response()->json(['success' => false, 'message' => 'الدواء غير موجود في مخزون الصيدلية'], 404);

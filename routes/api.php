@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Route;
 // ✅ Routes Public
 Route::post('/otp/send', [AuthController::class, 'sendOtp'])->middleware('throttle:otp');
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:otp-verify');
-Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middleware('throttle:login');
+Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middleware(['throttle:login', 'throttle:login-account']);
 
 // Medicines Routes Public
 Route::get('/medicines', [MedicineController::class, 'index']);
@@ -70,8 +70,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
-    // Patient inquiries
-    Route::apiResource('patient/inquiries', PatientInquiryController::class)->only(['index', 'store']);
+    // Patient inquiries — M-9: throttle مخصص للكتابة على store (يولّد إشعاراً + FCM)
+    // بدون أسماء صريحة — المسار الويب يحمل الاسم نفسه (route('patient.inquiries.store'))
+    Route::get('patient/inquiries', [PatientInquiryController::class, 'index']);
+    Route::post('patient/inquiries', [PatientInquiryController::class, 'store'])->middleware('throttle:writes');
 
     // Patient-scoped routes (Phase 9 — SRS endpoints).
     // ملاحظة على ترتيب المسارات: `medicines/search` يجب أن يسبق `medicines/{medicine}`
@@ -102,7 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Device tokens (FCM) — خارج prefix('patient') لأن كلا الـ roles (patient/pharmacy) قد يسجّلان جهازاً.
-    Route::post('device-tokens', [DeviceTokenController::class, 'store']);
+    Route::post('device-tokens', [DeviceTokenController::class, 'store'])->middleware('throttle:writes');
     Route::delete('device-tokens/current', [DeviceTokenController::class, 'destroy']);
 
     // Pharmacy inquiries (role-checked)
@@ -114,14 +116,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('medicines/search', [PharmacyMedicineController::class, 'search']);
         // إضافة دواء بالاسم مباشرة (للموبايل) — بدون medicine_id أو moh_medicine_id
-        Route::post('medicines/by-name', [PharmacyMedicineController::class, 'storeByName']);
+        Route::post('medicines/by-name', [PharmacyMedicineController::class, 'storeByName'])->middleware('throttle:writes');
         Route::apiResource('medicines', PharmacyMedicineController::class)
             ->names('api.pharmacy.medicines');
         Route::get('medicines/{medicine}/alternatives', [PharmacyMedicineController::class, 'alternatives']);
 
         Route::get('inventory', [PharmacyInventoryController::class, 'index']);
-        Route::put('inventory/{medicine}', [PharmacyInventoryController::class, 'update']);
-        Route::post('inventory/bulk', [PharmacyInventoryController::class, 'bulkUpdate']);
+        Route::put('inventory/{medicine}', [PharmacyInventoryController::class, 'update'])->middleware('throttle:writes');
+        Route::post('inventory/bulk', [PharmacyInventoryController::class, 'bulkUpdate'])->middleware('throttle:writes');
 
         Route::get('alternatives', [PharmacyAlternativeController::class, 'index']);
         Route::post('alternatives', [PharmacyAlternativeController::class, 'store']);
@@ -132,13 +134,14 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Ratings
-    Route::apiResource('ratings', RatingController::class)->only(['index', 'store']);
+    Route::get('ratings', [RatingController::class, 'index']);
+    Route::post('ratings', [RatingController::class, 'store'])->middleware('throttle:writes');
 });
 
 // Offline-first Sync (Pharmacy web PWA)
 Route::middleware('auth')->post('/sync/token', [SyncController::class, 'issueToken']);
 
 Route::middleware(['auth:sanctum', 'role:pharmacy'])->prefix('sync')->group(function () {
-    Route::post('push', [SyncController::class, 'push']);
+    Route::post('push', [SyncController::class, 'push'])->middleware('throttle:writes');
     Route::get('pull', [SyncController::class, 'pull']);
 });
