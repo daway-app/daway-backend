@@ -10,12 +10,16 @@ use App\Models\PharmacyMedicine;
 use App\Models\SyncOperation;
 use App\Models\SyncState;
 use App\Models\User;
+use App\Services\MedicineCatalogService;
 use App\Support\LowStockNotifier;
 use Illuminate\Support\Carbon;
 use Throwable;
 
 class SyncService
 {
+    public function __construct(private readonly MedicineCatalogService $catalog)
+    {
+    }
     /**
      * معالجة دفعة عمليات مزامنة من العميل (offline queue).
      * كل عملية idempotent عبر الـ uuid؛ فشل عملية واحدة لا يوقف الدفعة.
@@ -240,31 +244,14 @@ class SyncService
         }
 
         // 1) الاسم الإنجليزي في الكتالوج العام، وإلا الاسم العربي إن أُرسل
-        $medicine = Medicine::where('trade_name', $tradeName)->first()
-            ?? ($tradeNameAr ? Medicine::where('trade_name_ar', $tradeNameAr)->first() : null);
+        // 2) كتالوج الوزارة يُستخدم للوصف فقط (ليس للنسخ) — نفس storeByName بالـ API
+        $medicine = $this->catalog->resolveByName($tradeName, $tradeNameAr, lookupMoh: false);
 
         if (! $medicine) {
-            // 2) كتالوج وزارة الصحة بالاسم الإنجليزي — يُنسخ للكتالوج العام عند الحاجة
             $moh = MohMedicine::where('trade_name', $tradeName)->first();
-
-            // 3) إنشاء دواء جديد
-            $medicine = Medicine::create([
-                'trade_name' => $tradeName,
-                'trade_name_ar' => $tradeNameAr,
-                'active_ingredient' => $activeIngredient,
-                'description' => $moh->manufacturer ?? ($moh->company ?? null),
-            ]);
+            $medicine = $this->catalog->createFromNames($tradeName, $tradeNameAr, $activeIngredient, $moh);
         } else {
-            // إثراء الكتالوج: دواء موجود بمادة فعالة فارغة → تُكمّل
-            if (empty($medicine->active_ingredient) && $activeIngredient !== '') {
-                $medicine->active_ingredient = $activeIngredient;
-                $medicine->save();
-            }
-
-            if ($tradeNameAr && empty($medicine->trade_name_ar)) {
-                $medicine->trade_name_ar = $tradeNameAr;
-                $medicine->save();
-            }
+            $this->catalog->fillMissingAttributes($medicine, $tradeNameAr, $activeIngredient);
         }
 
         $existing = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
@@ -343,32 +330,16 @@ class SyncService
         }
 
         // إثراء بيانات الكتالوج: فقط إذا لم تستخدم صيدلية أخرى نفس الدواء.
-        $catalogDirty = false;
         $pm->loadMissing('medicine');
-        $catalogMedicine = $pm->medicine;
-
-        $otherPharmaciesUsingSame = PharmacyMedicine::where('medicine_id', $catalogMedicine->id)
-            ->where('pharmacy_id', '!=', $pharmacy->id)
-            ->exists();
-
-        if (! $otherPharmaciesUsingSame) {
-            if (! empty($payload['trade_name'])) {
-                $catalogMedicine->trade_name = trim((string) $payload['trade_name']);
-                $catalogDirty = true;
-            }
-            if (! empty($payload['trade_name_ar'])) {
-                $catalogMedicine->trade_name_ar = trim((string) $payload['trade_name_ar']);
-                $catalogDirty = true;
-            }
-            if (! empty($payload['active_ingredient'])) {
-                $catalogMedicine->active_ingredient = trim((string) $payload['active_ingredient']);
-                $catalogDirty = true;
-            }
-        }
-
-        if ($catalogDirty) {
-            $catalogMedicine->save();
-        }
+        $this->catalog->applySoleOwnerEdits(
+            $pm->medicine,
+            $pharmacy->id,
+            [
+                'trade_name' => $payload['trade_name'] ?? null,
+                'trade_name_ar' => $payload['trade_name_ar'] ?? null,
+                'active_ingredient' => $payload['active_ingredient'] ?? null,
+            ]
+        );
 
         LowStockNotifier::notifyIfLowStock($pm->loadMissing('medicine', 'pharmacy.user'));
 
