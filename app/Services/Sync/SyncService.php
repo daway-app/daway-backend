@@ -10,6 +10,7 @@ use App\Models\PharmacyMedicine;
 use App\Models\SyncOperation;
 use App\Models\SyncState;
 use App\Models\User;
+use App\Services\InquiryService;
 use App\Services\MedicineCatalogService;
 use App\Support\LowStockNotifier;
 use Illuminate\Support\Carbon;
@@ -17,8 +18,10 @@ use Throwable;
 
 class SyncService
 {
-    public function __construct(private readonly MedicineCatalogService $catalog)
-    {
+    public function __construct(
+        private readonly MedicineCatalogService $catalog,
+        private readonly InquiryService $inquiries,
+    ) {
     }
     /**
      * معالجة دفعة عمليات مزامنة من العميل (offline queue).
@@ -371,7 +374,9 @@ class SyncService
             return ['status' => SyncOperation::STATUS_FAILED, 'error' => 'الاستفسار غير موجود لهذه الصيدلية'];
         }
 
-        $inquiry->update(['status' => $status]);
+        // M-10: المنطق الموحد عبر InquiryService — sync answered يُشعر المريض الآن
+        // (كان يحديث الحالة صامتاً)
+        $this->inquiries->answer($inquiry, $pharmacy, ['status' => $status]);
 
         return [
             'status' => SyncOperation::STATUS_APPLIED,

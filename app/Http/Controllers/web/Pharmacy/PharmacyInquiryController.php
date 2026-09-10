@@ -5,12 +5,13 @@ namespace App\Http\Controllers\web\Pharmacy;
 use App\Http\Controllers\Controller;
 use App\Models\PatientInquiry;
 use App\Models\Pharmacy;
+use App\Services\InquiryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PharmacyInquiryController extends Controller
 {
-    public function __construct()
+    public function __construct(private readonly InquiryService $inquiries)
     {
         $this->middleware('auth');
         $this->middleware(function ($request, $next) {
@@ -45,7 +46,11 @@ class PharmacyInquiryController extends Controller
         $data = $request->validate([
             'status' => 'required|string|in:' . implode(',', PatientInquiry::STATUSES),
         ]);
-        $inquiry->update(['status' => $data['status']]);
+
+        // M-10/M-36: المنطق الموحد عبر InquiryService — الويب أصبح يُشعر المريض
+        // عند answered مثل الـ API (كان يحديث الحالة صامتاً)
+        $this->inquiries->answer($inquiry, $pharmacy, ['status' => $data['status']]);
+
         return redirect()->route('pharmacy.inquiries.index')->with('success', 'تم تحديث حالة الاستفسار');
     }
 }
