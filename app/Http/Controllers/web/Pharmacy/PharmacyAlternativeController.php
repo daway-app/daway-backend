@@ -31,28 +31,20 @@ class PharmacyAlternativeController extends Controller
      *
      * @return Response
      */
-    public function index(Request $request)
+    public function index()
     {
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
 
-        // الإحصائيات تبقى شاملة (مش متأثرة بالـ pagination)
-        $allMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-            ->with(['medicine', 'medicine.alternatives'])
+        // Get all medicines that this pharmacy offers
+        $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->with(['medicine', 'medicine.alternatives']) // Eager load Medicine and its alternatives
             ->get();
 
-        $totalAlternatives = $allMedicines->pluck('medicine')->sum(fn ($m) => $m->alternatives->count());
-        $availableAlternatives = $allMedicines->filter(fn ($pm) => $pm->medicine->alternatives->isNotEmpty())->count();
-        $needsAlternative = $allMedicines->filter(fn ($pm) => $pm->quantity <= 0 && $pm->medicine->alternatives->isEmpty())->count();
+        $totalAlternatives = $pharmacyMedicines->pluck('medicine')->sum(fn ($m) => $m->alternatives->count());
+        $availableAlternatives = $pharmacyMedicines->filter(fn ($pm) => $pm->medicine->alternatives->isNotEmpty())->count();
 
-        // 7 بصفحة + pagination لتفادي تحميل الكل دفعة واحدة
-        $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-            ->with(['medicine', 'medicine.alternatives'])
-            ->orderByDesc('updated_at')
-            ->paginate(7)
-            ->withQueryString();
-
-        return view('pharmacy.alternatives.index', compact('pharmacyMedicines', 'pharmacy', 'totalAlternatives', 'availableAlternatives', 'needsAlternative'));
+        return view('pharmacy.alternatives.index', compact('pharmacyMedicines', 'pharmacy', 'totalAlternatives', 'availableAlternatives'));
     }
 
     /**
