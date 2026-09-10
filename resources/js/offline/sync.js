@@ -38,7 +38,15 @@ export const sync = {
             setBanner('offline');
         });
         // heartbeat: navigator.onLine lies on captive portals
-        this.timer = setInterval(() => this.checkThenSync(), 30000);
+        this.timer = setInterval(() => {
+            // H-10: تاب مخفي = إيقاف الـ heartbeat (المتصفح يستأنف عند العودة)
+            if (document.hidden) return;
+            this.checkThenSync();
+        }, 30000);
+        // H-10: عند إعادة ظهور التاب نفحص فوراً بعد الغياب الطويل
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) this.checkThenSync();
+        });
         if (navigator.onLine) this.checkThenSync();
         else { this.serverUp = false; this.lastCheckAt = Date.now(); setBanner('offline'); }
     },

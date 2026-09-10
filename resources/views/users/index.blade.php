@@ -202,6 +202,10 @@
             clearTimeout(window._searchTimer);
             window._searchTimer = setTimeout(function () {
                 const query = document.getElementById('userSearchInput').value.trim();
+                // M-28: بحث بحرف واحد = فحص كامل الجدول على السيرفر — لا نلاحقه إلا من حرفين،
+                // والتفريغ يعيد القائمة كاملة بلا navigation
+                if (query.length === 1) return;
+                if (query === '' && window.location.search.indexOf('q=') === -1) return;
                 window.location.href = '{{ route('users.index') }}?role=' + encodeURIComponent(currentRoleFilter) + '&q=' + encodeURIComponent(query);
             }, 500);
         }

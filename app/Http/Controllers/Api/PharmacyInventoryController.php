@@ -118,11 +118,16 @@ class PharmacyInventoryController extends Controller
 
         $items = $request->validated()['items'];
         $updated = 0;
+        $affectedIds = [];
+
+        // M-11: batched — استعلام واحد بدل SELECT لكل عنصر (N+1)
+        $rows = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->whereIn('id', collect($items)->pluck('id')->all())
+            ->get()
+            ->keyBy('id');
 
         foreach ($items as $item) {
-            $pm = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-                ->where('id', $item['id'])
-                ->first();
+            $pm = $rows->get($item['id']);
 
             if (! $pm) {
                 continue;
@@ -134,9 +139,16 @@ class PharmacyInventoryController extends Controller
             }
 
             $pm->update($payload);
-            LowStockNotifier::notifyIfLowStock($pm);
+            $affectedIds[] = $pm->id;
             $updated++;
         }
+
+        // إشعار واحد مجمّع (نفس نمط SyncService::notifyAffected) بدل إشعار لكل صف
+        $affected = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->whereIn('id', $affectedIds)
+            ->with('medicine', 'pharmacy.user')
+            ->get()
+            ->each(fn (PharmacyMedicine $pm) => LowStockNotifier::notifyIfLowStock($pm));
 
         return response()->json([
             'success' => true,

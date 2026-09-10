@@ -208,10 +208,18 @@ class NotificationController extends Controller
 
     /**
      * يولّد إشعارات النظام (نقص مخزون...) ثم يكسر الكاش إذا أُنشئ جديد.
+     * M-22: مرة واحدة على الأكثر لكل دقيقة لكل مستخدم (throttle عبر الكاش) —
+     * كانت تعمل عند كل poll بتكلفة 3-5 queries لكل استدعاء.
      */
     private function syncNotifications(User $user): void
     {
         try {
+            $throttleKey = 'notif_sync_at_'.Auth::id();
+
+            if (! Cache::add($throttleKey, true, 60)) {
+                return;
+            }
+
             if (NotificationGenerator::syncForUser($user)) {
                 Cache::forget('notifications_count_'.Auth::id());
                 Cache::forget('notifications_feed_'.Auth::id());
