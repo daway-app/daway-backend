@@ -43,15 +43,18 @@ async function precacheBuildAssets() {
 
 async function precachePharmacyPages() {
     const cache = await caches.open(VERSION);
-    await Promise.allSettled(PHARMACY_PAGES.map(async (url) => {
+    // A6-9: تسلسل بدل تزامن — 8 صفحات مصادَقة ثقيلة في وقت واحد كانت تُجمّد
+    // العامل الواحد بعد كل deploy؛ طلب واحد كل 400ms يوزّع الحمل
+    for (const url of PHARMACY_PAGES) {
         try {
-            if (await cache.match(url)) return; // مخزّنة مسبقاً
+            if (await cache.match(url)) continue; // موجود مسبقاً — تخطَّ
             const response = await fetch(url, { credentials: 'same-origin', redirect: 'follow' });
             if (response && response.ok && response.type === 'basic') {
-                await cache.put(url, response);
+                await cache.put(url, response.clone());
             }
-        } catch (e) { /* offline أو فشل شبكة — ستُجرّب لاحقاً عبر DAWAY_PREFETCH */ }
-    }));
+        } catch (e) { /* offline أو خطأ متقطع — نتجاهل (يعاد لاحقاً عبر DAWAY_PREFETCH) */ }
+        await new Promise((r) => setTimeout(r, 400));
+    }
 }
 
 self.addEventListener('install', (event) => {

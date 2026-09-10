@@ -7,7 +7,6 @@
     @include('partials.pharmacy-hub-i18n')
 
     @php
-        $needsAlternative = $pharmacyMedicines->filter(fn($pm) => $pm->quantity <= 0 && $pm->medicine->alternatives->isEmpty());
         $confirmDelete = __('pharmacy.alternatives.index.confirm_delete');
     @endphp
 

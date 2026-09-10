@@ -7,7 +7,7 @@ use App\Models\Favorite;
 use App\Models\Medicine;
 use App\Support\Cloudinary;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redirect;
 
@@ -15,44 +15,44 @@ class MedicineController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * A1-7: ترقيم وتجميع على مستوى SQL بدل تحميل الكتالوج كاملاً + كل صفوف
+     * المخزون بالـ PHP (كان: Cache::remember للجدولين + array_slice).
      */
     public function index()
     {
         $perPage = 10;
-        $page = (int) request()->get('page', 1);
 
-        $data = Cache::remember('medicines_list_cache_v3', 30, function () {
-            $medicines = Medicine::with('pharmacyMedicines')->latest()->get();
+        // لكل دواء: مجموع الكميات، عدد الصيدليات، أقل سعر موجب
+        $perMedicine = DB::table('pharmacy_medicines')
+            ->selectRaw('medicine_id, SUM(quantity) as stock, COUNT(*) as pharmacy_count, MIN(CASE WHEN price > 0 THEN price END) as min_price')
+            ->groupBy('medicine_id');
 
-            $rows = $medicines->map(function ($m) {
-                $pms = $m->pharmacyMedicines;
-                $totalStock = (int) $pms->sum('quantity');
-                $prices = $pms->pluck('price')->filter(fn ($p) => (float) $p > 0);
+        $query = DB::table('medicines as m')
+            ->leftJoinSub($perMedicine, 'pm', 'pm.medicine_id', '=', 'm.id')
+            ->selectRaw('m.id, m.trade_name, m.active_ingredient, m.is_available,
+                COALESCE(pm.stock, 0) as stock,
+                COALESCE(pm.pharmacy_count, 0) as pharmacy_count,
+                pm.min_price')
+            ->orderByDesc('m.created_at');
 
-                return [
-                    'id' => $m->id,
-                    'trade_name' => $m->trade_name,
-                    'active_ingredient' => $m->active_ingredient,
-                    'stock' => $totalStock,
-                    'is_available' => (bool) $m->is_available,
-                    'pharmacy_count' => $pms->count(),
-                    'min_price' => $prices->min() !== null ? (float) $prices->min() : null,
-                ];
-            })->values()->all();
+        $medicines = $query->paginate($perPage)->withQueryString();
 
-            return ['rows' => $rows, 'total' => count($rows)];
-        });
+        // الإحصائيات العامة — نفس الاستعلام المجمّع بدون حدود الصفحة
+        $statsRow = (clone $query)->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN COALESCE(pm.stock, 0) <= 0 THEN 1 ELSE 0 END) as out_c,
+                SUM(CASE WHEN COALESCE(pm.stock, 0) > 0 AND COALESCE(pm.stock, 0) <= 10 THEN 1 ELSE 0 END) as low_c,
+                SUM(CASE WHEN COALESCE(pm.pharmacy_count, 0) > 0 THEN 1 ELSE 0 END) as in_pharmacy
+            ")->first();
 
-        $rows = $data['rows'];
-        $total = $data['total'];
-
-        $out = count(array_filter($rows, fn ($r) => $r['stock'] <= 0));
-        $low = count(array_filter($rows, fn ($r) => $r['stock'] > 0 && $r['stock'] <= 10));
+        $total = (int) ($statsRow->total ?? 0);
+        $out = (int) ($statsRow->out_c ?? 0);
+        $low = (int) ($statsRow->low_c ?? 0);
         $available = max(0, $total - $out - $low);
+        $inPharmacy = (int) ($statsRow->in_pharmacy ?? 0);
 
         $pct = fn ($count) => $total > 0 ? round(($count / $total) * 100) : 0;
-
-        $inPharmacy = count(array_filter($rows, fn ($r) => $r['pharmacy_count'] > 0));
 
         $stats = [
             'total' => $total,
@@ -65,15 +65,6 @@ class MedicineController extends Controller
             'in_pharmacy_pct' => $pct($inPharmacy),
             'not_in_pharmacy_pct' => $pct($total - $inPharmacy),
         ];
-
-        $items = array_map(function ($row) {
-            return (object) $row;
-        }, array_slice($rows, ($page - 1) * $perPage, $perPage));
-
-        $medicines = new LengthAwarePaginator($items, $data['total'], $perPage, $page, [
-            'path' => request()->url(),
-            'query' => request()->query(),
-        ]);
 
         return view('medicines.index', compact('medicines', 'stats'));
     }

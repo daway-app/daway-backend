@@ -5,8 +5,6 @@ namespace App\Http\Controllers\web\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
@@ -15,11 +13,13 @@ class UserController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * A1-7: ترقيم على مستوى SQL بدل تحميل الجدول كاملاً بالـ PHP
+     * (كان: Cache::remember لكل الجدول + array_filter + array_slice)
      */
     public function index()
     {
         $perPage = 10;
-        $page = (int) request()->get('page', 1);
         $role = request()->get('role', 'all');
         $q = mb_strtolower(trim((string) request()->get('q', '')));
 
@@ -27,64 +27,35 @@ class UserController extends Controller
             $role = 'all';
         }
 
-        $data = Cache::remember('users_list_cache', 30, function () {
-            $rows = User::latest()->get()->map(function ($u) {
-                return [
-                    'id' => $u->id,
-                    'name' => $u->name,
-                    'email' => $u->email,
-                    'phone' => $u->phone,
-                    'role' => $u->role,
-                    'avatar' => $u->avatar,
-                    'is_active' => $u->is_active,
-                    'updated_at' => $u->updated_at ? $u->updated_at->format('Y-m-d H:i:s') : null,
-                ];
-            })->values()->all();
-
-            return ['rows' => $rows, 'total' => count($rows)];
-        });
-
-        $rows = $data['rows'];
+        $query = User::query()->latest();
 
         if ($role !== 'all') {
-            $rows = array_values(array_filter($rows, fn ($r) => $r['role'] === $role));
+            $query->where('role', $role);
         }
 
         if ($q !== '') {
-            $rows = array_values(array_filter($rows, function ($r) use ($q) {
-                $hay = mb_strtolower($r['name'].' '.$r['phone'].' '.($r['email'] ?? ''));
-
-                return str_contains($hay, $q);
-            }));
+            $like = '%'.addcslashes($q, '%_\\').'%';
+            $query->where(function ($qq) use ($like) {
+                $qq->whereRaw('LOWER(name) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(phone) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
+            });
         }
 
-        $users = $this->paginateArray($rows, count($rows), $perPage, $page);
+        $users = $query->paginate($perPage)->withQueryString();
 
-        $roleCounts = ['admin' => 0, 'pharmacy' => 0, 'patient' => 0];
-        foreach ($data['rows'] as $row) {
-            if (isset($roleCounts[$row['role']])) {
-                $roleCounts[$row['role']]++;
-            }
-        }
+        $counts = User::query()
+            ->selectRaw('role, COUNT(*) as c')
+            ->groupBy('role')
+            ->pluck('c', 'role');
+
+        $roleCounts = [
+            'admin' => (int) ($counts['admin'] ?? 0),
+            'pharmacy' => (int) ($counts['pharmacy'] ?? 0),
+            'patient' => (int) ($counts['patient'] ?? 0),
+        ];
 
         return view('users.index', compact('users', 'roleCounts', 'role', 'q'));
-    }
-
-    private function paginateArray(array $rows, int $total, int $perPage, int $page)
-    {
-        $items = array_map(function ($row) {
-            $obj = (object) $row;
-            if (! empty($obj->updated_at)) {
-                $obj->updated_at = Carbon::parse($obj->updated_at);
-            }
-
-            return $obj;
-        }, array_slice($rows, ($page - 1) * $perPage, $perPage));
-
-        return new LengthAwarePaginator($items, $total, $perPage, $page, [
-            'path' => request()->url(),
-            'query' => request()->query(),
-        ]);
     }
 
     private function clearUsersIndexCache()

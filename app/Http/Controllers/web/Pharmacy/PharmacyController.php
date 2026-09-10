@@ -19,41 +19,12 @@ class PharmacyController extends Controller
 {
     public function index()
     {
-        $perPage = 10;
-        $page = (int) request()->get('page', 1);
-
-        $data = Cache::remember('pharmacies_list_cache', 30, function () {
-            $rows = Pharmacy::withCount('pharmacyMedicines')->latest()->get()->map(function ($p) {
-                return [
-                    'id' => $p->id,
-                    'pharmacy_name' => $p->pharmacy_name,
-                    'pharmacy_custom_id' => $p->pharmacy_custom_id,
-                    'address' => $p->address,
-                    'phone_number' => $p->phone_number,
-                    'latitude' => $p->latitude,
-                    'longitude' => $p->longitude,
-                    'is_active' => $p->is_active,
-                    'pharmacy_medicines_count' => $p->pharmacy_medicines_count ?? 0,
-                    'created_at' => $p->created_at ? $p->created_at->format('Y-m-d H:i:s') : null,
-                ];
-            })->values()->all();
-
-            return ['rows' => $rows, 'total' => count($rows)];
-        });
-
-        $items = array_map(function ($row) {
-            $obj = (object) $row;
-            if (! empty($obj->created_at)) {
-                $obj->created_at = Carbon::parse($obj->created_at);
-            }
-
-            return $obj;
-        }, array_slice($data['rows'], ($page - 1) * $perPage, $perPage));
-
-        $pharmacies = new LengthAwarePaginator($items, $data['total'], $perPage, $page, [
-            'path' => request()->url(),
-            'query' => request()->query(),
-        ]);
+        // A1-7: ترقيم SQL مباشر — withCount يبقى (استعلام مجمّع واحد بدل الجدول كاملاً بالكاش)
+        $pharmacies = Pharmacy::query()
+            ->withCount('pharmacyMedicines')
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         return view('pharmacies.index', compact('pharmacies'));
     }

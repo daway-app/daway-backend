@@ -81,13 +81,25 @@ class DashboardController extends Controller
             $chartPharmacies = [];
             $chartAll = [];
             $weekLabels = [];
+            // A5-15: 4 استعلامات (pluck للتواريخ فقط) بدل 32 COUNT —
+            // والتجميع الأسبوعي بالـ PHP يحافظ على منطق بداية الأسبوع المحلي
+            $firstWeekStart = $now->copy()->subWeeks(7)->startOfWeek($weekStart);
+            $patientsCreated = User::where('role', 'patient')->where('created_at', '>=', $firstWeekStart)->pluck('created_at');
+            $allMedicinesCreated = Medicine::where('created_at', '>=', $firstWeekStart)->pluck('created_at');
+            $searchesCreated = SearchLog::where('created_at', '>=', $firstWeekStart)->pluck('created_at');
+            $pharmaciesCreated = User::where('role', 'pharmacy')->where('created_at', '>=', $firstWeekStart)->pluck('created_at');
+
+            $countInWeek = function ($collection, $start, $end) {
+                return $collection->filter(fn ($c) => $c >= $start && $c < $end)->count();
+            };
+
             for ($i = 7; $i >= 0; $i--) {
                 $start = $now->copy()->subWeeks($i)->startOfWeek($weekStart);
                 $end = $now->copy()->subWeeks($i - 1)->startOfWeek($weekStart);
-                $weekUsers = User::where('role', 'patient')->whereBetween('created_at', [$start, $end])->count();
-                $weekMedicines = Medicine::whereBetween('created_at', [$start, $end])->count();
-                $weekSearches = SearchLog::whereBetween('created_at', [$start, $end])->count();
-                $weekPharmacies = User::where('role', 'pharmacy')->whereBetween('created_at', [$start, $end])->count();
+                $weekUsers = $countInWeek($patientsCreated, $start, $end);
+                $weekMedicines = $countInWeek($allMedicinesCreated, $start, $end);
+                $weekSearches = $countInWeek($searchesCreated, $start, $end);
+                $weekPharmacies = $countInWeek($pharmaciesCreated, $start, $end);
                 $chartUsers[] = $weekUsers;
                 $chartMedicines[] = $weekMedicines;
                 $chartSearches[] = $weekSearches;
