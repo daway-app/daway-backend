@@ -11,6 +11,7 @@ use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
 use App\Services\MedicineCatalogService;
 use App\Services\PharmacyContext;
+use App\Models\SyncTombstone;
 use App\Support\Cloudinary;
 use App\Support\LowStockNotifier;
 use Illuminate\Http\JsonResponse;
@@ -314,6 +315,13 @@ class PharmacyMedicineController extends Controller
         }
 
         $medicine->delete();
+
+        // M-16: tombstone — حتى يعرف الـ PWA بالحذف عند الـ pull
+        SyncTombstone::create([
+            'pharmacy_id' => $pharmacy->id,
+            'pharmacy_medicine_id' => $medicine->id,
+            'deleted_at' => now(),
+        ]);
 
         return response()->json([
             'success' => true,

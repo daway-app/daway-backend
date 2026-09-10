@@ -9,6 +9,7 @@ use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\SyncOperation;
 use App\Models\SyncState;
+use App\Models\SyncTombstone;
 use App\Models\User;
 use App\Services\InquiryService;
 use App\Services\MedicineCatalogService;
@@ -118,6 +119,7 @@ class SyncService
 
         $inventory = [];
         $inquiries = [];
+        $deletedIds = [];
 
         if ($pharmacy) {
             $inventory = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
@@ -157,6 +159,29 @@ class SyncService
                 ])
                 ->values()
                 ->all();
+
+            // M-16: tombstones — الصفوف المحذوفة منذ آخر مزامنة
+            $deletedIds = SyncTombstone::where('pharmacy_id', $pharmacy->id)
+                ->where('deleted_at', '>', $since)
+                ->pluck('pharmacy_medicine_id')
+                ->values()
+                ->all();
+        }
+
+        // M-15: watermark آمن — بداية السلسلة الجديدة = أقصى updated_at مرصود فعلياً،
+        // وليس وقت بداية الاستعلام (الصفوف المكتوبة أثناء الاستعلام لا تضيع بعد الآن)
+        $seenWatermarks = collect($inventory)->pluck('updated_at')
+            ->merge(collect($inquiries)->pluck('updated_at'))
+            ->filter()
+            ->push($since->toISOString());
+
+        $nextSince = Carbon::parse($seenWatermarks->max());
+
+        // M-16: تنظيف الأ知乎ات الأقدم من 30 يوماً (استكمال دورة حياة القبور)
+        if ($pharmacy) {
+            SyncTombstone::where('pharmacy_id', $pharmacy->id)
+                ->where('deleted_at', '<', now()->subDays(30))
+                ->delete();
         }
 
         SyncState::updateOrCreate(
@@ -172,7 +197,7 @@ class SyncService
                 'server_time' => $now->toISOString(),
                 'inventory' => $inventory,
                 'inquiries' => $inquiries,
-                'deleted_pharmacy_medicine_ids' => [],
+                'deleted_pharmacy_medicine_ids' => $deletedIds,
             ],
         ];
     }
@@ -204,6 +229,12 @@ class SyncService
             $clientTs = ! empty($item['client_updated_at'])
                 ? Carbon::parse($item['client_updated_at'])
                 : $opClientUpdatedAt;
+
+            // M-17: clamp على ساعة السيرفر — عميل بساعة متقدمة لا يتجاوز التعديلات
+            // التي حدثت فعلياً بعد لحظته على السيرفر
+            if ($clientTs !== null && $clientTs->gt(now())) {
+                $clientTs = now();
+            }
 
             if ($clientTs !== null && $pm->updated_at !== null && $clientTs->lt($pm->updated_at)) {
                 $applied[] = ['id' => $pm->id, 'status' => 'conflict', 'quantity' => (int) $pm->quantity];
@@ -311,6 +342,11 @@ class SyncService
             $clientTs = ! empty($payload['client_updated_at'])
                 ? Carbon::parse($payload['client_updated_at'])
                 : $opClientUpdatedAt;
+
+            // M-17: clamp على ساعة السيرفر (نفس قاعدة inventory.update)
+            if ($clientTs !== null && $clientTs->gt(now())) {
+                $clientTs = now();
+            }
 
             if ($clientTs !== null && $pm->updated_at !== null && $clientTs->lt($pm->updated_at)) {
                 // تعارض على الكمية — نتخطى الكمية لكن نكمل بقية الحقول
