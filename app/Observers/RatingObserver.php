@@ -13,6 +13,13 @@ class RatingObserver
         if (! $pharmacy || ! $pharmacy->user) {
             return;
         }
+
+        // H-6: إعادة حساب المعدل المجمّع بعد كل تقييم — العمود يُقرأ من
+        // contract الجوال (pharmacyRowPayload/payload) وكان ميتاً بدون هذه الصيانة
+        $pharmacy->forceFill([
+            'avg_rating' => round((float) $pharmacy->ratings()->avg('stars_rating'), 2),
+        ])->save();
+
         $userId = $pharmacy->user->id;
 
         // C7: لا تُنشئ إشعار تقييم جديد إن وُجد إشعار تقييم سابق غير مقروء
