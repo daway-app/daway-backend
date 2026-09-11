@@ -4,7 +4,9 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetAppLocale
@@ -31,7 +33,11 @@ class SetAppLocale
 
         if (! $locale) {
             try {
-                $locale = DB::table('settings')->where('key', 'default_language')->value('value');
+                // استعلام settings يُنفَّذ في كل طلب بدون جلسة/بدون ?lang —
+                // القيمة تتغير نادراً → كاش 5 دقائق يوفر رحلة DB في كل طلب.
+                $locale = Cache::remember('app_default_language', 300, function () {
+                    return DB::table('settings')->where('key', 'default_language')->value('value');
+                });
             } catch (\Throwable) {
                 $locale = null;
             }

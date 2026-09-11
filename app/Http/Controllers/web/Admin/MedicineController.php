@@ -44,13 +44,18 @@ class MedicineController extends Controller
 
         $medicines = $query->paginate($perPage)->withQueryString();
 
-        // الإحصائيات العامة — استعلام مجمّع نظيف على نفس الـ joins بدون أعمدة غير مجمّعة
-        $statsRow = (clone $base)->selectRaw("
+        // الإحصائيات العامة — كاش 60 ثانية بمفتاح versioned (تعديل دواء يرفع
+        // med_medicines_version → كاش جديد تلقائياً). يوفر joinSub كامل كل فتح.
+        $statsRow = Cache::remember(
+            'admin_medicines_stats|v'.Cache::get('med_medicines_version', 1),
+            60,
+            fn () => (clone $base)->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN COALESCE(pm.stock, 0) <= 0 THEN 1 ELSE 0 END) as out_c,
                 SUM(CASE WHEN COALESCE(pm.stock, 0) > 0 AND COALESCE(pm.stock, 0) <= 10 THEN 1 ELSE 0 END) as low_c,
                 SUM(CASE WHEN COALESCE(pm.pharmacy_count, 0) > 0 THEN 1 ELSE 0 END) as in_pharmacy
-            ")->first();
+            ")->first()
+        );
 
         $total = (int) ($statsRow->total ?? 0);
         $out = (int) ($statsRow->out_c ?? 0);
