@@ -28,8 +28,14 @@ class MedicineController extends Controller
             ->selectRaw('medicine_id, SUM(quantity) as stock, COUNT(*) as pharmacy_count, MIN(CASE WHEN price > 0 THEN price END) as min_price')
             ->groupBy('medicine_id');
 
-        $query = DB::table('medicines as m')
-            ->leftJoinSub($perMedicine, 'pm', 'pm.medicine_id', '=', 'm.id')
+        // الأساس المشترك (joins فقط) — التركيبة تُبنى لكل غرض على حدة:
+        // وضع selectRaw إضافي على نسخة clone من استعلام يحتوي أعمدة غير مجمّعة
+        // يجعل MySQL (ONLY_FULL_GROUP_BY) يرمي خطأ 1140 — sqlite يتساهل فكانت
+        // الاختبارات تنجح بينما الإنتاج يرجع 500.
+        $base = DB::table('medicines as m')
+            ->leftJoinSub($perMedicine, 'pm', 'pm.medicine_id', '=', 'm.id');
+
+        $query = (clone $base)
             ->selectRaw('m.id, m.trade_name, m.active_ingredient, m.is_available,
                 COALESCE(pm.stock, 0) as stock,
                 COALESCE(pm.pharmacy_count, 0) as pharmacy_count,
@@ -38,8 +44,8 @@ class MedicineController extends Controller
 
         $medicines = $query->paginate($perPage)->withQueryString();
 
-        // الإحصائيات العامة — نفس الاستعلام المجمّع بدون حدود الصفحة
-        $statsRow = (clone $query)->selectRaw("
+        // الإحصائيات العامة — استعلام مجمّع نظيف على نفس الـ joins بدون أعمدة غير مجمّعة
+        $statsRow = (clone $base)->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN COALESCE(pm.stock, 0) <= 0 THEN 1 ELSE 0 END) as out_c,
                 SUM(CASE WHEN COALESCE(pm.stock, 0) > 0 AND COALESCE(pm.stock, 0) <= 10 THEN 1 ELSE 0 END) as low_c,
