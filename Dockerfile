@@ -73,12 +73,15 @@ USER appuser
 # Expose port
 EXPOSE 10000
 
-# C-1: سيرفر PHP CLI يعمل بمعامل واحد افتراضياً — 4 عمال يمنعون حجب الطلبات بطلب بطيء واحد
-ENV PHP_CLI_SERVER_WORKERS=4
+# C-1: سيرفر PHP CLI يعمل بمعامل واحد افتراضياً — عمال متعددون يمنعون حجب
+# الطلبات. 4 عمال على 512MB (Render Free) يستهلكون الذاكرة كلها تحت التزامن
+# (OOM → 500 متقطعة/تعلق) → 2 عمال + memory_limit مضبوط.
+ENV PHP_CLI_SERVER_WORKERS=2
 
 # Cache config/routes at startup (env vars are already available at runtime),
 # run migrations, ensure the public storage symlink exists (H2), keep the app
 # AND the Aiven DB awake (free tiers sleep after inactivity) and start Laravel
 # C-1: تسخين /api/medicines مرة واحدة قبل الحلقة (يبني كاش الأدوية)، والحلقة تضرب
-# /healthz الرخيص فقط (بلا إعادة بناء كاش) حتى لا تستهلك عمال الـ CLI server
-CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan storage:link || true && php artisan migrate --force && { curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/api/medicines; while true; do curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/healthz; php artisan migrate:status > /dev/null 2>&1; sleep 240; done & } && exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+# /healthz فقط (يلمس الـ DB بـ SELECT 1 خفيف — بلا boot لـ Laravel كاملاً
+# ولا منافسة على ذاكرة العمال) حتى لا تستهلك عمال الـ CLI server
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan storage:link || true && php artisan migrate --force && { curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/api/medicines; while true; do curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/healthz; sleep 240; done & } && exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
