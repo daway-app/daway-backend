@@ -3,6 +3,7 @@
 use App\Http\Controllers\HealthController;
 // General Controllers
 use App\Http\Controllers\web\Admin\DashboardController;
+use App\Http\Controllers\web\Admin\CategoryController;
 // Auth Controllers
 use App\Http\Controllers\web\Admin\InventoryController;
 // Admin Controllers
@@ -94,6 +95,33 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         'medicines',
         MedicineController::class
     );
+
+    // ==================== CATEGORIES ====================
+
+    Route::resource(
+        'categories',
+        CategoryController::class
+    );
+
+    Route::patch('/categories/{category}/toggle-status', [
+        CategoryController::class,
+        'toggleStatus',
+    ])->name('categories.toggleStatus');
+
+    Route::post('/categories/{category}/medicines', [
+        CategoryController::class,
+        'attachMedicine',
+    ])->name('categories.medicines.attach');
+
+    Route::delete('/categories/{category}/medicines/{link}', [
+        CategoryController::class,
+        'detachMedicine',
+    ])->name('categories.medicines.detach');
+
+    Route::post('/categories/{category}/review/{link}', [
+        CategoryController::class,
+        'approveReview',
+    ])->name('categories.review.approve');
 
     // ==================== USERS ====================
 

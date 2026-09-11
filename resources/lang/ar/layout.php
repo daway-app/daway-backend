@@ -9,6 +9,7 @@ return [
     'management_section' => 'الإدارة',
     'pharmacies' => 'الصيدليات',
     'medicines' => 'الأدوية',
+    'categories' => 'الأقسام',
     'inventory' => 'المخزون',
     'patients' => 'المرضى',
     'users' => 'المستخدمون',

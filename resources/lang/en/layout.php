@@ -9,6 +9,7 @@ return [
     'management_section' => 'Management',
     'pharmacies' => 'Pharmacies',
     'medicines' => 'Medicines',
+    'categories' => 'Categories',
     'inventory' => 'Inventory',
     'patients' => 'Patients',
     'users' => 'Users',

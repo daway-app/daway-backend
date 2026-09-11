@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             PharmacySeeder::class,
             MedicineSeeder::class,
+            CategorySeeder::class,
         ]);
     }
 }

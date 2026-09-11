@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvailabilityAlertController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChatAssistantController;
 use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\FavoriteController;
@@ -145,3 +146,11 @@ Route::middleware(['auth:sanctum', 'role:pharmacy'])->prefix('sync')->group(func
     Route::post('push', [SyncController::class, 'push'])->middleware('throttle:writes');
     Route::get('pull', [SyncController::class, 'pull']);
 });
+
+// Categories (public catalog metadata) — {category} يقبل id أو slug
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{category}', [CategoryController::class, 'show']);
+Route::get('/categories/{category}/medicines', [CategoryController::class, 'medicines']);
+
+// أشكال الجرعات (قائمة أعراف canonical لاستخدامها مع فلتر dosage_form)
+Route::get('/dosage-forms', [CategoryController::class, 'dosageForms']);

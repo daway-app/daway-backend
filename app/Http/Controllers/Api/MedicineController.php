@@ -9,6 +9,7 @@ use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
 use App\Services\Ai\MedicineResolver;
+use App\Support\DosageFormNormalizer;
 use App\Support\Haversine;
 use App\Support\Image;
 use App\Support\PharmacyAvailability;
@@ -127,11 +128,69 @@ class MedicineController extends Controller
             });
         }
 
-        $validated = $request->validate(['per_page' => 'nullable|integer|min:1|max:100']);
+        // فلاتر اختيارية (additive) على مسار كتالوج وزارة الصحة فقط —
+        // مسارات chatbot/OCR والبحث لا تتأثر بها عمداً. غيابها يُبقي
+        // الاستعلام ومفتاح الـcache كما كانا تماماً.
+        $validated = $request->validate([
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'category_id' => 'nullable|integer|exists:categories,id',
+            'dosage_form' => 'nullable|string|max:50',
+        ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
         $page = (int) $request->get('page', 1);
 
-        $items = Cache::remember($this->cacheKey("api_meds_idx|v{$catVer}", $q)."|{$page}|{$perPage}", 900, function () use ($query, $perPage) {
+        $categoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
+        // قيمة dosage_form غير معروفة → null → تُتجاهل الفلترة بصمت
+        $dosageForm = isset($validated['dosage_form']) ? DosageFormNormalizer::forInput($validated['dosage_form']) : null;
+
+        // null-safe: كل ارتباط يُقيَّد بـ whereNotNull داخلي، والمفاتيح مستقرة فقط
+        // (moh_product_id / moh_drug_id) — لا يُشار إلى moh_medicines.id مطلقاً.
+        if ($categoryId !== null) {
+            $query->where(function ($outer) use ($categoryId) {
+                $outer->whereExists(function ($sub) use ($categoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links')
+                        ->whereColumn('category_medicine_links.moh_product_id', 'moh_medicines.moh_product_id')
+                        ->where('category_medicine_links.category_id', $categoryId)
+                        ->whereNotNull('category_medicine_links.moh_product_id');
+                })->orWhereExists(function ($sub) use ($categoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links')
+                        ->whereColumn('category_medicine_links.moh_drug_id', 'moh_medicines.moh_drug_id')
+                        ->where('category_medicine_links.category_id', $categoryId)
+                        ->whereNotNull('category_medicine_links.moh_drug_id');
+                });
+            });
+        }
+
+        // العمود يخزّن نصاً إنجليزياً حراً → OR'd LIKE على tokens القياسي
+        // (مع استثناءات NOT LIKE، مثال: جل يستثني gelatin/capsule)
+        if ($dosageForm !== null) {
+            $query->where(function ($builder) use ($dosageForm) {
+                foreach (DosageFormNormalizer::likeTokens($dosageForm) as $i => $token) {
+                    $i === 0
+                        ? $builder->where('moh_medicines.dosage_form', 'like', "%{$token}%")
+                        : $builder->orWhere('moh_medicines.dosage_form', 'like', "%{$token}%");
+                }
+
+                foreach (DosageFormNormalizer::excludeTokens($dosageForm) as $excluded) {
+                    $builder->where('moh_medicines.dosage_form', 'not like', "%{$excluded}%");
+                }
+            });
+        }
+
+        // مفتاح الـcache: مقاطع تُلحق فقط عند وجود الفلتر — بدون فلاتر يبقى
+        // المفتاح مطابقاً بايت ببايت للسلوك السابق. للـdosage_form يُستخدم
+        // رقم القياسي في facets() بدل النص العربي (توافق مع مخازن مفاتيح ASCII).
+        $filterKeySuffix = '';
+        if ($categoryId !== null) {
+            $filterKeySuffix .= "|cat{$categoryId}";
+        }
+        if ($dosageForm !== null) {
+            $filterKeySuffix .= '|df'.array_search($dosageForm, DosageFormNormalizer::facets(), true);
+        }
+
+        $items = Cache::remember($this->cacheKey("api_meds_idx|v{$catVer}", $q).$filterKeySuffix."|{$page}|{$perPage}", 900, function () use ($query, $perPage) {
             return $query->orderBy('trade_name')->paginate($perPage);
         });
 
