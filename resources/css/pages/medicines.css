@@ -2,8 +2,8 @@
    1. ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¦ط·آ·ط¹آ¾ط·آ·ط·â€؛ط·آ¸ط¸آ¹ط·آ·ط¢آ±ط·آ·ط¢آ§ط·آ·ط¹آ¾ ط·آ¸ط«â€ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ£ط·آ·ط¢آ³ط·آ·ط¢آ§ط·آ·ط¢آ³ط·آ¸ط¸آ¹ط·آ·ط¢آ§ط·آ·ط¹آ¾
    ========================================== */
 :root {
-    --primary: #0B8FAC;
-    --primary-dark: #00657A;
+    --primary: #1C72A6;
+    --primary-dark: #155E85;
     --primary-soft: #ccfbf1;
     --blue: #0284c7;
     --ink: #0f172a;
@@ -42,7 +42,7 @@ html[dir="ltr"] body, html[dir="ltr"] .container, html[dir="ltr"] .main-content 
 
 html[dir] body {
     background:
-        radial-gradient(circle at 5% 5%, rgba(11, 143, 172, 0.08), transparent 28%),
+        radial-gradient(circle at 5% 5%, rgba(28, 114, 166, 0.08), transparent 28%),
         radial-gradient(circle at 95% 10%, rgba(2, 132, 199, 0.07), transparent 25%),
         linear-gradient(135deg, #f8fafc 0%, #eef5f5 100%);
 }
@@ -92,7 +92,7 @@ html[dir] body.dark-mode {
     font-weight: 800;
     margin: 0 0 4px 0;
     letter-spacing: -0.4px;
-    background: linear-gradient(135deg, #0f172a, #00657A);
+    background: linear-gradient(135deg, #0f172a, #155E85);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -118,7 +118,7 @@ body.dark-mode .header-title-section h1 {
 
 .btn-add-pharmacy {
     position: relative;
-    background: linear-gradient(135deg, #0B8FAC, #00657A);
+    background: linear-gradient(135deg, #1C72A6, #155E85);
     color: #ffffff;
     padding: 12px 22px;
     border-radius: 14px;
@@ -134,7 +134,7 @@ body.dark-mode .header-title-section h1 {
 }
 .btn-add-pharmacy:hover {
     transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 28px rgba(11, 143, 172, 0.45);
+    box-shadow: 0 12px 28px rgba(28, 114, 166, 0.45);
 }
 
 .hover-shimmer { position: relative; overflow: hidden; }
@@ -373,7 +373,7 @@ body.dark-mode .chart-card {
     height: 100%;
     border-radius: 50%;
     background: conic-gradient(
-        #0B8FAC 0deg var(--seg1),
+        #1C72A6 0deg var(--seg1),
         #e11d48 var(--seg1) 360deg
     );
     display: flex;
@@ -470,7 +470,7 @@ body.dark-mode .legend-text {
     border-radius: 12px;
 }
 
-.badge-teal { background: #ccfbf1; color: #00657A; }
+.badge-teal { background: #ccfbf1; color: #155E85; }
 .badge-sky { background: #e0f2fe; color: #0369a1; }
 .badge-amber { background: #fef3c7; color: #b45309; }
 .badge-rose { background: #ffe4e6; color: #be123c; }

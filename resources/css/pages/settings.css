@@ -16,9 +16,9 @@
 }
 
 .lang-btn.active {
-    background-color: #0B8FAC;
+    background-color: #1C72A6;
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(11, 143, 172, 0.2);
+    box-shadow: 0 4px 12px rgba(28, 114, 166, 0.2);
 }
 
 .lang-btn:not(.active):hover {
@@ -81,8 +81,8 @@ body.dark-mode .lang-btn:not(.active):hover {
 }
 
 .tab-btn.active {
-    color: #0B8FAC;
-    border-bottom-color: #0B8FAC;
+    color: #1C72A6;
+    border-bottom-color: #1C72A6;
 }
 
 .tab-pane {
@@ -144,8 +144,8 @@ body.dark-mode .lang-btn:not(.active):hover {
 
 .form-control:focus {
     outline: none;
-    border-color: #0B8FAC;
-    box-shadow: 0 0 0 3px rgba(11, 143, 172, 0.1);
+    border-color: #1C72A6;
+    box-shadow: 0 0 0 3px rgba(28, 114, 166, 0.1);
 }
 
 .toggle-item {
@@ -205,7 +205,7 @@ body.dark-mode .lang-btn:not(.active):hover {
 }
 
 input:checked + .slider {
-    background-color: #0B8FAC;
+    background-color: #1C72A6;
 }
 
 input:checked + .slider:before {
@@ -213,7 +213,7 @@ input:checked + .slider:before {
 }
 
 .btn-primary {
-    background-color: #0B8FAC;
+    background-color: #1C72A6;
     color: white;
     padding: 0.75rem 1.5rem;
     border-radius: 0.5rem;
@@ -224,7 +224,7 @@ input:checked + .slider:before {
 }
 
 .btn-primary:hover {
-    background-color: #00657A;
+    background-color: #155E85;
 }
 
 .btn-secondary {

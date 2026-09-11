@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', __('layout.profile_title'))
 
@@ -213,7 +213,7 @@
             height: 86px;
             border-radius: 50%;
             padding: 3px;
-            background: conic-gradient(#0B8FAC, #7BC1B7, #3b82f6, #0B8FAC);
+            background: conic-gradient(#1C72A6, #7BC1B7, #3b82f6, #1C72A6);
             flex-shrink: 0;
         }
         .profile-avatar {
@@ -303,8 +303,8 @@
             border-radius: 8px;
             transition: color 0.2s ease, background-color 0.2s ease;
         }
-        .eye-toggle:hover { color: #0B8FAC; background: rgba(11,143,172,0.08); }
-        .eye-toggle.eye-active { color: #0B8FAC; }
+        .eye-toggle:hover { color: #1C72A6; background: rgba(28,114,166,0.08); }
+        .eye-toggle.eye-active { color: #1C72A6; }
         .profile-col-footer {
             display: flex;
             gap: 10px;
@@ -332,8 +332,8 @@
             width: 42px;
             height: 42px;
             border-radius: 12px;
-            background: rgba(11,143,172,0.1);
-            color: #0B8FAC;
+            background: rgba(28,114,166,0.1);
+            color: #1C72A6;
             display: flex;
             align-items: center;
             justify-content: center;

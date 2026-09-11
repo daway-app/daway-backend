@@ -3,7 +3,7 @@
         <!-- Logo Header -->
         <div class="sidebar-logo-header">
             <div class="logo-icon-box">
-                <img src="{{ asset('images/dawaei-logo.jpg') }}" alt="Logo" class="sidebar-logo-img" width="64" height="64" loading="lazy">
+                <img src="{{ asset('images/dawak-logo.jpg') }}" alt="شعار دواك" class="sidebar-logo-img" width="64" height="64" loading="lazy">
             </div>
             <div class="logo-text-group">
                 <h2 class="logo-title">{{ __('layout.app_title') }}</h2>

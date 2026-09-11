@@ -1,7 +1,7 @@
 :root {
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
     --card-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
-    --teal-primary: #0B8FAC;
+    --teal-primary: #1C72A6;
 }
 
 body.dark-mode {

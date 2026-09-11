@@ -1,12 +1,12 @@
 {
-    "name": "دواي — لوحة الصيدلية",
-    "short_name": "دواي",
+    "name": "دواك — لوحة الصيدلية",
+    "short_name": "دواك",
     "start_url": "/pharmacy/dashboard",
     "display": "standalone",
     "dir": "rtl",
     "lang": "ar",
-    "background_color": "#0B8FAC",
-    "theme_color": "#0B8FAC",
+    "background_color": "#1C72A6",
+    "theme_color": "#1C72A6",
     "icons": [
         {
             "src": "/icons/icon-192.png",

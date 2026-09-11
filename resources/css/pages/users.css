@@ -88,7 +88,7 @@ body.dark-mode .header-title-section h1 {
 
 .btn-add-pharmacy {
     position: relative;
-    background: linear-gradient(135deg, #0B8FAC, #00657A);
+    background: linear-gradient(135deg, #1C72A6, #155E85);
     color: #ffffff;
     padding: 12px 22px;
     border-radius: 14px;
@@ -104,7 +104,7 @@ body.dark-mode .header-title-section h1 {
 
 .btn-add-pharmacy:hover {
     transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 28px rgba(11, 143, 172, 0.45);
+    box-shadow: 0 12px 28px rgba(28, 114, 166, 0.45);
 }
 
 .hover-shimmer { position: relative; overflow: hidden; }
@@ -161,7 +161,7 @@ body.dark-mode .notification-btn {
 }
 
 .breadcrumb-trail a {
-    color: #0B8FAC;
+    color: #1C72A6;
     text-decoration: none;
     font-weight: 600;
 }
@@ -428,7 +428,7 @@ body.dark-mode .user-info strong {
 }
 
 .role-admin { background-color: #e0f2fe; color: #0284c7; }
-.role-pharmacy { background-color: #ccfbf1; color: #00657A; }
+.role-pharmacy { background-color: #ccfbf1; color: #155E85; }
 .role-patient { background-color: #f3e8ff; color: #7e22ce; }
 
 .status-toggle {
@@ -593,9 +593,9 @@ body.dark-mode .pagination-wrapper nav a:hover:not(.active) {
 .pagination-wrapper .active span,
 .pagination-container span[aria-current="page"],
 .pagination-wrapper span[aria-current="page"] {
-    background-color: #0B8FAC !important;
+    background-color: #1C72A6 !important;
     color: #ffffff !important;
-    border-color: #0B8FAC !important;
+    border-color: #1C72A6 !important;
     box-shadow: 0 0 12px rgba(16, 185, 129, 0.6), 0 0 24px rgba(16, 185, 129, 0.3) !important;
 }
 
@@ -786,8 +786,8 @@ body.dark-mode .role-dist-label {
 
 .stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 12px 25px -5px rgba(11, 143, 172, 0.12);
-    border-color: #0B8FAC;
+    box-shadow: 0 12px 25px -5px rgba(28, 114, 166, 0.12);
+    border-color: #1C72A6;
 }
 
 .stat-icon-box {
@@ -928,8 +928,8 @@ body.dark-mode .role-dist-label {
 }
 
 .confirm-modal-actions .modal-btn.primary {
-    background: var(--accent-teal, #0B8FAC);
-    border-color: var(--accent-teal, #0B8FAC);
+    background: var(--accent-teal, #1C72A6);
+    border-color: var(--accent-teal, #1C72A6);
     color: #fff;
 }
 

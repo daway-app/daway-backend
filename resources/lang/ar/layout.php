@@ -2,7 +2,7 @@
 
 return [
     // Sidebar
-    'app_title' => 'دوائي',
+    'app_title' => 'دواك',
     'app_subtitle' => 'الصحة، في مكان واحد',
     'main_section' => 'الرئيسية',
     'dashboard' => 'لوحة التحكم',

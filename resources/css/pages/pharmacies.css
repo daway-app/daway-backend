@@ -1,7 +1,7 @@
 :root {
-    --primary: #0B8FAC;
-    --primary-dark: #00657A;
-    --primary-glow: rgba(11, 143, 172, 0.35);
+    --primary: #1C72A6;
+    --primary-dark: #155E85;
+    --primary-glow: rgba(28, 114, 166, 0.35);
     --bg-body: #f8fafc;
     --border-color: rgba(226, 232, 240, 0.8);
     --text-main: #0f172a;
@@ -54,7 +54,7 @@ body.dark-mode {
     opacity: 0.5;
     animation: floatGlow 10s infinite alternate ease-in-out;
 }
-.glow-1 { top: -50px; right: -50px; background: rgba(11, 143, 172, 0.25); }
+.glow-1 { top: -50px; right: -50px; background: rgba(28, 114, 166, 0.25); }
 .glow-2 { bottom: 100px; left: -50px; background: rgba(59, 130, 246, 0.2); }
 
 @keyframes floatGlow {
@@ -90,12 +90,12 @@ body.dark-mode .glass-panel {
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ط£آ¢ط¹â€کط·إ’ ط·آ·ط¢آ¹ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ§ط·آ·ط¢آµط·آ·ط¢آ± ط·آ·ط¢آ£ط·آ·ط¢آ®ط·آ·ط¢آ±ط·آ¸أ¢â‚¬آ° */
-.gradient-text { background: linear-gradient(135deg, #0f172a, #0B8FAC); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.gradient-text { background: linear-gradient(135deg, #0f172a, #1C72A6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 body.dark-mode .gradient-text { background: linear-gradient(135deg, #E4E4E7, #A1A1AA); -webkit-background-clip: text; }
 
 .btn-add-pharmacy {
     position: relative;
-    background: linear-gradient(135deg, #0B8FAC, #00657A);
+    background: linear-gradient(135deg, #1C72A6, #155E85);
     color: #ffffff;
     padding: 12px 22px;
     border-radius: 14px;

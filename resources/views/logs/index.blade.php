@@ -9,7 +9,7 @@
         <div class="logs-header">
             <div class="logs-title-group">
                 <h2>@lang('logs.main_heading')</h2>
-                <p>@lang('logs.main_description', ['site_name' => session('app_settings.site_name', 'Daway')])</p>
+                <p>@lang('logs.main_description', ['site_name' => session('app_settings.site_name', 'DAWAK')])</p>
             </div>
 
             <a href="{{ route('logs.export.excel') }}" class="btn-export-excel">

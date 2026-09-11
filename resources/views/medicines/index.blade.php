@@ -73,7 +73,7 @@
 
                     <div class="chart-legend-vertical">
                         <div class="legend-row">
-                            <span class="dot-indicator" style="--dot-color: #0B8FAC;"></span>
+                            <span class="dot-indicator" style="--dot-color: #1C72A6;"></span>
                             <span class="legend-text">@lang('medicines.coverage_in')</span>
                             <span class="badge-percent badge-teal">{{ $stats['in_pharmacy_pct'] }}%</span>
                         </div>
@@ -180,7 +180,7 @@
                         </td>
                         <td>{{ $medicine->active_ingredient }}</td>
                         <td><span class="pill-badge status-badge {{ $rowStatus }}">{{ $medicine->stock }}</span></td>
-                        <td><strong style="color: #0B8FAC;">{{ $medicine->pharmacy_count }}</strong> {{ $medicine->pharmacy_count === 1 ? __('medicines.pharmacy_one') : __('medicines.pharmacy_many') }}</td>
+                        <td><strong style="color: #1C72A6;">{{ $medicine->pharmacy_count }}</strong> {{ $medicine->pharmacy_count === 1 ? __('medicines.pharmacy_one') : __('medicines.pharmacy_many') }}</td>
                         <td><strong>₪ {{ $medicine->min_price !== null ? number_format($medicine->min_price, 2) : '—' }}</strong></td>
                         <td><span class="pill-badge status-badge {{ $rowStatus }}">● {{ $rowStatus === 'out' ? __('medicines.out_of_stock_status') : ($rowStatus === 'low' ? __('medicines.low_stock_status') : __('medicines.available_status')) }}</span></td>
                         <td><span class="pill-badge badge-none">• —</span></td>

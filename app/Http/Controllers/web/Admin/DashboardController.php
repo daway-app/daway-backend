@@ -144,7 +144,7 @@ class DashboardController extends Controller
             };
 
             $chartDatasets = [
-                'all' => $toChartDataset($chartAll, __('dashboard.all_filter'), '#0B8FAC'),
+                'all' => $toChartDataset($chartAll, __('dashboard.all_filter'), '#1C72A6'),
                 'searches' => $toChartDataset($chartSearches, __('dashboard.medicines_search_filter'), '#3b82f6'),
                 'patients' => $toChartDataset($chartUsers, __('dashboard.users_filter'), '#10b981'),
                 'pharmacies' => $toChartDataset($chartPharmacies, __('dashboard.pharmacies_filter'), '#f59e0b'),
@@ -213,7 +213,7 @@ class DashboardController extends Controller
                     'description' => (string) ($a['description'] ?? ''),
                     'time' => (string) ($a['time'] ?? ''),
                     'created_at' => (string) ($a['created_at'] ?? ''),
-                    'color' => (string) ($a['color'] ?? '#0B8FAC'),
+                    'color' => (string) ($a['color'] ?? '#1C72A6'),
                 ];
             })->values()->all();
         });
@@ -224,18 +224,18 @@ class DashboardController extends Controller
                 return (object) [
                     'description' => (string) ($a['description'] ?? ''),
                     'time' => (string) ($a['time'] ?? ''),
-                    'color' => (string) ($a['color'] ?? '#0B8FAC'),
+                    'color' => (string) ($a['color'] ?? '#1C72A6'),
                 ];
             }
             if (is_object($a)) {
                 return (object) [
                     'description' => (string) ($a->description ?? ''),
                     'time' => (string) ($a->time ?? ''),
-                    'color' => (string) ($a->color ?? '#0B8FAC'),
+                    'color' => (string) ($a->color ?? '#1C72A6'),
                 ];
             }
 
-            return (object) ['description' => (string) $a, 'time' => '', 'color' => '#0B8FAC'];
+            return (object) ['description' => (string) $a, 'time' => '', 'color' => '#1C72A6'];
         })->values();
 
         $topPharmacies = User::where('role', 'pharmacy')->latest()->take(4)->get();

@@ -4,8 +4,8 @@ const STYLES = `
 .daway-sync-banner.show{display:flex;}
 .daway-sync-banner.online{background:var(--ph-green-bg,#DCFCE7);color:var(--ph-green,#16A34A);}
 .daway-sync-banner.offline{background:var(--ph-orange-bg,#FEF9C3);color:var(--ph-orange,#CA8A04);}
-.daway-sync-banner.queued{background:var(--ph-teal-mist,#EAF5F4);color:var(--ph-teal,#0B8FAC);border-bottom:2px solid var(--ph-teal,#0B8FAC);}
-.daway-sync-banner.syncing{background:var(--ph-teal-mist,#EAF5F4);color:var(--ph-teal,#0B8FAC);}
+.daway-sync-banner.queued{background:var(--ph-teal-mist,#EAF5F4);color:var(--ph-teal,#1C72A6);border-bottom:2px solid var(--ph-teal,#1C72A6);}
+.daway-sync-banner.syncing{background:var(--ph-teal-mist,#EAF5F4);color:var(--ph-teal,#1C72A6);}
 .daway-sync-banner.synced{background:var(--ph-green-bg,#DCFCE7);color:var(--ph-green,#16A34A);}
 .daway-sync-banner.failed{background:var(--ph-red-bg,#FEE2E2);color:var(--ph-red,#DC2626);}
 .daway-sync-banner.auth{background:var(--ph-red-bg,#FEE2E2);color:var(--ph-red,#DC2626);}

@@ -249,3 +249,148 @@
         font-size: 17px;
     }
 }
+
+/* ==========================================
+   أزرار ترقيم الصفحات — تنسيق موحد لكل الصفحات (RTL)
+   ========================================== */
+.pagination-wrapper nav,
+.pagination-container nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.pagination-wrapper nav ul,
+.pagination-container nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.pagination-wrapper nav ul li,
+.pagination-container nav ul li {
+    margin: 0;
+    display: flex;
+}
+
+.pagination-wrapper nav ul li a,
+.pagination-wrapper nav ul li span,
+.pagination-container nav ul li a,
+.pagination-container nav ul li span,
+.pagination-wrapper .page-item a,
+.pagination-wrapper .page-item span,
+.pagination-container .page-item a,
+.pagination-container .page-item span,
+.pagination-wrapper nav a,
+.pagination-wrapper nav span,
+.pagination-container nav a,
+.pagination-container nav span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1.5px solid #D7E5EE;
+    background: #ffffff;
+    color: #1C72A6;
+    font-family: 'Tajawal', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none !important;
+    line-height: 1;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+.pagination-wrapper nav a:hover:not(.active):not([aria-current]),
+.pagination-container nav a:hover:not(.active):not([aria-current]),
+.pagination-wrapper nav ul li a:hover:not(.active):not([aria-current]),
+.pagination-container nav ul li a:hover:not(.active):not([aria-current]) {
+    background: #E3F0F8;
+    border-color: #1C72A6;
+    color: #155E85;
+    transform: translateY(-1px);
+}
+
+.pagination-wrapper nav span[aria-current="page"],
+.pagination-wrapper nav .active span,
+.pagination-wrapper nav a.active,
+.pagination-wrapper .page-item.active span,
+.pagination-wrapper .page-item.active a,
+.pagination-container nav span[aria-current="page"],
+.pagination-container nav .active span,
+.pagination-container nav a.active,
+.pagination-container .page-item.active span,
+.pagination-container .page-item.active a,
+.pagination-wrapper .active span,
+.pagination-container .active span {
+    background: linear-gradient(135deg, #1C72A6, #155E85);
+    border-color: #155E85;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(28, 114, 166, 0.35);
+}
+
+.pagination-wrapper nav .disabled span,
+.pagination-wrapper nav .disabled a,
+.pagination-wrapper .page-item.disabled span,
+.pagination-wrapper .page-item.disabled a,
+.pagination-container nav .disabled span,
+.pagination-container nav .disabled a,
+.pagination-container .page-item.disabled span,
+.pagination-container .page-item.disabled a,
+.pagination-wrapper .disabled span,
+.pagination-container .disabled span {
+    background: #F1F5F9;
+    border-color: #E2E8F0;
+    color: #94A3B8;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+body.dark-mode .pagination-wrapper nav ul li a,
+body.dark-mode .pagination-wrapper nav ul li span,
+body.dark-mode .pagination-container nav ul li a,
+body.dark-mode .pagination-container nav ul li span,
+body.dark-mode .pagination-wrapper nav a,
+body.dark-mode .pagination-wrapper nav span,
+body.dark-mode .pagination-container nav a,
+body.dark-mode .pagination-container nav span {
+    background: #232327;
+    border-color: #333338;
+    color: #7EB8DC;
+}
+
+body.dark-mode .pagination-wrapper nav span[aria-current="page"],
+body.dark-mode .pagination-wrapper nav .active span,
+body.dark-mode .pagination-wrapper nav a.active,
+body.dark-mode .pagination-container nav span[aria-current="page"],
+body.dark-mode .pagination-container nav .active span,
+body.dark-mode .pagination-container nav a.active,
+body.dark-mode .pagination-wrapper .active span,
+body.dark-mode .pagination-container .active span {
+    background: linear-gradient(135deg, #1C72A6, #155E85);
+    border-color: #155E85;
+    color: #ffffff !important;
+}
+
+body.dark-mode .pagination-wrapper nav .disabled span,
+body.dark-mode .pagination-wrapper nav .disabled a,
+body.dark-mode .pagination-container nav .disabled span,
+body.dark-mode .pagination-container nav .disabled a,
+body.dark-mode .pagination-wrapper .disabled span,
+body.dark-mode .pagination-container .disabled span {
+    background: #18181b;
+    border-color: #27272a;
+    color: #52525b;
+}

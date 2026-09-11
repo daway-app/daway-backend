@@ -1,6 +1,6 @@
 :root {
-    --teal-700: #00657A;
-    --teal-600: #0B8FAC;
+    --teal-700: #155E85;
+    --teal-600: #1C72A6;
     --gray-900: #0f172a;
     --gray-600: #475569;
     --border: #cbd5e1;
@@ -61,7 +61,7 @@ body {
     transition: 0.2s;
 }
 
-.fc:focus { border-color: var(--teal-600); box-shadow: 0 0 0 3px rgba(11, 143, 172, 0.15); }
+.fc:focus { border-color: var(--teal-600); box-shadow: 0 0 0 3px rgba(28, 114, 166, 0.15); }
 
 .btn-p {
     width: 100%;

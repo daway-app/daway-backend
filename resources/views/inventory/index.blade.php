@@ -9,7 +9,7 @@
         <!-- 1. كروت الإحصائيات -->
         <div class="stats-container">
             <div class="stat-item">
-                <div class="stat-icon" style="background-color: #e0f2f1; color: #00657A;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg></div>
+                <div class="stat-icon" style="background-color: #e0f2f1; color: #155E85;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg></div>
                 <div class="stat-details">
                     <div class="label">@lang('inventory.total_items')</div>
                     <div class="value">{{ $stockSummary->totalItems ?? 0 }}</div>

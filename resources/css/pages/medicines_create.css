@@ -50,7 +50,7 @@
     box-sizing: border-box;
 }
 .fc:focus {
-    border-color: #0B8FAC;
+    border-color: #1C72A6;
     background: #ffffff;
 }
 .req {
@@ -70,12 +70,12 @@
     justify-content: center;
 }
 .btn-p {
-    background-color: #0B8FAC;
+    background-color: #1C72A6;
     color: #ffffff;
-    box-shadow: 0 3px 6px rgba(11, 143, 172, 0.2);
+    box-shadow: 0 3px 6px rgba(28, 114, 166, 0.2);
 }
 .btn-p:hover {
-    background-color: #00657A;
+    background-color: #155E85;
 }
 .btn-s {
     background-color: #ffffff;

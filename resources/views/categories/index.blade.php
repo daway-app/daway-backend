@@ -59,7 +59,7 @@
             <form method="GET" action="{{ route('categories.index') }}">
                 <div class="filter-row">
                     <input type="text" name="q" value="{{ $q }}" placeholder="@lang('categories.search_placeholder')" class="filter-input">
-                    <button type="submit" style="padding:10px 22px;border:none;border-radius:12px;background:#0B8FAC;color:#ffffff;cursor:pointer;font-weight:600;font-family:inherit;">@lang('categories.search_button')</button>
+                    <button type="submit" style="padding:10px 22px;border:none;border-radius:12px;background:#1C72A6;color:#ffffff;cursor:pointer;font-weight:600;font-family:inherit;">@lang('categories.search_button')</button>
                 </div>
             </form>
         </div>
@@ -105,10 +105,10 @@
                             </form>
                         </td>
                         <td>{{ $category->sort_order }}</td>
-                        <td><strong style="color: #0B8FAC;">{{ $category->category_medicine_links_count }}</strong></td>
+                        <td><strong style="color: #1C72A6;">{{ $category->category_medicine_links_count }}</strong></td>
                         <td>
                             <div class="action-btn-group">
-                                <a href="{{ route('categories.show', $category->id) }}" class="action-btn" title="@lang('categories.tooltip_manage')" style="color: #0B8FAC;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>
+                                <a href="{{ route('categories.show', $category->id) }}" class="action-btn" title="@lang('categories.tooltip_manage')" style="color: #1C72A6;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>
                                 <a href="{{ route('categories.edit', $category->id) }}" class="action-btn edit" title="@lang('categories.tooltip_edit')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></a>
                                 <form action="{{ route('categories.destroy', $category->id) }}" method="POST" onsubmit="return confirm('@lang('categories.delete_confirm')');">
                                     @csrf

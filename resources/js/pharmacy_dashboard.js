@@ -86,13 +86,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 tealGradient.addColorStop(
                     0,
-                    'rgba(11,143,172,.22)'
+                    'rgba(28,114,166,.22)'
                 );
 
 
                 tealGradient.addColorStop(
                     1,
-                    'rgba(11,143,172,0)'
+                    'rgba(28,114,166,0)'
                 );
 
 
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     data: chartOrders,
 
                                     borderColor:
-                                        '#0B8FAC',
+                                        '#1C72A6',
 
                                     backgroundColor:
                                     tealGradient,
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             : '#ffffff',
 
                                     pointBorderColor:
-                                        '#0B8FAC',
+                                        '#1C72A6',
 
                                     pointBorderWidth:
                                         2
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         font: {
 
                                             family:
-                                                'Cairo, sans-serif',
+                                                'Tajawal, sans-serif',
 
                                             size:
                                                 11,
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     titleFont: {
 
                                         family:
-                                            'Cairo, sans-serif',
+                                            'Tajawal, sans-serif',
 
                                         size:
                                             11,
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     bodyFont: {
 
                                         family:
-                                            'Cairo, sans-serif',
+                                            'Tajawal, sans-serif',
 
                                         size:
                                             10
@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         font: {
 
                                             family:
-                                                'Cairo, sans-serif',
+                                                'Tajawal, sans-serif',
 
                                             size:
                                                 10
@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         font: {
 
                                             family:
-                                                'Cairo, sans-serif',
+                                                'Tajawal, sans-serif',
 
                                             size:
                                                 10

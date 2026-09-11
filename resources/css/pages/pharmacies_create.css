@@ -69,8 +69,8 @@ body.dark-mode .fc:disabled {
 }
 
 .fc:focus {
-    border-color: #0B8FAC;
-    box-shadow: 0 0 0 3px rgba(11, 143, 172, 0.12);
+    border-color: #1C72A6;
+    box-shadow: 0 0 0 3px rgba(28, 114, 166, 0.12);
 }
 
 .fc-icon {
@@ -202,7 +202,7 @@ body.dark-mode .btn-cancel {
     padding: 7px 13px;
     background-color: #f0fdfa;
     border: 1px solid #99f6e4;
-    color: #0B8FAC;
+    color: #1C72A6;
     font-size: 12px;
     font-weight: 700;
     border-radius: 8px;
@@ -213,7 +213,7 @@ body.dark-mode .btn-cancel {
 .btn-get-location:hover {
     background-color: #ccfbf1;
     border-color: #5eead4;
-    color: #00657A;
+    color: #155E85;
     transform: translateY(-1px);
 }
 
@@ -266,7 +266,7 @@ body.dark-mode .btn-cancel {
 .btn-submit {
     padding: 10px 20px;
     border-radius: 8px;
-    background: #0B8FAC;
+    background: #1C72A6;
     color: #fff;
     font-weight: 600;
     border: none;
@@ -587,7 +587,7 @@ body.dark-mode .btn-cancel {
 }
 
 .fc:focus {
-    border-color: #0B8FAC;
+    border-color: #1C72A6;
     background: #fff;
     box-shadow:
         0 0 0 4px rgba(13,148,136,.09),
@@ -719,7 +719,7 @@ html[dir="ltr"] .password-toggle {
 }
 
 .map-tip {
-    color: #0B8FAC;
+    color: #1C72A6;
     background: #f0fdfa;
     border: 1px solid #ccfbf1;
     padding: 4px 8px;
@@ -865,8 +865,8 @@ html[dir="ltr"] .password-toggle {
 
     background: linear-gradient(
         135deg,
-        #0B8FAC,
-        #00657A
+        #1C72A6,
+        #155E85
     );
 
     box-shadow:

@@ -23,8 +23,8 @@
     border-radius: 16px;
     font-size: 24px;
     background: linear-gradient(135deg, #f0fdfa, #e0f2fe);
-    color: #0B8FAC;
-    box-shadow: 0 8px 22px rgba(11, 143, 172, 0.12);
+    color: #1C72A6;
+    box-shadow: 0 8px 22px rgba(28, 114, 166, 0.12);
 }
 .page-heading h1 {
     margin: 0 0 4px;
@@ -124,7 +124,7 @@
     transition: all 0.25s ease;
 }
 .fc:focus {
-    border-color: #0B8FAC;
+    border-color: #1C72A6;
     box-shadow: 0 0 0 4px rgba(13,148,136,.09);
 }
 
@@ -171,7 +171,7 @@
     font-weight: 700;
 }
 .btn-submit {
-    background: #0B8FAC;
+    background: #1C72A6;
     color: #fff;
     padding: 12px 24px;
     border-radius: 12px;

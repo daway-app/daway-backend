@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول — دوائي</title>
+    <title>تسجيل الدخول — دواك</title>
+    <meta name="theme-color" content="#1C72A6">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
 
     <!-- ربط ملف الـ CSS الخارجي عبر Vite -->
     @vite(['resources/css/app.css', 'resources/css/auth/forms.css'])
@@ -74,7 +78,7 @@
 
                 <div class="form-footer-options">
                     <a href="{{ route('login.show') }}"
-                        style="color:#0B8FAC; text-decoration:none; font-weight:700">نسيت كلمة المرور؟</a>
+                        style="color:#1C72A6; text-decoration:none; font-weight:700">نسيت كلمة المرور؟</a>
                     <label class="remember-label">
                         <span>تذكرني</span>
                         <input type="checkbox" name="remember">
@@ -85,7 +89,7 @@
             </form>
 
             <div class="auth-footer">
-                ليس لديك حساب؟ <span style="color:#0B8FAC; font-weight:700">تواصل مع الأدمن لإنشاء حساب</span>
+                ليس لديك حساب؟ <span style="color:#1C72A6; font-weight:700">تواصل مع الأدمن لإنشاء حساب</span>
             </div>
         </div>
 
@@ -93,10 +97,10 @@
         <div class="auth-hero">
             <div class="hero-content">
                 <div class="logo-wrapper">
-                    <img src="{{ asset('images/dawaei-logo.jpg') }}" alt="شعار دوائي" class="brand-logo-img">
+                    <img src="{{ asset('images/dawak-logo.jpg') }}" alt="شعار دواك" class="brand-logo-img">
                 </div>
 
-                <span class="hero-subtitle-tag">منصة دوائي</span>
+                <span class="hero-subtitle-tag">منصة دواك</span>
                 <h2 class="hero-title">مرحباً بك مجدداً</h2>
                 <p class="hero-desc">إدارة الصيدليات، الأدوية، والطلبات ومتابعة كافة العمليات من مكان واحد بسهولة وأمان.
                 </p>

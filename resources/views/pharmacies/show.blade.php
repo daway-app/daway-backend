@@ -93,7 +93,7 @@
                             <strong class="med-name">{{ $pharmacyMedicine->medicine->trade_name }}</strong>
                             <span class="med-ing">{{ $pharmacyMedicine->medicine->active_ingredient }}</span>
                         </td>
-                        <td style="padding: 14px 20px; font-weight: 700; color: #0B8FAC;">{{ $pharmacyMedicine->price }} ₪</td>
+                        <td style="padding: 14px 20px; font-weight: 700; color: #1C72A6;">{{ $pharmacyMedicine->price }} ₪</td>
                         <td style="padding: 14px 20px;" class="qty-text">{{ $pharmacyMedicine->quantity }} @lang('medicines.unit')</td>
                         <td style="padding: 14px 20px;">
                             @if($pharmacyMedicine->quantity > 10)
@@ -125,7 +125,7 @@
                 <div class="form-card-body" style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
                     <div>
                         <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">@lang('pharmacies.searches_this_month')</div>
-                        <div style="font-size: 1.6rem; font-weight: 800; color: #0B8FAC;">{{ number_format($searchesThisMonth) }}</div>
+                        <div style="font-size: 1.6rem; font-weight: 800; color: #1C72A6;">{{ number_format($searchesThisMonth) }}</div>
                     </div>
                     <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 0;">
                     <div>

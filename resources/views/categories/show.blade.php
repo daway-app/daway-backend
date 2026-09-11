@@ -68,8 +68,8 @@
         <div class="filter-card">
             <div class="filter-row" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
                 <div style="display:flex;gap:8px;align-items:center;">
-                    <a href="{{ route('categories.show', $category->id) }}" style="padding:8px 16px;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;background:{{ $review ? '#e2e8f0' : '#0B8FAC' }};color:{{ $review ? '#334155' : '#ffffff' }};">@lang('categories.tab_all')</a>
-                    <a href="{{ route('categories.show', array_merge(['category' => $category->id], ['review' => 1])) }}" style="padding:8px 16px;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;background:{{ $review ? '#0B8FAC' : '#e2e8f0' }};color:{{ $review ? '#ffffff' : '#334155' }};">@lang('categories.tab_review')</a>
+                    <a href="{{ route('categories.show', $category->id) }}" style="padding:8px 16px;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;background:{{ $review ? '#e2e8f0' : '#1C72A6' }};color:{{ $review ? '#334155' : '#ffffff' }};">@lang('categories.tab_all')</a>
+                    <a href="{{ route('categories.show', array_merge(['category' => $category->id], ['review' => 1])) }}" style="padding:8px 16px;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;background:{{ $review ? '#1C72A6' : '#e2e8f0' }};color:{{ $review ? '#ffffff' : '#334155' }};">@lang('categories.tab_review')</a>
                 </div>
                 <form method="GET" action="{{ route('categories.show', $category->id) }}" style="display:flex;gap:8px;flex:1;min-width:260px;max-width:560px;">
                     <input type="hidden" name="review" value="{{ $review ? 1 : '' }}">
@@ -80,7 +80,7 @@
                         <option value="rules" {{ $source === 'rules' ? 'selected' : '' }}>@lang('categories.source_rules')</option>
                         <option value="admin" {{ $source === 'admin' ? 'selected' : '' }}>@lang('categories.source_admin')</option>
                     </select>
-                    <button type="submit" style="padding:10px 22px;border:none;border-radius:12px;background:#0B8FAC;color:#ffffff;cursor:pointer;font-weight:600;font-family:inherit;">@lang('categories.search_button')</button>
+                    <button type="submit" style="padding:10px 22px;border:none;border-radius:12px;background:#1C72A6;color:#ffffff;cursor:pointer;font-weight:600;font-family:inherit;">@lang('categories.search_button')</button>
                 </form>
             </div>
         </div>

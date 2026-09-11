@@ -2,7 +2,7 @@
 
 return [
     // Sidebar
-    'app_title' => 'Daway',
+    'app_title' => 'DAWAK',
     'app_subtitle' => 'Health, in one place',
     'main_section' => 'Main',
     'dashboard' => 'Dashboard',

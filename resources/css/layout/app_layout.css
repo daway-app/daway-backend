@@ -13,8 +13,8 @@
     --r-sm:     8px;
     --r-md:     12px;
     --sidebar-width: 260px;
-    --accent-teal: #0B8FAC; /* Added for consistency with topbar.css */
-    --accent-teal-dark: #00657A; /* Added for consistency with topbar.css */
+    --accent-teal: #1C72A6; /* Added for consistency with topbar.css */
+    --accent-teal-dark: #155E85; /* Added for consistency with topbar.css */
     --unread-notification-bg: #f0f9ff; /* Light blue for unread */
 }
 
@@ -39,7 +39,7 @@ html.dark-mode {
     z-index: 0;
     pointer-events: none;
     background:
-        radial-gradient(900px 520px at 88% -8%, rgba(11, 143, 172, .06), transparent 60%),
+        radial-gradient(900px 520px at 88% -8%, rgba(28, 114, 166, .06), transparent 60%),
         radial-gradient(760px 460px at 0% 104%, rgba(123, 193, 183, .07), transparent 55%);
 }
 
@@ -87,7 +87,7 @@ body.dark-mode {
     --white:    #112433;
     background-color: #050C12;
     color: #EAF4F8;
-    --unread-notification-bg: rgba(18, 180, 214, 0.15);
+    --unread-notification-bg: rgba(28, 114, 166, 0.15);
 }
 
 /* Main layout container */
@@ -385,7 +385,7 @@ body.dark-mode .notification-icon-full .icon-wrapper.bg-gray { background-color:
     box-shadow: 0 12px 32px rgba(0,0,0,.25);
     pointer-events: auto;
     animation: toastIn .3s cubic-bezier(0.16, 1, 0.3, 1) both;
-    border-inline-start: 4px solid var(--accent-teal, #0B8FAC);
+    border-inline-start: 4px solid var(--accent-teal, #1C72A6);
 }
 .site-toast.out { animation: toastOut .25s ease forwards; }
 .site-toast .toast-icon {
@@ -401,8 +401,8 @@ body.dark-mode .notification-icon-full .icon-wrapper.bg-gray { background-color:
 .site-toast.error .toast-icon { background: #DC2626; }
 .site-toast.warning { border-inline-start-color: #CA8A04; }
 .site-toast.warning .toast-icon { background: #CA8A04; }
-.site-toast.info { border-inline-start-color: #0B8FAC; }
-.site-toast.info .toast-icon { background: #0B8FAC; }
+.site-toast.info { border-inline-start-color: #1C72A6; }
+.site-toast.info .toast-icon { background: #1C72A6; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(-14px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes toastOut { to { opacity: 0; transform: translateY(-10px) scale(.96); } }
 body.dark-mode .site-toast { background: #1a1a1e; border: 1px solid rgba(255,255,255,.08); border-inline-start-width: 4px; }

@@ -64,7 +64,7 @@
                 <!-- الفوتر والأزرار -->
                 <div style="display: flex; gap: 12px; justify-content: flex-end; padding: 18px 25px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
                     <a href="{{ route('users.index') }}" style="padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">إلغاء</a>
-                    <button type="submit" style="padding: 10px 22px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; background: #0B8FAC; color: white; border: none;">حفظ التعديلات</button>
+                    <button type="submit" style="padding: 10px 22px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; background: #1C72A6; color: white; border: none;">حفظ التعديلات</button>
                 </div>
 
             </form>

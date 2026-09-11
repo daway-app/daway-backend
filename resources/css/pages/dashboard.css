@@ -95,7 +95,7 @@ body.dark-mode {
     animation: shimmerLine 1s ease-in-out;
 }
 
-.stat-card.card-teal::before { background: linear-gradient(90deg, #0B8FAC, #2dd4bf); }
+.stat-card.card-teal::before { background: linear-gradient(90deg, #1C72A6, #2dd4bf); }
 .stat-card.card-green::before { background: linear-gradient(90deg, #10b981, #34d399); }
 .stat-card.card-amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
 .stat-card.card-blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
@@ -156,7 +156,7 @@ body.dark-mode {
     right: 0;
     left: 0;
     height: 5px;
-    background: linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #0B8FAC 100%);
+    background: linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #1C72A6 100%);
 }
 
 .featured-chart-card:hover {
@@ -632,8 +632,8 @@ body.dark-mode {
 }
 
 .search-input-wrapper input:focus {
-    border-color: #0B8FAC;
-    box-shadow: 0 0 0 3px rgba(11, 143, 172, 0.15);
+    border-color: #1C72A6;
+    box-shadow: 0 0 0 3px rgba(28, 114, 166, 0.15);
 }
 
 .modal-body {
@@ -715,7 +715,7 @@ body.dark-mode {
 }
 
 .btn-link-pro {
-    color: #0B8FAC;
+    color: #1C72A6;
     font-size: 13px;
     font-weight: 600;
     text-decoration: none;
@@ -723,7 +723,7 @@ body.dark-mode {
 }
 
 .btn-link-pro:hover {
-    color: #00657A;
+    color: #155E85;
 }
 
 .table-responsive {
@@ -878,18 +878,18 @@ body.dark-mode {
     font-size: 12px;
     font-weight: 700;
     color: #ffffff;
-    background: linear-gradient(135deg, #0B8FAC, #00657A);
+    background: linear-gradient(135deg, #1C72A6, #155E85);
     border: none;
     border-radius: 10px;
     cursor: pointer;
     overflow: hidden;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(11, 143, 172, 0.2);
+    box-shadow: 0 4px 12px rgba(28, 114, 166, 0.2);
 }
 
 .btn-view-all-logs:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(11, 143, 172, 0.3);
+    box-shadow: 0 6px 16px rgba(28, 114, 166, 0.3);
 }
 
 .btn-view-all-logs::after {

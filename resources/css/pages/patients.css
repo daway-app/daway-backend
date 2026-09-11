@@ -455,9 +455,9 @@ body.dark-mode .pagination-wrapper nav a:hover:not(.active) {
 .pagination-wrapper .active span,
 .pagination-container span[aria-current="page"],
 .pagination-wrapper span[aria-current="page"] {
-    background-color: #0B8FAC !important;
+    background-color: #1C72A6 !important;
     color: #ffffff !important;
-    border-color: #0B8FAC !important;
+    border-color: #1C72A6 !important;
     box-shadow: 0 0 12px rgba(16, 185, 129, 0.6), 0 0 24px rgba(16, 185, 129, 0.3) !important;
 }
 

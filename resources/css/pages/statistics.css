@@ -57,8 +57,8 @@
 }
 
 .form-control:focus {
-    border-color: #0B8FAC;
-    box-shadow: 0 0 0 3px rgba(11, 143, 172, 0.15);
+    border-color: #1C72A6;
+    box-shadow: 0 0 0 3px rgba(28, 114, 166, 0.15);
 }
 
 .form-actions {
@@ -68,7 +68,7 @@
 }
 
 .btn-pro-primary {
-    background: #0B8FAC;
+    background: #1C72A6;
     color: #ffffff;
     border: none;
     padding: 12px 24px;
@@ -77,13 +77,13 @@
     font-weight: 700;
     cursor: pointer;
     transition: all 0.25s ease;
-    box-shadow: 0 4px 12px rgba(11, 143, 172, 0.2);
+    box-shadow: 0 4px 12px rgba(28, 114, 166, 0.2);
 }
 
 .btn-pro-primary:hover {
-    background: #00657A;
+    background: #155E85;
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(11, 143, 172, 0.3);
+    box-shadow: 0 6px 16px rgba(28, 114, 166, 0.3);
 }
 
 .btn-pro-secondary {
@@ -155,7 +155,7 @@
 }
 
 .pid button:hover {
-    color: #0B8FAC;
+    color: #1C72A6;
 }
 
 .bdg {
@@ -181,7 +181,7 @@
 }
 
 .breadcrumb-nav a {
-    color: #0B8FAC;
+    color: #1C72A6;
     text-decoration: none;
     font-weight: 600;
 }

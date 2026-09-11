@@ -24,7 +24,7 @@
 
 /* ط±ط£ط³ ط§ظ„طµظپط­ط© ط§ظ„ظ…ظ„ظˆظ† ط§ظ„ظ…ظ…ظٹط² */
 .card-header-modern {
-    background: linear-gradient(135deg, #00657A 0%, #14b8a6 100%);
+    background: linear-gradient(135deg, #155E85 0%, #14b8a6 100%);
     color: #ffffff;
     padding: 25px 30px;
     display: flex;
@@ -142,7 +142,7 @@
 }
 
 .toggle-password:hover {
-    color: #00657A;
+    color: #155E85;
 }
 
 /* ظ…ط¤ط´ط± ظ‚ظˆط© ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± (Animation & Strength Bar) */
@@ -210,7 +210,7 @@ select.form-control {
 }
 
 .btn-submit:hover {
-    background-color: #0B8FAC;
+    background-color: #1C72A6;
     transform: translateY(-1px);
 }
 

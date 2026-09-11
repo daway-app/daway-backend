@@ -100,13 +100,13 @@
                     @forelse($recentActivities as $activity)
                         @php
                             if (is_array($activity)) {
-                                $activity = (object) ['description' => $activity['description'] ?? '', 'time' => $activity['time'] ?? '', 'color' => $activity['color'] ?? '#0B8FAC'];
+                                $activity = (object) ['description' => $activity['description'] ?? '', 'time' => $activity['time'] ?? '', 'color' => $activity['color'] ?? '#1C72A6'];
                             } elseif (!is_object($activity)) {
-                                $activity = (object) ['description' => $activity, 'time' => '', 'color' => '#0B8FAC'];
+                                $activity = (object) ['description' => $activity, 'time' => '', 'color' => '#1C72A6'];
                             }
                         @endphp
                         <div class="activity-card">
-                            <span class="dot-indicator" style="background: {{ $activity->color ?? '#0B8FAC' }};"></span>
+                            <span class="dot-indicator" style="background: {{ $activity->color ?? '#1C72A6' }};"></span>
                             <div class="activity-desc">{!! $activity->description ?? '' !!}</div>
                             <small class="activity-time">{{ $activity->time ?? '' }}</small>
                         </div>
@@ -201,7 +201,7 @@
                     <tbody id="modalLogTableBody">
                     @forelse($recentActivities as $activity)
                         <tr>
-                            <td><span class="dot-indicator" style="background: {{ $activity->color ?? '#0B8FAC' }}; display: inline-block;"></span></td>
+                            <td><span class="dot-indicator" style="background: {{ $activity->color ?? '#1C72A6' }}; display: inline-block;"></span></td>
                             <td>{!! $activity->description !!}</td>
                             <td><small style="color: #64748b;">{{ $activity->time }}</small></td>
                         </tr>
