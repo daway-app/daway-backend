@@ -209,9 +209,14 @@ class CategoryApiTest extends TestCase
         $this->assertSame(2, $unfiltered->json('pagination.total'));
     }
 
-    public function test_medicines_index_rejects_unknown_category_id(): void
+    public function test_medicines_index_ignores_unknown_category_id_silently(): void
     {
-        $this->getJson('/api/medicines?category_id=424242')->assertStatus(422);
+        // category_id غير صالح → يُتجاهل بصمت (200 + النتائج العادية)
+        // بدل 422 — تجنّب redirect-back لعملاء بدون Accept: application/json
+        $this->createMohMedicine(['trade_name' => 'PLAINMED 1', 'moh_product_id' => 6001]);
+
+        $response = $this->getJson('/api/medicines?category_id=424242')->assertOk();
+        $this->assertSame(1, $response->json('pagination.total'));
     }
 
     public function test_medicines_index_filters_by_canonical_dosage_form(): void

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
 use App\Models\Pharmacy;
@@ -133,13 +134,19 @@ class MedicineController extends Controller
         // الاستعلام ومفتاح الـcache كما كانا تماماً.
         $validated = $request->validate([
             'per_page' => 'nullable|integer|min:1|max:100',
-            'category_id' => 'nullable|integer|exists:categories,id',
+            // category_id غير صالح → يُتجاهل بصمت (مثل dosage_form) بدل 422 —
+            // عميل بدون Accept: application/json كان يأخذ redirect بدل JSON.
+            'category_id' => 'nullable|integer|min:1',
             'dosage_form' => 'nullable|string|max:50',
         ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
         $page = (int) $request->get('page', 1);
 
-        $categoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
+        // category_id غير موجود فعلاً في جدول الأقسام → يُعامل كغير مُرسل
+        $categoryId = null;
+        if (! empty($validated['category_id'])) {
+            $categoryId = Category::find((int) $validated['category_id'])?->id;
+        }
         // قيمة dosage_form غير معروفة → null → تُتجاهل الفلترة بصمت
         $dosageForm = isset($validated['dosage_form']) ? DosageFormNormalizer::forInput($validated['dosage_form']) : null;
 
