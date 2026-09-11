@@ -33,11 +33,9 @@ class SetAppLocale
 
         if (! $locale) {
             try {
-                // استعلام settings يُنفَّذ في كل طلب بدون جلسة/بدون ?lang —
-                // القيمة تتغير نادراً → كاش 5 دقائق يوفر رحلة DB في كل طلب.
-                $locale = Cache::remember('app_default_language', 300, function () {
-                    return DB::table('settings')->where('key', 'default_language')->value('value');
-                });
+                // بلا كاش هنا: CACHE_STORE=file على الإنتاج ليس آمناً للكتابات
+                // المتزامنة (فساد الملف → 500 شامل). الاستعلام رخيص.
+                $locale = DB::table('settings')->where('key', 'default_language')->value('value');
             } catch (\Throwable) {
                 $locale = null;
             }
