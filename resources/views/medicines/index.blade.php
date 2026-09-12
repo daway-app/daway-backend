@@ -181,7 +181,9 @@
                                 </div>
                             </div>
                         </td>
-                        <td>{{ $medicine->active_ingredient }}</td>
+                        <td>
+                            <span class="med-ingredient-text" title="{{ $medicine->active_ingredient }}">{{ $medicine->active_ingredient }}</span>
+                        </td>
                         <td><span class="pill-badge status-badge {{ $rowStatus }}">{{ $medicine->stock }}</span></td>
                         <td><strong style="color: #1C72A6;">{{ $medicine->pharmacy_count }}</strong> {{ $medicine->pharmacy_count === 1 ? __('medicines.pharmacy_one') : __('medicines.pharmacy_many') }}</td>
                         <td><strong>₪ {{ $medicine->min_price !== null ? number_format($medicine->min_price, 2) : '—' }}</strong></td>

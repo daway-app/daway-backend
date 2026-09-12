@@ -95,7 +95,9 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ $pm->medicine->active_ingredient }}</td>
+                                <td>
+                                    <span class='med-ingredient-text' title='{{ $pm->medicine->active_ingredient }}'>{{ $pm->medicine->active_ingredient }}</span>
+                                </td>
                                 <td>{{ number_format($pm->price, 2) }} @lang('pharmacy.currency')</td>
                                 <td>{{ $qty }}</td>
                                 <td><span class='ph-badge {{ $status }}'>{{ $statusText($status) }}</span></td>

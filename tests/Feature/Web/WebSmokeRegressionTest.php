@@ -146,10 +146,11 @@ class WebSmokeRegressionTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $longName = 'اسم-دواء-تجاري-طويل-جدًا-جدا-جدا-جدا';
+        $longIngredient = 'مادة-فعالة-طويلة-أيضًا-جدا-جدا';
 
         Medicine::factory()->create([
             'trade_name' => $longName,
-            'active_ingredient' => 'مادة-فعالة-طويلة-أيضًا-جدا-جدا',
+            'active_ingredient' => $longIngredient,
         ]);
 
         $response = $this->actingAs($admin)->get('/medicines');
@@ -159,6 +160,9 @@ class WebSmokeRegressionTest extends TestCase
             ->assertSee('med-cell-text', false)
             // الاسم الكامل محفوظ في title (لا يُحذف من الـDOM)
             ->assertSee('title="'.$longName.'"', false)
+            // المادة الفعالة لها حد مستقل وtitle للاسم الكامل
+            ->assertSee('med-ingredient-text', false)
+            ->assertSee('title="'.$longIngredient.'"', false)
             // حاوية التمرير الأفقي
             ->assertSee('tbl-wrap', false);
     }

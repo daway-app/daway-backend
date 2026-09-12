@@ -568,7 +568,8 @@ body.dark-mode nav[role="navigation"] span[aria-current="page"] > span {
 }
 
 .med-cell-text > strong,
-.med-cell-text > small {
+.med-cell-text > small,
+.med-ingredient-text {
     display: block;
     max-width: 100%;
     overflow: hidden;
@@ -576,12 +577,19 @@ body.dark-mode nav[role="navigation"] span[aria-current="page"] > span {
     white-space: nowrap;
 }
 
+/* المادة الفعالة لها عمود مستقل أيضًا — حدّها حتى لا تمدّ الجدول */
+.med-ingredient-text {
+    max-width: 240px;
+}
+
 @media (max-width: 1100px) {
     .med-cell-text { max-width: 180px; }
+    .med-ingredient-text { max-width: 180px; }
 }
 
 @media (max-width: 768px) {
     .med-cell-text { max-width: 140px; }
+    .med-ingredient-text { max-width: 140px; }
 }
 
 /* نفس المعالجة لاسم الدواء في جدول مخزون الصيدلية (pharmacies/show).
