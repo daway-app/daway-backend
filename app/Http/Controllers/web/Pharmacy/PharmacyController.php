@@ -125,19 +125,27 @@ class PharmacyController extends Controller
 
     public function show(string $id)
     {
-        $pharmacy = Pharmacy::with('user', 'pharmacyMedicines.medicine')->findOrFail($id);
+        $pharmacy = Pharmacy::with('user')->findOrFail($id);
 
         // عمليات البحث التي أجراها حساب الصيدلية هذا الشهر
         $searchesThisMonth = SearchLog::where('user_id', $pharmacy->user_id)
             ->where('created_at', '>=', now()->startOfMonth())
             ->count();
 
-        // نسبة التوفر: أدوية المخزون المتوفرة (الكمية أكبر من صفر) من إجمالي أدوية الصيدلية
-        $totalMedicines = $pharmacy->pharmacyMedicines->count();
-        $availableMedicines = $pharmacy->pharmacyMedicines->where('quantity', '>', 0)->count();
+        // نسبة التوفر: أدوية المخزون المتوفرة (الكمية أكبر من صفر) من إجمالي أدوية الصيدلية.
+        // إحصاء على مستوى SQL بدل تحميل كل صفوف المخزون في الذاكرة.
+        $totalMedicines = (int) $pharmacy->pharmacyMedicines()->count();
+        $availableMedicines = (int) $pharmacy->pharmacyMedicines()->where('quantity', '>', 0)->count();
         $availabilityRate = $totalMedicines > 0 ? round(($availableMedicines / $totalMedicines) * 100) : 0;
 
-        return view('pharmacies.show', compact('pharmacy', 'searchesThisMonth', 'availabilityRate'));
+        // جدول المخزون: الصفحة الحالية فقط — كان @forelse يعرض كل الصفوف بلا حد
+        $pharmacyMedicines = $pharmacy->pharmacyMedicines()
+            ->with('medicine')
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('pharmacies.show', compact('pharmacy', 'searchesThisMonth', 'availabilityRate', 'pharmacyMedicines'));
     }
 
     public function edit(string $id)

@@ -1,12 +1,14 @@
 {
   "version": 1,
   "style": {
-    "file": "assets/fonts-BJRfngpw.css",
+    "file": "assets/fonts-B7qq6EhU.css",
     "familyStyles": {
-      "cairo": "@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-400-normal-Dh7otpdh.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-400-normal-b1R3q6Pf.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-500-normal-D-WQsSKQ.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-500-normal-DkdkMETP.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 600;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-600-normal-mGS0uvCM.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 600;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-600-normal-buYOP1M3.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 700;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-700-normal-C3GYtKbV.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 700;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-700-normal-6fcUy4Rc.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n.font-cairo {\n  font-family: var(--font-cairo);\n}"
+      "cairo": "@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-400-normal-Dh7otpdh.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-400-normal-b1R3q6Pf.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-500-normal-D-WQsSKQ.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-500-normal-DkdkMETP.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 600;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-600-normal-mGS0uvCM.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 600;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-600-normal-buYOP1M3.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 700;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-700-normal-C3GYtKbV.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Cairo\";\n  font-style: normal;\n  font-weight: 700;\n  font-display: swap;\n  src: url(\"/build/assets/cairo-700-normal-6fcUy4Rc.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n.font-cairo {\n  font-family: var(--font-cairo);\n}",
+      "tajawal": "@font-face {\n  font-family: \"Tajawal\";\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"/build/assets/tajawal-400-normal-BVNSOH3d.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Tajawal\";\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"/build/assets/tajawal-400-normal-BdYcZznU.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Tajawal\";\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"/build/assets/tajawal-500-normal-CoYeBiSI.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Tajawal\";\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"/build/assets/tajawal-500-normal-DU9v6xgj.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Tajawal\";\n  font-style: normal;\n  font-weight: 700;\n  font-display: swap;\n  src: url(\"/build/assets/tajawal-700-normal-BypgxfGb.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Tajawal\";\n  font-style: normal;\n  font-weight: 700;\n  font-display: swap;\n  src: url(\"/build/assets/tajawal-700-normal-CV3bxpHe.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Tajawal\";\n  font-style: normal;\n  font-weight: 800;\n  font-display: swap;\n  src: url(\"/build/assets/tajawal-800-normal-CmI34b-g.woff2\") format(\"woff2\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n@font-face {\n  font-family: \"Tajawal\";\n  font-style: normal;\n  font-weight: 800;\n  font-display: swap;\n  src: url(\"/build/assets/tajawal-800-normal-Dm5jVIIh.woff\") format(\"woff\");\n  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;\n}\n\n.font-tajawal {\n  font-family: var(--font-tajawal);\n}"
     },
     "variables": {
-      "cairo": "--font-cairo: \"Cairo\";"
+      "cairo": "--font-cairo: \"Cairo\";",
+      "tajawal": "--font-tajawal: \"Tajawal\";"
     }
   },
   "preloads": [
@@ -46,6 +48,46 @@
       "weight": 700,
       "style": "normal",
       "file": "assets/cairo-700-normal-C3GYtKbV.woff2",
+      "as": "font",
+      "type": "font/woff2",
+      "crossorigin": "anonymous"
+    },
+    {
+      "alias": "tajawal",
+      "family": "Tajawal",
+      "weight": 400,
+      "style": "normal",
+      "file": "assets/tajawal-400-normal-BVNSOH3d.woff2",
+      "as": "font",
+      "type": "font/woff2",
+      "crossorigin": "anonymous"
+    },
+    {
+      "alias": "tajawal",
+      "family": "Tajawal",
+      "weight": 500,
+      "style": "normal",
+      "file": "assets/tajawal-500-normal-CoYeBiSI.woff2",
+      "as": "font",
+      "type": "font/woff2",
+      "crossorigin": "anonymous"
+    },
+    {
+      "alias": "tajawal",
+      "family": "Tajawal",
+      "weight": 700,
+      "style": "normal",
+      "file": "assets/tajawal-700-normal-BypgxfGb.woff2",
+      "as": "font",
+      "type": "font/woff2",
+      "crossorigin": "anonymous"
+    },
+    {
+      "alias": "tajawal",
+      "family": "Tajawal",
+      "weight": 800,
+      "style": "normal",
+      "file": "assets/tajawal-800-normal-CmI34b-g.woff2",
       "as": "font",
       "type": "font/woff2",
       "crossorigin": "anonymous"
@@ -107,6 +149,68 @@
             },
             {
               "file": "assets/cairo-700-normal-6fcUy4Rc.woff",
+              "format": "woff",
+              "unicodeRange": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"
+            }
+          ]
+        }
+      }
+    },
+    "tajawal": {
+      "family": "Tajawal",
+      "variable": "--font-tajawal",
+      "variants": {
+        "400:normal": {
+          "files": [
+            {
+              "file": "assets/tajawal-400-normal-BVNSOH3d.woff2",
+              "format": "woff2",
+              "unicodeRange": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"
+            },
+            {
+              "file": "assets/tajawal-400-normal-BdYcZznU.woff",
+              "format": "woff",
+              "unicodeRange": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"
+            }
+          ]
+        },
+        "500:normal": {
+          "files": [
+            {
+              "file": "assets/tajawal-500-normal-CoYeBiSI.woff2",
+              "format": "woff2",
+              "unicodeRange": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"
+            },
+            {
+              "file": "assets/tajawal-500-normal-DU9v6xgj.woff",
+              "format": "woff",
+              "unicodeRange": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"
+            }
+          ]
+        },
+        "700:normal": {
+          "files": [
+            {
+              "file": "assets/tajawal-700-normal-BypgxfGb.woff2",
+              "format": "woff2",
+              "unicodeRange": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"
+            },
+            {
+              "file": "assets/tajawal-700-normal-CV3bxpHe.woff",
+              "format": "woff",
+              "unicodeRange": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"
+            }
+          ]
+        },
+        "800:normal": {
+          "files": [
+            {
+              "file": "assets/tajawal-800-normal-CmI34b-g.woff2",
+              "format": "woff2",
+              "unicodeRange": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"
+            },
+            {
+              "file": "assets/tajawal-800-normal-Dm5jVIIh.woff",
               "format": "woff",
               "unicodeRange": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"
             }

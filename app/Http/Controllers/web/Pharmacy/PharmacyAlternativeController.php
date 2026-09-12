@@ -9,6 +9,7 @@ use App\Models\PharmacyMedicine; // To get pharmacy's own medicines
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class PharmacyAlternativeController extends Controller
@@ -36,15 +37,61 @@ class PharmacyAlternativeController extends Controller
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
 
-        // Get all medicines that this pharmacy offers
+        // الصفحة الحالية فقط — كان ->get() يحمّل كل أدوية الصيدلية بلا حد
         $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->with(['medicine', 'medicine.alternatives']) // Eager load Medicine and its alternatives
-            ->get();
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
 
-        $totalAlternatives = $pharmacyMedicines->pluck('medicine')->sum(fn ($m) => $m->alternatives->count());
-        $availableAlternatives = $pharmacyMedicines->filter(fn ($pm) => $pm->medicine->alternatives->isNotEmpty())->count();
+        // مرشّحو البدائل لكل المواد الفعالة في الصفحة — استعلام واحد بدل استعلامين لكل صف.
+        // المادة الفعالة الفارغة لا تُعادَل بأدوية عشوائية (لا تدخل الخريطة أصلاً).
+        $ingredients = $pharmacyMedicines->getCollection()
+            ->pluck('medicine.active_ingredient')
+            ->filter(fn ($value) => $value !== null && $value !== '')
+            ->unique()
+            ->values();
 
-        return view('pharmacy.alternatives.index', compact('pharmacyMedicines', 'pharmacy', 'totalAlternatives', 'availableAlternatives'));
+        $candidatesByIngredient = $ingredients->isEmpty()
+            ? collect()
+            : Medicine::whereIn('active_ingredient', $ingredients)
+                ->orderBy('trade_name')
+                ->get(['id', 'trade_name', 'active_ingredient'])
+                ->groupBy('active_ingredient');
+
+        // مخزون المرشّحين في هذه الصيدلية — استعلام واحد للصفحة كلها
+        $candidateIds = $candidatesByIngredient->flatten(1)->pluck('id')->unique()->values();
+
+        $stockByCandidate = $candidateIds->isEmpty()
+            ? collect()
+            : PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+                ->whereIn('medicine_id', $candidateIds)
+                ->get(['medicine_id', 'quantity', 'is_available'])
+                ->keyBy('medicine_id');
+
+        // الإحصاءات تُحسب على كامل مجموعة الصيدلية (لا على الصفحة الحالية فقط)
+        $totalAlternatives = (int) DB::table('alternative_medicine')
+            ->join('pharmacy_medicines', 'pharmacy_medicines.medicine_id', '=', 'alternative_medicine.medicine_id')
+            ->where('pharmacy_medicines.pharmacy_id', $pharmacy->id)
+            ->count();
+
+        $needsAlternative = (int) PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->where('quantity', '<=', 0)
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('alternative_medicine')
+                    ->whereColumn('alternative_medicine.medicine_id', 'pharmacy_medicines.medicine_id');
+            })
+            ->count();
+
+        return view('pharmacy.alternatives.index', compact(
+            'pharmacyMedicines',
+            'pharmacy',
+            'totalAlternatives',
+            'needsAlternative',
+            'candidatesByIngredient',
+            'stockByCandidate'
+        ));
     }
 
     /**

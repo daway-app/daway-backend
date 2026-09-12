@@ -6,9 +6,11 @@
     <title>دواك — غير متصل</title>
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="#1C72A6">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
+    {{-- لا خطوط خارجية هنا: هذه صفحة الانقطاع — أي <link rel="stylesheet"> خارجي
+         حاجب للعرض، وطلبه يفشل دائماً offline فيؤخّر ظهور الصفحة بلا فائدة.
+         النص يُرسم فوراً بخط النظام عبر fallback system-ui المُعلَن أدناه.
+         (الخطوط الذاتية عبر Vite لا تنفع هنا: هذه الصفحة standalone بلا @vite،
+          وأسماء ملفات الخطوط مُجزَّأة/hashed وتتغيّر مع كل build.) --}}
     <style>
         body{margin:0;min-height:100vh;display:grid;place-items:center;background:#F5FAF9;font-family:'Tajawal',system-ui,sans-serif;color:#0C2224;}
         .offline-box{background:#fff;border:1px solid #EEF4F3;border-radius:16px;box-shadow:0 1px 3px rgba(12,34,36,.06);padding:48px 40px;max-width:460px;text-align:center;}

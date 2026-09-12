@@ -38,11 +38,11 @@ export const sync = {
             setBanner('offline');
         });
         // heartbeat: navigator.onLine lies on captive portals
+        // H-10: تاب مخفي = إيقاف النبضة. الفترة 60s بدل 30s — كل نبضة = /healthz + /api/sync/pull
         this.timer = setInterval(() => {
-            // H-10: تاب مخفي = إيقاف الـ heartbeat (المتصفح يستأنف عند العودة)
             if (document.hidden) return;
             this.checkThenSync();
-        }, 30000);
+        }, 60000);
         // H-10: عند إعادة ظهور التاب نفحص فوراً بعد الغياب الطويل
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) this.checkThenSync();
@@ -51,9 +51,14 @@ export const sync = {
         else { this.serverUp = false; this.lastCheckAt = Date.now(); setBanner('offline'); }
     },
 
-    /* null = غير معروف (heartbeat قديم) — true/false = نتيجة حديثة (خلال 20 ثانية) */
+    /* null = غير معروف (قراءة قديمة) — true/false = نتيجة حديثة.
+       العتبة مشتقّة من تصميم المزامنة نفسه، لا رقم اعتباطي:
+           فترة النبضة (60000ms) + مهلة طلب /healthz (5000ms) + هامش (10000ms) = 75000ms
+       الغرض: تبقى قراءة النبضة صالحة حتى تصل النبضة التالية، فلا يدخل قرار الحفظ
+       في حالة «مجهول» أثناء الدورة الطبيعية. كان 20000 مع نبضة 60000 = 40 ثانية
+       مجهولة من كل دقيقة → مسار probeOnce مرتين في intercept.js → تأخير حفظ حتى ~8s. */
     isServerReachable() {
-        if (Date.now() - this.lastCheckAt > 20000) return null;
+        if (Date.now() - this.lastCheckAt > 75000) return null;
         return this.serverUp;
     },
 

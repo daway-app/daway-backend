@@ -42,3 +42,6 @@ postman/
 /PROJECT_MAP.md
 /opencode.json
 /opencode.jsonc
+
+# بيانات أدوات محلية (ذاكرة الجلسات) — لا تُرفع للمستودع
+/.workbuddy-ai/

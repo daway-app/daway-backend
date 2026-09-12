@@ -6,9 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول — دواك</title>
     <meta name="theme-color" content="#1C72A6">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
+    {{-- الخطوط (Cairo + Tajawal) تُستضاف ذاتياً عبر Vite/bunny — لا طلب خارجي حاجب للعرض --}}
 
     <!-- ربط ملف الـ CSS الخارجي عبر Vite -->
     @vite(['resources/css/app.css', 'resources/css/auth/forms.css'])

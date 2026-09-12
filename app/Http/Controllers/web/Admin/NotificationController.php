@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\NotificationGenerator;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -114,8 +115,10 @@ class NotificationController extends Controller
 
             $notifications = $user->notifications()
                 ->orderBy('created_at', 'desc')
-                ->get()
-                ->each(fn ($n) => $n->link = $this->notificationLink($n));
+                ->paginate(20);
+
+            // الرابط يُحسب على الصفحة الحالية فقط (كان ->get() يحمّل كل الإشعارات)
+            $notifications->getCollection()->each(fn ($n) => $n->link = $this->notificationLink($n));
 
             return view('notifications.index', compact('notifications'));
 
@@ -125,7 +128,7 @@ class NotificationController extends Controller
             );
 
             return view('notifications.index', [
-                'notifications' => collect(),
+                'notifications' => new LengthAwarePaginator([], 0, 20),
             ])->with('error', 'Failed to load notifications.');
         }
     }

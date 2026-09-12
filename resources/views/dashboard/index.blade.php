@@ -407,27 +407,25 @@
             }
         });
 
-        // ===== التحميل المسبق: بعد الدخول تُحمَّل الصفحات مرة واحدة وتُخزَّن (متصفح + خادم) =====
+        // ===== التحميل المسبق: عند مرور المؤشر/التركيز على رابط تنقّل =====
+        // كان: 6 صفحات كاملة + API تُطلب تلقائياً بعد الدخول (كل 400ms) — 6 عمليات render كاملة
+        // على السيرفر. الآن: تُسخَّن الصفحة فقط عندما يُبدي المستخدم نية الانتقال إليها.
         (function () {
-            const prefetchUrls = [
-                '/users',
-                '/medicines',
-                '/pharmacies',
-                '/patients',
-                '/inventory',
-                '/logs',
-                '/api/notifications/count'
-            ];
             if (typeof fetch !== 'function') return;
-            prefetchUrls.forEach(function (url, i) {
-                setTimeout(function () {
-                    try {
-                        fetch(url, { credentials: 'same-origin', cache: 'force-cache' });
-                    } catch (e) { /* ignore */ }
-                }, i * 400);
+            var warmed = Object.create(null);
+            function warm(url) {
+                if (!url || warmed[url]) return;
+                warmed[url] = true;
+                try {
+                    fetch(url, { credentials: 'same-origin', cache: 'force-cache' });
+                } catch (e) { /* ignore */ }
+            }
+            document.querySelectorAll('.nav-item[href]').forEach(function (link) {
+                var url = link.getAttribute('href');
+                if (!url || url.charAt(0) !== '/' || url.indexOf('//') === 0) return;
+                link.addEventListener('mouseenter', function () { warm(url); }, { once: true });
+                link.addEventListener('focus', function () { warm(url); }, { once: true });
             });
         })();
     </script>
 @endsection
-< ! - -   F o r c e   r e b u i l d     - - >  
- 

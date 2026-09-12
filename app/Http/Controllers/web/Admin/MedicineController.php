@@ -151,9 +151,16 @@ class MedicineController extends Controller
      */
     public function show(string $id)
     {
-        $medicine = Medicine::with(['alternatives', 'pharmacyMedicines.pharmacy'])->findOrFail($id);
+        $medicine = Medicine::with('alternatives')->findOrFail($id);
 
-        return view('medicines.show', compact('medicine'));
+        // جدول الصيدليات: الصفحة الحالية فقط — كان @forelse يعرض كل الصيدليات بلا حد
+        $pharmacyMedicines = $medicine->pharmacyMedicines()
+            ->with('pharmacy')
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('medicines.show', compact('medicine', 'pharmacyMedicines'));
     }
 
     /**

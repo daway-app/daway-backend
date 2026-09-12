@@ -31,13 +31,45 @@
     "file": "assets/cairo-700-normal-C3GYtKbV.woff2",
     "src": "_cairo-700-normal-C3GYtKbV.woff2"
   },
-  "_fonts-BJRfngpw.css": {
-    "file": "assets/fonts-BJRfngpw.css",
-    "src": "_fonts-BJRfngpw.css"
+  "_fonts-B7qq6EhU.css": {
+    "file": "assets/fonts-B7qq6EhU.css",
+    "src": "_fonts-B7qq6EhU.css"
   },
   "_index.esm-DRF2KiTp.js": {
     "file": "assets/index.esm-DRF2KiTp.js",
     "name": "index.esm"
+  },
+  "_tajawal-400-normal-BVNSOH3d.woff2": {
+    "file": "assets/tajawal-400-normal-BVNSOH3d.woff2",
+    "src": "_tajawal-400-normal-BVNSOH3d.woff2"
+  },
+  "_tajawal-400-normal-BdYcZznU.woff": {
+    "file": "assets/tajawal-400-normal-BdYcZznU.woff",
+    "src": "_tajawal-400-normal-BdYcZznU.woff"
+  },
+  "_tajawal-500-normal-CoYeBiSI.woff2": {
+    "file": "assets/tajawal-500-normal-CoYeBiSI.woff2",
+    "src": "_tajawal-500-normal-CoYeBiSI.woff2"
+  },
+  "_tajawal-500-normal-DU9v6xgj.woff": {
+    "file": "assets/tajawal-500-normal-DU9v6xgj.woff",
+    "src": "_tajawal-500-normal-DU9v6xgj.woff"
+  },
+  "_tajawal-700-normal-BypgxfGb.woff2": {
+    "file": "assets/tajawal-700-normal-BypgxfGb.woff2",
+    "src": "_tajawal-700-normal-BypgxfGb.woff2"
+  },
+  "_tajawal-700-normal-CV3bxpHe.woff": {
+    "file": "assets/tajawal-700-normal-CV3bxpHe.woff",
+    "src": "_tajawal-700-normal-CV3bxpHe.woff"
+  },
+  "_tajawal-800-normal-CmI34b-g.woff2": {
+    "file": "assets/tajawal-800-normal-CmI34b-g.woff2",
+    "src": "_tajawal-800-normal-CmI34b-g.woff2"
+  },
+  "_tajawal-800-normal-Dm5jVIIh.woff": {
+    "file": "assets/tajawal-800-normal-Dm5jVIIh.woff",
+    "src": "_tajawal-800-normal-Dm5jVIIh.woff"
   },
   "node_modules/firebase/app/dist/esm/index.esm.js": {
     "file": "assets/index.esm-Bk6RMNmA.js",
@@ -265,7 +297,7 @@
     "isEntry": true
   },
   "resources/js/offline/index.js": {
-    "file": "assets/index-BSBMtd27.js",
+    "file": "assets/index-VrtmJoWC.js",
     "name": "index",
     "src": "resources/js/offline/index.js",
     "isEntry": true,

@@ -124,24 +124,51 @@ self.addEventListener('fetch', (event) => {
         if (isOfflinePage(url)) {
             event.respondWith(
                 (async () => {
+                    // قراءة الكاش محميّة: خطأ في Cache API لا يكسر التنقّل بالكامل —
+                    // نكمل إلى الشبكة، وإن فشلت الشبكة أيضًا نسقط على /offline.
+                    let cached = null;
                     try {
-                        const controller = new AbortController();
-                        const timer = setTimeout(() => controller.abort(), 3000);
-                        const fresh = await fetch(request, { signal: controller.signal, credentials: 'same-origin' });
-                        clearTimeout(timer);
-                        if (fresh && fresh.ok && fresh.type === 'basic') {
-                            const cache = await caches.open(VERSION);
-                            cache.put(request, fresh.clone());
-                        }
-                        return fresh;
+                        cached = await caches.match(request, { ignoreSearch: false });
                     } catch (e) {
-                        // offline (أو timeout نادر) — من الكاش
-                        const cached = await caches.match(request, { ignoreSearch: false });
-                        if (cached) return cached;
-                        return caches.match('/offline').then((resp) =>
-                            resp || new Response('offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
-                        );
+                        cached = null;
                     }
+
+                    // الطلب لا يُلغى أبداً: يكمل في الخلفية ويُحدِّث الكاش حتى لو خُدم الكاش أولاً.
+                    // (كان AbortController(3000ms) يلغي الطلب على cold start → لا تحديث للكاش،
+                    //  فتظل الصفحة قديمة للأبد كلما كان التحميل بطيئاً.)
+                    const freshPromise = fetch(request, { credentials: 'same-origin' })
+                        .then(async (fresh) => {
+                            if (fresh && fresh.ok && fresh.type === 'basic') {
+                                const cache = await caches.open(VERSION);
+                                cache.put(request, fresh.clone());
+                            }
+                            return fresh;
+                        })
+                        .catch(() => null);
+
+                    // يوجد كاش → نمنح الشبكة 1200ms ثم نعرض الكاش فوراً (لا تعليق للواجهة).
+                    // لا يوجد كاش → ننتظر الشبكة كاملة (8s تغطي cold start على Render).
+                    const timeoutMs = cached ? 1200 : 8000;
+                    let timer;
+                    const timeout = new Promise((resolve) => {
+                        timer = setTimeout(() => resolve(null), timeoutMs);
+                    });
+
+                    const fresh = await Promise.race([freshPromise, timeout]);
+                    clearTimeout(timer);
+
+                    if (fresh) return fresh;
+                    if (cached) return cached;
+
+                    // نفس الحماية لقراءة /offline — الفشل يعطي استجابة 503 نصية لا رفضاً.
+                    let fallback = null;
+                    try {
+                        fallback = await caches.match('/offline');
+                    } catch (e) {
+                        fallback = null;
+                    }
+
+                    return fallback || new Response('offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
                 })()
             );
             return;

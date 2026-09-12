@@ -17,7 +17,7 @@
                 <h2 style="font-size:1.3rem; font-weight:800; color:var(--gray-900)">{{ $medicine->trade_name }}</h2>
                 <div style="display:flex; gap:10px; align-items:center; margin-top:2px">
                     <span class="pid">MED-{{ $medicine->id }} <button onclick="copyId(this,'MED-{{ $medicine->id }}')" title="نسخ">⎘</button></span>
-                    <span class="bdg bdg-ok">متوفر في {{ $medicine->pharmacyMedicines->count() }} صيدلية</span>
+                    <span class="bdg bdg-ok">متوفر في {{ $pharmacyMedicines->total() }} صيدلية</span>
                 </div>
             </div>
         </div>
@@ -94,7 +94,7 @@
         <!-- الصيدليات المتوفر بها -->
         <div>
             <div class="card">
-                <div class="card-head"><h2>📍 صيدليات يتوفر بها الدواء ({{ $medicine->pharmacyMedicines->count() }})</h2></div>
+                <div class="card-head"><h2>📍 صيدليات يتوفر بها الدواء ({{ $pharmacyMedicines->total() }})</h2></div>
                 <div class="card-body np">
                     <div class="tbl-wrap">
                         <table>
@@ -104,7 +104,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            @forelse($medicine->pharmacyMedicines as $pharmacyMedicine)
+                            @forelse($pharmacyMedicines as $pharmacyMedicine)
                             <tr>
                                 <td><strong>{{ $pharmacyMedicine->pharmacy->pharmacy_name }}</strong></td>
                                 <td>{{ $pharmacyMedicine->price }} ₪</td>
@@ -117,6 +117,9 @@
                             @endforelse
                             </tbody>
                         </table>
+                        @if($pharmacyMedicines->hasPages())
+                            <div style="padding: 14px 20px; border-top: 1px solid #eef2f7;">{{ $pharmacyMedicines->withQueryString()->links() }}</div>
+                        @endif
                     </div>
                 </div>
             </div>

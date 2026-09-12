@@ -71,7 +71,7 @@
             <!-- البطاقة الثانية: مخزون الأدوية للصيدلية -->
             <div class="table-card">
                 <div class="table-card-header" style="padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                    <h3 class="table-card-title">💊 @lang('pharmacies.medicines_in_stock') ({{ $pharmacy->pharmacyMedicines->count() }})</h3>
+                    <h3 class="table-card-title">💊 @lang('pharmacies.medicines_in_stock') ({{ $pharmacyMedicines->total() }})</h3>
                     <div class="search-input-wrapper" style="max-width: 200px; flex: unset;">
                         <input type="text" placeholder="@lang('pharmacies.search_placeholder')" style="padding: 8px 12px; font-size: 12px;">
                     </div>
@@ -87,7 +87,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    @forelse($pharmacy->pharmacyMedicines as $pharmacyMedicine)
+                    @forelse($pharmacyMedicines as $pharmacyMedicine)
                     <tr>
                         <td style="padding: 14px 20px;">
                             <strong class="med-name">{{ $pharmacyMedicine->medicine->trade_name }}</strong>
@@ -112,6 +112,9 @@
                     @endforelse
                     </tbody>
                 </table>
+                @if($pharmacyMedicines->hasPages())
+                    <div style="padding: 14px 20px; border-top: 1px solid #eef2f7;">{{ $pharmacyMedicines->withQueryString()->links() }}</div>
+                @endif
             </div>
 
         </div>

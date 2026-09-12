@@ -7,7 +7,6 @@
     @include('partials.pharmacy-hub-i18n')
 
     @php
-        $needsAlternative = $pharmacyMedicines->filter(fn($pm) => $pm->quantity <= 0 && $pm->medicine->alternatives->isEmpty());
         $confirmDelete = __('pharmacy.alternatives.index.confirm_delete');
     @endphp
 
@@ -31,7 +30,7 @@
 
         <div class='ph-stats'>
             <div class='ph-stat'><i class='fas fa-arrows-rotate teal'></i><div><strong>{{ $totalAlternatives }}</strong><span>@lang('pharmacy.alternatives.index.stat_defined')</span></div></div>
-            <div class='ph-stat'><i class='fas fa-triangle-exclamation orange'></i><div><strong>{{ $needsAlternative->count() }}</strong><span>@lang('pharmacy.alternatives.index.stat_need')</span></div></div>
+            <div class='ph-stat'><i class='fas fa-triangle-exclamation orange'></i><div><strong>{{ $needsAlternative }}</strong><span>@lang('pharmacy.alternatives.index.stat_need')</span></div></div>
         </div>
 
         <div class='ph-filters'>
@@ -45,19 +44,12 @@
             @php
                 $isOut = $pm->quantity <= 0;
                 $currentAlts = $pm->medicine->alternatives;
-                // C2.1: لا تحمّل Medicine::all() — استعلم لكل دواء حسب المادة الفعالة
-                $candidates = \App\Models\Medicine::where('id', '!=', $pm->medicine_id)
-                    ->where('active_ingredient', '=', $pm->medicine->active_ingredient)
-                    // C2.2: self-pair protection — إذا المادة الفعالة فارغة، لا يُعادل أدويةً عشوائية
-                    ->when(empty($pm->medicine->active_ingredient), fn ($q) => $q->whereRaw('0 = 1'))
-                    ->orderBy('trade_name')
-                    ->get(['id', 'trade_name', 'active_ingredient']);
-                // Badge حالة: بديل في مخزون الصيدلية ومتوفر الآن؟
-                $stockByCandidate = \App\Models\PharmacyMedicine::query()
-                    ->where('pharmacy_id', $pharmacy->id)
-                    ->whereIn('medicine_id', $candidates->pluck('id'))
-                    ->get(['medicine_id', 'quantity', 'is_available'])
-                    ->keyBy('medicine_id');
+                // C2.1/C2.2: المرشّحون يأتون من خريطة مُجهَّزة في الكنترولر — استعلام واحد لكل الصفحة
+                // بدل استعلامين لكل صف. المادة الفعالة الفارغة لا تدخل الخريطة (لا مطابقة عشوائية).
+                $ingredient = $pm->medicine->active_ingredient;
+                $candidates = ($ingredient && isset($candidatesByIngredient[$ingredient]))
+                    ? $candidatesByIngredient[$ingredient]->where('id', '!=', $pm->medicine_id)->values()
+                    : collect();
             @endphp
             <div class='ph-card ph-alt-block' style='margin-block-end:14px;'>
                 <div class='ph-card-head' role='button' tabindex='0' data-ph-toggle='alt-body-{{ $pm->id }}' aria-expanded='true' aria-controls='alt-body-{{ $pm->id }}' style='cursor:pointer;user-select:none;'>
@@ -128,6 +120,10 @@
         @empty
             <div class='ph-empty'><i class='fas fa-box-open'></i><h3>@lang('pharmacy.alternatives.index.empty_medicines')</h3></div>
         @endforelse
+
+        @if($pharmacyMedicines->hasPages())
+            <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>{{ $pharmacyMedicines->withQueryString()->links() }}</div>
+        @endif
     </div>
 
     {{-- Modal تأكيد الحذف --}}

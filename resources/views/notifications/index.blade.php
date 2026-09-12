@@ -56,6 +56,10 @@
             <p class="no-notifications-full">@lang('layout.no_notifications_yet')</p>
         @endforelse
     </div>
+
+    @if(method_exists($notifications, 'hasPages') && $notifications->hasPages())
+        <div style="padding: 14px 0;">{{ $notifications->withQueryString()->links() }}</div>
+    @endif
 </div>
 
 <script>

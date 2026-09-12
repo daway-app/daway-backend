@@ -45,6 +45,11 @@ export default defineConfig({
                 bunny('Cairo', {
                     weights: [400, 500, 600, 700],
                 }),
+                // Tajawal كان يُحمَّل من Google Fonts (طلب خارجي حاجب للعرض على كل صفحة)
+                // — الآن يُستضاف ذاتياً مثل Cairo، بلا اعتماد على طرف ثالث.
+                bunny('Tajawal', {
+                    weights: [400, 500, 700, 800],
+                }),
             ],
         }),
         tailwindcss(),

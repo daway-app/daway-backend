@@ -34,10 +34,15 @@ function hydrateFromCache() {
     return render.renderFromCache().catch(() => {});
 }
 
+/* نطاق العمل offline = نفس نطاق الـ Service Worker (OFFLINE_NAV_PREFIXES في sw.js).
+   نبضة المزامنة تُشغَّل فقط داخل هذا النطاق: على صفحات الأدمن لا معنى لها وكانت
+   تُنتج /healthz + /api/sync/pull كل 30 ثانية بلا داعٍ. */
+const OFFLINE_SCOPE = /^\/(pharmacy|profile)(\/|$)/.test(window.location.pathname);
+
 document.addEventListener('DOMContentLoaded', () => {
     banner.init();
     intercept.init();
-    sync.init();
+    if (OFFLINE_SCOPE) sync.init();
     seedFromPage();
     hydrateFromCache();
     fcm.initFcm();
