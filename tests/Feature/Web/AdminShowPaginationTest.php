@@ -74,6 +74,10 @@ class AdminShowPaginationTest extends TestCase
         $page2->assertOk()
             ->assertSee('MED-1</strong>', false)
             ->assertSee('MED-5</strong>', false);
+
+        // ماركب الترقيم موجود (nav role="navigation" هو ما تعتمد عليه قواعد CSS
+        // العالمية في app_layout.css لتصغير أسهم SVG — راجع تعليق القسم هناك).
+        $page1->assertSee('role="navigation"', false);
     }
 
     public function test_medicine_show_paginates_pharmacies_and_reports_full_total(): void

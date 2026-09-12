@@ -406,3 +406,128 @@ body.dark-mode .notification-icon-full .icon-wrapper.bg-gray { background-color:
 @keyframes toastIn { from { opacity: 0; transform: translateY(-14px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes toastOut { to { opacity: 0; transform: translateY(-10px) scale(.96); } }
 body.dark-mode .site-toast { background: #1a1a1e; border: 1px solid rgba(255,255,255,.08); border-inline-start-width: 4px; }
+
+/* ==========================================================
+   ترقيم Laravel (view الافتراضي) — تنسيق عالمي
+   ==========================================================
+   view الترقيم الافتراضي يعتمد كليًا على أصناف Tailwind:
+     sm:hidden · hidden sm:flex · w-5 h-5 · border · rounded-md
+   وهذا المشروع لا يحمّل Tailwind إطلاقًا (لا @import "tailwindcss").
+   النتيجة قبل هذه القواعد:
+     • بلوكا الترقيم (موبايل + ديسكتوب) يظهران معًا
+     • أسهم SVG بحجمها الافتراضي الضخم
+     • روابط بلا أي تنسيق (أزرق مُسطَّر)
+   القواعد هنا عالمية لأن بعض الصفحات لا تحمّل أي ملف CSS خاص
+   (مثال: medicines/show بلا @vite)، فتنسيقها يجب أن يأتي من الـlayout.
+   ملاحظة أمان: role="navigation" لا يُستخدم في المشروع إلا في الترقيم.
+   ========================================================== */
+
+nav[role="navigation"] {
+    display: block;
+    width: 100%;
+    margin-top: 18px;
+}
+
+/* بلوك الموبايل (sm:hidden) — يُخفى، ونعرض بلوك الديسكتوب فقط */
+nav[role="navigation"] > div:first-child {
+    display: none !important;
+}
+
+nav[role="navigation"] > div:last-child {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+/* نص "عرض X إلى Y من Z" */
+nav[role="navigation"] > div:last-child > div:first-child p {
+    margin: 0;
+    color: #64748b;
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+/* حاوية أزرار الصفحات */
+nav[role="navigation"] > div:last-child > div:last-child {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+nav[role="navigation"] > div:last-child > div:last-child > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* الأزرار: أرقام الصفحات + أسهم السابق/التالي */
+nav[role="navigation"] a,
+nav[role="navigation"] span[aria-current="page"] > span,
+nav[role="navigation"] span[aria-disabled="true"] > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+}
+
+nav[role="navigation"] a:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+/* الصفحة الحالية */
+nav[role="navigation"] span[aria-current="page"] > span {
+    background: #1C72A6;
+    border-color: #1C72A6;
+    color: #ffffff;
+}
+
+/* المعطّل (سهم ممنوع / فاصل النقاط) */
+nav[role="navigation"] span[aria-disabled="true"] > span {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+/* ⚠️ الأسهم — جوهر العطل: بلا هذا تظهر بحجمها الافتراضي الضخم
+   لأن w-5 h-5 صنف Tailwind غير محمَّل في المشروع. */
+nav[role="navigation"] svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* الوضع الليلي */
+body.dark-mode nav[role="navigation"] > div:last-child > div:first-child p { color: #94a3b8; }
+
+body.dark-mode nav[role="navigation"] a,
+body.dark-mode nav[role="navigation"] span[aria-disabled="true"] > span {
+    background: #333338;
+    border-color: #3F3F46;
+    color: #cbd5e1;
+}
+
+body.dark-mode nav[role="navigation"] a:hover {
+    background: #3F3F46;
+    border-color: #71717A;
+    color: #E4E4E7;
+}
+
+body.dark-mode nav[role="navigation"] span[aria-current="page"] > span {
+    background: #1C72A6;
+    border-color: #1C72A6;
+    color: #ffffff;
+}
