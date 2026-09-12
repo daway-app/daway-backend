@@ -89,9 +89,9 @@
                                                 <i class='fas fa-pills'></i>
                                             @endif
                                         </div>
-                                        <div>
-                                            <strong>{{ $pm->medicine->trade_name }}</strong><br>
-                                            <small style='color:var(--ph-ink-faint);'>{{ $pm->medicine->strength ?? '' }}</small>
+                                        <div class='med-cell-text'>
+                                            <strong title='{{ $pm->medicine->trade_name }}'>{{ $pm->medicine->trade_name }}</strong>
+                                            <small style='color:var(--ph-ink-faint);' title='{{ $pm->medicine->strength ?? '' }}'>{{ $pm->medicine->strength ?? '' }}</small>
                                         </div>
                                     </div>
                                 </td>

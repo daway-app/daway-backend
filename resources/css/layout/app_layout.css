@@ -425,7 +425,6 @@ body.dark-mode .site-toast { background: #1a1a1e; border: 1px solid rgba(255,255
 nav[role="navigation"] {
     display: block;
     width: 100%;
-    margin-top: 18px;
 }
 
 /* بلوك الموبايل (sm:hidden) — يُخفى، ونعرض بلوك الديسكتوب فقط */
@@ -433,12 +432,14 @@ nav[role="navigation"] > div:first-child {
     display: none !important;
 }
 
+/* بلوك الديسكتوب: عمود — نص "عرض X إلى Y" في سطر، والأزرار في سطر تحته.
+   (كان صفًّا واحدًا فيلتفّ النص فوق الأزرار بشكل غير متوازن) */
 nav[role="navigation"] > div:last-child {
     display: flex !important;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 14px;
+    gap: 10px;
 }
 
 /* نص "عرض X إلى Y من Z" */
@@ -530,4 +531,86 @@ body.dark-mode nav[role="navigation"] span[aria-current="page"] > span {
     background: #1C72A6;
     border-color: #1C72A6;
     color: #ffffff;
+}
+
+/* شاشات صغيرة: أزرار أصغر ومسافات أضيق حتى لا يلتفّ الصف بشكل سيئ */
+@media (max-width: 640px) {
+    nav[role="navigation"] > div:last-child { gap: 8px; }
+    nav[role="navigation"] > div:last-child > div:first-child p { font-size: 11.5px; }
+    nav[role="navigation"] > div:last-child > div:last-child { gap: 4px; }
+
+    nav[role="navigation"] a,
+    nav[role="navigation"] span[aria-current="page"] > span,
+    nav[role="navigation"] span[aria-disabled="true"] > span {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 9px;
+        font-size: 12px;
+    }
+
+    nav[role="navigation"] svg { width: 16px; height: 16px; }
+}
+
+/* ==========================================================
+   خلية نص مقتطعة — أسماء الأدوية الطويلة
+   ==========================================================
+   الاسم التجاري/المادة الفعالة الطويلة كانت تمدّ عمود الجدول
+   وتكسر التخطيط. هنا حدّ أقصى افتراضي، وما بعده يُقتطع النص
+   بثلاث نقاط (…) بدل كسر العرض.
+   تُستخدم في قائمتي الأدوية: admin (medicines/index) والصيدلية
+   (pharmacy/medicines/index).
+   ========================================================== */
+
+.med-cell-text {
+    /* ضروري داخل flex: بدونه لا يقبل العنصر الانكماش دون حدّ المحتوى */
+    min-width: 0;
+    max-width: 240px;
+}
+
+.med-cell-text > strong,
+.med-cell-text > small {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+    .med-cell-text { max-width: 180px; }
+}
+
+@media (max-width: 768px) {
+    .med-cell-text { max-width: 140px; }
+}
+
+/* نفس المعالجة لاسم الدواء في جدول مخزون الصيدلية (pharmacies/show).
+   statistics.css يجعله display:block بلا حدّ عرض — فالاسم الطويل يمدّ العمود. */
+.med-name {
+    display: block;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+    .med-name { max-width: 180px; }
+}
+
+@media (max-width: 768px) {
+    .med-name { max-width: 140px; }
+}
+
+/* ==========================================================
+   غلاف جدول قابل للتمرير أفقيًا
+   ==========================================================
+   الجداول العريضة على الشاشات الضيقة كانت تمدّ عرض الصفحة.
+   .tbl-wrap موجود في القوالب (medicines/show · pharmacies/show)
+   لكنه لم يكن معرَّفًا في أي ملف CSS — نعرّفه هنا.
+   ========================================================== */
+.tbl-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }

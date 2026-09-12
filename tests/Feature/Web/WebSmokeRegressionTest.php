@@ -137,4 +137,29 @@ class WebSmokeRegressionTest extends TestCase
         $this->get('/healthz')->assertOk();
         $this->get('/offline')->assertOk();
     }
+
+    /**
+     * قائمة الأدوية: الاسم الطويل يُقتطع بـCSS لا يُحذف من الـDOM،
+     * مع title ليظهر كاملًا عند المرور — وماركب الترقيم موجود.
+     */
+    public function test_medicines_list_truncates_long_names(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $longName = 'اسم-دواء-تجاري-طويل-جدًا-جدا-جدا-جدا';
+
+        Medicine::factory()->create([
+            'trade_name' => $longName,
+            'active_ingredient' => 'مادة-فعالة-طويلة-أيضًا-جدا-جدا',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/medicines');
+
+        $response->assertOk()
+            // الصنف الذي يطبّق الاقتطاع
+            ->assertSee('med-cell-text', false)
+            // الاسم الكامل محفوظ في title (لا يُحذف من الـDOM)
+            ->assertSee('title="'.$longName.'"', false)
+            // حاوية التمرير الأفقي
+            ->assertSee('tbl-wrap', false);
+    }
 }
