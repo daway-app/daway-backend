@@ -19,9 +19,15 @@ class MedicineController extends Controller
      * A1-7: ترقيم وتجميع على مستوى SQL بدل تحميل الكتالوج كاملاً + كل صفوف
      * المخزون بالـ PHP (كان: Cache::remember للجدولين + array_slice).
      */
-    public function index()
+    public function index(Request $request)
     {
-        $perPage = 10;
+        $perPage = 7;
+        $q = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', 'all');
+
+        if (! in_array($status, ['all', 'out', 'low', 'available'])) {
+            $status = 'all';
+        }
 
         // لكل دواء: مجموع الكميات، عدد الصيدليات، أقل سعر موجب
         $perMedicine = DB::table('pharmacy_medicines')
@@ -40,6 +46,15 @@ class MedicineController extends Controller
                 COALESCE(pm.stock, 0) as stock,
                 COALESCE(pm.pharmacy_count, 0) as pharmacy_count,
                 pm.min_price')
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($w) use ($q) {
+                    $w->where('m.trade_name', 'like', "%{$q}%")
+                        ->orWhere('m.active_ingredient', 'like', "%{$q}%");
+                });
+            })
+            ->when($status === 'out', fn ($query) => $query->whereRaw('COALESCE(pm.stock, 0) <= 0'))
+            ->when($status === 'low', fn ($query) => $query->whereRaw('COALESCE(pm.stock, 0) > 0 AND COALESCE(pm.stock, 0) <= 10'))
+            ->when($status === 'available', fn ($query) => $query->whereRaw('COALESCE(pm.stock, 0) > 10'))
             ->orderByDesc('m.created_at');
 
         $medicines = $query->paginate($perPage)->withQueryString();
@@ -74,7 +89,7 @@ class MedicineController extends Controller
             'not_in_pharmacy_pct' => $pct($total - $inPharmacy),
         ];
 
-        return view('medicines.index', compact('medicines', 'stats'));
+        return view('medicines.index', compact('medicines', 'stats', 'q', 'status'));
     }
 
     private function clearMedicinesIndexCache()

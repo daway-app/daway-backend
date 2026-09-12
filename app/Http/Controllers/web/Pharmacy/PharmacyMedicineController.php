@@ -36,15 +36,45 @@ class PharmacyMedicineController extends Controller
      *
      * @return Response
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+        $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
 
-        // Get medicines associated with this pharmacy through the pivot table
-        $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-            ->with('medicine') // Eager load the Medicine details
-            ->get();
+        $q = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', 'all');
+        // القيم المعتمدة مطابقة لتبويبات الواجهة: all/out/low/ok
+        // ('available' تُقبل كمرادف لـ 'ok' فقط للتوافق)
+        if ($status === 'available') {
+            $status = 'ok';
+        }
+        if (! in_array($status, ['all', 'ok', 'low', 'out'], true)) {
+            $status = 'all';
+        }
+
+        $query = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->with('medicine');
+
+        if ($q !== '') {
+            $query->whereHas('medicine', function ($mq) use ($q) {
+                $mq->where('trade_name', 'like', "%{$q}%")
+                    ->orWhere('active_ingredient', 'like', "%{$q}%")
+                    ->orWhere('trade_name_ar', 'like', "%{$q}%");
+            });
+        }
+
+        if ($status === 'ok') {
+            $query->where('is_available', true)->where('quantity', '>', 0);
+        } elseif ($status === 'low') {
+            $query->where('quantity', '>', 0)->where('quantity', '<=', $threshold);
+        } elseif ($status === 'out') {
+            $query->where(function ($sq) {
+                $sq->where('is_available', false)->orWhere('quantity', '<=', 0);
+            });
+        }
+
+        $pharmacyMedicines = $query->orderByDesc('id')->paginate(7)->withQueryString();
 
         $availableCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->where('is_available', true)
@@ -60,10 +90,12 @@ class PharmacyMedicineController extends Controller
 
         $lowCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->where('quantity', '>', 0)
-            ->where('quantity', '<=', 10)
+            ->where('quantity', '<=', $threshold)
             ->count();
 
-        return view('pharmacy.medicines.index', compact('pharmacyMedicines', 'pharmacy', 'availableCount', 'outCount', 'lowCount'));
+        $totalCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->count();
+
+        return view('pharmacy.medicines.index', compact('pharmacyMedicines', 'pharmacy', 'availableCount', 'outCount', 'lowCount', 'totalCount', 'q', 'status', 'threshold'));
     }
 
     /**

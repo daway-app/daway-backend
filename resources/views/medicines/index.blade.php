@@ -130,17 +130,19 @@
 
         </div>
 
-        <!-- 5. Filter and Search Bar -->
+        <!-- 5. Filter and Search Bar (server-side via GET) -->
         <div class="filter-card">
-            <div class="filter-row">
-                <input type="text" id="searchInput" placeholder="@lang('medicines.search_placeholder')" class="filter-input">
-                <select id="statusFilter" class="filter-select">
-                    <option value="">@lang('medicines.all_statuses_filter')</option>
-                    <option value="available">@lang('medicines.available_status')</option>
-                    <option value="low">@lang('medicines.low_stock_status')</option>
-                    <option value="out">@lang('medicines.out_of_stock_status')</option>
-                </select>
-            </div>
+            <form method="GET" action="{{ route('medicines.index') }}" id="medicinesFilterForm">
+                <div class="filter-row">
+                    <input type="text" id="searchInput" name="q" value="{{ $q ?? request('q') }}" placeholder="@lang('medicines.search_placeholder')" class="filter-input" autocomplete="off">
+                    <select id="statusFilter" name="status" class="filter-select">
+                        <option value="all" {{ ($status ?? request('status', 'all')) === 'all' ? 'selected' : '' }}>@lang('medicines.all_statuses_filter')</option>
+                        <option value="available" {{ ($status ?? request('status', 'all')) === 'available' ? 'selected' : '' }}>@lang('medicines.available_status')</option>
+                        <option value="low" {{ ($status ?? request('status', 'all')) === 'low' ? 'selected' : '' }}>@lang('medicines.low_stock_status')</option>
+                        <option value="out" {{ ($status ?? request('status', 'all')) === 'out' ? 'selected' : '' }}>@lang('medicines.out_of_stock_status')</option>
+                    </select>
+                </div>
+            </form>
         </div>
 
         <!-- 6. Table Card -->
@@ -232,39 +234,28 @@
             const search = document.getElementById('searchInput');
             const status = document.getElementById('statusFilter');
             const rows = [...document.querySelectorAll('#tableBody tr[data-status]')];
-            const count = document.getElementById('registeredCount');
 
-            const normalize = value => (value || '').trim().toLowerCase();
-
-            const filterRows = () => {
-                const q = normalize(search?.value);
-                const selectedStatus = normalize(status?.value);
-
-                let visible = 0;
-
-                rows.forEach(row => {
-                    const text = normalize(row.textContent);
-                    const rowStatus = normalize(row.dataset.status);
-
-                    const matchesSearch = !q || text.includes(q);
-                    const matchesStatus = !selectedStatus || rowStatus === selectedStatus;
-
-                    const show = matchesSearch && matchesStatus;
-                    row.style.display = show ? '' : 'none';
-                    if (show) visible++;
-                });
-
-                if (count) {
-                    count.textContent = `@lang('medicines.filtered_medicines', ['count' => 'visible'])`;
-                }
+            // Server-side filtering: navigate to URL with params (page resets to 1).
+            const navigateWithFilters = () => {
+                const params = new URLSearchParams();
+                const q = (search?.value || '').trim();
+                const selectedStatus = status?.value || 'all';
+                if (q) params.set('q', q);
+                if (selectedStatus && selectedStatus !== 'all') params.set('status', selectedStatus);
+                const query = params.toString();
+                window.location.href = '{{ route('medicines.index') }}' + (query ? '?' + query : '');
             };
 
-            [search, status].forEach(el => {
-                if (el) {
-                    el.addEventListener('input', filterRows);
-                    el.addEventListener('change', filterRows);
-                }
-            });
+            let searchTimer = null;
+            if (search) {
+                search.addEventListener('input', () => {
+                    clearTimeout(searchTimer);
+                    searchTimer = setTimeout(navigateWithFilters, 500);
+                });
+            }
+            if (status) {
+                status.addEventListener('change', navigateWithFilters);
+            }
 
             rows.forEach((row, index) => {
                 row.style.animation = `tableRowIn 0.45s ${Math.min(index * 0.035, 0.6)}s both`;

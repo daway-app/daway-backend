@@ -370,7 +370,7 @@
                         <span class="stat-label">@lang('pharmacies.stat_total_pharmacies')</span>
                         <div class="stat-icon icon-teal"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
                     </div>
-                    <h2 class="stat-value counter" data-target="{{ $pharmacies->total() }}">0</h2>
+                    <h2 class="stat-value counter" data-target="{{ $totalPharmacies }}">0</h2>
                     <div class="card-footer-flex">
                         <span class="trend-up">100%</span>
                         <span>@lang('pharmacies.stat_registered_in_system')</span>
@@ -382,7 +382,7 @@
                         <span class="stat-label">@lang('pharmacies.stat_active_pharmacies')</span>
                         <div class="stat-icon icon-green"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
                     </div>
-                    <h2 class="stat-value counter" data-target="{{ $pharmacies->where('is_active', true)->count() }}">0</h2>
+                    <h2 class="stat-value counter" data-target="{{ $activeCount }}">0</h2>
                     <div class="card-footer-flex">
                         <span class="trend-up">@lang('pharmacies.status_active')</span>
                         <span>@lang('pharmacies.stat_working_efficiently')</span>
@@ -394,7 +394,7 @@
                         <span class="stat-label">@lang('pharmacies.stat_inactive_pharmacies')</span>
                         <div class="stat-icon icon-amber"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg></div>
                     </div>
-                    <h2 class="stat-value counter" data-target="{{ $pharmacies->where('is_active', false)->count() }}">0</h2>
+                    <h2 class="stat-value counter" data-target="{{ $inactiveCount }}">0</h2>
                     <div class="card-footer-flex">
                         <span class="trend-up" style="color: #ef4444;">@lang('pharmacies.stat_paused')</span>
                         <span>@lang('pharmacies.stat_temporarily_inactive')</span>
@@ -406,7 +406,7 @@
                         <span class="stat-label">@lang('pharmacies.stat_total_items')</span>
                         <div class="stat-icon icon-blue"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg></div>
                     </div>
-                    <h2 class="stat-value counter" data-target="{{ $pharmacies->sum('pharmacy_medicines_count') }}">0</h2>
+                    <h2 class="stat-value counter" data-target="{{ $totalItems }}">0</h2>
                     <div class="card-footer-flex">
                         <span>@lang('pharmacies.stat_available_medicines')</span>
                     </div>
@@ -436,25 +436,28 @@
 
         <div class="filter-card glass-panel animate-fade-up delay-3">
             <div class="filter-right-side">
-                <div class="search-input-group">
-                    <input type="text" id="searchInput" placeholder="@lang('pharmacies.search_placeholder')" autocomplete="off">
-                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                </div>
+                <form method="GET" action="{{ route('pharmacies.index') }}" id="pharmacySearchForm" style="margin: 0;">
+                    <input type="hidden" name="status" value="{{ $status }}">
+                    <div class="search-input-group">
+                        <input type="text" id="searchInput" name="q" value="{{ $q }}" placeholder="@lang('pharmacies.search_placeholder')" autocomplete="off">
+                        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                </form>
 
                 <div class="pills-group" id="statusFilterPills">
-                    <button type="button" class="pill-item active" data-filter="all">
+                    <a href="{{ route('pharmacies.index', array_filter(['status' => 'all', 'q' => $q])) }}" class="pill-item {{ $status === 'all' ? 'active' : '' }}" style="text-decoration: none;">
                         <span>@lang('pharmacies.filter_all')</span>
-                        <span class="pill-badge">{{ $pharmacies->total() }}</span>
-                    </button>
-                    <button type="button" class="pill-item" data-filter="active">
+                        <span class="pill-badge">{{ $totalPharmacies }}</span>
+                    </a>
+                    <a href="{{ route('pharmacies.index', array_filter(['status' => 'active', 'q' => $q])) }}" class="pill-item {{ $status === 'active' ? 'active' : '' }}" style="text-decoration: none;">
                         <span>@lang('pharmacies.filter_active')</span>
-                    </button>
-                    <button type="button" class="pill-item" data-filter="disabled">
+                    </a>
+                    <a href="{{ route('pharmacies.index', array_filter(['status' => 'disabled', 'q' => $q])) }}" class="pill-item {{ $status === 'disabled' ? 'active' : '' }}" style="text-decoration: none;">
                         <span>@lang('pharmacies.filter_disabled')</span>
-                    </button>
+                    </a>
                 </div>
             </div>
 
@@ -709,36 +712,24 @@
             });
 
             const searchInput = document.getElementById('searchInput');
-            const pills = document.querySelectorAll('#statusFilterPills .pill-item');
-            const cards = document.querySelectorAll('.pharmacy-card-pro');
-            let currentFilter = 'all';
 
-            function filterCards() {
-                const query = searchInput.value.toLowerCase().trim();
-                cards.forEach(card => {
-                    const name = card.getAttribute('data-name');
-                    const status = card.getAttribute('data-status');
-                    const matchesSearch = name.includes(query);
-                    const matchesStatus = (currentFilter === 'all' || status === currentFilter);
-
-                    if (matchesSearch && matchesStatus) {
-                        card.style.display = 'flex';
-                    } else {
-                        card.style.display = 'none';
-                    }
+            // Server-side search: debounce then navigate with ?q= (page resets to 1).
+            // Status pills are plain GET links — no client-side card hiding.
+            if (searchInput) {
+                let searchTimer = null;
+                searchInput.addEventListener('input', function () {
+                    clearTimeout(searchTimer);
+                    searchTimer = setTimeout(function () {
+                        const params = new URLSearchParams();
+                        const query = searchInput.value.trim();
+                        if (query) params.set('q', query);
+                        const currentStatus = '{{ $status }}';
+                        if (currentStatus && currentStatus !== 'all') params.set('status', currentStatus);
+                        const qs = params.toString();
+                        window.location.href = '{{ route('pharmacies.index') }}' + (qs ? '?' + qs : '');
+                    }, 500);
                 });
             }
-
-            searchInput.addEventListener('input', filterCards);
-
-            pills.forEach(pill => {
-                pill.addEventListener('click', function () {
-                    pills.forEach(p => p.classList.remove('active'));
-                    this.classList.add('active');
-                    currentFilter = this.getAttribute('data-filter');
-                    filterCards();
-                });
-            });
 
             const ctxStatus = document.getElementById('pharmacyStatusChart').getContext('2d');
             new Chart(ctxStatus, {
@@ -747,8 +738,8 @@
                     labels: ['@lang('pharmacies.chart_active')', '@lang('pharmacies.chart_disabled')'],
                     datasets: [{
                         data: [
-                            {{ $pharmacies->where('is_active', true)->count() }},
-                            {{ $pharmacies->where('is_active', false)->count() }}
+                            {{ $activeCount }},
+                            {{ $inactiveCount }}
                         ],
                         backgroundColor: ['#10b981', '#f59e0b'],
                         borderWidth: 0
@@ -765,10 +756,10 @@
             new Chart(ctxTop, {
                 type: 'bar',
                 data: {
-                    labels: @json($pharmacies->sortByDesc('pharmacy_medicines_count')->take(5)->pluck('pharmacy_name')),
+                    labels: @json($topPharmacies->pluck('pharmacy_name')),
                     datasets: [{
                         label: '@lang('pharmacies.chart_item_count')',
-                        data: @json($pharmacies->sortByDesc('pharmacy_medicines_count')->take(5)->pluck('pharmacy_medicines_count')),
+                        data: @json($topPharmacies->pluck('pharmacy_medicines_count')),
                         backgroundColor: '#1C72A6',
                         borderRadius: 8
                     }]

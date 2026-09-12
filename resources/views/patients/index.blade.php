@@ -53,10 +53,12 @@
         <div class="table-card-wrapper">
             <div class="table-header">
                 <h3>@lang('patients.registered_patients_list')</h3>
-                <div class="search-input-group search-input-large">
-                    <input type="text" id="patientSearchInput" placeholder="@lang('patients.search_placeholder')">
-                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                </div>
+                <form method="GET" action="{{ route('patients.index') }}" id="patientSearchForm" style="margin: 0;">
+                    <div class="search-input-group search-input-large">
+                        <input type="text" id="patientSearchInput" name="q" value="{{ $q ?? request('q') }}" placeholder="@lang('patients.search_placeholder')" autocomplete="off">
+                        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </div>
+                </form>
             </div>
 
             <div class="table-responsive">
@@ -131,48 +133,17 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('patientSearchInput');
-            const tableBody = document.getElementById('patientsTableBody');
-            const rows = tableBody.querySelectorAll('tr[data-search-term]');
 
-            if (!searchInput || !tableBody) return;
+            if (!searchInput) return;
 
+            // Server-side search: debounce then navigate with ?q= (page resets to 1).
+            let searchTimer = null;
             searchInput.addEventListener('input', function(e) {
-                const query = e.target.value.toLowerCase().trim();
-                let visibleCount = 0;
-
-                rows.forEach(row => {
-                    const searchTerm = row.getAttribute('data-search-term') || '';
-
-                    if (searchTerm.includes(query)) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                let noResultRow = document.getElementById('noSearchMatchRow');
-
-                if (visibleCount === 0 && query !== '') {
-                    if (!noResultRow) {
-                        noResultRow = document.createElement('tr');
-                        noResultRow.id = 'noSearchMatchRow';
-                        noResultRow.innerHTML = `
-                            <td colspan="5">
-                                <div class="empty-state" style="padding: 30px; text-align: center;">
-                                    <h4>@lang('patients.no_patients_found')</h4>
-                                    <p>@lang('patients.no_search_results') "${e.target.value}"</p>
-                                </div>
-                            </td>
-                        `;
-                        tableBody.appendChild(noResultRow);
-                    } else {
-                        noResultRow.querySelector('p').textContent = `@lang('patients.no_search_results') "${e.target.value}"`;
-                        noResultRow.style.display = '';
-                    }
-                } else if (noResultRow) {
-                    noResultRow.style.display = 'none';
-                }
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    const query = e.target.value.trim();
+                    window.location.href = '{{ route('patients.index') }}' + (query ? '?q=' + encodeURIComponent(query) : '');
+                }, 500);
             });
         });
     </script>

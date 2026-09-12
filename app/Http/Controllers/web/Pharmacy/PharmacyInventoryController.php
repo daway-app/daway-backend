@@ -34,44 +34,41 @@ class PharmacyInventoryController extends Controller
             $status = 'all';
         }
 
-        // الإحصائيات تبقى شاملة — لا تتأثر بالفلتر
-        $all = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->with('medicine')->get();
-        $available = $all->where('quantity', '>', 0)->count();
-        $out = $all->where('quantity', '<=', 0)->count();
-        $low = $all->filter(fn ($i) => $i->quantity > 0 && $i->quantity <= $threshold)->count();
+        // الإحصائيات تبقى شاملة — عدّادات SQL مستقلة لا تتأثر بالفلتر ولا تحمّل موديلات
+        $base = PharmacyMedicine::where('pharmacy_id', $pharmacy->id);
+        $available = (clone $base)->where('quantity', '>', $threshold)->count();
+        $low = (clone $base)->where('quantity', '>', 0)->where('quantity', '<=', $threshold)->count();
+        $out = (clone $base)->where('quantity', '<=', 0)->count();
 
-        // جدول العرض يخضع للبحث والفلتر
-        $items = $all;
+        // جدول العرض: استعلام SQL حقيقي مع البحث والفلتر ثم ترقيم
+        $rows = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->with('medicine');
 
         if ($status === 'ok') {
-            $items = $items->where('quantity', '>', $threshold);
+            $rows->where('quantity', '>', $threshold);
         } elseif ($status === 'low') {
-            $items = $items->where('quantity', '>', 0)->where('quantity', '<=', $threshold);
+            $rows->where('quantity', '>', 0)->where('quantity', '<=', $threshold);
         } elseif ($status === 'out') {
-            $items = $items->where('quantity', '<=', 0);
+            $rows->where('quantity', '<=', 0);
         }
 
         if ($q !== '') {
-            $needle = mb_strtolower($q);
-            $items = $items->filter(function ($i) use ($needle) {
-                $name = mb_strtolower((string) ($i->medicine->trade_name ?? ''));
-                $ar = mb_strtolower((string) ($i->medicine->trade_name_ar ?? ''));
-                $ai = mb_strtolower((string) ($i->medicine->active_ingredient ?? ''));
-
-                return str_contains($name, $needle)
-                    || ($ar !== '' && str_contains($ar, $needle))
-                    || ($ai !== '' && str_contains($ai, $needle));
-            })->values();
+            $rows->whereHas('medicine', function ($mq) use ($q) {
+                $mq->where('trade_name', 'like', "%{$q}%")
+                    ->orWhere('active_ingredient', 'like', "%{$q}%")
+                    ->orWhere('trade_name_ar', 'like', "%{$q}%");
+            });
         }
+
+        $items = $rows->orderByDesc('id')->paginate(7)->withQueryString();
 
         $trendLabels = [];
         $trendData = [];
         for ($i = 6; $i >= 0; $i--) {
             $trendLabels[] = now()->subDays($i)->format('d/m');
-            $trendData[] = $all->where('created_at', '<=', now()->subDays($i)->toDateString())->count();
+            $trendData[] = (clone $base)->where('created_at', '<=', now()->subDays($i)->toDateString())->count();
         }
 
-        return view('pharmacy.inventory.index', compact('pharmacy', 'items', 'all', 'available', 'out', 'low', 'threshold', 'trendLabels', 'trendData', 'q', 'status'));
+        return view('pharmacy.inventory.index', compact('pharmacy', 'items', 'available', 'out', 'low', 'threshold', 'trendLabels', 'trendData', 'q', 'status'));
     }
 
     public function update(Request $request)

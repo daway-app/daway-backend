@@ -18,8 +18,8 @@
         </div>
 
         <!-- Filter and Search Tools -->
-        <div class="search-bar">
-            <input type="text" class="form-control" placeholder="@lang('logs.search_placeholder')" style="flex: 1; min-width: 250px;">
+        <form method="GET" action="{{ route('logs.index') }}" class="search-bar">
+            <input type="text" name="q" value="{{ $q ?? request('q') }}" class="form-control" placeholder="@lang('logs.search_placeholder')" style="flex: 1; min-width: 250px;" autocomplete="off">
             <select class="form-control">
                 <option value="">@lang('logs.all_activities_option')</option>
                 <option value="create">@lang('logs.create_option')</option>
@@ -28,7 +28,7 @@
                 <option value="auth">@lang('logs.auth_option')</option>
             </select>
             <input type="date" class="form-control">
-        </div>
+        </form>
 
         <!-- Logs Table -->
         <div class="table-container">

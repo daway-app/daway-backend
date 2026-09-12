@@ -7,10 +7,13 @@
     @include('partials.pharmacy-hub-i18n')
 
     @php
-        $total = $pharmacyMedicines->count();
+        $total = $totalCount ?? $pharmacyMedicines->total();
         $available = $availableCount ?? 0;
         $low = $lowCount ?? 0;
         $out = $outCount ?? 0;
+        $threshold = $threshold ?? \App\Models\PharmacyMedicine::LOW_STOCK_THRESHOLD;
+        $q = $q ?? '';
+        $status = $status ?? 'all';
 
         $statusText = fn($status) => $status === 'ok' ? __('pharmacy.status.available') : ($status === 'low' ? __('pharmacy.status.low') : __('pharmacy.status.out'));
     @endphp
@@ -40,18 +43,22 @@
             <div class='ph-stat'><i class='fas fa-pills teal'></i><div><strong>{{ $total }}</strong><span>@lang('pharmacy.dashboard.stat_total')</span></div><span class='ph-stat-progress'></span></div>
         </div>
 
-        <div class='ph-filters'>
-            <div class='ph-tabs' data-ph-tabs='.ph-medicine-table'>
-                <button class='ph-tab active' data-filter='all'>@lang('pharmacy.status.all')</button>
-                <button class='ph-tab' data-filter='out'>@lang('pharmacy.status.out')</button>
-                <button class='ph-tab' data-filter='low'>@lang('pharmacy.status.low')</button>
-                <button class='ph-tab' data-filter='ok'>@lang('pharmacy.status.available')</button>
+        <form method='GET' action='{{ route('pharmacy.medicines.index') }}' class='ph-filters'>
+            <div class='ph-tabs'>
+                <a href='{{ route('pharmacy.medicines.index', array_filter(['q' => $q, 'status' => 'all'])) }}' class='ph-tab {{ $status === 'all' ? 'active' : '' }}'>@lang('pharmacy.status.all')</a>
+                <a href='{{ route('pharmacy.medicines.index', array_filter(['q' => $q, 'status' => 'out'])) }}' class='ph-tab {{ $status === 'out' ? 'active' : '' }}'>@lang('pharmacy.status.out')</a>
+                <a href='{{ route('pharmacy.medicines.index', array_filter(['q' => $q, 'status' => 'low'])) }}' class='ph-tab {{ $status === 'low' ? 'active' : '' }}'>@lang('pharmacy.status.low')</a>
+                <a href='{{ route('pharmacy.medicines.index', array_filter(['q' => $q, 'status' => 'ok'])) }}' class='ph-tab {{ $status === 'ok' ? 'active' : '' }}'>@lang('pharmacy.status.available')</a>
             </div>
             <div class='ph-search'>
                 <i class='fas fa-search'></i>
-                <input type='text' placeholder='@lang('pharmacy.medicines.index.search_placeholder')' data-ph-search='.ph-medicine-table tbody tr'>
+                <input type='text' name='q' value='{{ $q }}' placeholder='@lang('pharmacy.medicines.index.search_placeholder')' autocomplete='off'>
+                <input type='hidden' name='status' value='{{ $status }}'>
             </div>
-        </div>
+            @if($q !== '' || $status !== 'all')
+                <a href='{{ route('pharmacy.medicines.index') }}' class='ph-btn ghost'><i class='fas fa-xmark'></i> @lang('pharmacy.inventory.clear_filters')</a>
+            @endif
+        </form>
 
         <div class='ph-card ph-medicine-table' data-offline-page='medicines'>
             <div class='ph-card-body ph-table-wrap' style='padding:0;'>
@@ -69,10 +76,10 @@
                     <tbody>
                         @forelse($pharmacyMedicines as $pm)
                             @php
-                                $q = $pm->quantity;
-                                $status = $q <= 0 ? 'out' : ($q <= 10 ? 'low' : 'ok');
+                                $qty = $pm->quantity;
+                                $status = $qty <= 0 ? 'out' : ($qty <= $threshold ? 'low' : 'ok');
                             @endphp
-                            <tr data-status='{{ $status }}' data-min='10'>
+                            <tr data-status='{{ $status }}' data-min='{{ $threshold }}'>
                                 <td>
                                     <div style='display:flex;align-items:center;gap:12px;'>
                                         <div class='ph-med-thumb'>
@@ -90,7 +97,7 @@
                                 </td>
                                 <td>{{ $pm->medicine->active_ingredient }}</td>
                                 <td>{{ number_format($pm->price, 2) }} @lang('pharmacy.currency')</td>
-                                <td>{{ $q }}</td>
+                                <td>{{ $qty }}</td>
                                 <td><span class='ph-badge {{ $status }}'>{{ $statusText($status) }}</span></td>
                                 <td>
                                     <div style='display:flex;gap:8px;'>
@@ -109,14 +116,15 @@
                     </tbody>
                 </table>
             </div>
-            @if($pharmacyMedicines->count() > 0)
-            </div>
-        @endif
+            @if($pharmacyMedicines->hasPages())
+                <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>{{ $pharmacyMedicines->withQueryString()->links() }}</div>
+            @endif
+        </div>
     </div>
 
     {{-- بيانات أدوية الصيدلية للعمل بدون اتصال (offline hydration payload) --}}
     @php
-        $offlineMedicines = $pharmacyMedicines->map(fn ($pm) => [
+        $offlineMedicines = $pharmacyMedicines->getCollection()->map(fn ($pm) => [
             'id' => $pm->id,
             'price' => (float) $pm->price,
             'quantity' => $pm->quantity,

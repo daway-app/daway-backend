@@ -4,7 +4,9 @@ namespace App\Http\Controllers\web\Admin;
 
 use App\Exports\LogsExport;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Activitylog\Models\Activity;
@@ -17,12 +19,25 @@ class LogController extends Controller
      *
      * @return View
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Fetch logs using the Activity model, ordered by the most recent, and load the user
-        $logs = Activity::with('causer')->latest()->paginate(20);
+        $q = trim((string) $request->query('q', ''));
 
-        return view('logs.index', compact('logs'));
+        // Fetch logs using the Activity model, ordered by the most recent, and load the user
+        $logs = Activity::with('causer')
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($w) use ($q) {
+                    $w->where('description', 'like', "%{$q}%")
+                        ->orWhereHasMorph('causer', [User::class], function ($cq) use ($q) {
+                            $cq->where('name', 'like', "%{$q}%");
+                        });
+                });
+            })
+            ->latest()
+            ->paginate(7)
+            ->withQueryString();
+
+        return view('logs.index', compact('logs', 'q'));
     }
 
     /**

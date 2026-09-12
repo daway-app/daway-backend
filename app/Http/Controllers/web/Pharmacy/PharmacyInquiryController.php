@@ -22,18 +22,41 @@ class PharmacyInquiryController extends Controller
         });
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
-        $inquiries = $pharmacy->patientInquiries()
+
+        $q = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', 'all');
+        // القيم المعتمدة هي قيم عمود status الفعلية (PatientInquiry::STATUSES)
+        if (! in_array($status, array_merge(['all'], PatientInquiry::STATUSES), true)) {
+            $status = 'all';
+        }
+
+        $query = $pharmacy->patientInquiries()
             ->with(['user', 'medicine'])
-            ->latest()
-            ->paginate(10);
+            ->latest();
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        if ($q !== '') {
+            $query->where(function ($sq) use ($q) {
+                $sq->where('message', 'like', "%{$q}%")
+                    ->orWhere('reply', 'like', "%{$q}%")
+                    ->orWhereHas('user', fn ($uq) => $uq->where('name', 'like', "%{$q}%"))
+                    ->orWhereHas('medicine', fn ($mq) => $mq->where('trade_name', 'like', "%{$q}%"));
+            });
+        }
+
+        $inquiries = $query->paginate(7)->withQueryString();
         $newCount = $pharmacy->patientInquiries()->where('status', 'new')->count();
         $answeredCount = $pharmacy->patientInquiries()->where('status', 'answered')->count();
         $closedCount = $pharmacy->patientInquiries()->where('status', 'closed')->count();
-        return view('pharmacy.inquiries.index', compact('pharmacy', 'inquiries', 'newCount', 'answeredCount', 'closedCount'));
+
+        return view('pharmacy.inquiries.index', compact('pharmacy', 'inquiries', 'newCount', 'answeredCount', 'closedCount', 'q', 'status'));
     }
 
     public function update(Request $request, PatientInquiry $inquiry)

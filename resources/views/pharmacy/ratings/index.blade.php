@@ -83,7 +83,7 @@
                 </div>
             </div>
             @if($ratings->hasPages())
-                <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>{{ $ratings->links() }}</div>
+                <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>{{ $ratings->withQueryString()->links() }}</div>
             @endif
         </div>
     </div>

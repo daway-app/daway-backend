@@ -27,7 +27,7 @@ class CategoryController extends Controller
                 ->where('name_ar', 'like', "%{$q}%")
                 ->orWhere('name_en', 'like', "%{$q}%")))
             ->ordered()
-            ->paginate(10)
+            ->paginate(7)
             ->withQueryString();
 
         $stats = [
@@ -87,7 +87,7 @@ class CategoryController extends Controller
             ->when($source !== '', fn ($query) => $query->where('source', $source))
             ->orderByDesc('needs_review')
             ->orderBy('id')
-            ->paginate(10)
+            ->paginate(7)
             ->withQueryString();
 
         // resolve كل صفوف الصفحة الحالية باستعلام واحد لكل نوع

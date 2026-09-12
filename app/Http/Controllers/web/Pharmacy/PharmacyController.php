@@ -17,16 +17,41 @@ use Illuminate\Validation\Rule;
 
 class PharmacyController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // A1-7: ترقيم SQL مباشر — withCount يبقى (استعلام مجمّع واحد بدل الجدول كاملاً بالكاش)
+        // ترقيم SQL مباشر (7) + بحث/فلترة على مستوى السيرفر عبر GET.
+        $q = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', 'all');
+
+        if (! in_array($status, ['all', 'active', 'disabled'])) {
+            $status = 'all';
+        }
+
         $pharmacies = Pharmacy::query()
             ->withCount('pharmacyMedicines')
+            ->when($q !== '', fn ($query) => $query->where('pharmacy_name', 'like', "%{$q}%"))
+            ->when($status === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($status === 'disabled', fn ($query) => $query->where('is_active', false))
             ->latest()
-            ->paginate(10)
+            ->paginate(7)
             ->withQueryString();
 
-        return view('pharmacies.index', compact('pharmacies'));
+        // الإحصائيات والرسوم من استعلامات مستقلة على الجدول الكامل — أبداً من صفحة الـ paginator.
+        $totalPharmacies = Pharmacy::count();
+        $activeCount = Pharmacy::where('is_active', true)->count();
+        $inactiveCount = $totalPharmacies - $activeCount;
+        $totalItems = \App\Models\PharmacyMedicine::count();
+
+        $topPharmacies = Pharmacy::query()
+            ->withCount('pharmacyMedicines')
+            ->orderByDesc('pharmacy_medicines_count')
+            ->take(5)
+            ->get(['id', 'pharmacy_name']);
+
+        return view('pharmacies.index', compact(
+            'pharmacies', 'q', 'status',
+            'totalPharmacies', 'activeCount', 'inactiveCount', 'totalItems', 'topPharmacies'
+        ));
     }
 
     private function clearPharmaciesIndexCache()

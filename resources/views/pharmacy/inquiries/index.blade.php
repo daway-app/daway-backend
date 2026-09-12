@@ -8,6 +8,8 @@
 
     @php
         $statusText = fn($status) => $status === 'new' ? __('pharmacy.inquiries.status_new') : ($status === 'answered' ? __('pharmacy.inquiries.status_answered') : __('pharmacy.inquiries.status_closed'));
+        $q = $q ?? '';
+        $status = $status ?? 'all';
     @endphp
 
     <div class='ph-page'>
@@ -31,18 +33,22 @@
             <div class='ph-stat'><i class='fas fa-envelope green'></i><div><strong>{{ $newCount }}</strong><span>@lang('pharmacy.inquiries.stat_new')</span></div></div>
         </div>
 
-        <div class='ph-filters'>
-            <div class='ph-tabs' data-ph-tabs='.ph-inquiry-table'>
-                <button class='ph-tab active' data-filter='all'>@lang('pharmacy.inquiries.filter_all')</button>
-                <button class='ph-tab' data-filter='closed'>@lang('pharmacy.inquiries.filter_closed')</button>
-                <button class='ph-tab' data-filter='ans'>@lang('pharmacy.inquiries.filter_answered')</button>
-                <button class='ph-tab' data-filter='new'>@lang('pharmacy.inquiries.filter_new')</button>
+        <form method='GET' action='{{ route('pharmacy.inquiries.index') }}' class='ph-filters'>
+            <div class='ph-tabs'>
+                <a href='{{ route('pharmacy.inquiries.index', array_filter(['q' => $q, 'status' => 'all'])) }}' class='ph-tab {{ $status === 'all' ? 'active' : '' }}'>@lang('pharmacy.inquiries.filter_all')</a>
+                <a href='{{ route('pharmacy.inquiries.index', array_filter(['q' => $q, 'status' => 'closed'])) }}' class='ph-tab {{ $status === 'closed' ? 'active' : '' }}'>@lang('pharmacy.inquiries.filter_closed')</a>
+                <a href='{{ route('pharmacy.inquiries.index', array_filter(['q' => $q, 'status' => 'answered'])) }}' class='ph-tab {{ $status === 'answered' ? 'active' : '' }}'>@lang('pharmacy.inquiries.filter_answered')</a>
+                <a href='{{ route('pharmacy.inquiries.index', array_filter(['q' => $q, 'status' => 'new'])) }}' class='ph-tab {{ $status === 'new' ? 'active' : '' }}'>@lang('pharmacy.inquiries.filter_new')</a>
             </div>
             <div class='ph-search'>
                 <i class='fas fa-search'></i>
-                <input type='text' placeholder='@lang('pharmacy.inquiries.search_placeholder')' data-ph-search='.ph-inquiry-table tbody tr'>
+                <input type='text' name='q' value='{{ $q }}' placeholder='@lang('pharmacy.inquiries.search_placeholder')' autocomplete='off'>
+                <input type='hidden' name='status' value='{{ $status }}'>
             </div>
-        </div>
+            @if($q !== '' || $status !== 'all')
+                <a href='{{ route('pharmacy.inquiries.index') }}' class='ph-btn ghost'><i class='fas fa-xmark'></i> @lang('pharmacy.inventory.clear_filters')</a>
+            @endif
+        </form>
 
         <div class='ph-card ph-inquiry-table' data-offline-page='inquiries'>
             <div class='ph-card-body ph-table-wrap' style='padding:0;'>
@@ -114,7 +120,7 @@
                 </table>
             </div>
             @if($inquiries->hasPages())
-                <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>{{ $inquiries->links() }}</div>
+                <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>{{ $inquiries->withQueryString()->links() }}</div>
             @endif
         </div>
     </div>

@@ -115,6 +115,12 @@ self.addEventListener('fetch', (event) => {
     //    offline → الكاش فوراً (fetch يفشل فوراً)، وبلا كاش → /offline.
     //  - بقية الصفحات: network-only مع fallback.
     if (request.mode === 'navigate') {
+        // ?page= navigations are always network-only: never read from nor write to cache
+        // (paginated snapshots cached at different times show inconsistent lists).
+        if (url.searchParams.has('page')) {
+            event.respondWith(fetch(request, { cache: 'no-store' }));
+            return;
+        }
         if (isOfflinePage(url)) {
             event.respondWith(
                 (async () => {

@@ -84,14 +84,11 @@
         </div>
 
         <form method='GET' action='{{ route('pharmacy.inventory.index') }}' class='ph-filters'>
-            @if(($q ?? '') !== '')
-                <input type='hidden' name='q' value='{{ $q }}'>
-            @endif
-            <div class='ph-tabs' data-ph-tabs='.ph-inventory-table'>
-                <button type='submit' name='status' value='all' class='ph-tab {{ ($status ?? 'all') === 'all' ? 'active' : '' }}' data-filter='all'>@lang('pharmacy.inventory.status_all')</button>
-                <button type='submit' name='status' value='ok' class='ph-tab {{ ($status ?? 'all') === 'ok' ? 'active' : '' }}' data-filter='ok'>@lang('pharmacy.inventory.status_available')</button>
-                <button type='submit' name='status' value='low' class='ph-tab {{ ($status ?? 'all') === 'low' ? 'active' : '' }}' data-filter='low'>@lang('pharmacy.inventory.status_low')</button>
-                <button type='submit' name='status' value='out' class='ph-tab {{ ($status ?? 'all') === 'out' ? 'active' : '' }}' data-filter='out'>@lang('pharmacy.inventory.status_out')</button>
+            <div class='ph-tabs'>
+                <button type='submit' name='status' value='all' class='ph-tab {{ ($status ?? 'all') === 'all' ? 'active' : '' }}'>@lang('pharmacy.inventory.status_all')</button>
+                <button type='submit' name='status' value='ok' class='ph-tab {{ ($status ?? 'all') === 'ok' ? 'active' : '' }}'>@lang('pharmacy.inventory.status_available')</button>
+                <button type='submit' name='status' value='low' class='ph-tab {{ ($status ?? 'all') === 'low' ? 'active' : '' }}'>@lang('pharmacy.inventory.status_low')</button>
+                <button type='submit' name='status' value='out' class='ph-tab {{ ($status ?? 'all') === 'out' ? 'active' : '' }}'>@lang('pharmacy.inventory.status_out')</button>
             </div>
             <div class='ph-search' style='flex:1;max-width:340px;'>
                 <i class='fas fa-search'></i>
@@ -114,9 +111,10 @@
                             @forelse($items as $item)
                                 @php
                                     $qty = $item->quantity;
-                                    $status = $qty <= 0 ? 'out' : ($qty <= 10 ? 'low' : 'ok');
+                                    $threshold = $threshold ?? \App\Models\PharmacyMedicine::LOW_STOCK_THRESHOLD;
+                                    $status = $qty <= 0 ? 'out' : ($qty <= $threshold ? 'low' : 'ok');
                                 @endphp
-                                <tr data-status='{{ $status }}' data-min='10'>
+                                <tr data-status='{{ $status }}' data-min='{{ $threshold }}'>
                                     <td><strong>{{ $item->medicine->trade_name }}</strong><br><small style='color:var(--ph-ink-faint);'>{{ $item->medicine->active_ingredient }}</small></td>
                                     <td><span class='ph-badge {{ $status }}'>{{ $statusText($status) }}</span></td>
                                     <td>{{ $qty }}</td>
@@ -134,11 +132,14 @@
                         </tbody>
                     </table>
                 </div>
-                @if($items->isEmpty() && $all->isNotEmpty())
+                @if($items->isEmpty() && $items->total() > 0)
                     <div class='ph-empty' style='padding:24px;'>
                         <i class='fas fa-magnifying-glass'></i>
                         <h3>@lang('pharmacy.inventory.no_results')</h3>
                     </div>
+                @endif
+                @if($items->hasPages())
+                    <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>{{ $items->withQueryString()->links() }}</div>
                 @endif
                 @if($items->count())
                     <div style='padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>
@@ -151,7 +152,7 @@
 
     {{-- بيانات المخزون للعمل بدون اتصال (offline hydration payload) --}}
     @php
-        $offlineInventory = collect($items ?? collect())->map(fn ($item) => [
+        $offlineInventory = $items->getCollection()->map(fn ($item) => [
             'id' => $item->id,
             'medicine_id' => $item->medicine_id,
             'quantity' => $item->quantity,
