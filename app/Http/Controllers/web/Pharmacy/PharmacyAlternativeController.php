@@ -32,16 +32,28 @@ class PharmacyAlternativeController extends Controller
      *
      * @return Response
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+        $q = trim((string) $request->query('q', ''));
 
-        // الصفحة الحالية فقط — كان ->get() يحمّل كل أدوية الصيدلية بلا حد
-        $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-            ->with(['medicine', 'medicine.alternatives']) // Eager load Medicine and its alternatives
+        $query = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->with(['medicine', 'medicine.alternatives']);
+
+        if ($q !== '') {
+            $query->whereHas('medicine', function ($medicineQuery) use ($q) {
+                $medicineQuery
+                    ->where('trade_name', 'like', "%{$q}%")
+                    ->orWhere('active_ingredient', 'like', "%{$q}%")
+                    ->orWhere('trade_name_ar', 'like', "%{$q}%");
+            });
+        }
+
+        // الصفحة الحالية فقط — لا نحمّل كل أدوية الصيدلية دفعة واحدة.
+        $pharmacyMedicines = $query
             ->orderByDesc('id')
-            ->paginate(20)
+            ->paginate(7)
             ->withQueryString();
 
         // مرشّحو البدائل لكل المواد الفعالة في الصفحة — استعلام واحد بدل استعلامين لكل صف.
@@ -87,6 +99,7 @@ class PharmacyAlternativeController extends Controller
         return view('pharmacy.alternatives.index', compact(
             'pharmacyMedicines',
             'pharmacy',
+            'q',
             'totalAlternatives',
             'needsAlternative',
             'candidatesByIngredient',

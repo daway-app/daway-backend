@@ -33,12 +33,15 @@
             <div class='ph-stat'><i class='fas fa-triangle-exclamation orange'></i><div><strong>{{ $needsAlternative }}</strong><span>@lang('pharmacy.alternatives.index.stat_need')</span></div></div>
         </div>
 
-        <div class='ph-filters'>
+        <form method='GET' action='{{ route('pharmacy.alternatives.index') }}' class='ph-filters'>
             <div class='ph-search' style='min-width:320px;'>
                 <i class='fas fa-search'></i>
-                <input type='text' placeholder='@lang('pharmacy.alternatives.index.search_placeholder')' data-ph-search='.ph-alt-block'>
+                <input type='text' name='q' value='{{ $q }}' placeholder='@lang('pharmacy.alternatives.index.search_placeholder')' data-ph-search='.ph-alt-block' autocomplete='off'>
             </div>
-        </div>
+            @if($q !== '')
+                <a href='{{ route('pharmacy.alternatives.index') }}' class='ph-btn ghost'><i class='fas fa-xmark'></i> @lang('pharmacy.inventory.clear_filters')</a>
+            @endif
+        </form>
 
         @forelse($pharmacyMedicines as $pm)
             @php

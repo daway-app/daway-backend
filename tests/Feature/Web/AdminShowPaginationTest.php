@@ -17,7 +17,7 @@ use Tests\TestCase;
  *   - medicines/show:107   → @forelse($medicine->pharmacyMedicines) بلا حد
  *   - pharmacy/alternatives/index:44 → ->get() بلا حد + استعلامان لكل صف
  *
- * هذه الاختبارات تُثبّت: العدّاد الكلي صحيح، والصفحة تعرض 20 صفاً فقط،
+ * هذه الاختبارات تُثبّت: العدّاد الكلي صحيح، وكل صفحة تعرض العدد المحدد فقط،
  * وأن الصفحة التالية تعرض البقية.
  */
 class AdminShowPaginationTest extends TestCase
@@ -25,6 +25,8 @@ class AdminShowPaginationTest extends TestCase
     use RefreshDatabase;
 
     private const PER_PAGE = 20;
+
+    private const ALTERNATIVES_PER_PAGE = 7;
 
     private const TOTAL = 25;
 
@@ -153,11 +155,71 @@ class AdminShowPaginationTest extends TestCase
             "عدد الاستعلامات يجب أن يبقى ثابتاً ومنخفضاً (كان 2×عدد الصفوف). الفعلي: {$queryCount}"
         );
 
-        // الصفحة الأولى: 20 بطاقة فقط من 25
+        // الصفحة الأولى: 7 بطاقات فقط من 25 مثل باقي صفحات لوحة الصيدلية.
         $this->assertSame(
-            self::PER_PAGE,
+            self::ALTERNATIVES_PER_PAGE,
             substr_count($response->getContent(), "class='ph-card ph-alt-block'"),
-            'الصفحة الأولى يجب أن تعرض 20 بطاقة فقط'
+            'الصفحة الأولى يجب أن تعرض 7 بطاقات فقط'
         );
+
+        $page2 = $this->actingAs($user)->get(
+            route('pharmacy.alternatives.index', ['page' => 2])
+        );
+
+        $page2->assertOk()->assertSee('ALT-MED-'.(self::TOTAL - self::ALTERNATIVES_PER_PAGE), false);
+    }
+
+    public function test_pharmacy_alternatives_index_searches_before_paginating_and_preserves_query_string(): void
+    {
+        $user = User::factory()->pharmacy()->create();
+        $pharmacy = Pharmacy::factory()->create(['user_id' => $user->id]);
+
+        for ($i = 1; $i <= 8; $i++) {
+            $medicine = Medicine::factory()->create([
+                'trade_name' => 'SEARCH-ALT-'.$i,
+                'active_ingredient' => 'ING-SEARCH-'.$i,
+            ]);
+            PharmacyMedicine::create([
+                'pharmacy_id' => $pharmacy->id,
+                'medicine_id' => $medicine->id,
+                'price' => 5,
+                'quantity' => 0,
+            ]);
+        }
+
+        $otherMedicine = Medicine::factory()->create([
+            'trade_name' => 'OTHER-MEDICINE',
+            'active_ingredient' => 'ING-OTHER',
+        ]);
+        PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $otherMedicine->id,
+            'price' => 5,
+            'quantity' => 0,
+        ]);
+
+        $page1 = $this->actingAs($user)->get(
+            route('pharmacy.alternatives.index', ['q' => 'SEARCH-ALT'])
+        );
+
+        $page1->assertOk()
+            ->assertSee('name=\'q\'', false)
+            ->assertSee('value=\'SEARCH-ALT\'', false)
+            ->assertSee('page=2', false)
+            ->assertDontSee('OTHER-MEDICINE', false);
+
+        $this->assertSame(
+            self::ALTERNATIVES_PER_PAGE,
+            substr_count($page1->getContent(), "class='ph-card ph-alt-block'"),
+            'البحث يجب أن يتم في الاستعلام قبل الترقيم'
+        );
+
+        $page2 = $this->actingAs($user)->get(
+            route('pharmacy.alternatives.index', ['q' => 'SEARCH-ALT', 'page' => 2])
+        );
+
+        $page2->assertOk()
+            ->assertSee('SEARCH-ALT-1', false)
+            ->assertDontSee('OTHER-MEDICINE', false);
     }
 }
