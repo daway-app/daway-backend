@@ -3,7 +3,7 @@
 @section('title', __('categories.title'))
 
 @section('content')
-    @vite(['resources/css/pages/categories.css'])
+    @vite(['resources/css/pages/medicines.css', 'resources/css/pages/categories.css'])
 
     <div class="animated-page">
         <!-- 1. Top Header -->
