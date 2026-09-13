@@ -69,10 +69,10 @@ class LoginController extends Controller
                 ])->onlyInput('identity', 'account_type');
             }
 
-            // 3. التحقق من تفعيل الحساب
+            // 3. التحقق من تفعيل الحساب — حساب مسجّل حديثاً ينتظر موافقة الإدارة
             if (! $pharmacy->is_active || ! $user->is_active) {
                 return back()->withErrors([
-                    'identity' => 'الحساب معطل.',
+                    'identity' => 'الحساب غير مفعّل. إن كان قد سجّل حديثاً فسيُفعَّل بعد موافقة الإدارة.',
                 ])->onlyInput('identity', 'account_type');
             }
 

@@ -1,5 +1,6 @@
 /* Daway service worker — offline shell for pharmacy dashboard. */
-const VERSION = 'daway-v4';
+// v5: استبدال ستَب Chart.js بالمكتبة الحقيقية + إصلاح فلتر تجهيز ملفات الـ build
+const VERSION = 'daway-v5';
 const PRECACHE_URLS = [
     '/offline',
     '/vendor/chart.umd.js',
@@ -29,11 +30,25 @@ async function precacheBuildAssets() {
         const manifestResponse = await fetch('/build/manifest.json', { cache: 'no-store' });
         if (!manifestResponse.ok) return;
         const manifest = await manifestResponse.json();
+
+        // مسارات الـ manifest نسبية داخل public/build (مثل "assets/app-xxxx.css")،
+        // لذا نُسبقها بـ /build/ بدل ترشيحها بـ startsWith('/build/') — الفلتر القديم
+        // كان يُسقط كل الملفات لأن أي ملف لا يبدأ فعلاً بـ /build/.
+        const toUrl = (f) => {
+            if (typeof f !== 'string' || f === '') return null;
+            if (f.startsWith('/')) return f;
+            if (f.startsWith('http')) return f;
+            return '/build/' + f.replace(/^\.?\/*/, '');
+        };
+
         const files = Object.values(manifest)
-            .flatMap((entry) => [entry.file, ...(entry.css || [])])
-            .filter((f) => typeof f === 'string' && f.startsWith('/build/'));
+            .flatMap((entry) => (entry && typeof entry === 'object' ? [entry.file, ...(entry.css || [])] : []))
+            .map(toUrl)
+            .filter(Boolean);
+
+        const unique = [...new Set(files)];
         const cache = await caches.open(VERSION);
-        await Promise.allSettled(files.map(async (file) => {
+        await Promise.allSettled(unique.map(async (file) => {
             if (await cache.match(file)) return;
             const response = await fetch(file);
             if (response && response.ok) await cache.put(file, response);

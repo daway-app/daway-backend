@@ -178,6 +178,29 @@ class CategoryManagementTest extends TestCase
         $this->assertSame(['vitamin-group', 'vitamin-group-2'], $slugs);
     }
 
+    public function test_duplicate_max_length_slug_stays_within_database_limit(): void
+    {
+        $this->actingAs($this->admin());
+        $slug = str_repeat('a', 180);
+
+        $this->post(route('categories.store'), [
+            'name_ar' => 'قسم طويل',
+            'name_en' => 'Long Category',
+            'slug' => $slug,
+        ])->assertRedirect();
+
+        $this->post(route('categories.store'), [
+            'name_ar' => 'قسم طويل ثانٍ',
+            'name_en' => 'Second Long Category',
+            'slug' => $slug,
+        ])->assertRedirect();
+
+        $slugs = Category::orderBy('id')->pluck('slug')->all();
+        $this->assertSame($slug, $slugs[0]);
+        $this->assertSame(180, strlen($slugs[1]));
+        $this->assertStringEndsWith('-2', $slugs[1]);
+    }
+
     public function test_admin_can_attach_moh_medicine_by_stable_keys(): void
     {
         $this->actingAs($this->admin());
@@ -249,6 +272,27 @@ class CategoryManagementTest extends TestCase
 
         $this->post(route('categories.medicines.attach', $category), [
             'type' => 'moh',
+        ])->assertRedirect()->assertSessionHas('error');
+
+        $this->assertSame(0, CategoryMedicineLink::count());
+    }
+
+    public function test_attach_rejects_nonexistent_or_mismatched_moh_identifiers(): void
+    {
+        $this->actingAs($this->admin());
+        $category = $this->createCategory();
+        $this->createMohMedicine(['moh_product_id' => 1001, 'moh_drug_id' => 5001]);
+        $this->createMohMedicine(['trade_name' => 'OTHER MED', 'moh_product_id' => 1002, 'moh_drug_id' => 5002]);
+
+        $this->post(route('categories.medicines.attach', $category), [
+            'type' => 'moh',
+            'moh_product_id' => 9999,
+        ])->assertRedirect()->assertSessionHas('error');
+
+        $this->post(route('categories.medicines.attach', $category), [
+            'type' => 'moh',
+            'moh_product_id' => 1001,
+            'moh_drug_id' => 5002,
         ])->assertRedirect()->assertSessionHas('error');
 
         $this->assertSame(0, CategoryMedicineLink::count());
@@ -389,5 +433,26 @@ class CategoryManagementTest extends TestCase
         $this->assertNotNull($category->image);
         $this->assertStringStartsWith('categories/', $category->image);
         Storage::disk('public')->assertExists($category->image);
+    }
+
+    public function test_update_replaces_local_image_and_deletes_previous_file(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->admin());
+        $oldImage = UploadedFile::fake()->image('old.png')->store('categories', 'public');
+        $category = $this->createCategory(['image' => $oldImage]);
+
+        $this->put(route('categories.update', $category), [
+            'name_ar' => $category->name_ar,
+            'name_en' => $category->name_en,
+            'is_active' => '1',
+            'image' => UploadedFile::fake()->image('new.png'),
+        ])->assertRedirect(route('categories.index'));
+
+        $newImage = $category->refresh()->image;
+        $this->assertNotNull($newImage);
+        $this->assertNotSame($oldImage, $newImage);
+        Storage::disk('public')->assertMissing($oldImage);
+        Storage::disk('public')->assertExists($newImage);
     }
 }

@@ -7,7 +7,7 @@
     @include('partials.pharmacy-hub-i18n')
 
     @push('scripts')
-        <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+        <script src="{{ asset('vendor/chart.umd.js') }}" defer></script>
     @endpush
 
     @php

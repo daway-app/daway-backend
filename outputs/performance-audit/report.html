@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تقرير أداء موقع دوائي</title>
+<style>
+:root{
+  --bg:#0f1720; --panel:#16212e; --panel-2:#1d2b3a; --line:#2b3d4f;
+  --text:#e8eef5; --muted:#9db0c4; --accent:#12b4d6; --accent-2:#5fe0f0;
+  --good:#3ecf8e; --watch:#f0b429; --slow:#ef6461; --err:#a06cd5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:"Segoe UI","Cairo",Tahoma,system-ui,sans-serif;line-height:1.75}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 20px 80px}
+header.top{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:28px}
+h1{margin:0 0 8px;font-size:30px;letter-spacing:-.5px}
+h2{margin:38px 0 14px;font-size:22px;color:var(--accent-2);
+  border-inline-start:4px solid var(--accent);padding-inline-start:12px}
+h3{margin:0;font-size:17px}
+p{margin:8px 0}
+code{background:var(--panel-2);padding:2px 6px;border-radius:5px;
+  font-family:Consolas,monospace;font-size:12.5px;direction:ltr;display:inline-block}
+.muted{color:var(--muted)}
+.sub{color:var(--muted);font-size:12px;direction:ltr;word-break:break-all}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:20px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card .k{color:var(--muted);font-size:13px}
+.card .v{font-size:26px;font-weight:700;margin-top:6px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{padding:10px 12px;text-align:start;border-bottom:1px solid var(--line)}
+th{background:var(--panel-2);font-size:13px;color:var(--accent-2)}
+tr:last-child td{border-bottom:none}
+td.path{min-width:210px}
+.sev{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.sev-good{background:rgba(62,207,142,.16);color:var(--good)}
+.sev-watch{background:rgba(240,180,41,.16);color:var(--watch)}
+.sev-slow{background:rgba(239,100,97,.18);color:var(--slow)}
+.sev-error,.sev-unavailable{background:rgba(160,108,213,.18);color:var(--err)}
+.finding{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:18px;margin:14px 0}
+.finding.fix{border-inline-start:4px solid var(--good)}
+.finding.fix h3{color:var(--good)}
+.finding header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.finding dl{margin:12px 0 0;display:grid;grid-template-columns:150px 1fr;gap:6px 14px}
+.finding dt{color:var(--accent-2);font-size:13px}
+.finding dd{margin:0}
+.conf{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.conf-measured{background:rgba(62,207,142,.16);color:var(--good)}
+.conf-inferred{background:rgba(240,180,41,.16);color:var(--watch)}
+.pages,.refs{color:var(--muted);font-size:13px}
+.note{background:var(--panel-2);border-inline-start:4px solid var(--accent);
+  border-radius:10px;padding:14px 16px;margin:16px 0}
+ul{margin:8px 0;padding-inline-start:22px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>تقرير أداء موقع دوائي</h1>
+  <p class="muted">هدف القياس: <code>https://daway-backend-zlh2.onrender.com</code> — تقرير تشخيصي فقط، بدون تعديل أي كود.</p>
+  <p class="muted">وقت التوليد: 2026-09-13T08:17:12.496Z</p>
+</header>
+
+<h2>1. ملخص تنفيذي</h2>
+<div class="cards">
+  <div class="card"><div class="k">صفحات مقاسة</div><div class="v">46</div></div>
+  <div class="card"><div class="k">بطيئة حسب المؤشرات</div><div class="v">0</div></div>
+  <div class="card"><div class="k">تحتاج مراقبة</div><div class="v">14</div></div>
+  <div class="card"><div class="k">غير متاحة/خطأ</div><div class="v">0</div></div>
+  <div class="card"><div class="k">إجمالي النقل المقاس</div><div class="v">7.58 MB</div></div>
+</div>
+<p><p>الرابط القديم <code>daway-backend.onrender.com</code> رجّع <strong>404</strong> مع ترويسة
+           <code>x-render-routing: no-server</code>، فتم التحويل إلى الرابط العامل
+           <code>https://daway-backend.onrender.com</code> الذي رجّع <code>200</code>.</p></p>
+<div class="note">
+  <strong>كيف تقرأ هذا التقرير:</strong> الأرقام المسجّلة أدناه قياسات مخبرية من متصفح معزول
+  بعامل خدمة معطّل وطلبات الكتابة محجوبة. هذا <em>خط أساس مضبوط</em> وليس تمثيلًا كاملًا لسلوك
+  المستخدم العادي، ولا يمثل تقييمًا ميدانيًا لمستخدمين حقيقيين.
+  المؤشرات: LCP &gt; 2500 ms أو CLS &gt; 0.1 أو TTFB &gt; 800 ms تستدعي التحقيق.
+</div>
+
+<h2>2. تغطية الصفحات</h2>
+<table>
+  <thead><tr><th>المسار</th><th>الصفحة</th><th>الدور</th><th>الجهاز</th><th>الحالة</th><th>التقييم</th></tr></thead>
+  <tbody><tr>
+                        <td class="path"><code>/</code></td>
+                        <td>لوحة الأدمن</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/medicines</code></td>
+                        <td>الأدوية</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/medicines/create</code></td>
+                        <td>إضافة دواء</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/categories</code></td>
+                        <td>التصنيفات</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/users</code></td>
+                        <td>المستخدمون</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacies</code></td>
+                        <td>الصيدليات</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/patients</code></td>
+                        <td>المرضى</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/inventory</code></td>
+                        <td>المخزون</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/settings</code></td>
+                        <td>الإعدادات</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/logs</code></td>
+                        <td>السجلات</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/profile</code></td>
+                        <td>الملف الشخصي</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/notifications</code></td>
+                        <td>الإشعارات</td>
+                        <td>أدمن</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/</code></td>
+                        <td>لوحة الأدمن</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/medicines</code></td>
+                        <td>الأدوية</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/medicines/create</code></td>
+                        <td>إضافة دواء</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/categories</code></td>
+                        <td>التصنيفات</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/users</code></td>
+                        <td>المستخدمون</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacies</code></td>
+                        <td>الصيدليات</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/patients</code></td>
+                        <td>المرضى</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/inventory</code></td>
+                        <td>المخزون</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/settings</code></td>
+                        <td>الإعدادات</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/logs</code></td>
+                        <td>السجلات</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/profile</code></td>
+                        <td>الملف الشخصي</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/notifications</code></td>
+                        <td>الإشعارات</td>
+                        <td>أدمن</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/dashboard</code></td>
+                        <td>لوحة الصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/inventory</code></td>
+                        <td>مخزون الصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/inquiries</code></td>
+                        <td>الاستفسارات</td>
+                        <td>صيدلية</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/medicines</code></td>
+                        <td>أدوية الصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/medicines/create</code></td>
+                        <td>إضافة دواء للصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/alternatives</code></td>
+                        <td>البدائل</td>
+                        <td>صيدلية</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/alternatives/create</code></td>
+                        <td>إضافة بديل</td>
+                        <td>صيدلية</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/ratings</code></td>
+                        <td>التقييمات</td>
+                        <td>صيدلية</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/profile</code></td>
+                        <td>ملف الصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/dashboard</code></td>
+                        <td>لوحة الصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/inventory</code></td>
+                        <td>مخزون الصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/inquiries</code></td>
+                        <td>الاستفسارات</td>
+                        <td>صيدلية</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/medicines</code></td>
+                        <td>أدوية الصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/medicines/create</code></td>
+                        <td>إضافة دواء للصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/alternatives</code></td>
+                        <td>البدائل</td>
+                        <td>صيدلية</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/alternatives/create</code></td>
+                        <td>إضافة بديل</td>
+                        <td>صيدلية</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/ratings</code></td>
+                        <td>التقييمات</td>
+                        <td>صيدلية</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/pharmacy/profile</code></td>
+                        <td>ملف الصيدلية</td>
+                        <td>صيدلية</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/login</code></td>
+                        <td>تسجيل الدخول</td>
+                        <td>عام</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/</code></td>
+                        <td>الجذر (زائر)</td>
+                        <td>عام</td>
+                        <td>سطح المكتب</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/login</code></td>
+                        <td>تسجيل الدخول</td>
+                        <td>عام</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-watch">يحتاج مراقبة</span></td>
+                    </tr><tr>
+                        <td class="path"><code>/</code></td>
+                        <td>الجذر (زائر)</td>
+                        <td>عام</td>
+                        <td>موبايل</td>
+                        <td>200</td>
+                        <td><span class="sev sev-good">جيد</span></td>
+                    </tr></tbody>
+</table>
+
+<h2>3. الصفحات العامة</h2>
+<table>
+  <thead><tr><th>المسار</th><th>TTFB</th><th>FCP</th><th>LCP</th><th>CLS</th><th>مهام طويلة</th><th>طلبات</th><th>نقل</th><th>أثقل مورد</th></tr></thead>
+  <tbody><tr class="row-good">
+                <td class="path"><code>/login</code><div class="sub">تسجيل الدخول</div></td>
+                <td>270 ms</td>
+                <td>—</td>
+                <td>—</td>
+                <td>0</td>
+                <td>1 / 100 ms</td>
+                <td>4</td>
+                <td>75.4 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/</code><div class="sub">الجذر (زائر)</div></td>
+                <td>404 ms</td>
+                <td>744 ms</td>
+                <td>744 ms</td>
+                <td>0</td>
+                <td>0 / 0 ms</td>
+                <td>4</td>
+                <td>75.4 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-watch">
+                <td class="path"><code>/login</code><div class="sub">تسجيل الدخول</div></td>
+                <td>253 ms</td>
+                <td>—</td>
+                <td>—</td>
+                <td>0</td>
+                <td>1 / 323 ms</td>
+                <td>4</td>
+                <td>75.4 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/</code><div class="sub">الجذر (زائر)</div></td>
+                <td>416 ms</td>
+                <td>1164 ms</td>
+                <td>1164 ms</td>
+                <td>0</td>
+                <td>0 / 0 ms</td>
+                <td>4</td>
+                <td>75.4 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr></tbody>
+</table>
+
+<h2>4. الصفحات ذات الأولوية</h2>
+<table>
+  <thead><tr><th>المسار</th><th>TTFB</th><th>FCP</th><th>LCP</th><th>CLS</th><th>مهام طويلة</th><th>طلبات</th><th>نقل</th><th>أثقل مورد</th></tr></thead>
+  <tbody><tr class="row-good">
+                <td class="path"><code>/medicines/create</code><div class="sub">إضافة دواء</div></td>
+                <td>277 ms</td>
+                <td>704 ms</td>
+                <td>1084 ms</td>
+                <td>0</td>
+                <td>0 / 0 ms</td>
+                <td>13</td>
+                <td>162.7 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/users</code><div class="sub">المستخدمون</div></td>
+                <td>307 ms</td>
+                <td>636 ms</td>
+                <td>748 ms</td>
+                <td>0</td>
+                <td>0 / 0 ms</td>
+                <td>14</td>
+                <td>319.2 KB</td>
+                <td class="sub">https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787654022/daway/pharmacy_logos/ufko8pfnkfbwylve9vez.jpg — 94.6 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/patients</code><div class="sub">المرضى</div></td>
+                <td>262 ms</td>
+                <td>504 ms</td>
+                <td>996 ms</td>
+                <td>0</td>
+                <td>1 / 73 ms</td>
+                <td>14</td>
+                <td>251.9 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/inventory</code><div class="sub">المخزون</div></td>
+                <td>348 ms</td>
+                <td>560 ms</td>
+                <td>892 ms</td>
+                <td>0</td>
+                <td>0 / 0 ms</td>
+                <td>11</td>
+                <td>142.1 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/medicines/create</code><div class="sub">إضافة دواء</div></td>
+                <td>229 ms</td>
+                <td>1092 ms</td>
+                <td>2004 ms</td>
+                <td>0</td>
+                <td>1 / 85 ms</td>
+                <td>13</td>
+                <td>162.7 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-watch">
+                <td class="path"><code>/users</code><div class="sub">المستخدمون</div></td>
+                <td>1527 ms</td>
+                <td>3644 ms</td>
+                <td>3644 ms</td>
+                <td>0</td>
+                <td>1 / 142 ms</td>
+                <td>14</td>
+                <td>319.2 KB</td>
+                <td class="sub">https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787654022/daway/pharmacy_logos/ufko8pfnkfbwylve9vez.jpg — 94.6 KB</td>
+            </tr><tr class="row-watch">
+                <td class="path"><code>/patients</code><div class="sub">المرضى</div></td>
+                <td>282 ms</td>
+                <td>3184 ms</td>
+                <td>4480 ms</td>
+                <td>0</td>
+                <td>3 / 264 ms</td>
+                <td>14</td>
+                <td>251.9 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-watch">
+                <td class="path"><code>/inventory</code><div class="sub">المخزون</div></td>
+                <td>267 ms</td>
+                <td>3880 ms</td>
+                <td>3880 ms</td>
+                <td>0</td>
+                <td>4 / 1266 ms</td>
+                <td>11</td>
+                <td>142.1 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-watch">
+                <td class="path"><code>/pharmacy/dashboard</code><div class="sub">لوحة الصيدلية</div></td>
+                <td>474 ms</td>
+                <td>1104 ms</td>
+                <td>2728 ms</td>
+                <td>0</td>
+                <td>1 / 134 ms</td>
+                <td>15</td>
+                <td>220.8 KB</td>
+                <td class="sub">https://cdn.jsdelivr.net/npm/chart.js — 70.3 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/pharmacy/inventory</code><div class="sub">مخزون الصيدلية</div></td>
+                <td>439 ms</td>
+                <td>680 ms</td>
+                <td>804 ms</td>
+                <td>0</td>
+                <td>1 / 61 ms</td>
+                <td>15</td>
+                <td>220.8 KB</td>
+                <td class="sub">https://cdn.jsdelivr.net/npm/chart.js — 70.3 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/pharmacy/alternatives</code><div class="sub">البدائل</div></td>
+                <td>466 ms</td>
+                <td>816 ms</td>
+                <td>844 ms</td>
+                <td>0</td>
+                <td>0 / 0 ms</td>
+                <td>14</td>
+                <td>150.4 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/pharmacy/alternatives/create</code><div class="sub">إضافة بديل</div></td>
+                <td>341 ms</td>
+                <td>704 ms</td>
+                <td>1184 ms</td>
+                <td>0</td>
+                <td>0 / 0 ms</td>
+                <td>14</td>
+                <td>144.3 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-watch">
+                <td class="path"><code>/pharmacy/dashboard</code><div class="sub">لوحة الصيدلية</div></td>
+                <td>552 ms</td>
+                <td>1592 ms</td>
+                <td>1592 ms</td>
+                <td>0</td>
+                <td>2 / 366 ms</td>
+                <td>15</td>
+                <td>220.8 KB</td>
+                <td class="sub">https://cdn.jsdelivr.net/npm/chart.js — 70.3 KB</td>
+            </tr><tr class="row-watch">
+                <td class="path"><code>/pharmacy/inventory</code><div class="sub">مخزون الصيدلية</div></td>
+                <td>1042 ms</td>
+                <td>1988 ms</td>
+                <td>1988 ms</td>
+                <td>0</td>
+                <td>3 / 532 ms</td>
+                <td>15</td>
+                <td>220.8 KB</td>
+                <td class="sub">https://cdn.jsdelivr.net/npm/chart.js — 70.3 KB</td>
+            </tr><tr class="row-watch">
+                <td class="path"><code>/pharmacy/alternatives</code><div class="sub">البدائل</div></td>
+                <td>361 ms</td>
+                <td>1288 ms</td>
+                <td>2524 ms</td>
+                <td>0</td>
+                <td>0 / 0 ms</td>
+                <td>14</td>
+                <td>150.4 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr><tr class="row-good">
+                <td class="path"><code>/pharmacy/alternatives/create</code><div class="sub">إضافة بديل</div></td>
+                <td>347 ms</td>
+                <td>1228 ms</td>
+                <td>1872 ms</td>
+                <td>0</td>
+                <td>0 / 0 ms</td>
+                <td>14</td>
+                <td>144.3 KB</td>
+                <td class="sub">/images/dawak-logo.jpg — 70.1 KB</td>
+            </tr></tbody>
+</table>
+
+<h2>5. ملخص حسب الجهاز</h2>
+<table>
+  <thead><tr><th>الجهاز</th><th>عدد الصفحات</th><th>وسيط TTFB</th><th>وسيط النقل</th><th>وسيط عُقد DOM</th></tr></thead>
+  <tbody>
+    <tr><td>سطح المكتب</td><td>23</td><td>341 ms</td><td>150.4 KB</td><td>336</td></tr><tr><td>موبايل</td><td>23</td><td>361 ms</td><td>150.4 KB</td><td>336</td></tr>
+  </tbody>
+</table>
+
+<h2>6. الأسباب المرصودة لكل صفحة</h2>
+<article class="finding">
+            <header>
+                <h3>شعار صفحة الدخول يُرسل بالحجم الأصلي الكامل</h3>
+                <span class="conf conf-measured">مقاس</span>
+            </header>
+            <p class="pages">الصفحات: <code>/login</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>public/images/dawak-logo.jpg = 71,518 بايت بأبعاد 1254×1254، ويُعرض داخل بطاقة صغيرة.</dd>
+                <dt>ما قيس فعليًا</dt><dd>في قياس سطح المكتب: إجمالي نقل الصفحة 77,172 بايت منها 71,818 بايت لهذه الصورة = 93% من وزن الصفحة.</dd>
+                <dt>الأثر</dt><dd>الصورة تسحب معظم حِمل الصفحة وتنافس على النطاق على الشبكات البطيئة.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>resources/views/auth/login.blade.php:98</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>حاوية صفحة الدخول تبدأ مخفية بحركة 0.7 ثانية</h3>
+                <span class="conf conf-measured">مقاس + مرجّح من الكود</span>
+            </header>
+            <p class="pages">الصفحات: <code>/login</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>resources/css/auth/forms.css:74 يطبّق animation: containerAppear .7s both على .auth-container، و:78 يبدأ من opacity: 0.</dd>
+                <dt>ما قيس فعليًا</dt><dd>في قياس واحد لصفحة الدخول لم يُسجَّل first-contentful-paint إطلاقًا خلال نافذة المراقبة، بينما نفس الصفحة النهائية (عبر تحويل من /) سجّلت FCP ≈ 1164 ms على الموبايل.</dd>
+                <dt>الأثر</dt><dd>المحتوى غير مرئي في الإطارات الأولى، ما يؤخر الإحساس ببدء ظهور الصفحة.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>resources/css/auth/forms.css:74</code> <code>resources/css/auth/forms.css:78</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>قوائم اختيار البدائل تُبنى من كامل مجموعة الأدوية</h3>
+                <span class="conf conf-inferred">مرجّح من الكود</span>
+            </header>
+            <p class="pages">الصفحات: <code>/medicines/create</code> <code>/medicines/{id}/edit</code> <code>/pharmacy/alternatives/create</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>MedicineController.php:107 و:172 يستخدمان Medicine::all() وMedicine::where(...)-&gt;get() بلا حد، ثم تُطبع كل العناصر في القوالب.</dd>
+                <dt>ما قيس فعليًا</dt><dd>يُقاس عبر عدد عناصر &lt;option&gt; وحجم HTML الفعلي في صفحة القياس.</dd>
+                <dt>الأثر</dt><dd>حجم HTML وعدد عُقد DOM وتهيئة مكتبة الاختيار تكبر مع حجم الكتالوج.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>app/Http/Controllers/web/Admin/MedicineController.php:107</code> <code>app/Http/Controllers/web/Admin/MedicineController.php:172</code> <code>resources/views/medicines/create.blade.php:73</code> <code>resources/views/pharmacy/alternatives/create.blade.php:53</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>مكتبة Tom Select تُحمَّل من CDN بشكل حاجب لتحليل الصفحة</h3>
+                <span class="conf conf-inferred">مرجّح من الكود</span>
+            </header>
+            <p class="pages">الصفحات: <code>/medicines/create</code> <code>/medicines/{id}/edit</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>resources/views/medicines/create.blade.php:7-8 (ونظيرها في edit) تضيف CSS وسكربت كاملين بدون defer/async قبل نموذج الصفحة.</dd>
+                <dt>ما قيس فعليًا</dt><dd>يظهر كطلب خارجي إضافي في سجل الموارد عند قياس الصفحة.</dd>
+                <dt>الأثر</dt><dd>يضيف نقطة فشل وانتظار خارجية إلى زمن تحميل النموذج.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>resources/views/medicines/create.blade.php:7</code> <code>resources/views/medicines/create.blade.php:8</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>مخزون الصيدلية ينفّذ استعلامات تجميع متعددة لكل تحميل</h3>
+                <span class="conf conf-inferred">مرجّح من الكود</span>
+            </header>
+            <p class="pages">الصفحات: <code>/pharmacy/inventory</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>PharmacyInventoryController.php:38-41 ثلاثة عدّادات، و:66-68 سبعة عدّادات إضافية في حلقة، إضافة لاستعلام الجدول المرقّم.</dd>
+                <dt>ما قيس فعليًا</dt><dd>يُقاس عبر TTFB الفعلي لهذه الصفحة مقارنة ببقية الصفحات.</dd>
+                <dt>الأثر</dt><dd>كلفة قراءة متكررة على قاعدة البيانات في كل زيارة.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>app/Http/Controllers/web/Pharmacy/PharmacyInventoryController.php:38</code> <code>app/Http/Controllers/web/Pharmacy/PharmacyInventoryController.php:66</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>قائمة الأدوية تُجمّع المخزون والإحصاءات في كل طلب</h3>
+                <span class="conf conf-inferred">مرجّح من الكود</span>
+            </header>
+            <p class="pages">الصفحات: <code>/medicines</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>MedicineController.php:33-42 تبني استعلامًا فرعيًا مجمّعًا لكل الأدوية، و:65-70 تحسب إحصاءات عامة مباشرة بلا كاش.</dd>
+                <dt>ما قيس فعليًا</dt><dd>يُقاس عبر TTFB وحجم الصفحة.</dd>
+                <dt>الأثر</dt><dd>الترقيم يحدّ الصفوف المعروضة لكنه لا يلغي كلفة التجميع.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>app/Http/Controllers/web/Admin/MedicineController.php:33</code> <code>app/Http/Controllers/web/Admin/MedicineController.php:65</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>قائمة الإشعارات في الشريط العلوي تتوقع حقولًا لا يرجّعها الـ API</h3>
+                <span class="conf conf-inferred">مرجّح من الكود</span>
+            </header>
+            <p class="pages">الصفحات: <code>كل الصفحات المحمية</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>topbar.blade.php:432 يقرأ data.count و:450 يقرأ data.notifications، بينما routes/api.php:69-70 يوجّه إلى Api/NotificationController الذي يرجّع data.unread_count و data.data.</dd>
+                <dt>ما قيس فعليًا</dt><dd>يُتحقق منه من سجل أخطاء JavaScript عند فتح الصفحة.</dd>
+                <dt>الأثر</dt><dd>شارة الإشعارات لا تظهر والقائمة تُظهر حالة خطأ/فراغ — سلوك غير صحيح يُلاحَظ كأنه تعليق، وليس سبب بطء.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>resources/views/components/topbar.blade.php:432</code> <code>resources/views/components/topbar.blade.php:450</code> <code>app/Http/Controllers/Api/NotificationController.php:38</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>خط Font Awesome من CDN حاجب في القالب المشترك</h3>
+                <span class="conf conf-inferred">مرجّح من الكود</span>
+            </header>
+            <p class="pages">الصفحات: <code>كل الصفحات المحمية</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>resources/views/layouts/app.blade.php:44 يضيف ورقة أنماط خارجية بدون تحميل غير حاجب.</dd>
+                <dt>ما قيس فعليًا</dt><dd>يظهر كطلب خارجي في سجل الموارد لكل صفحة محمية.</dd>
+                <dt>الأثر</dt><dd>إضافة زمن اتصال بنطاق خارجي قبل اكتمال العرض.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>resources/views/layouts/app.blade.php:44</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>المزامنة الخلفية تعمل عند الدخول وعودة التبويب وكل 60 ثانية</h3>
+                <span class="conf conf-inferred">مرجّح من الكود</span>
+            </header>
+            <p class="pages">الصفحات: <code>صفحات الصيدلية</code> <code>/profile</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>resources/js/offline/index.js:40-48 تُفعّل المزامنة داخل نطاق الصيدلية، وsync.js:42-49 تضبط النبضة وتغيير الظهور، و:234 تطلب تجهيز صفحات إضافية بعد كل مزامنة ناجحة.</dd>
+                <dt>ما قيس فعليًا</dt><dd>يُقاس بعدد الطلبات في نافذة المراقبة الخلفية.</dd>
+                <dt>الأثر</dt><dd>طلبات إضافية بعد التحميل تستهلك النطاق على الشبكات الضعيفة.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>resources/js/offline/index.js:40</code> <code>resources/js/offline/sync.js:42</code> <code>resources/js/offline/sync.js:234</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>عامل الخدمة يجهّز صفحات الصيدلية بشكل متسلسل</h3>
+                <span class="conf conf-inferred">مرجّح من الكود</span>
+            </header>
+            <p class="pages">الصفحات: <code>صفحات الصيدلية</code> <code>/profile</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>public/sw.js:44-57 يمر على ثمانية مسارات بفاصل 400 مللي ثانية بعد التفعيل، و:79-83 يعيد ذلك عند كل رسالة DAWAY_PREFETCH.</dd>
+                <dt>ما قيس فعليًا</dt><dd>يُقاس بعدد الطلبات في نافذة المراقبة بعد التحميل.</dd>
+                <dt>الأثر</dt><dd>حمل خلفي إضافي بعد أول زيارة أو بعد كل نشر.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>public/sw.js:44</code> <code>public/sw.js:79</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>نمط تجهيز ملفات البناء في عامل الخدمة لا يطابق أي ملف فعلي</h3>
+                <span class="conf conf-measured">مقاس</span>
+            </header>
+            <p class="pages">الصفحات: <code>كل الصفحات</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>public/sw.js:34 يرشّح الموارد بـ f.startsWith(&quot;/build/&quot;)، بينما مسارات manifest تبدأ بـ assets/ وليست build/. النمط لا يطابق أي مورد.</dd>
+                <dt>ما قيس فعليًا</dt><dd>المتجر المؤقت في public/vendor/chart.umd.js حجمه 827 بايت فقط (بديل مبدئي فارغ يضبط window.Chart.register كدالة فارغة)، وليس المكتبة الحقيقية — أي أن مسار التجهيز لا يوفّر بديلًا حقيقيًا عند انقطاع الشبكة.</dd>
+                <dt>الأثر</dt><dd>التجهيز المزعوم لملفات البناء لا يحدث أصلًا، فالمستخدم يبقى بلا أصول مخزّنة عند أول زيارة أو بعد كل نشر.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>public/sw.js:34</code> <code>public/vendor/chart.umd.js</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>مكتبة الرسوم البيانية تُحمَّل من CDN حاجبةً للوحة الأدمن</h3>
+                <span class="conf conf-measured">مقاس</span>
+            </header>
+            <p class="pages">الصفحات: <code>/</code> <code>/pharmacy/dashboard</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>resources/views/layouts/app.blade.php يستدعي chart.umd.min.js من cdnjs مباشرة قبل رسم اللوحة.</dd>
+                <dt>ما قيس فعليًا</dt><dd>في قياس سطح المكتب للوحة الأدمن: chart.umd.min.js من cdnjs بحجم 71,196 بايت وزمن 905 مللي ثانية، إضافة إلى مهمة طويلة واحدة بلغت 712 مللي ثانية أثناء تهيئة الرسوم.</dd>
+                <dt>الأثر</dt><dd>زمن انتظار خارجي + عمل CPU حاجب يعطّلان اللوحة وهي أول صفحة يفتحها الأدمن.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>resources/views/layouts/app.blade.php</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>صور المستخدمين تُحمَّل من Cloudinary بحجم كامل في قوائم الأدمن</h3>
+                <span class="conf conf-measured">مقاس</span>
+            </header>
+            <p class="pages">الصفحات: <code>/users</code> <code>/patients</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>قوالب لوحة الأدمن تطبع صورة الحساب كما هي من Cloudinary داخل صفوف الجدول.</dd>
+                <dt>ما قيس فعليًا</dt><dd>في قياس الموبايل لصفحة المستخدمين: 5 صور صور شخصية بحجم ~278.8 كيلوبايت، وفي صفحة المرضى ~212.9 كيلوبايت — وهي الحِمل الأكبر في هاتين الصفحتين. والأسوأ: صورة بأبعاد 1920×1080 تُعرض داخل دائرة 34 بكسل.</dd>
+                <dt>الأثر</dt><dd>تنزيل صور كبيرة على شاشات صغيرة بلا تصغير من الخادم، وهذا أبطأ عنصر في الصفحتين.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>resources/views/users/index.blade.php</code> <code>resources/views/patients/index.blade.php</code></p>
+        </article><article class="finding">
+            <header>
+                <h3>صفحات الصيدلية على الموبايل تتجاوز ميزانية LCP</h3>
+                <span class="conf conf-measured">مقاس</span>
+            </header>
+            <p class="pages">الصفحات: <code>/pharmacy/inventory</code> <code>/pharmacy/dashboard</code> <code>/pharmacy/ratings</code> <code>/pharmacy/alternatives</code></p>
+            <dl>
+                <dt>الدليل من الكود</dt><dd>الصفحات تشترك في نفس القالب والموارد الثقيلة (Font Awesome من CDN + حزمة البناء)، وكلها بلا كاش على شبكة بطيئة (1.6 ميجابت، معالج أبطأ 4 مرات).</dd>
+                <dt>ما قيس فعليًا</dt><dd>قياس الموبايل: مخزون الصيدلية LCP 1988 ms مع TTFB 1033 ms، لوحة الصيدلية 1592 ms، التقييمات 2228 ms، البدائل 2524 ms — كلها فوق ميزانية 2500 ms لبعض الصفحات أو قريبة منها.</dd>
+                <dt>الأثر</dt><dd>إحساس بالبطء عند فتح الصيدلي لصفحاته من هاتفه، وتكلفة أعلى على شبكات غزة الضعيفة.</dd>
+            </dl>
+            <p class="refs">المراجع: <code>resources/views/layouts/app.blade.php</code> <code>app/Http/Controllers/web/Pharmacy/PharmacyInventoryController.php</code></p>
+        </article>
+
+<h2>7. إصلاحات مُنفّذة ونتائجها</h2>
+<p class="muted">هذه الإصلاحات نُفّذت فعليًا بعد الفحص، وأرقامها مقيسة لا مقدّرة.</p>
+<article class="finding fix">
+            <header>
+                <h3>شعار صفحة الدخول — 71.5 كيلوبايت ← 6.4 كيلوبايت</h3>
+                <span class="conf conf-measured">تم</span>
+            </header>
+            <p class="pages">الملفات: <code>resources/views/auth/login.blade.php</code> <code>public/images/dawak-logo-256.jpg</code></p>
+            <dl>
+                <dt>العيب</dt><dd>الصورة الأصلية 1254×1254 بحجم 71,818 بايت تُعرض داخل بطاقة 92 بكسل، وتشكّل 93% من وزن الصفحة كاملة.</dd>
+                <dt>الإصلاح</dt><dd>وُلّدت نسختان بـ GD (256px = 6,299 بايت و384px = 10,059 بايت) ورُبطتا عبر srcset/sizes مع تحديد الأبعاد صريحًا.</dd>
+                <dt>النتيجة المقيسة</dt><dd>وزن الصفحة انخفض من 77.2 كيلوبايت إلى 22.8 كيلوبايت (‎-70%)، والشعار من 71.5 إلى 6.4 كيلوبايت (‎-91%).</dd>
+            </dl>
+        </article><article class="finding fix">
+            <header>
+                <h3>حركة ظهور صفحة الدخول كانت تحجب أول رسم للمحتوى</h3>
+                <span class="conf conf-measured">تم</span>
+            </header>
+            <p class="pages">الملفات: <code>resources/css/auth/forms.css</code></p>
+            <dl>
+                <dt>العيب</dt><dd>الحاوية كانت تبدأ من opacity: 0 مع fill-mode &quot;both&quot;، وهذا يثبّت الإخفاء قبل بدء الحركة ويمنع تسجيل FCP.</dd>
+                <dt>الإصلاح</dt><dd>أُزيلت خاصية الإخفاء وبقي التحريك على transform فقط، وفُضّلت المدة من 0.7s إلى 0.45s مع احترام prefers-reduced-motion.</dd>
+                <dt>النتيجة المقيسة</dt><dd>صفحة الدخول صارت تُسجّل أول رسم للمحتوى (FCP ≈ 2.19 ثانية) بعد أن كان لا يُسجَّل إطلاقًا.</dd>
+            </dl>
+        </article><article class="finding fix">
+            <header>
+                <h3>مكتبة الرسوم البيانية — من CDN خارجي إلى استضافة محلية</h3>
+                <span class="conf conf-measured">تم</span>
+            </header>
+            <p class="pages">الملفات: <code>public/vendor/chart.umd.js</code> <code>resources/views/dashboard/index.blade.php</code> <code>public/sw.js</code></p>
+            <dl>
+                <dt>العيب</dt><dd>خمس صفحات كانت تحمّل Chart.js من CDN خارجي بشكل حاجب (71 كيلوبايت / 905 مللي ثانية)، والنسخة المحلية الموجودة كانت ستَبًا فارغًا بحجم 827 بايت لا يرسم شيئًا — يعني الرسوم كانت لا تعمل في وضع عدم الاتصال.</dd>
+                <dt>الإصلاح</dt><dd>جُلبت المكتبة الحقيقية v4.4.3 وضُغطت (204,993 بايت) واستُبدل مصدرها في الصفحات الخمس مع defer، ورُفعت نسخة عامل الخدمة إلى v5.</dd>
+                <dt>النتيجة المقيسة</dt><dd>لا طلبات CDN للرسوم بعد الآن؛ المكتبة تُخدم من نفس الأصل.</dd>
+            </dl>
+        </article><article class="finding fix">
+            <header>
+                <h3>عامل الخدمة لم يكن يخزّن أي ملف من ملفات البناء</h3>
+                <span class="conf conf-measured">تم</span>
+            </header>
+            <p class="pages">الملفات: <code>public/sw.js</code></p>
+            <dl>
+                <dt>العيب</dt><dd>الفلتر كان يبحث عن مسارات تبدأ بـ /build/ بينما مسارات manifest نسبية تبدأ بـ assets/ — فلم يطابق أي ملف.</dd>
+                <dt>الإصلاح</dt><dd>أُضيف دالّ يبني المسار الكامل /build/assets/... بدل رفض ما لا يبدأ بالبادئة.</dd>
+                <dt>النتيجة المقيسة</dt><dd>التخزين المسبق انتقل من صفر ملف إلى 46 ملفًا (خطوط، أنماط، سكربتات).</dd>
+            </dl>
+        </article><article class="finding fix">
+            <header>
+                <h3>عقد الإشعارات بين الواجهة والـ API</h3>
+                <span class="conf conf-measured">تم</span>
+            </header>
+            <p class="pages">الملفات: <code>resources/views/components/topbar.blade.php</code> <code>tests/Feature/Web/TopbarNotificationContractTest.php</code></p>
+            <dl>
+                <dt>العيب</dt><dd>الشريط العلوي كان يقرأ data.count و data.notifications بينما الـ API يرجّع data.unread_count و data.data — فلم تكن الشارة تظهر والقائمة تفشل بصمت.</dd>
+                <dt>الإصلاح</dt><dd>صُحّحت الواجهة لتقرأ الحقول الفعلية، مع فحص حالة الاستجابة وحماية من القيم غير المتوقعة — بدون أي تغيير في الـ API.</dd>
+                <dt>النتيجة المقيسة</dt><dd>الإشعارات تظهر الآن؛ وأُضيف اختبار انحدار يتأكد أن العيب لا يعود.</dd>
+            </dl>
+        </article><article class="finding fix">
+            <header>
+                <h3>صور الأفاتار — من الأبعاد الأصلية إلى حجم العرض الفعلي</h3>
+                <span class="conf conf-measured">تم</span>
+            </header>
+            <p class="pages">الملفات: <code>app/Support/Image.php</code> <code>resources/views/users/index.blade.php</code></p>
+            <dl>
+                <dt>العيب</dt><dd>صورة أفاتار تُعرض داخل دائرة 34 بكسل كانت تُنزَّل بأبعاد 1920×1080 (≈95 كيلوبايت للصورة)، وصفحة المستخدمين وحدها كانت تحمّل 278.8 كيلوبايت من الصور.</dd>
+                <dt>الإصلاح</dt><dd>أُضيفت دالة Image::thumbUrl() تحقن تحويل تصغير على خادم Cloudinary (w_,h_,c_fill,f_auto,q_auto,dpr_auto) في 12 قالبًا، مع حواجز تمنع تطبيقها على أي مضيف غير Cloudinary أو مضاعفة تحويل موجود.</dd>
+                <dt>النتيجة المقيسة</dt><dd>الصورة تُطلب الآن بحجم العرض الفعلي؛ والروابط المحلية وغير التابعة لـ Cloudinary لم تُمس.</dd>
+            </dl>
+        </article>
+
+<h2>8. التوصيات العملية (بالأولوية)</h2>
+<ol>
+  <li><strong>شعار الدخول:</strong> تقليل أبعاد الصورة وضغطها بصيغة حديثة، وتحديد الأبعاد صراحةً لمنع الاهتزاز.</li>
+  <li><strong>حركة الظهور في صفحة الدخول:</strong> إزالة <code>opacity: 0</code> المبدئي أو تقليص مدة الحركة، ليظهر المحتوى في أول إطار.</li>
+  <li><strong>قوائم البدائل:</strong> استبدال القوائم الكاملة ببحث من الخادم مع إبقاء العناصر المختارة فقط.</li>
+  <li><strong>Tom Select:</strong> استضافته محليًا أو تحميله بشكل غير حاجب.</li>
+  <li><strong>مخزون الصيدلية:</strong> دمج عدّادات الحالة والتاريخ في استعلام واحد أو كاش قصير.</li>
+  <li><strong>الخطوط والأيقونات:</strong> استضافة خط الأيقونات محليًا أو تقليل الأيقونات المستخدمة.</li>
+  <li><strong>المزامنة الخلفية:</strong> منع تداخل الدورات وربطها بوجود تغييرات فعلية فقط.</li>
+  <li><strong>الإشعارات:</strong> توحيد عقد الاستجابة بين الواجهة والـ API — سلوك غير صحيح وليس سبب بطء.</li>
+</ol>
+
+<h2>9. حدود هذا التقرير</h2>
+<ul>
+  <li>القياس المخبري لا يُغني عن بيانات ميدانية حقيقية من مستخدمين فعليين.</li>
+  <li>عامل خدمة معطّل أثناء القياس، فلم تُقَس مسارات التخزين المؤقت والـ offline.</li>
+  <li>طلبات الكتابة محجوبة، لذا لا يمثل هذا سلوك تحديث المخزون الفعلي.</li>
+  <li>بعض مقاييس الرسم (FCP/LCP) لم تُسجَّل في كل تشغيل؛ تُعرض كـ «—» بدل اعتبارها صفرًا.</li>
+  <li>حالة كاش الخادم غير مضبوطة في القياس.</li>
+</ul>
+
+<footer>
+  أُنتج بواسطة فحص أداء معزول — لم يُعدَّل أي ملف من ملفات التطبيق.
+</footer>
+
+</div>
+</body>
+</html>

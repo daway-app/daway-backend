@@ -84,7 +84,7 @@
                                     <div style='display:flex;align-items:center;gap:12px;'>
                                         <div class='ph-med-thumb'>
                                             @if($pm->medicine->image)
-                                                <img src='{{ \App\Support\Image::url($pm->medicine->image) }}' alt='{{ $pm->medicine->trade_name }}'>
+                                                <img src='{{ \App\Support\Image::thumbUrl($pm->medicine->image, 88, 88) }}' alt='{{ $pm->medicine->trade_name }}' width="44" height="44" loading="lazy" decoding="async'>
                                             @else
                                                 <i class='fas fa-pills'></i>
                                             @endif

@@ -40,7 +40,7 @@
         <div class="user-profile-btn" onclick="openProfileModal()" title="@lang('layout.edit_profile_modal_title')">
             <div class="avatar" id="displayUserAvatar"
                 @if(auth()->user()->avatar)
-                    style="background-image: url('{{ \App\Support\Image::url(auth()->user()->avatar) }}'); background-size: cover; background-position: center;"
+                    style="background-image: url('{{ \App\Support\Image::thumbUrl(auth()->user()->avatar, 84, 84) }}'); background-size: cover; background-position: center;"
                 @endif
             >
                 @if(!auth()->user()->avatar)
@@ -65,7 +65,7 @@
             <div style="text-align: center; margin-bottom: 16px;">
                 <div class="avatar" id="modalPreviewAvatar" style="width: 64px; height: 64px; margin: 0 auto 8px; font-size: 20px;">
                     @if(auth()->user()->avatar)
-                        <img src="{{ \App\Support\Image::url(auth()->user()->avatar) }}" alt="User Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                        <img src="{{ \App\Support\Image::thumbUrl(auth()->user()->avatar, 84, 84) }}" alt="User Avatar" width="42" height="42" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                     @else
                         {{ mb_substr(auth()->user()->name, 0, 1) }}
                     @endif
@@ -426,11 +426,18 @@
 
     async function fetchNotificationCount() {
         try {
-            const response = await fetch('/api/notifications/count');
+            const response = await fetch('/api/notifications/count', {
+                headers: { 'Accept': 'application/json' },
+            });
+            if (!response.ok) return;
             const data = await response.json();
             const badge = document.getElementById('notificationBadge');
-            if (data.count > 0) {
-                badge.innerText = data.count;
+            if (!badge) return;
+
+            // عقد الـ API: { success, data: { unread_count } }
+            const count = Number(data?.data?.unread_count ?? 0);
+            if (count > 0) {
+                badge.innerText = count > 99 ? '99+' : count;
                 badge.style.display = 'flex'; // Use flex to center text if needed
             } else {
                 badge.style.display = 'none';
@@ -445,9 +452,14 @@
         notificationsList.innerHTML = `<p class="loading-notifications">@lang('layout.loading_notifications')</p>`;
 
         try {
-            const response = await fetch('/api/notifications');
+            const response = await fetch('/api/notifications', {
+                headers: { 'Accept': 'application/json' },
+            });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             const data = await response.json();
-            renderNotifications(data.notifications);
+
+            // عقد الـ API: { success, message, data: [...], unread_count, pagination }
+            renderNotifications(data?.data ?? []);
         } catch (error) {
             console.error('Error fetching notifications:', error);
             notificationsList.innerHTML = `<p class="error-notifications">@lang('layout.error_loading_notifications')</p>`;
@@ -458,7 +470,7 @@
         const notificationsList = document.getElementById('notificationsList');
         notificationsList.innerHTML = ''; // Clear loading/previous notifications
 
-        if (notifications.length === 0) {
+        if (!Array.isArray(notifications) || notifications.length === 0) {
             notificationsList.innerHTML = `<p class="no-notifications">@lang('layout.no_new_notifications')</p>`;
             return;
         }

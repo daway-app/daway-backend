@@ -20,6 +20,11 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <!-- الاختبارات كانت تكتب 500+ مدخل ERROR/WARNING في storage/logs/laravel.log
+             (محاكاة فشل OCR/AI/Cloudinary + مسارات الملفات المفقودة)، فتغرق السجل
+             الحقيقي وتخفي أعطاله. force="true" لأن PHPUnit لا يتجاوز متغير بيئة
+             مضبوطًا مسبقًا بدونها. تعطيل القناة هنا لا يمسّ تشغيل التطبيق. -->
+        <env name="LOG_CHANNEL" value="null" force="true"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>

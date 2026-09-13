@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 class Pharmacy extends Model
@@ -92,5 +93,24 @@ class Pharmacy extends Model
     public function profileCompleted(): bool
     {
         return $this->profile_completed_at !== null;
+    }
+
+    /**
+     * توليد معرّف صيدلية فريد بصيغة PH-XXXX (يُستخدم كمعرّف دخول).
+     *
+     * يُعيد null بعد استنفاد المحاولات — نادر جداً (36^4 احتمال).
+     * المستدعي مسؤول عن إظهار خطأ مناسب للمستخدم.
+     */
+    public static function generateUniqueCustomId(int $attempts = 5): ?string
+    {
+        for ($attempt = 0; $attempt < $attempts; $attempt++) {
+            $candidate = 'PH-'.Str::upper(Str::random(4));
+
+            if (! static::where('pharmacy_custom_id', $candidate)->exists()) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 }

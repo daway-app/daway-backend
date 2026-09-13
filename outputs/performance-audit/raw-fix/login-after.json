@@ -1,0 +1,55 @@
+{
+  "label": "after",
+  "baseUrl": "http://127.0.0.1:8124",
+  "measuredAt": "2026-09-13T07:47:08.891Z",
+  "device": "سطح المكتب",
+  "url": "http://127.0.0.1:8124/login",
+  "ttfbFullMs": 421,
+  "requestTtfbMs": 415,
+  "domContentLoadedMs": 453,
+  "loadEventMs": 502,
+  "transferSize": 8066,
+  "docDecoded": 7766,
+  "fcpMs": 2188,
+  "lcpMs": 2188,
+  "lcpElement": "P",
+  "cls": 0,
+  "resourceCount": 4,
+  "resourceTransferTotal": 23374,
+  "resources": [
+    {
+      "url": "http://127.0.0.1:8124/build/assets/app-xBk42oXK.css",
+      "type": "link",
+      "transferBytes": 7494,
+      "decodedBytes": 7194,
+      "startTime": 429,
+      "duration": 18
+    },
+    {
+      "url": "http://127.0.0.1:8124/build/assets/forms-CR2z2g3A.css",
+      "type": "link",
+      "transferBytes": 9281,
+      "decodedBytes": 8981,
+      "startTime": 429,
+      "duration": 20
+    },
+    {
+      "url": "http://127.0.0.1:8124/images/dawak-logo-256.jpg",
+      "type": "img",
+      "transferBytes": 6599,
+      "decodedBytes": 6299,
+      "startTime": 429,
+      "duration": 20
+    },
+    {
+      "url": "http://127.0.0.1:8124/favicon.ico",
+      "type": "other",
+      "transferBytes": 0,
+      "decodedBytes": 0,
+      "startTime": 505,
+      "duration": 1
+    }
+  ],
+  "domNodes": 62,
+  "htmlBytes": 6898
+}

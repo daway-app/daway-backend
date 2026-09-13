@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Category;
 use App\Models\CategoryMedicineLink;
 use App\Models\MohMedicine;
+use App\Support\CategoryCatalogCache;
 use App\Support\MedicineNameMapper;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Console\Command;
@@ -262,6 +263,9 @@ class ClassifyMohCatalog extends Command
             'admin_preserved' => $adminLinksPreserved,
             'per_category' => $perCategory,
         ]);
+
+        // التصنيف يكتب روابط feed نفس كاش الأقسام — بدونه تبقى النتائج قديمة 15 دقيقة
+        CategoryCatalogCache::bump();
 
         return self::SUCCESS;
     }

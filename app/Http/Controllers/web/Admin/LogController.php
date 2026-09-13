@@ -23,8 +23,21 @@ class LogController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
 
+        // فلتر نوع النشاط: القيم المقبولة تطابق عمود event في activity_log
+        // (Spatie يكتب created/updated/deleted)، و'auth' تُترجم لأحداث الدخول/الخروج.
+        $event = (string) $request->query('event', '');
+        if (! in_array($event, ['created', 'updated', 'deleted', 'auth'], true)) {
+            $event = '';
+        }
+
+        // فلتر التاريخ: <input type="date"> يرسل Y-m-d فقط؛ أي قيمة أخرى تُهمل.
+        $date = trim((string) $request->query('date', ''));
+        if ($date !== '' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = '';
+        }
+
         // Fetch logs using the Activity model, ordered by the most recent, and load the user
-        $logs = Activity::with('causer')
+        $query = Activity::with('causer')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($w) use ($q) {
                     $w->where('description', 'like', "%{$q}%")
@@ -32,12 +45,21 @@ class LogController extends Controller
                             $cq->where('name', 'like', "%{$q}%");
                         });
                 });
-            })
-            ->latest()
-            ->paginate(7)
-            ->withQueryString();
+            });
 
-        return view('logs.index', compact('logs', 'q'));
+        if ($event === 'auth') {
+            $query->whereIn('event', ['login', 'logout']);
+        } elseif ($event !== '') {
+            $query->where('event', $event);
+        }
+
+        if ($date !== '') {
+            $query->whereDate('created_at', $date);
+        }
+
+        $logs = $query->latest()->paginate(7)->withQueryString();
+
+        return view('logs.index', compact('logs', 'q', 'event', 'date'));
     }
 
     /**

@@ -29,10 +29,21 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            Category::firstOrCreate(
-                ['slug' => $category['slug']],
-                $category + ['is_active' => true]
-            );
+            // withTrashed: القيد unique يشمل المحذوف ناعماً، فإعادة البذر يجب أن
+            // تستعيد القسم الافتراضي بدل محاولة إنشاء صف بنفس الـ slug.
+            $existing = Category::withTrashed()
+                ->where('slug', $category['slug'])
+                ->first();
+
+            if ($existing !== null) {
+                if ($existing->trashed()) {
+                    $existing->restore();
+                }
+
+                continue;
+            }
+
+            Category::create($category + ['is_active' => true]);
         }
     }
 }

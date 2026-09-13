@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\CategoryMedicineLink;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
+use App\Support\CategoryCatalogCache;
 use App\Support\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -60,12 +61,18 @@ class CategoryController extends Controller
                 : Str::slug($request->input('name_en'))
         );
 
+        unset($data['image']);
         $category = Category::create($data);
 
         if ($request->hasFile('image')) {
-            $category->image = Cloudinary::upload($request->file('image'), 'categories');
-            $category->save();
+            $image = Cloudinary::upload($request->file('image'), 'categories');
+            if ($image !== null) {
+                $category->image = $image;
+                $category->save();
+            }
         }
+
+        CategoryCatalogCache::bump();
 
         return Redirect::route('categories.index')->with('success', 'تم إنشاء القسم بنجاح!');
     }
@@ -196,13 +203,20 @@ class CategoryController extends Controller
             unset($data['slug']);
         }
 
+        unset($data['image']);
         $category->update($data);
 
         if ($request->hasFile('image')) {
-            Cloudinary::deleteLocal($category->image);
-            $category->image = Cloudinary::upload($request->file('image'), 'categories');
-            $category->save();
+            $oldImage = $category->image;
+            $newImage = Cloudinary::upload($request->file('image'), 'categories');
+            if ($newImage !== null) {
+                $category->image = $newImage;
+                $category->save();
+                Cloudinary::deleteLocal($oldImage);
+            }
         }
+
+        CategoryCatalogCache::bump();
 
         return Redirect::route('categories.index')->with('success', 'تم تحديث القسم بنجاح!');
     }
@@ -214,6 +228,7 @@ class CategoryController extends Controller
     public function destroy(Category $category)
     {
         $category->delete();
+        CategoryCatalogCache::bump();
 
         return Redirect::route('categories.index')->with('success', 'تم حذف القسم بنجاح!');
     }
@@ -225,6 +240,7 @@ class CategoryController extends Controller
     {
         $category->is_active = ! $category->is_active;
         $category->save();
+        CategoryCatalogCache::bump();
 
         return Redirect::back()->with('success', 'تم تحديث حالة القسم بنجاح!');
     }
@@ -256,6 +272,8 @@ class CategoryController extends Controller
                 ]
             );
 
+            CategoryCatalogCache::bump();
+
             return Redirect::back()->with('success', 'تم ربط الدواء بالقسم بنجاح!');
         }
 
@@ -264,6 +282,17 @@ class CategoryController extends Controller
 
         if (! $productId && ! $drugId) {
             return Redirect::back()->with('error', 'لا يمكن ربط هذا الدواء: معرّفات وزارة الصحة غير متوفرة.');
+        }
+
+        // لا يُقبل ربط إلا بمفاتيح موجودة فعلاً في الكتالوج وتخصّ نفس الصف
+        // (نموذج البحث يرسلها صحيحة، لكن الطلب نفسه غير موثوق).
+        $catalogRowExists = MohMedicine::query()
+            ->when($productId, fn ($query) => $query->where('moh_product_id', $productId))
+            ->when($drugId, fn ($query) => $query->where('moh_drug_id', $drugId))
+            ->exists();
+
+        if (! $catalogRowExists) {
+            return Redirect::back()->with('error', 'تعذر العثور على الدواء في كتالوج وزارة الصحة.');
         }
 
         // فحص تكرار على مستوى الدواء الواحد (بأي من مفتاحيه المستقرين)
@@ -290,6 +319,8 @@ class CategoryController extends Controller
             'needs_review' => false,
         ]);
 
+        CategoryCatalogCache::bump();
+
         return Redirect::back()->with('success', 'تم ربط الدواء بالقسم بنجاح!');
     }
 
@@ -301,6 +332,7 @@ class CategoryController extends Controller
         abort_unless($link->category_id === $category->id, 404);
 
         $link->delete();
+        CategoryCatalogCache::bump();
 
         return Redirect::back()->with('success', 'تم إزالة الدواء من القسم بنجاح!');
     }
@@ -317,6 +349,8 @@ class CategoryController extends Controller
             'source' => CategoryMedicineLink::SOURCE_ADMIN,
             'confidence' => 100,
         ]);
+
+        CategoryCatalogCache::bump();
 
         return Redirect::back()->with('success', 'تم اعتماد الربط بنجاح!');
     }
@@ -347,6 +381,7 @@ class CategoryController extends Controller
     private function uniqueSlug(string $base, ?int $ignoreId = null): string
     {
         $base = $base !== '' ? $base : 'category';
+        $base = mb_substr($base, 0, 180);
         $slug = $base;
         $suffix = 2;
 
@@ -354,7 +389,9 @@ class CategoryController extends Controller
             ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
             ->where('slug', $slug)
             ->exists()) {
-            $slug = $base.'-'.$suffix;
+            // القصّ يحفظ الطول داخل حدّ العمود (180) مع بقاء اللاحقة مميّزة
+            $suffixPart = '-'.$suffix;
+            $slug = mb_substr($base, 0, 180 - mb_strlen($suffixPart)).$suffixPart;
             $suffix++;
         }
 

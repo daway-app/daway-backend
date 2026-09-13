@@ -10,6 +10,7 @@ use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
 use App\Services\Ai\MedicineResolver;
+use App\Support\CategoryCatalogCache;
 use App\Support\DosageFormNormalizer;
 use App\Support\Haversine;
 use App\Support\Image;
@@ -191,7 +192,8 @@ class MedicineController extends Controller
         // رقم القياسي في facets() بدل النص العربي (توافق مع مخازن مفاتيح ASCII).
         $filterKeySuffix = '';
         if ($categoryId !== null) {
-            $filterKeySuffix .= "|cat{$categoryId}";
+            $categoryVersion = CategoryCatalogCache::version();
+            $filterKeySuffix .= "|cv{$categoryVersion}|cat{$categoryId}";
         }
         if ($dosageForm !== null) {
             $filterKeySuffix .= '|df'.array_search($dosageForm, DosageFormNormalizer::facets(), true);
@@ -201,10 +203,16 @@ class MedicineController extends Controller
             return $query->orderBy('trade_name')->paginate($perPage);
         });
 
+        // medicine_id يُحسب خارج الكاش عمداً: الصيدليات تُنشئ أدوية محلية في أي
+        // وقت بدون أن يمسّ ذلك نسخة كاش الكتالوج.
+        $pageItems = collect($items->items());
+        $localMedicineIds = Medicine::idsByTradeName($pageItems->pluck('trade_name')->all());
+
         return response()->json([
             'success' => true,
             'message' => 'تم جلب الأدوية بنجاح',
-            'data' => collect($items->items())->map(fn (MohMedicine $m) => $this->mohPayload($m)),
+            'data' => $pageItems->map(fn (MohMedicine $m) => $this->mohPayload($m)
+                + ['medicine_id' => $localMedicineIds[$m->trade_name] ?? null]),
             'pagination' => [
                 'total' => $items->total(),
                 'per_page' => $items->perPage(),

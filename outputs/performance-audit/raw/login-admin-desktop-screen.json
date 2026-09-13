@@ -1,0 +1,9 @@
+{
+  "phase": "login",
+  "role": "admin",
+  "loggedIn": true,
+  "landingUrl": "https://daway-backend-zlh2.onrender.com/",
+  "stateSaved": true,
+  "deniedRequests": [],
+  "finishedAt": "2026-09-13T07:32:21.557Z"
+}

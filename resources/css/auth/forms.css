@@ -71,12 +71,21 @@ body {
     grid-template-columns: 1fr 1.05fr;
     overflow: hidden;
     position: relative;
-    animation: containerAppear .7s var(--ease) both;
+    animation: containerAppear .45s var(--ease);
 }
 
+/*
+ * ملاحظة أداء: كانت الحركة تبدأ من opacity: 0 مع fill-mode "both"، وهذا كان
+ * يحجب أول رسم للمحتوى (FCP) حتى انتهاء الحركة بالكامل. الآن الحركة تعمل على
+ * transform فقط — المحتوى مرئي من أول إطار، والحركة مجرد تحسين بصري.
+ */
 @keyframes containerAppear {
-    from { opacity: 0; transform: translateY(18px) scale(.99); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    from { transform: translateY(18px) scale(.99); }
+    to   { transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-container { animation: none; }
 }
 
 @media (max-width: 900px) {

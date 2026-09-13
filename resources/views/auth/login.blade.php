@@ -87,7 +87,7 @@
             </form>
 
             <div class="auth-footer">
-                ليس لديك حساب؟ <span style="color:#1C72A6; font-weight:700">تواصل مع الأدمن لإنشاء حساب</span>
+                ليس لديك حساب؟ <a href="{{ route('register.show') }}">إنشاء حساب صيدلية</a>
             </div>
         </div>
 
@@ -95,7 +95,10 @@
         <div class="auth-hero">
             <div class="hero-content">
                 <div class="logo-wrapper">
-                    <img src="{{ asset('images/dawak-logo.jpg') }}" alt="شعار دواك" class="brand-logo-img">
+                    <img src="{{ asset('images/dawak-logo-384.jpg') }}"
+                        srcset="{{ asset('images/dawak-logo-256.jpg') }} 256w, {{ asset('images/dawak-logo-384.jpg') }} 384w"
+                        sizes="92px" width="92" height="92" fetchpriority="high" decoding="async"
+                        alt="شعار دواك" class="brand-logo-img">
                 </div>
 
                 <span class="hero-subtitle-tag">منصة دواك</span>

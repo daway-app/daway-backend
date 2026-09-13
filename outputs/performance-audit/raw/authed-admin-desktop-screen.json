@@ -1,0 +1,2695 @@
+{
+  "phase": "authed",
+  "role": "admin",
+  "device": "سطح المكتب",
+  "origin": "https://daway-backend-zlh2.onrender.com",
+  "measuredAt": "2026-09-13T07:35:02.330Z",
+  "deniedRequests": [
+    {
+      "method": "POST",
+      "path": "/api/sync/token",
+      "reason": "non-read-method"
+    }
+  ],
+  "results": [
+    {
+      "id": "admin-dashboard",
+      "label": "لوحة الأدمن",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/",
+      "startedAt": "2026-09-13T07:33:39.216Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/",
+      "navigation": {
+        "ttfbFullMs": 690,
+        "requestTtfbMs": 663,
+        "domContentLoadedMs": 1784,
+        "loadEventMs": 1811,
+        "durationMs": 1811,
+        "transferSize": 15037,
+        "decodedBodySize": 76630,
+        "redirectCount": 0,
+        "protocol": "h2"
+      },
+      "fcpMs": 2364,
+      "lcpMs": 2764,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 1,
+      "longTaskTotalMs": 712,
+      "longTaskMaxMs": 712,
+      "jsErrors": [],
+      "resourceCount": 12,
+      "resourceTransferTotal": 219479,
+      "resourceDecodedTotal": 461783,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 33630,
+          "decodedBytes": 129093
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "script": {
+          "count": 1,
+          "transferBytes": 71196,
+          "decodedBytes": 205637
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 786,
+          "duration": 149,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 787,
+          "duration": 255,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 787,
+          "duration": 134,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 787,
+          "duration": 138,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 787,
+          "duration": 142,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 788,
+          "duration": 474,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js",
+          "type": "script",
+          "startTime": 788,
+          "duration": 167,
+          "transferBytes": 71196,
+          "decodedBytes": 205637,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/dashboard-AnyN2ntB.css",
+          "type": "link",
+          "startTime": 788,
+          "duration": 269,
+          "transferBytes": 4203,
+          "decodedBytes": 16355,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 788,
+          "duration": 152,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 1784,
+          "duration": 459,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 1809,
+          "duration": 558,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 1815,
+          "duration": 6,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 490,
+      "htmlBytes": 75832,
+      "docTitle": "دواك - لوحة التحكم",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/",
+      "optionCount": 0,
+      "imgCount": 4,
+      "imgWithoutDimensions": 2,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "admin-medicines",
+      "label": "الأدوية",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/medicines",
+      "startedAt": "2026-09-13T07:33:47.432Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/medicines",
+      "navigation": {
+        "ttfbFullMs": 320,
+        "requestTtfbMs": 298,
+        "domContentLoadedMs": 843,
+        "loadEventMs": 976,
+        "durationMs": 976,
+        "transferSize": 13748,
+        "decodedBodySize": 80698,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 784,
+      "lcpMs": 1608,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "jsErrors": [],
+      "resourceCount": 11,
+      "resourceTransferTotal": 147853,
+      "resourceDecodedTotal": 252386,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 33200,
+          "decodedBytes": 125333
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 347,
+          "duration": 99,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 348,
+          "duration": 165,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 348,
+          "duration": 159,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 348,
+          "duration": 292,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 348,
+          "duration": 171,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 348,
+          "duration": 160,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/medicines-Z5ZlIX7N.css",
+          "type": "link",
+          "startTime": 349,
+          "duration": 174,
+          "transferBytes": 3773,
+          "decodedBytes": 12595,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 349,
+          "duration": 299,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 757,
+          "duration": 204,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 843,
+          "duration": 360,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 980,
+          "duration": 6,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 600,
+      "htmlBytes": 80581,
+      "docTitle": "دواك - الأدوية",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/medicines",
+      "optionCount": 4,
+      "imgCount": 4,
+      "imgWithoutDimensions": 2,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "admin-medicines-create",
+      "label": "إضافة دواء",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/medicines/create",
+      "startedAt": "2026-09-13T07:33:54.682Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/medicines/create",
+      "navigation": {
+        "ttfbFullMs": 277,
+        "requestTtfbMs": 266,
+        "domContentLoadedMs": 588,
+        "loadEventMs": 596,
+        "durationMs": 596,
+        "transferSize": 11064,
+        "decodedBodySize": 49912,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 704,
+      "lcpMs": 1084,
+      "lcpElement": "H1",
+      "lcpUrl": "",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "jsErrors": [],
+      "resourceCount": 13,
+      "resourceTransferTotal": 166645,
+      "resourceDecodedTotal": 306676,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 7,
+          "transferBytes": 34344,
+          "decodedBytes": 130595
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "script": {
+          "count": 1,
+          "transferBytes": 17648,
+          "decodedBytes": 49028
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 322,
+          "duration": 57,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 323,
+          "duration": 121,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 323,
+          "duration": 126,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 323,
+          "duration": 131,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 323,
+          "duration": 129,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 323,
+          "duration": 113,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/medicines_edit-BmUFaKPJ.css",
+          "type": "link",
+          "startTime": 324,
+          "duration": 124,
+          "transferBytes": 1302,
+          "decodedBytes": 2995,
+          "fromCache": false
+        },
+        {
+          "url": "https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css",
+          "type": "link",
+          "startTime": 324,
+          "duration": 66,
+          "transferBytes": 3615,
+          "decodedBytes": 14862,
+          "fromCache": false
+        },
+        {
+          "url": "https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js",
+          "type": "script",
+          "startTime": 324,
+          "duration": 66,
+          "transferBytes": 17648,
+          "decodedBytes": 49028,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 324,
+          "duration": 137,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 564,
+          "duration": 92,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 588,
+          "duration": 362,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 600,
+          "duration": 6,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 294,
+      "htmlBytes": 50656,
+      "docTitle": "دواك - إضافة دواء جديد",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/medicines/create",
+      "optionCount": 17,
+      "imgCount": 4,
+      "imgWithoutDimensions": 2,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "admin-categories",
+      "label": "التصنيفات",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/categories",
+      "startedAt": "2026-09-13T07:34:01.459Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/categories",
+      "navigation": {
+        "ttfbFullMs": 352,
+        "requestTtfbMs": 343,
+        "domContentLoadedMs": 535,
+        "loadEventMs": 620,
+        "durationMs": 620,
+        "transferSize": 10638,
+        "decodedBodySize": 45417,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 668,
+      "lcpMs": 1100,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 1,
+      "longTaskTotalMs": 84,
+      "longTaskMaxMs": 84,
+      "jsErrors": [],
+      "resourceCount": 11,
+      "resourceTransferTotal": 147853,
+      "resourceDecodedTotal": 252386,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 33200,
+          "decodedBytes": 125333
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 368,
+          "duration": 46,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 368,
+          "duration": 159,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 369,
+          "duration": 105,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 369,
+          "duration": 107,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 369,
+          "duration": 108,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 369,
+          "duration": 100,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/medicines-Z5ZlIX7N.css",
+          "type": "link",
+          "startTime": 369,
+          "duration": 106,
+          "transferBytes": 3773,
+          "decodedBytes": 12595,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 369,
+          "duration": 109,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 535,
+          "duration": 370,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 631,
+          "duration": 393,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 634,
+          "duration": 5,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 263,
+      "htmlBytes": 45497,
+      "docTitle": "دواك - الأقسام",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/categories",
+      "optionCount": 0,
+      "imgCount": 4,
+      "imgWithoutDimensions": 2,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "admin-users",
+      "label": "المستخدمون",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/users",
+      "startedAt": "2026-09-13T07:34:08.310Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/users",
+      "navigation": {
+        "ttfbFullMs": 307,
+        "requestTtfbMs": 296,
+        "domContentLoadedMs": 593,
+        "loadEventMs": 600,
+        "durationMs": 600,
+        "transferSize": 14174,
+        "decodedBodySize": 98330,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 636,
+      "lcpMs": 748,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "jsErrors": [],
+      "resourceCount": 14,
+      "resourceTransferTotal": 326881,
+      "resourceDecodedTotal": 433011,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 33486,
+          "decodedBytes": 128116
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 5,
+          "transferBytes": 285484,
+          "decodedBytes": 283984
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 338,
+          "duration": 58,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 340,
+          "duration": 115,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 340,
+          "duration": 167,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 340,
+          "duration": 112,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 341,
+          "duration": 117,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 341,
+          "duration": 101,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/users-C7E2ToQz.css",
+          "type": "link",
+          "startTime": 365,
+          "duration": 96,
+          "transferBytes": 4059,
+          "decodedBytes": 15378,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787654022/daway/pharmacy_logos/ufko8pfnkfbwylve9vez.jpg",
+          "type": "img",
+          "startTime": 366,
+          "duration": 189,
+          "transferBytes": 96848,
+          "decodedBytes": 96548,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787139736/of5dfiqjmplvs1fe5bg5.jpg",
+          "type": "img",
+          "startTime": 366,
+          "duration": 185,
+          "transferBytes": 52538,
+          "decodedBytes": 52238,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787081815/jbj5qncxsfkdg0bhrh7i.jpg",
+          "type": "img",
+          "startTime": 366,
+          "duration": 127,
+          "transferBytes": 29356,
+          "decodedBytes": 29056,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 366,
+          "duration": 93,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 590,
+          "duration": 89,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 593,
+          "duration": 315,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 606,
+          "duration": 2,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 636,
+      "htmlBytes": 97304,
+      "docTitle": "دواك - المستخدمون",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/users",
+      "optionCount": 0,
+      "imgCount": 7,
+      "imgWithoutDimensions": 5,
+      "largestImages": [
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787081815/jbj5qncxsfkdg0bhrh7i.jpg",
+          "naturalWidth": 1440,
+          "naturalHeight": 1920,
+          "renderedWidth": 34,
+          "renderedHeight": 34,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787654022/daway/pharmacy_logos/ufko8pfnkfbwylve9vez.jpg",
+          "naturalWidth": 1920,
+          "naturalHeight": 1080,
+          "renderedWidth": 34,
+          "renderedHeight": 34,
+          "loading": null
+        },
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787139736/of5dfiqjmplvs1fe5bg5.jpg",
+          "naturalWidth": 736,
+          "naturalHeight": 736,
+          "renderedWidth": 34,
+          "renderedHeight": 34,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "admin-pharmacies",
+      "label": "الصيدليات",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/pharmacies",
+      "startedAt": "2026-09-13T07:34:15.132Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/pharmacies",
+      "navigation": {
+        "ttfbFullMs": 309,
+        "requestTtfbMs": 296,
+        "domContentLoadedMs": 644,
+        "loadEventMs": 693,
+        "durationMs": 693,
+        "transferSize": 19552,
+        "decodedBodySize": 130940,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 508,
+      "lcpMs": 1084,
+      "lcpElement": "H1",
+      "lcpUrl": "",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 1,
+      "longTaskTotalMs": 83,
+      "longTaskMaxMs": 83,
+      "jsErrors": [],
+      "resourceCount": 13,
+      "resourceTransferTotal": 216102,
+      "resourceDecodedTotal": 448313,
+      "resourcesWithUnknownTransfer": 3,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 29427,
+          "decodedBytes": 112738
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "script": {
+          "count": 2,
+          "transferBytes": 72022,
+          "decodedBytes": 208522
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 330,
+          "duration": 39,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 331,
+          "duration": 97,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 331,
+          "duration": 97,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 331,
+          "duration": 100,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 331,
+          "duration": 104,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 332,
+          "duration": 82,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+          "type": "link",
+          "startTime": 332,
+          "duration": 121,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        },
+        {
+          "url": "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+          "type": "script",
+          "startTime": 332,
+          "duration": 148,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        },
+        {
+          "url": "https://cdn.jsdelivr.net/npm/chart.js",
+          "type": "script",
+          "startTime": 332,
+          "duration": 50,
+          "transferBytes": 72022,
+          "decodedBytes": 208522,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 332,
+          "duration": 96,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 494,
+          "duration": 199,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 644,
+          "duration": 368,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 695,
+          "duration": 1,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 811,
+      "htmlBytes": 128990,
+      "docTitle": "دواك - الصيدليات",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/pharmacies",
+      "optionCount": 0,
+      "imgCount": 4,
+      "imgWithoutDimensions": 2,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "admin-patients",
+      "label": "المرضى",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/patients",
+      "startedAt": "2026-09-13T07:34:21.993Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/patients",
+      "navigation": {
+        "ttfbFullMs": 262,
+        "requestTtfbMs": 253,
+        "domContentLoadedMs": 390,
+        "loadEventMs": 462,
+        "durationMs": 462,
+        "transferSize": 12735,
+        "decodedBodySize": 72904,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 504,
+      "lcpMs": 996,
+      "lcpElement": null,
+      "lcpUrl": "",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 1,
+      "longTaskTotalMs": 73,
+      "longTaskMaxMs": 73,
+      "jsErrors": [],
+      "resourceCount": 14,
+      "resourceTransferTotal": 257923,
+      "resourceDecodedTotal": 360084,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 32020,
+          "decodedBytes": 122681
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 5,
+          "transferBytes": 217992,
+          "decodedBytes": 216492
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 271,
+          "duration": 33,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 271,
+          "duration": 104,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 271,
+          "duration": 105,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 271,
+          "duration": 104,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 271,
+          "duration": 105,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 271,
+          "duration": 87,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/patients-DGAiHi3Z.css",
+          "type": "link",
+          "startTime": 271,
+          "duration": 105,
+          "transferBytes": 2593,
+          "decodedBytes": 9943,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787081815/jbj5qncxsfkdg0bhrh7i.jpg",
+          "type": "img",
+          "startTime": 271,
+          "duration": 108,
+          "transferBytes": 29356,
+          "decodedBytes": 29056,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787139736/of5dfiqjmplvs1fe5bg5.jpg",
+          "type": "img",
+          "startTime": 271,
+          "duration": 116,
+          "transferBytes": 52538,
+          "decodedBytes": 52238,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 271,
+          "duration": 107,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787081417/hj2tkkjtyt7uh98vb6nw.jpg",
+          "type": "img",
+          "startTime": 271,
+          "duration": 108,
+          "transferBytes": 29356,
+          "decodedBytes": 29056,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 390,
+          "duration": 367,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 466,
+          "duration": 289,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 467,
+          "duration": 5,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 464,
+      "htmlBytes": 72455,
+      "docTitle": "دواك - المرضى",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/patients",
+      "optionCount": 0,
+      "imgCount": 7,
+      "imgWithoutDimensions": 5,
+      "largestImages": [
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787081815/jbj5qncxsfkdg0bhrh7i.jpg",
+          "naturalWidth": 1440,
+          "naturalHeight": 1920,
+          "renderedWidth": 36,
+          "renderedHeight": 36,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787081417/hj2tkkjtyt7uh98vb6nw.jpg",
+          "naturalWidth": 1440,
+          "naturalHeight": 1920,
+          "renderedWidth": 36,
+          "renderedHeight": 36,
+          "loading": null
+        },
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1787139736/of5dfiqjmplvs1fe5bg5.jpg",
+          "naturalWidth": 736,
+          "naturalHeight": 736,
+          "renderedWidth": 36,
+          "renderedHeight": 36,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "admin-inventory",
+      "label": "المخزون",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/inventory",
+      "startedAt": "2026-09-13T07:34:28.622Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/inventory",
+      "navigation": {
+        "ttfbFullMs": 348,
+        "requestTtfbMs": 341,
+        "domContentLoadedMs": 530,
+        "loadEventMs": 534,
+        "durationMs": 534,
+        "transferSize": 11654,
+        "decodedBodySize": 63149,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 560,
+      "lcpMs": 892,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "jsErrors": [],
+      "resourceCount": 11,
+      "resourceTransferTotal": 145552,
+      "resourceDecodedTotal": 244264,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 30899,
+          "decodedBytes": 117211
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 357,
+          "duration": 35,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 357,
+          "duration": 93,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 357,
+          "duration": 95,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 357,
+          "duration": 97,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 357,
+          "duration": 97,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 357,
+          "duration": 81,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/inventory-ByBZ1xBa.css",
+          "type": "link",
+          "startTime": 357,
+          "duration": 97,
+          "transferBytes": 1472,
+          "decodedBytes": 4473,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 357,
+          "duration": 98,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 527,
+          "duration": 325,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 530,
+          "duration": 325,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 537,
+          "duration": 2,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 413,
+      "htmlBytes": 63030,
+      "docTitle": "دواك - إدارة المخزون",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/inventory",
+      "optionCount": 0,
+      "imgCount": 4,
+      "imgWithoutDimensions": 2,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "admin-settings",
+      "label": "الإعدادات",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/settings",
+      "startedAt": "2026-09-13T07:34:35.329Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/settings",
+      "navigation": {
+        "ttfbFullMs": 257,
+        "requestTtfbMs": 250,
+        "domContentLoadedMs": 466,
+        "loadEventMs": 469,
+        "durationMs": 469,
+        "transferSize": 11975,
+        "decodedBodySize": 53932,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 488,
+      "lcpMs": 716,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "jsErrors": [],
+      "resourceCount": 11,
+      "resourceTransferTotal": 145572,
+      "resourceDecodedTotal": 244199,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 30919,
+          "decodedBytes": 117146
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 273,
+          "duration": 36,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 274,
+          "duration": 113,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 274,
+          "duration": 101,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 274,
+          "duration": 114,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 274,
+          "duration": 110,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 274,
+          "duration": 96,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/settings-CAQbVDE8.css",
+          "type": "link",
+          "startTime": 274,
+          "duration": 111,
+          "transferBytes": 1492,
+          "decodedBytes": 4408,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 274,
+          "duration": 114,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 464,
+          "duration": 207,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 465,
+          "duration": 366,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 471,
+          "duration": 1,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 328,
+      "htmlBytes": 53281,
+      "docTitle": "دواك - الإعدادات",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/settings",
+      "optionCount": 2,
+      "imgCount": 4,
+      "imgWithoutDimensions": 2,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "admin-logs",
+      "label": "السجلات",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/logs",
+      "startedAt": "2026-09-13T07:34:42.015Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/logs",
+      "navigation": {
+        "ttfbFullMs": 388,
+        "requestTtfbMs": 377,
+        "domContentLoadedMs": 621,
+        "loadEventMs": 635,
+        "durationMs": 635,
+        "transferSize": 11494,
+        "decodedBodySize": 61470,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 652,
+      "lcpMs": 764,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "jsErrors": [],
+      "resourceCount": 11,
+      "resourceTransferTotal": 145118,
+      "resourceDecodedTotal": 241773,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 30465,
+          "decodedBytes": 114720
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 402,
+          "duration": 38,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 403,
+          "duration": 105,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 403,
+          "duration": 109,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 403,
+          "duration": 109,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 403,
+          "duration": 109,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 403,
+          "duration": 95,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/logs-DpGqzcNm.css",
+          "type": "link",
+          "startTime": 403,
+          "duration": 114,
+          "transferBytes": 1038,
+          "decodedBytes": 1982,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 403,
+          "duration": 108,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 617,
+          "duration": 89,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 621,
+          "duration": 379,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 637,
+          "duration": 3,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 348,
+      "htmlBytes": 61259,
+      "docTitle": "دواك - سجل الأنشطة",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/logs",
+      "optionCount": 5,
+      "imgCount": 4,
+      "imgWithoutDimensions": 2,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "profile",
+      "label": "الملف الشخصي",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/profile",
+      "startedAt": "2026-09-13T07:34:48.841Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/profile",
+      "navigation": {
+        "ttfbFullMs": 248,
+        "requestTtfbMs": 238,
+        "domContentLoadedMs": 564,
+        "loadEventMs": 596,
+        "durationMs": 596,
+        "transferSize": 13837,
+        "decodedBodySize": 67153,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 576,
+      "lcpMs": 1048,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "jsErrors": [],
+      "resourceCount": 13,
+      "resourceTransferTotal": 146314,
+      "resourceDecodedTotal": 245083,
+      "resourcesWithUnknownTransfer": 2,
+      "byType": {
+        "link": {
+          "count": 6,
+          "transferBytes": 31311,
+          "decodedBytes": 117982
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "fetch": {
+          "count": 3,
+          "transferBytes": 694,
+          "decodedBytes": 90
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 260,
+          "duration": 180,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 261,
+          "duration": 196,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 261,
+          "duration": 211,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 261,
+          "duration": 228,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 261,
+          "duration": 168,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 261,
+          "duration": 165,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/users_create-fnforiYI.css",
+          "type": "link",
+          "startTime": 311,
+          "duration": 190,
+          "transferBytes": 1884,
+          "decodedBytes": 5244,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 334,
+          "duration": 173,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 554,
+          "duration": 421,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/healthz",
+          "type": "fetch",
+          "startTime": 563,
+          "duration": 2024,
+          "transferBytes": 350,
+          "decodedBytes": 48,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 563,
+          "duration": 388,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 604,
+          "duration": 4,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/sync/token",
+          "type": "fetch",
+          "startTime": 2599,
+          "duration": 3,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 336,
+      "htmlBytes": 67085,
+      "docTitle": "دواك - الملف الشخصي",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/profile",
+      "optionCount": 0,
+      "imgCount": 6,
+      "imgWithoutDimensions": 4,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 80,
+          "renderedHeight": 80,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    },
+    {
+      "id": "notifications",
+      "label": "الإشعارات",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/notifications",
+      "startedAt": "2026-09-13T07:34:55.582Z",
+      "throttling": {
+        "cpuRate": null,
+        "network": null,
+        "error": null
+      },
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/notifications",
+      "navigation": {
+        "ttfbFullMs": 318,
+        "requestTtfbMs": 308,
+        "domContentLoadedMs": 636,
+        "loadEventMs": 640,
+        "durationMs": 640,
+        "transferSize": 10572,
+        "decodedBodySize": 46603,
+        "redirectCount": 0,
+        "protocol": "h3"
+      },
+      "fcpMs": 660,
+      "lcpMs": 1140,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "jsErrors": [],
+      "resourceCount": 10,
+      "resourceTransferTotal": 144080,
+      "resourceDecodedTotal": 239791,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 5,
+          "transferBytes": 29427,
+          "decodedBytes": 112738
+        },
+        "other": {
+          "count": 2,
+          "transferBytes": 7567,
+          "decodedBytes": 20869
+        },
+        "img": {
+          "count": 2,
+          "transferBytes": 106742,
+          "decodedBytes": 106142
+        },
+        "fetch": {
+          "count": 1,
+          "transferBytes": 344,
+          "decodedBytes": 42
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+          "type": "link",
+          "startTime": 325,
+          "duration": 123,
+          "transferBytes": 18483,
+          "decodedBytes": 73890,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app_layout-DHPBzz8L.css",
+          "type": "link",
+          "startTime": 326,
+          "duration": 141,
+          "transferBytes": 3085,
+          "decodedBytes": 10768,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/sidebar-BTux-SnB.css",
+          "type": "link",
+          "startTime": 326,
+          "duration": 177,
+          "transferBytes": 2261,
+          "decodedBytes": 6678,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/topbar-Dd90Eh6e.css",
+          "type": "link",
+          "startTime": 326,
+          "duration": 233,
+          "transferBytes": 3246,
+          "decodedBytes": 12101,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/index-VrtmJoWC.js",
+          "type": "other",
+          "startTime": 326,
+          "duration": 217,
+          "transferBytes": 7567,
+          "decodedBytes": 20869,
+          "fromCache": false
+        },
+        {
+          "url": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "type": "img",
+          "startTime": 332,
+          "duration": 175,
+          "transferBytes": 34924,
+          "decodedBytes": 34624,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/css/responsive.css",
+          "type": "link",
+          "startTime": 360,
+          "duration": 125,
+          "transferBytes": 2352,
+          "decodedBytes": 9301,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 631,
+          "duration": 483,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/api/notifications/count",
+          "type": "fetch",
+          "startTime": 635,
+          "duration": 460,
+          "transferBytes": 344,
+          "decodedBytes": 42,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 642,
+          "duration": 2,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 231,
+      "htmlBytes": 46774,
+      "docTitle": "دواك - جميع الإشعارات",
+      "visibilityState": "visible",
+      "paintEntryNames": [
+        "first-paint",
+        "first-contentful-paint"
+      ],
+      "finalPath": "/notifications",
+      "optionCount": 0,
+      "imgCount": 4,
+      "imgWithoutDimensions": 2,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 56,
+          "renderedHeight": 56,
+          "loading": "lazy"
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 42,
+          "renderedHeight": 42,
+          "loading": null
+        },
+        {
+          "src": "https://res.cloudinary.com/dmvzcwm3g/image/upload/v1788947141/daway/avatars/okfxcw6bgxi3xfwwoe09.jpg",
+          "naturalWidth": 512,
+          "naturalHeight": 512,
+          "renderedWidth": 58,
+          "renderedHeight": 58,
+          "loading": null
+        },
+        {
+          "src": "",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "renderedWidth": 45,
+          "renderedHeight": 19,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": false,
+      "isErrorPage": false
+    }
+  ]
+}

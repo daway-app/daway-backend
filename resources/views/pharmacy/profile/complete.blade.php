@@ -52,19 +52,19 @@
                         <div class='ph-card-body'>
                             <div class='ph-group' style='margin-block-end:18px;'>
                                 <label class='ph-form-label' for='phone_number'>@lang('pharmacy.profile.phone_label') <span class='req'>*</span></label>
-                                <input type='text' name='phone_number' id='phone_number' class='ph-control' value='{{ old('phone_number') }}' required>
+                                <input type='text' name='phone_number' id='phone_number' class='ph-control' value='{{ old('phone_number', $pharmacy->phone_number) }}' required>
                                 @error('phone_number')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 
                             <div class='ph-group' style='margin-block-end:18px;'>
                                 <label class='ph-form-label' for='address'>@lang('pharmacy.profile.address_label') <span class='req'>*</span></label>
-                                <textarea name='address' id='address' class='ph-textarea' style='width:100%;' required>{{ old('address') }}</textarea>
+                                <textarea name='address' id='address' class='ph-textarea' style='width:100%;' required>{{ old('address', $pharmacy->address) }}</textarea>
                                 @error('address')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 
                             <div class='ph-group' style='margin-block-end:18px;'>
                                 <label class='ph-form-label' for='region'>@lang('pharmacy.profile.complete.region_label') <span class='req'>*</span></label>
-                                <input type='text' name='region' id='region' class='ph-control' value='{{ old('region') }}' required>
+                                <input type='text' name='region' id='region' class='ph-control' value='{{ old('region', $pharmacy->region) }}' required>
                                 @error('region')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
                             </div>
 

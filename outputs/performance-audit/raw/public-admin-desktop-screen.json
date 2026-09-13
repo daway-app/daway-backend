@@ -1,0 +1,227 @@
+{
+  "phase": "public",
+  "device": "سطح المكتب",
+  "origin": "https://daway-backend-zlh2.onrender.com",
+  "measuredAt": "2026-09-13T07:29:12.932Z",
+  "deniedRequests": [],
+  "results": [
+    {
+      "id": "login",
+      "label": "تسجيل الدخول",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/login",
+      "startedAt": "2026-09-13T07:28:59.334Z",
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/login",
+      "navigation": {
+        "ttfbFullMs": 270,
+        "requestTtfbMs": 191,
+        "domContentLoadedMs": 516,
+        "loadEventMs": 640,
+        "durationMs": 640,
+        "transferSize": 2519,
+        "decodedBodySize": 7651,
+        "redirectCount": 0,
+        "protocol": "h2"
+      },
+      "fcpMs": null,
+      "lcpMs": null,
+      "lcpElement": null,
+      "lcpUrl": null,
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 1,
+      "longTaskTotalMs": 100,
+      "longTaskMaxMs": 100,
+      "jsErrors": [],
+      "resourceCount": 4,
+      "resourceTransferTotal": 77172,
+      "resourceDecodedTotal": 87646,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 2,
+          "transferBytes": 5354,
+          "decodedBytes": 16128
+        },
+        "img": {
+          "count": 1,
+          "transferBytes": 71818,
+          "decodedBytes": 71518
+        },
+        "other": {
+          "count": 1,
+          "transferBytes": 0,
+          "decodedBytes": 0
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app-xBk42oXK.css",
+          "type": "link",
+          "startTime": 280,
+          "duration": 228,
+          "transferBytes": 2476,
+          "decodedBytes": 7194,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/forms-rj2a0aVM.css",
+          "type": "link",
+          "startTime": 281,
+          "duration": 231,
+          "transferBytes": 2878,
+          "decodedBytes": 8934,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 281,
+          "duration": 358,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 642,
+          "duration": 2,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 62,
+      "htmlBytes": 6847,
+      "docTitle": "تسجيل الدخول — دواك",
+      "finalPath": "/login",
+      "optionCount": 2,
+      "imgCount": 1,
+      "imgWithoutDimensions": 1,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 80,
+          "renderedHeight": 80,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": true,
+      "isErrorPage": false
+    },
+    {
+      "id": "root-anon",
+      "label": "الجذر (زائر)",
+      "device": "سطح المكتب",
+      "url": "https://daway-backend-zlh2.onrender.com/",
+      "startedAt": "2026-09-13T07:29:06.137Z",
+      "httpStatus": 200,
+      "responseUrl": "https://daway-backend-zlh2.onrender.com/login",
+      "navigation": {
+        "ttfbFullMs": 404,
+        "requestTtfbMs": 191,
+        "domContentLoadedMs": 646,
+        "loadEventMs": 670,
+        "durationMs": 670,
+        "transferSize": 2518,
+        "decodedBodySize": 7651,
+        "redirectCount": 1,
+        "protocol": "h3"
+      },
+      "fcpMs": 744,
+      "lcpMs": 744,
+      "lcpElement": "IMG",
+      "lcpUrl": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+      "cls": 0,
+      "clsShiftCount": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "jsErrors": [],
+      "resourceCount": 4,
+      "resourceTransferTotal": 77172,
+      "resourceDecodedTotal": 87646,
+      "resourcesWithUnknownTransfer": 1,
+      "byType": {
+        "link": {
+          "count": 2,
+          "transferBytes": 5354,
+          "decodedBytes": 16128
+        },
+        "img": {
+          "count": 1,
+          "transferBytes": 71818,
+          "decodedBytes": 71518
+        },
+        "other": {
+          "count": 1,
+          "transferBytes": 0,
+          "decodedBytes": 0
+        }
+      },
+      "resourceRows": [
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/app-xBk42oXK.css",
+          "type": "link",
+          "startTime": 427,
+          "duration": 121,
+          "transferBytes": 2476,
+          "decodedBytes": 7194,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/build/assets/forms-rj2a0aVM.css",
+          "type": "link",
+          "startTime": 428,
+          "duration": 116,
+          "transferBytes": 2878,
+          "decodedBytes": 8934,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "type": "img",
+          "startTime": 428,
+          "duration": 238,
+          "transferBytes": 71818,
+          "decodedBytes": 71518,
+          "fromCache": false
+        },
+        {
+          "url": "https://daway-backend-zlh2.onrender.com/favicon.ico",
+          "type": "other",
+          "startTime": 679,
+          "duration": 3,
+          "transferBytes": 0,
+          "decodedBytes": 0,
+          "fromCache": false
+        }
+      ],
+      "domNodes": 62,
+      "htmlBytes": 6847,
+      "docTitle": "تسجيل الدخول — دواك",
+      "finalPath": "/login",
+      "optionCount": 2,
+      "imgCount": 1,
+      "imgWithoutDimensions": 1,
+      "largestImages": [
+        {
+          "src": "https://daway-backend-zlh2.onrender.com/images/dawak-logo.jpg",
+          "naturalWidth": 1254,
+          "naturalHeight": 1254,
+          "renderedWidth": 80,
+          "renderedHeight": 80,
+          "loading": null
+        }
+      ],
+      "measurementOk": true,
+      "isLoginRedirect": true,
+      "isErrorPage": false
+    }
+  ]
+}

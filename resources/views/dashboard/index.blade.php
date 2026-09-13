@@ -221,7 +221,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    {{-- Chart.js مستضاف محليًا: يلغي زمن الاتصال بـ CDN ونقطة الفشل الخارجية --}}
+    <script src="{{ asset('vendor/chart.umd.js') }}" defer></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

@@ -26,4 +26,33 @@ class RateLimitersConfigTest extends TestCase
             'password' => 'wrong-password',
         ])->assertStatus(429);
     }
+
+    public function test_pharmacy_registration_is_throttled_on_sixth_attempt_from_same_ip(): void
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $response = $this->postJson('/api/register/pharmacy', [
+                'pharmacy_name' => 'Throttle Test Pharmacy',
+                'phone_number' => '059900000'.$i,
+                'address' => 'شارع الاختبار',
+                'region' => 'منطقة الاختبار',
+                'password' => 'secret1234',
+                'password_confirmation' => 'secret1234',
+            ]);
+
+            $this->assertNotSame(
+                429,
+                $response->status(),
+                "Attempt #{$i} should not be throttled (throttle:register is 5/min)."
+            );
+        }
+
+        $this->postJson('/api/register/pharmacy', [
+            'pharmacy_name' => 'Throttle Test Pharmacy',
+            'phone_number' => '0599000009',
+            'address' => 'شارع الاختبار',
+            'region' => 'منطقة الاختبار',
+            'password' => 'secret1234',
+            'password_confirmation' => 'secret1234',
+        ])->assertStatus(429);
+    }
 }

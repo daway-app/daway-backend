@@ -162,7 +162,9 @@ class PharmacyAlternativesPageTest extends TestCase
             // selected على option الـ pm (الـ HTML literal)
             ->assertSee('value="'.$pm->id.'" selected', false)
             // الـ title في h1 يجب أن يكون مخصص
-            ->assertSee(__('pharmacy.alternatives.create.heading', ['pharmacy' => $pharmacy->pharmacy_name]));
+            // (escape = false: الـ view يطبعها بـ @lang بدون escaping، وfaker قد يولّد
+            //  اسم صيدلية فيه فاصلة عليا مثل "O'Kon" فيفشل المقارنة الموسّطة)
+            ->assertSee(__('pharmacy.alternatives.create.heading', ['pharmacy' => $pharmacy->pharmacy_name]), false);
     }
 
     public function test_create_route_without_pharmacy_medicine_works(): void

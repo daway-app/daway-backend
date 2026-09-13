@@ -51,7 +51,7 @@
                     <div class="fg">
                         <label class="fl" for="image">@lang('medicines.image_label')</label>
                         @if($medicine->image)
-                            <img src="{{ \App\Support\Image::url($medicine->image) }}" alt="{{ $medicine->trade_name }}" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:10px;margin-bottom:8px;">
+                            <img src="{{ \App\Support\Image::thumbUrl($medicine->image, 144, 144) }}" alt="{{ $medicine->trade_name }}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:10px;margin-bottom:8px;">
                         @endif
                         <input class="fc" type="file" id="image" name="image" accept="image/*" style="height:auto;padding:10px;">
                     </div>

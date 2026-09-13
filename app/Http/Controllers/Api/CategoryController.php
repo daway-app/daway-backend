@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Medicine;
 use App\Models\MohMedicine;
+use App\Support\CategoryCatalogCache;
 use App\Support\DosageFormNormalizer;
 use App\Support\Image;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +22,7 @@ use Illuminate\Support\Facades\Cache;
  */
 class CategoryController extends Controller
 {
-    private const CATEGORIES_CACHE_KEY = 'api_categories_list_v1';
+    private const CATEGORIES_CACHE_KEY = 'api_categories_list';
     private const CACHE_TTL = 900;
 
     /**
@@ -28,7 +30,9 @@ class CategoryController extends Controller
      */
     public function index(): JsonResponse
     {
-        $categories = Cache::remember(self::CATEGORIES_CACHE_KEY, self::CACHE_TTL, function () {
+        $categoryVersion = CategoryCatalogCache::version();
+        $cacheKey = self::CATEGORIES_CACHE_KEY.'|v'.$categoryVersion;
+        $categories = Cache::remember($cacheKey, self::CACHE_TTL, function () {
             return Category::query()
                 ->active()
                 ->ordered()
@@ -109,18 +113,25 @@ class CategoryController extends Controller
             });
         }
 
-        $catVer = (int) Cache::get('med_catalog_version', 1);
-        $key = "api_cat_meds|v{$catVer}|cat{$model->id}|{$page}|{$perPage}";
+        $catalogVersion = (int) Cache::get('med_catalog_version', 1);
+        $categoryVersion = CategoryCatalogCache::version();
+        $key = "api_cat_meds|v{$catalogVersion}|cv{$categoryVersion}|cat{$model->id}|{$page}|{$perPage}";
         if (mb_strlen($q) >= 2) {
             $key .= '|q'.str_replace('|', ' ', (string) preg_replace('/\s+/u', ' ', mb_substr($q, 0, 100)));
         }
 
         $items = Cache::remember($key, self::CACHE_TTL, fn () => $query->orderBy('trade_name')->paginate($perPage));
 
+        // خريطة الربط بالكتالوج المحلي تُحسب خارج الكاش عمداً: الصيدليات تُنشئ
+        // أدوية محلية في أي وقت بدون أن يمسّ ذلك نسخة كاش الأقسام.
+        $pageItems = collect($items->items());
+        $localMedicineIds = Medicine::idsByTradeName($pageItems->pluck('trade_name')->all());
+
         return response()->json([
             'success' => true,
             'message' => 'تم جلب أدوية القسم بنجاح',
-            'data' => collect($items->items())->map(fn (MohMedicine $m) => $this->mohPayload($m)),
+            'data' => $pageItems->map(fn (MohMedicine $m) => $this->mohPayload($m)
+                + ['medicine_id' => $localMedicineIds[$m->trade_name] ?? null]),
             'pagination' => [
                 'total' => $items->total(),
                 'per_page' => $items->perPage(),
@@ -175,6 +186,10 @@ class CategoryController extends Controller
 
     /**
      * نفس شكل صف الكتالوج في MedicineController@index (mohPayload).
+     *
+     * medicine_id (nullable) يُضاف من المتصل عبر Medicine::idsByTradeName()
+     * = معرّف الدواء في الكتالوج المحلي حين يوجد مطابق بالاسم، حتى يستطيع
+     * العميل إكمال مسار التفاصيل/التوفر بدل الاعتماد على moh_medicines.id.
      */
     private function mohPayload(MohMedicine $m): array
     {

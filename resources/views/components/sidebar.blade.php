@@ -3,7 +3,7 @@
         <!-- Logo Header -->
         <div class="sidebar-logo-header">
             <div class="logo-icon-box">
-                <img src="{{ asset('images/dawak-logo.jpg') }}" alt="شعار دواك" class="sidebar-logo-img" width="64" height="64" loading="lazy">
+                <img src="{{ asset('images/dawak-logo-256.jpg') }}" alt="شعار دواك" class="sidebar-logo-img" width="64" height="64" loading="lazy" decoding="async">
             </div>
             <div class="logo-text-group">
                 <h2 class="logo-title">{{ __('layout.app_title') }}</h2>
@@ -141,7 +141,7 @@
         <div class="user-info-group" onclick="openProfileModal()" title="@lang('layout.edit_profile_modal_title')">
             <div class="avatar-box" id="sidebarDisplayUserAvatar">
                 @if(auth()->user()->avatar)
-                    <img src="{{ \App\Support\Image::url(auth()->user()->avatar) }}" alt="User Avatar" width="42" height="42" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    <img src="{{ \App\Support\Image::thumbUrl(auth()->user()->avatar, 84, 84) }}" alt="User Avatar" width="42" height="42" loading="lazy" decoding="async" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                 @else
                     {{ mb_substr(auth()->user()->name, 0, 1) }}
                 @endif

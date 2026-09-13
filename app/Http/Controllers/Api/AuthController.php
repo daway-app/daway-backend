@@ -45,7 +45,12 @@ class AuthController extends Controller
         }
 
         if (! $user->is_active || ! $pharmacy->is_active) {
-            return response()->json(['message' => 'Account is inactive'], 403);
+            // الحساب غير مفعّل — صيدلية سجّلت حديثاً تنتظر موافقة الإدارة.
+            // نُبقي نص الرسالة كما هو (توافق مع تطبيق Flutter) ونضيف code إضافياً.
+            return response()->json([
+                'message' => 'Account is inactive',
+                'code' => 'account_inactive',
+            ], 403);
         }
 
         // ملاحظة: لا يوجد فحص لتوثيق البريد الإلكتروني هنا — مطابقة لسلوك تسجيل دخول الويب،
@@ -67,6 +72,95 @@ class AuthController extends Controller
                 'token' => $token,
             ],
         ]);
+    }
+
+    /**
+     * إنشاء حساب صيدلية جديد من تطبيق الموبايل (بانتظار موافقة الإدارة).
+     *
+     * نفس منطق تسجيل الويب: الحساب يُنشأ غير مفعّل (is_active = false)،
+     * والأدمن يفعّله لاحقاً. يُعيد Pharmacy ID الذي تدخل به الصيدلية بعد الموافقة.
+     */
+    public function pharmacyRegister(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'pharmacy_name' => 'required|string|max:150',
+            'phone_number' => 'required|string|max:20|unique:users,phone',
+            'address' => 'required|string|max:255',   // الشارع
+            'region' => 'required|string|max:150',    // المنطقة / الحي
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'phone_number.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'بيانات التسجيل غير صحيحة.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $pharmacyCustomId = Pharmacy::generateUniqueCustomId();
+
+        if ($pharmacyCustomId === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'تعذر توليد معرّف صيدلية فريد، حاول مجدداً.',
+                'errors' => ['pharmacy_name' => ['تعذر توليد معرّف صيدلية فريد، حاول مجدداً.']],
+            ], 422);
+        }
+
+        $pharmacyName = $request->string('pharmacy_name')->trim()->toString();
+
+        try {
+            DB::transaction(function () use ($request, $pharmacyCustomId, $pharmacyName) {
+                $user = User::create([
+                    'name' => $pharmacyName,
+                    'email' => null,
+                    'phone' => $request->phone_number,
+                    'password' => Hash::make($request->password),
+                ]);
+
+                // الحقول الحساسة خارج $fillable → تُضبط صراحةً.
+                // حساب جديد = غير مفعّل حتى يوافق الأدمن (نفس ما يفعله toggleStatus).
+                $user->role = 'pharmacy';
+                $user->is_active = false;
+                $user->must_change_password = false;
+                $user->save();
+                $user->syncRoles(['pharmacy']);
+
+                $pharmacy = new Pharmacy([
+                    'pharmacy_name' => $pharmacyName,
+                    'address' => $request->string('address')->trim()->toString(),
+                    'region' => $request->string('region')->trim()->toString(),
+                    'phone_number' => $request->phone_number,
+                ]);
+                $pharmacy->user_id = $user->id;
+                $pharmacy->pharmacy_custom_id = $pharmacyCustomId;
+                $pharmacy->is_active = false;
+                // profile_completed_at يبقى null → أول دخول بعد الموافقة يوجّه لإكمال الملف
+                $pharmacy->save();
+            });
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // سباق تسجيل متزامن بنفس رقم الهاتف — قيد users.phone يرفض الخاسر
+            return response()->json([
+                'success' => false,
+                'message' => 'بيانات التسجيل غير صحيحة.',
+                'errors' => ['phone_number' => ['رقم الهاتف مستخدم مسبقاً بحساب آخر.']],
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم إنشاء حساب الصيدلية بنجاح، بانتظار موافقة الإدارة.',
+            'data' => [
+                'pharmacy_id' => $pharmacyCustomId,
+                'pharmacy_name' => $pharmacyName,
+                'phone_number' => $request->phone_number,
+                'is_active' => false,
+                'status' => 'pending_approval',
+            ],
+        ], 201);
     }
 
     public function logout(Request $request)

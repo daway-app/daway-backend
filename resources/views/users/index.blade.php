@@ -83,7 +83,7 @@
                                         <div class="user-profile-cell">
                                             <div class="user-avatar avatar-blue">
                                                 @if($user->avatar)
-                                                    <img src="{{ \App\Support\Image::url($user->avatar) }}" alt="{{ $user->name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                                    <img src="{{ \App\Support\Image::thumbUrl($user->avatar, 72, 72) }}" alt="{{ $user->name }}" width="36" height="36" loading="lazy" decoding="async" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                                                 @else
                                                     {{ mb_substr($user->name, 0, 2) }}
                                                 @endif

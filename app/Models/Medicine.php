@@ -93,4 +93,37 @@ class Medicine extends Model
 
         return $query->get();
     }
+
+    /**
+     * خريطة trade_name → id للكتالوج المحلي، لربط صفوف كتالوج وزارة الصحة
+     * بالدواء المحلي المطابق.
+     *
+     * الجسر الوحيد المتاح حالياً بين الكتالوجين هو مطابقة trade_name — نفس
+     * القاعدة المستخدمة في MedicineCatalogService::findOrCreateFromMoh، لذا
+     * النتيجة هنا تطابق ما يعيده ذلك الـ service.
+     *
+     * @param  array<int, string|null>  $tradeNames
+     * @return array<string, int>
+     */
+    public static function idsByTradeName(array $tradeNames): array
+    {
+        $names = array_values(array_unique(array_filter($tradeNames, fn ($name): bool => $name !== null && $name !== '')));
+
+        if ($names === []) {
+            return [];
+        }
+
+        $map = [];
+
+        // ترتيب تصاعدي بالـ id: أصغر id يفوز عند تكرار الاسم — نفس دلالة first()
+        static::query()
+            ->whereIn('trade_name', $names)
+            ->orderBy('id')
+            ->get(['id', 'trade_name'])
+            ->each(function (self $medicine) use (&$map): void {
+                $map[$medicine->trade_name] ??= $medicine->id;
+            });
+
+        return $map;
+    }
 }

@@ -10,7 +10,7 @@
         <div class="top-header-bar">
             <div class="header-title-section" style="display:flex;align-items:center;gap:14px;">
                 @if($category->image)
-                    <img src="{{ \App\Support\Image::url($category->image) }}" alt="{{ $category->name_ar }}" width="56" height="56" style="width:56px;height:56px;object-fit:cover;border-radius:14px;">
+                    <img src="{{ \App\Support\Image::thumbUrl($category->image, 112, 112) }}" alt="{{ $category->name_ar }}" width="56" height="56" decoding="async" style="width:56px;height:56px;object-fit:cover;border-radius:14px;">
                 @endif
                 <div>
                     <h1>{{ $category->name_ar }}</h1>

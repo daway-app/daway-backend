@@ -67,7 +67,7 @@
                     <div class="fg">
                         <label class="fl" for="image">@lang('categories.image_label')</label>
                         @if($category->image)
-                            <img src="{{ \App\Support\Image::url($category->image) }}" alt="{{ $category->name_ar }}" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:10px;margin-bottom:8px;">
+                            <img src="{{ \App\Support\Image::thumbUrl($category->image, 144, 144) }}" alt="{{ $category->name_ar }}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:10px;margin-bottom:8px;">
                         @endif
                         <input class="fc" type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" style="height:auto;padding:10px;">
                         @error('image')<span style="display:block;color:#e11d48;font-size:.8rem;margin-top:4px;">{{ $message }}</span>@enderror

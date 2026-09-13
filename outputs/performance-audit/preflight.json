@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "targetOrigin": "https://daway-backend.onrender.com",
+  "sourceSnapshot": {
+    "branch": "develop",
+    "commit": "2208837bd023d4d49cbf34650f83627f6b3884f6",
+    "trackedChangesReported": false,
+    "unrelatedUntrackedDocumentsPresent": true,
+    "applicationModifiedByAudit": false
+  },
+  "method": "Two sequential native Node HTTPS GET requests, redirects disabled, no authentication, no retries. Elapsed times include client/network overhead and are not browser navigation metrics or PHP execution times.",
+  "requests": [
+    {
+      "startedAt": "2026-09-12T13:13:43.138Z",
+      "url": "https://daway-backend.onrender.com/healthz",
+      "status": 404,
+      "headersElapsedMs": 1682,
+      "totalElapsedMs": 1744,
+      "headers": {
+        "server": "cloudflare",
+        "content-type": "text/plain; charset=utf-8",
+        "content-length": "10",
+        "content-encoding": null,
+        "cache-control": null,
+        "x-render-routing": "no-server",
+        "location": null,
+        "retry-after": null
+      },
+      "genericResponseText": "Not Found\n"
+    },
+    {
+      "startedAt": "2026-09-12T13:14:37.956Z",
+      "url": "https://daway-backend.onrender.com/login",
+      "status": 404,
+      "headersElapsedMs": 539,
+      "totalElapsedMs": 544,
+      "headers": {
+        "server": "cloudflare",
+        "content-type": "text/plain; charset=utf-8",
+        "content-length": "10",
+        "x-render-routing": "no-server",
+        "location": null
+      },
+      "genericResponseText": "Not Found\n"
+    }
+  ],
+  "readinessGate": {
+    "passed": false,
+    "reason": "Both checked URLs returned HTTP 404 with x-render-routing: no-server. Application page profiling stopped; these platform error responses are not treated as Daway page performance measurements.",
+    "browserMeasurementsTaken": false,
+    "authenticatedSessionsOpened": false,
+    "deployedSourceMatchVerified": false
+  },
+  "nextDecision": "Confirm a working deployment URL. Repository render.yaml references daway-backend-zlh2.onrender.com in SANCTUM_STATEFUL_DOMAINS, but that host has not been tested or assumed to be the correct target."
+}

@@ -30,6 +30,10 @@ Route::post('/otp/send', [AuthController::class, 'sendOtp'])->middleware('thrott
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:otp-verify');
 Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middleware(['throttle:login', 'throttle:login-account']);
 
+// التسجيل الذاتي للصيدليات (تطبيق الموبايل) — ينشئ حساباً غير مفعّل بانتظار موافقة الإدارة،
+// ويُعيد Pharmacy ID (PH-XXXX) الذي تدخل به الصيدلية بعد الموافقة.
+Route::post('/register/pharmacy', [AuthController::class, 'pharmacyRegister'])->middleware('throttle:register');
+
 // Medicines Routes Public
 Route::get('/medicines', [MedicineController::class, 'index']);
 Route::get('/medicines/search', [MedicineController::class, 'search']);

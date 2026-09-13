@@ -84,6 +84,10 @@ $app->booted(function () {
 
     RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
 
+    // التسجيل الذاتي للصيدليات (ويب + API): 5 محاولات/دقيقة لكل IP
+    // — يمنع إنشاء حسابات وهمية بالجملة. قيد users.phone unique يمنع التكرار برقم واحد.
+    RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+
     // M-3: حد معدل لكل حساب (وليس لكل IP فقط) — يحمي حساب صيدلية محدداً من هجوم
     // موزع من عناوين متعددة. pharmacy_id للـ API وidentity للويب؛ فارغ = بلا حد.
     RateLimiter::for('login-account', function (Request $request) {

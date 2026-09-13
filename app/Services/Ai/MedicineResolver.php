@@ -270,7 +270,7 @@ final class MedicineResolver
                     continue; // كلمة واحدة أصلاً — الالتحاق لا يغيرها
                 }
 
-                if (str_contains(skeletonOf(str_replace(' ', '', $normalized)), $needleSkel)) {
+                if (str_contains(self::skeletonOf(str_replace(' ', '', $normalized)), $needleSkel)) {
                     $hits[] = $this->mappingHitPayload($record);
 
                     return;

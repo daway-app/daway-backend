@@ -20,14 +20,14 @@
         <!-- Filter and Search Tools -->
         <form method="GET" action="{{ route('logs.index') }}" class="search-bar">
             <input type="text" name="q" value="{{ $q ?? request('q') }}" class="form-control" placeholder="@lang('logs.search_placeholder')" style="flex: 1; min-width: 250px;" autocomplete="off">
-            <select class="form-control">
+            <select name="event" class="form-control">
                 <option value="">@lang('logs.all_activities_option')</option>
-                <option value="create">@lang('logs.create_option')</option>
-                <option value="update">@lang('logs.update_option')</option>
-                <option value="delete">@lang('logs.delete_option')</option>
-                <option value="auth">@lang('logs.auth_option')</option>
+                <option value="created" @selected($event === 'created')>@lang('logs.create_option')</option>
+                <option value="updated" @selected($event === 'updated')>@lang('logs.update_option')</option>
+                <option value="deleted" @selected($event === 'deleted')>@lang('logs.delete_option')</option>
+                <option value="auth" @selected($event === 'auth')>@lang('logs.auth_option')</option>
             </select>
-            <input type="date" class="form-control">
+            <input type="date" name="date" value="{{ $date }}" class="form-control">
         </form>
 
         <!-- Logs Table -->

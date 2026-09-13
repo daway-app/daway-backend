@@ -71,15 +71,8 @@ class PharmacyController extends Controller
         ]);
 
         // M-43: توليد معرّف الصيدلية مع إعادة المحاولة عند تصادم الـ unique (نادر: 36^4)
-        $pharmacyCustomId = null;
-        for ($attempt = 0; $attempt < 5; $attempt++) {
-            $candidate = 'PH-'.Str::upper(Str::random(4));
-
-            if (! Pharmacy::where('pharmacy_custom_id', $candidate)->exists()) {
-                $pharmacyCustomId = $candidate;
-                break;
-            }
-        }
+        // المنطق موحّد في Pharmacy::generateUniqueCustomId (يُستخدم أيضاً في التسجيل الذاتي)
+        $pharmacyCustomId = Pharmacy::generateUniqueCustomId();
 
         if ($pharmacyCustomId === null) {
             return back()->withErrors(['pharmacy_name' => 'تعذر توليد معرّف صيدلية فريد، حاول مجدداً.'])->withInput();

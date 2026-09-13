@@ -78,7 +78,7 @@
                             <td>
                                 <div class="user-info-cell">
                                     @if($patient->avatar)
-                                        <img src="{{ \App\Support\Image::url($patient->avatar) }}" alt="{{ $patient->name }}" class="user-avatar-img">
+                                        <img src="{{ \App\Support\Image::thumbUrl($patient->avatar, 72, 72) }}" alt="{{ $patient->name }}" class="user-avatar-img" width="36" height="36" loading="lazy" decoding="async">
                                     @else
                                         <div class="user-avatar-initials">
                                             {{ mb_substr($patient->name, 0, 2) }}

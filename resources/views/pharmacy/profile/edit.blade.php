@@ -78,7 +78,7 @@
                                 <p>@lang('pharmacy.profile.tagline')</p>
                             </div>
                             @if($pharmacy->logo)
-                                <img src='{{ \App\Support\Image::url($pharmacy->logo) }}' alt='{{ $pharmacy->pharmacy_name }}' class='ph-avatar' style='cursor:pointer;' title='@lang('pharmacy.profile.logo_change')' onclick='openModal("logoModal")'>
+                                <img src='{{ \App\Support\Image::thumbUrl($pharmacy->logo, 180, 180) }}' alt='{{ $pharmacy->pharmacy_name }}' class='ph-avatar' width="90" height="90" style='cursor:pointer;' title='@lang('pharmacy.profile.logo_change')' onclick='openModal("logoModal")'>
                             @else
                                 <div class='ph-avatar' style='display:grid;place-items:center;background:var(--ph-teal-mist);color:var(--ph-teal);font-size:2rem;font-weight:700;cursor:pointer;' title='@lang('pharmacy.profile.logo_change')' onclick='openModal("logoModal")'>{{ mb_substr($pharmacy->pharmacy_name, 0, 1) }}</div>
                             @endif
@@ -170,7 +170,7 @@
                     </div>
                     <div class='ph-modal-body' style='text-align:center;'>
                         @if($pharmacy->logo)
-                            <img src='{{ \App\Support\Image::url($pharmacy->logo) }}' alt='' id='logoPreview' class='ph-logo-preview'>
+                            <img src='{{ \App\Support\Image::thumbUrl($pharmacy->logo, 240, 240) }}' alt='' id='logoPreview' class='ph-logo-preview' width="120" height="120" decoding="async">
                         @else
                             <div id='logoPreviewPlaceholder' class='ph-logo-preview' style='display:grid;place-items:center;background:var(--ph-teal-mist);color:var(--ph-teal);font-size:2.2rem;font-weight:700;'>{{ mb_substr($pharmacy->pharmacy_name, 0, 1) }}</div>
                         @endif

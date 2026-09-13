@@ -14,6 +14,7 @@ use App\Http\Controllers\web\Admin\CatalogImportController;
 use App\Http\Controllers\web\Admin\SettingController;
 use App\Http\Controllers\web\Admin\UserController;
 use App\Http\Controllers\web\Auth\LoginController;
+use App\Http\Controllers\web\Auth\RegisterController;
 use App\Http\Controllers\web\General\LocaleController;
 use App\Http\Controllers\web\General\ProfileController;
 // Patient Controllers
@@ -64,6 +65,24 @@ Route::middleware('guest')->group(function () {
         LoginController::class,
         'login',
     ])->middleware(['throttle:login', 'throttle:login-account'])->name('login');
+
+    // ==================== PHARMACY SELF-REGISTRATION ====================
+    // إنشاء حساب صيدلية (بانتظار موافقة الأدمن) — يظهر بعدها معرّف الدخول PH-XXXX
+
+    Route::get('/register', [
+        RegisterController::class,
+        'show',
+    ])->name('register.show');
+
+    Route::post('/register', [
+        RegisterController::class,
+        'store',
+    ])->middleware('throttle:register')->name('register');
+
+    Route::get('/register/success', [
+        RegisterController::class,
+        'success',
+    ])->name('register.success');
 });
 
 // ==================== ADMIN ONLY ====================

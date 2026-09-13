@@ -1,0 +1,15 @@
+{
+  "phase": "login",
+  "role": "pharmacy",
+  "loggedIn": true,
+  "landingUrl": "https://daway-backend-zlh2.onrender.com/pharmacy/dashboard",
+  "stateSaved": true,
+  "deniedRequests": [
+    {
+      "method": "POST",
+      "path": "/api/sync/token",
+      "reason": "non-read-method"
+    }
+  ],
+  "finishedAt": "2026-09-13T07:38:13.692Z"
+}

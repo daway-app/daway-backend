@@ -87,7 +87,7 @@
                         <td>
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 @if($category->image)
-                                    <img src="{{ \App\Support\Image::url($category->image) }}" alt="{{ $category->name_ar }}" width="42" height="42" style="width:42px;height:42px;object-fit:cover;border-radius:10px;">
+                                    <img src="{{ \App\Support\Image::thumbUrl($category->image, 84, 84) }}" alt="{{ $category->name_ar }}" width="42" height="42" loading="lazy" decoding="async" style="width:42px;height:42px;object-fit:cover;border-radius:10px;">
                                 @else
                                     <div class="pill-icon-wrapper icon-cyan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
                                 @endif

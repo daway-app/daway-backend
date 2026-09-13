@@ -24,13 +24,24 @@ class MobileAvatarAdminVisibilityTest extends TestCase
 
         $admin = User::factory()->admin()->create();
 
-        $this->actingAs($admin)->get(route('users.index'))
-            ->assertOk()
-            ->assertSee($avatarUrl);
+        // صفحة المستخدمين والمرضى تعرض الأفاتار عبر Image::thumbUrl، أي أن الصورة
+        // تُطلب من Cloudinary بتحويل تصغير (w_72,h_72,...) بدل الأبعاد الأصلية.
+        // لذا نتحقق من أساس الرابط + وجود التحويل، لا من مطابقة الرابط حرفيًا.
+        $basePath = 'image/upload/';
+        $publicId = 'v1/patient-avatar.jpg';
+        $transform = 'w_72,h_72';
 
-        $this->actingAs($admin)->get(route('patients.index'))
-            ->assertOk()
-            ->assertSee($avatarUrl);
+        foreach ([route('users.index'), route('patients.index')] as $routeName) {
+            $html = $this->actingAs($admin)->get($routeName)->assertOk()->getContent();
+
+            $this->assertStringContainsString($publicId, $html, "الأفاتار يجب أن يظهر في {$routeName}");
+            $this->assertStringContainsString($transform, $html, "الأفاتار يجب أن يُطلب بتحويل تصغير في {$routeName}");
+            $this->assertMatchesRegularExpression(
+                '#res\.cloudinary\.com/[^"\']*'.preg_quote($basePath, '#').'w_72,h_72[^"\']*'.preg_quote($publicId, '#').'#',
+                $html,
+                "رابط الأفاتار في {$routeName} يجب أن يكون رابط تصغير صالح على Cloudinary"
+            );
+        }
     }
 
     public function test_pharmacy_logo_url_is_persisted_via_api(): void
