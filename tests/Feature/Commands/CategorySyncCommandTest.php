@@ -15,7 +15,7 @@ class CategorySyncCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const FIXTURE = 'storage/app/testing/fixtures/categorized_small.json';
+    private const FIXTURE = 'tests/fixtures/categorized_small.json';
 
     protected function setUp(): void
     {
@@ -208,7 +208,13 @@ class CategorySyncCommandTest extends TestCase
         // ط§ظ„ظ€link ط§ظ„ط«ط§ظ†ظٹ (moh_product_id=5002). ط§ظ„ظ€command ظٹظ„ظپظ‘ ط§ظ„ظ€sync ط¨ظ€
         // DB::transaction() ظپظٹط¬ط¨ ط£ظ† ظٹطھط±ط§ط¬ط¹ ظƒظ„ ط´ظٹط، â€” ط­طھظ‰ ط§ظ„ظ€link ط§ظ„ط£ظˆظ„.
 
-        $testJson = base_path('storage/app/testing/fixtures/categorized_rollback.json');
+        // نكتب داخل tests/fixtures (مرفوع بالـ git) — storage/app مستثنى من المستودع
+        // فالمجلد غير موجود على CI. ننشئ الملف مؤقتاً ونحذفه في finally.
+        $fixtureDir = base_path('tests/fixtures');
+        if (! is_dir($fixtureDir)) {
+            mkdir($fixtureDir, 0777, true);
+        }
+        $testJson = $fixtureDir.'/categorized_rollback.json';
         file_put_contents($testJson, json_encode([
             [
                 'id' => 1,
@@ -243,7 +249,7 @@ class CategorySyncCommandTest extends TestCase
         $threw = false;
         try {
             $this->artisan('moh:sync-categories', [
-                '--file' => 'storage/app/testing/fixtures/categorized_rollback.json',
+                '--file' => 'tests/fixtures/categorized_rollback.json',
             ]);
         } catch (\RuntimeException $e) {
             $threw = true;

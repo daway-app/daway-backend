@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 class CategorySyncApiTest extends TestCase
 {
-    private const FIXTURE = 'storage/app/testing/fixtures/categorized_small.json';
+    private const FIXTURE = 'tests/fixtures/categorized_small.json';
 
     protected function setUp(): void
     {

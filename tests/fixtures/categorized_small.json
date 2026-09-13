@@ -1,0 +1,59 @@
+[
+  {
+    "id": 1,
+    "trade_name": "AMOXIDRUG 500MG TAB",
+    "generic_name": "AMOXICILLIN",
+    "moh_product_id": 1001,
+    "moh_drug_id": 11,
+    "categories": [
+      {"id": 1, "name_ar": "الأدوية", "slug": "medicines", "confidence": 90, "source": "product_class", "needs_review": false}
+    ]
+  },
+  {
+    "id": 2,
+    "trade_name": "SKINGLOW LOTION A",
+    "moh_product_id": 1002,
+    "moh_drug_id": null,
+    "categories": [
+      {"id": 5, "name_ar": "العناية الشخصية والجمال", "slug": "personal-care-and-beauty", "confidence": 84, "source": "rules", "needs_review": false}
+    ]
+  },
+  {
+    "id": 3,
+    "trade_name": "BABY MULTIVIT SYRUP",
+    "moh_product_id": 1003,
+    "moh_drug_id": null,
+    "categories": [
+      {"id": 4, "name_ar": "الأم والطفل", "slug": "mother-and-child", "confidence": 70, "source": "rules", "needs_review": false},
+      {"id": 9, "name_ar": "الفيتامينات والمكملات الغذائية", "slug": "vitamins-and-dietary-supplements", "confidence": 75, "source": "rules", "needs_review": false}
+    ]
+  },
+  {
+    "id": 4,
+    "trade_name": "RECALL ITEM X",
+    "moh_product_id": 1004,
+    "moh_drug_id": null,
+    "categories": [
+      {"id": 99, "name_ar": "قسم غير معروف", "slug": "unknown-future-category", "confidence": 60, "source": "rules", "needs_review": false}
+    ]
+  },
+  {
+    "id": 5,
+    "trade_name": "VATIKA COLOR PROTECT",
+    "moh_product_id": 19837,
+    "moh_drug_id": null,
+    "categories": [
+      {"id": 5, "name_ar": "العناية الشخصية والجمال", "slug": "personal-care-and-beauty", "confidence": 84, "source": "rules", "needs_review": true},
+      {"id": 11, "name_ar": "المنتجات العشبية", "slug": "herbal-products", "confidence": 99, "source": "product_class", "needs_review": true}
+    ]
+  },
+  {
+    "id": 6,
+    "trade_name": "PERFUME SPRAY FOR MEN",
+    "moh_product_id": 4412,
+    "moh_drug_id": null,
+    "categories": [
+      {"id": 5, "name_ar": "العناية الشخصية والجمال", "slug": "personal-care-and-beauty", "confidence": 78, "source": "rules", "needs_review": true}
+    ]
+  }
+]
