@@ -55,9 +55,8 @@ class RegisterController extends Controller
         $validated = $request->validate([
             'pharmacy_name' => ['required', 'string', 'max:150'],
             'phone_number' => ['required', 'string', 'max:20', 'unique:users,phone'],
-            'address' => ['required', 'string', 'max:255'],   // الشارع
             'region' => ['required', 'string', 'max:150'],    // المنطقة / الحي
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8'],
         ], [
             'phone_number.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
         ]);
@@ -89,7 +88,7 @@ class RegisterController extends Controller
 
                 $pharmacy = new Pharmacy([
                     'pharmacy_name' => $validated['pharmacy_name'],
-                    'address' => $validated['address'],
+                    // الشارع (address) يُكمله صاحب الصيدلية لاحقاً من ملفه — العمود nullable
                     'region' => $validated['region'],
                     'phone_number' => $validated['phone_number'],
                 ]);

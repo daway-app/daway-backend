@@ -10,15 +10,6 @@
 
     <!-- نفس نظام تصميم صفحات المصادقة (بلا ملف CSS جديد) -->
     @vite(['resources/css/app.css', 'resources/css/auth/forms.css'])
-
-    <style>
-        /* صفّ حقول مزدوج — خاص بهذه الصفحة فقط */
-        .reg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
-
-        @media (max-width: 520px) {
-            .reg-row { grid-template-columns: 1fr; }
-        }
-    </style>
 </head>
 
 <body>
@@ -63,25 +54,14 @@
                     @enderror
                 </div>
 
-                <!-- الموقع: الشارع + المنطقة -->
-                <div class="reg-row">
-                    <div class="fg">
-                        <label class="fl" for="address">الشارع <span style="color:#D64545">*</span></label>
-                        <input class="fc @error('address') is-invalid @enderror" type="text" id="address"
-                            name="address" value="{{ old('address') }}" placeholder="مثال: شارع عمر المختار" required>
-                        @error('address')
-                            <div class="error-message">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="fg">
-                        <label class="fl" for="region">المنطقة <span style="color:#D64545">*</span></label>
-                        <input class="fc @error('region') is-invalid @enderror" type="text" id="region" name="region"
-                            value="{{ old('region') }}" placeholder="مثال: الرمال" required>
-                        @error('region')
-                            <div class="error-message">{{ $message }}</div>
-                        @enderror
-                    </div>
+                <!-- المنطقة -->
+                <div class="fg">
+                    <label class="fl" for="region">المنطقة <span style="color:#D64545">*</span></label>
+                    <input class="fc @error('region') is-invalid @enderror" type="text" id="region" name="region"
+                        value="{{ old('region') }}" placeholder="مثال: الرمال" required>
+                    @error('region')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
                 </div>
 
                 <!-- كلمة المرور -->
@@ -95,18 +75,6 @@
                     @error('password')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
-                </div>
-
-                <!-- تأكيد كلمة المرور -->
-                <div class="fg">
-                    <label class="fl" for="password_confirmation">تأكيد كلمة المرور <span
-                            style="color:#D64545">*</span></label>
-                    <div class="fc-wrapper">
-                        <input class="fc" type="password" id="password_confirmation" name="password_confirmation"
-                            placeholder="••••••••" required>
-                        <button type="button" class="toggle-btn"
-                            onclick="togglePass('password_confirmation', this)">إظهار</button>
-                    </div>
                 </div>
 
                 <div class="info-hint">

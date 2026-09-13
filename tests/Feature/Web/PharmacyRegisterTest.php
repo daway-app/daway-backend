@@ -16,7 +16,6 @@ class PharmacyRegisterTest extends TestCase
         return array_merge([
             'pharmacy_name' => 'صيدلية الشفاء',
             'phone_number' => '0598765432',
-            'address' => 'شارع الوحدة',
             'region' => 'الشجاعية',
             'password' => 'secret1234',
             'password_confirmation' => 'secret1234',
@@ -51,7 +50,8 @@ class PharmacyRegisterTest extends TestCase
 
         $this->assertNotNull($pharmacy);
         $this->assertSame('صيدلية الشفاء', $pharmacy->pharmacy_name);
-        $this->assertSame('شارع الوحدة', $pharmacy->address);
+        // الشارع لم يعد يُجمع في التسجيل — يُكمله صاحب الصيدلية من ملفه لاحقاً
+        $this->assertNull($pharmacy->address);
         $this->assertSame('الشجاعية', $pharmacy->region);
         $this->assertSame('0598765432', $pharmacy->phone_number);
         $this->assertFalse((bool) $pharmacy->is_active);
@@ -91,15 +91,16 @@ class PharmacyRegisterTest extends TestCase
             ->assertRedirect(route('register.show'));
     }
 
-    public function test_password_mismatch_fails(): void
+    public function test_password_mismatch_is_no_longer_a_concept(): void
     {
+        // تأكيد كلمة المرور أُزيل من النموذج — أي قيمة مرسلة تُتجاهل ولا يوجد حقل errors
         $this->from(route('register.show'))
             ->post(route('register'), $this->validData([
                 'password_confirmation' => 'nope12345',
             ]))
-            ->assertSessionHasErrors('password');
+            ->assertRedirect(route('register.success'));
 
-        $this->assertDatabaseMissing('users', ['phone' => '0598765432']);
+        $this->assertDatabaseHas('users', ['phone' => '0598765432']);
     }
 
     public function test_duplicate_phone_fails(): void
@@ -120,7 +121,6 @@ class PharmacyRegisterTest extends TestCase
             ->assertSessionHasErrors([
                 'pharmacy_name',
                 'phone_number',
-                'address',
                 'region',
                 'password',
             ]);
