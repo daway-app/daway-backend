@@ -3,160 +3,226 @@
 @section('title', __('pharmacy.profile.complete.title'))
 
 @section('content')
-    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
-    @include('partials.pharmacy-hub-i18n')
+    @vite(['resources/css/pages/users_create.css'])
 
-    @push('scripts')
-        <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
-        <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
-    @endpush
+    <div class="page-wrapper" style="max-width: 1100px;">
+        <div class="main-card">
 
-    <div class='ph-page'>
-        <div class='ph-head'>
-            <div class='ph-page-title'>
-                <h1>@lang('pharmacy.profile.complete.heading')</h1>
-                <p>@lang('pharmacy.profile.complete.subtitle', ['pharmacy' => $pharmacy->pharmacy_name])</p>
+            <div class="card-header-modern">
+                <div class="header-title-area">
+                    <h2>@lang('pharmacy.profile.complete.heading')</h2>
+                    <p>@lang('pharmacy.profile.complete.subtitle', ['pharmacy' => $pharmacy->pharmacy_name])</p>
+                </div>
+                <div class="header-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
             </div>
-        </div>
 
-        @if (session('success'))
-            <div class='ph-card' style='margin-block-end:20px;background:var(--ph-green-bg);color:var(--ph-green);border-color:var(--ph-green-bg);padding:14px 18px;'>{{ session('success') }}</div>
-        @endif
-        @if (session('error'))
-            <div class='ph-card' style='margin-block-end:20px;background:var(--ph-red-bg);color:var(--ph-red);border-color:var(--ph-red-bg);padding:14px 18px;'>{{ session('error') }}</div>
-        @endif
+            <div class="complete-layout">
 
-        @if($errors->any())
-            <div class='ph-card' style='margin-block-end:20px;background:var(--ph-red-bg);color:var(--ph-red);border-color:var(--ph-red-bg);padding:14px 18px;'>
-                <ul style='margin:0;padding-inline-start:18px;'>
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+                <!-- العمود الأول: بيانات الصيدلية + كلمة المرور -->
+                <div class="complete-col">
 
-        <form action='{{ route('pharmacy.profile.complete') }}' method='POST'>
-            @csrf
-
-            <div class='ph-profile-grid ph-complete-grid'>
-                <div class='ph-profile-main'>
-                    <div class='ph-card'>
-                        <div class='ph-banner'>
-                            <div>
-                                <h2>{{ $pharmacy->pharmacy_name }}</h2>
-                                <p>@lang('pharmacy.profile.tagline')</p>
-                            </div>
-                            <div class='ph-avatar' style='display:grid;place-items:center;background:var(--ph-teal-mist);color:var(--ph-teal);font-size:2rem;font-weight:700;'>{{ mb_substr($pharmacy->pharmacy_name, 0, 1) }}</div>
+                    <!-- بطاقة الصيدلية -->
+                    <div class="complete-hero">
+                        <div class="complete-avatar">
+                            <span>{{ mb_substr($pharmacy->pharmacy_name, 0, 1) }}</span>
                         </div>
-                        <div class='ph-card-body'>
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='phone_number'>@lang('pharmacy.profile.phone_label') <span class='req'>*</span></label>
-                                <input type='text' name='phone_number' id='phone_number' class='ph-control' value='{{ old('phone_number', $pharmacy->phone_number) }}' required>
-                                @error('phone_number')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='address'>@lang('pharmacy.profile.address_label') <span class='req'>*</span></label>
-                                <textarea name='address' id='address' class='ph-textarea' style='width:100%;' required>{{ old('address', $pharmacy->address) }}</textarea>
-                                @error('address')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='region'>@lang('pharmacy.profile.complete.region_label') <span class='req'>*</span></label>
-                                <input type='text' name='region' id='region' class='ph-control' value='{{ old('region', $pharmacy->region) }}' required>
-                                @error('region')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='email'>@lang('pharmacy.profile.email_label')</label>
-                                <input type='email' name='email' id='email' class='ph-control' value='{{ old('email') }}'>
-                                <p class='ph-hint'>@lang('pharmacy.profile.complete.email_hint')</p>
-                                @error('email')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class='ph-card-head' style='margin-block-end:12px;padding:0;'><h2><i class='fas fa-lock'></i> @lang('pharmacy.profile.complete.password_section')</h2></div>
-
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='password'>@lang('pharmacy.profile.complete.new_password') <span class='req'>*</span></label>
-                                <input type='password' name='password' id='password' class='ph-control' required>
-                                <p class='ph-hint'>@lang('pharmacy.profile.complete.password_hint')</p>
-                                @error('password')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class='ph-group' style='margin-block-end:18px;'>
-                                <label class='ph-form-label' for='password_confirmation'>@lang('pharmacy.profile.complete.confirm_password') <span class='req'>*</span></label>
-                                <input type='password' name='password_confirmation' id='password_confirmation' class='ph-control' required>
-                            </div>
-                        </div>
-                        <div style='display:flex;gap:10px;padding:18px 22px;border-block-start:1px solid var(--ph-line-soft);'>
-                            <button type='submit' class='ph-btn primary'><i class='fas fa-save'></i> @lang('pharmacy.profile.complete.save_button')</button>
+                        <div class="complete-hero-text">
+                            <strong>{{ $pharmacy->pharmacy_name }}</strong>
+                            <span class="complete-badge">@lang('pharmacy.profile.complete.title')</span>
                         </div>
                     </div>
+
+                    <form action="{{ route('pharmacy.profile.complete') }}" method="POST">
+                        @csrf
+
+                        @if (session('success'))
+                            <div class="success-alert-modern" style="margin-bottom: 16px;">{{ session('success') }}</div>
+                        @endif
+                        @if (session('error'))
+                            <div class="alert-danger-modern" style="margin-bottom: 16px;">{{ session('error') }}</div>
+                        @endif
+
+                        @if ($errors->any())
+                            <div class="alert-danger-modern" style="margin-bottom: 16px;">
+                                <ul style="margin: 0; padding-right: 18px;">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        <div class="form-group">
+                            <label>@lang('pharmacy.profile.phone_label') <span>*</span></label>
+                            <div class="input-with-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                <input type="text" name="phone_number" id="phone_number" class="form-control" value="{{ old('phone_number', $pharmacy->phone_number) }}" required>
+                            </div>
+                            @error('phone_number')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>@lang('pharmacy.profile.address_label') <span>*</span></label>
+                            <div class="input-with-icon input-with-icon-top">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                <textarea name="address" id="address" class="form-control" rows="2" required>{{ old('address', $pharmacy->address) }}</textarea>
+                            </div>
+                            @error('address')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>@lang('pharmacy.profile.complete.region_label') <span>*</span></label>
+                            <div class="input-with-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                <input type="text" name="region" id="region" class="form-control" value="{{ old('region', $pharmacy->region) }}" required>
+                            </div>
+                            @error('region')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>@lang('pharmacy.profile.email_label')</label>
+                            <div class="input-with-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                <input type="email" name="email" id="email" class="form-control" value="{{ old('email') }}">
+                            </div>
+                            <p class="hint-under">@lang('pharmacy.profile.complete.email_hint')</p>
+                            @error('email')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- قسم كلمة المرور -->
+                        <div class="complete-security-head">
+                            <div class="lock-ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+                            <div>
+                                <h3>@lang('pharmacy.profile.complete.password_section')</h3>
+                                <p>@lang('pharmacy.profile.complete.password_hint')</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>@lang('pharmacy.profile.complete.new_password') <span>*</span></label>
+                            <div class="input-with-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                <input type="password" name="password" id="newPass" class="form-control" required minlength="8" autocomplete="new-password">
+                                <button type="button" class="eye-toggle" onclick="togglePass('newPass', this)" tabindex="-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                            @error('password')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>@lang('pharmacy.profile.complete.confirm_password') <span>*</span></label>
+                            <div class="input-with-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                <input type="password" name="password_confirmation" id="confPass" class="form-control" required autocomplete="new-password">
+                                <button type="button" class="eye-toggle" onclick="togglePass('confPass', this)" tabindex="-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                        </div>
+
                 </div>
 
-                <div class='ph-profile-side'>
-                    <div class='ph-card'>
-                        <div class='ph-card-head'><h2><i class='fas fa-map-marker-alt'></i> @lang('pharmacy.profile.location_title')</h2></div>
-                        <div class='ph-card-body'>
-                            <div class='ph-form-row' style='grid-template-columns:1fr 1fr;margin-block-end:12px;'>
-                                <div class='ph-group'>
-                                    <label class='ph-form-label' for='latitude'>@lang('pharmacy.profile.latitude_label') <span class='req'>*</span></label>
-                                    <input type='text' name='latitude' id='latitude' class='ph-control' value='{{ old('latitude') }}' required>
+                <!-- العمود الثاني: الموقع + ساعات العمل -->
+                <div class="complete-col">
+
+                    @push('scripts')
+                        <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
+                        <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+                    @endpush
+
+                    <div class="complete-card">
+                        <div class="complete-card-head">
+                            <span class="complete-card-ic"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></span>
+                            <h3>@lang('pharmacy.profile.location_title')</h3>
+                        </div>
+                        <div class="complete-card-body">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>@lang('pharmacy.profile.latitude_label') <span>*</span></label>
+                                    <input type="text" name="latitude" id="latitude" class="form-control" value="{{ old('latitude') }}" required>
                                 </div>
-                                <div class='ph-group'>
-                                    <label class='ph-form-label' for='longitude'>@lang('pharmacy.profile.longitude_label') <span class='req'>*</span></label>
-                                    <input type='text' name='longitude' id='longitude' class='ph-control' value='{{ old('longitude') }}' required>
+                                <div class="form-group">
+                                    <label>@lang('pharmacy.profile.longitude_label') <span>*</span></label>
+                                    <input type="text" name="longitude" id="longitude" class="form-control" value="{{ old('longitude') }}" required>
                                 </div>
                             </div>
-                            <div id='pharmacyMap' class='ph-map ph-map-sm' data-lat='{{ old('latitude', 31.5016) }}' data-lng='{{ old('longitude', 34.4668) }}'></div>
-                            <p class='ph-hint'>@lang('pharmacy.profile.map_hint')</p>
+                            <div id="pharmacyMap" class="complete-map" data-lat="{{ old('latitude', 31.5016) }}" data-lng="{{ old('longitude', 34.4668) }}"></div>
+                            <p class="hint-under">@lang('pharmacy.profile.map_hint')</p>
                         </div>
                     </div>
 
-                    <div class='ph-card'>
-                        <div class='ph-card-head'><h2><i class='fas fa-clock'></i> @lang('pharmacy.profile.hours_title') <span class='req'>*</span></h2></div>
-                        <div class='ph-card-body ph-hours' style='padding-block-start:0;'>
-                            <div class='ph-hours-quickbar'>
-                                <button type='button' class='ph-btn sm' onclick='applyPreset("unified")'>@lang('pharmacy.profile.hours_quick.unified')</button>
-                                <button type='button' class='ph-btn sm' onclick='applyPreset("24h")'>@lang('pharmacy.profile.hours_quick.h24')</button>
-                                <button type='button' class='ph-btn sm' onclick='applyPreset("friday_off")'>@lang('pharmacy.profile.hours_quick.friday_off')</button>
-                                <button type='button' class='ph-btn sm outline' onclick='applyPreset("clear")'>@lang('pharmacy.profile.hours_quick.clear')</button>
+                    <div class="complete-card">
+                        <div class="complete-card-head">
+                            <span class="complete-card-ic"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+                            <h3>@lang('pharmacy.profile.hours_title') <span style="color:#ef4444;">*</span></h3>
+                        </div>
+                        <div class="complete-card-body">
+                            <div class="complete-hours-quickbar">
+                                <button type="button" class="btn-quick" onclick="applyPreset('unified')">@lang('pharmacy.profile.hours_quick.unified')</button>
+                                <button type="button" class="btn-quick" onclick="applyPreset('24h')">@lang('pharmacy.profile.hours_quick.h24')</button>
+                                <button type="button" class="btn-quick" onclick="applyPreset('friday_off')">@lang('pharmacy.profile.hours_quick.friday_off')</button>
+                                <button type="button" class="btn-quick btn-quick-ghost" onclick="applyPreset('clear')">@lang('pharmacy.profile.hours_quick.clear')</button>
                             </div>
+
                             @foreach($daysOfWeek as $dayKey => $dayName)
                                 @php
                                     $isClosed = old('hours.'.$dayKey.'.is_closed', false);
                                 @endphp
-                                <div class='day-row'>
-                                    <label>
-                                        <input type='checkbox' name='hours[{{ $dayKey }}][is_closed]' value='1' {{ $isClosed ? 'checked' : '' }} onchange='toggleTime("{{ $dayKey }}")'>
+                                <div class="complete-day-row">
+                                    <label class="complete-day-label">
+                                        <input type="checkbox" name="hours[{{ $dayKey }}][is_closed]" value="1" {{ $isClosed ? 'checked' : '' }} onchange="toggleTime('{{ $dayKey }}')">
                                         {{ $dayName }}
                                     </label>
-                                    <div class='ph-group'>
-                                        <label class='ph-form-label'>@lang('pharmacy.profile.from')</label>
-                                        <input type='time' name='hours[{{ $dayKey }}][open_time]' id='open_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.open_time') }}' {{ $isClosed ? 'disabled' : '' }}>
+                                    <div class="complete-day-times">
+                                        <input type="time" name="hours[{{ $dayKey }}][open_time]" id="open_{{ $dayKey }}" class="form-control" value="{{ old('hours.'.$dayKey.'.open_time') }}" {{ $isClosed ? 'disabled' : '' }}>
+                                        <span class="complete-day-sep">–</span>
+                                        <input type="time" name="hours[{{ $dayKey }}][close_time]" id="close_{{ $dayKey }}" class="form-control" value="{{ old('hours.'.$dayKey.'.close_time') }}" {{ $isClosed ? 'disabled' : '' }}>
                                     </div>
-                                    <div class='ph-group'>
-                                        <label class='ph-form-label'>@lang('pharmacy.profile.to')</label>
-                                        <input type='time' name='hours[{{ $dayKey }}][close_time]' id='close_{{ $dayKey }}' class='ph-control' value='{{ old('hours.'.$dayKey.'.close_time') }}' {{ $isClosed ? 'disabled' : '' }}>
+                                    <div class="complete-day-quick">
+                                        <button type="button" class="btn-mini" title="@lang('pharmacy.profile.hours_quick.copy_title')" onclick="copyDay('{{ $dayKey }}')">@lang('pharmacy.profile.hours_quick.copy')</button>
+                                        <button type="button" class="btn-mini" title="@lang('pharmacy.profile.hours_quick.h24')" onclick="setDay('{{ $dayKey }}', '00:00', '23:59')">24h</button>
+                                        <button type="button" class="btn-mini btn-mini-danger" title="@lang('pharmacy.profile.hours_quick.closed_title')" onclick="closeDay('{{ $dayKey }}')">@lang('pharmacy.profile.hours_quick.closed')</button>
                                     </div>
-                                    <span class='day-quick'>
-                                        <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.copy_title')' onclick='copyDay("{{ $dayKey }}")'>@lang('pharmacy.profile.hours_quick.copy')</button>
-                                        <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.h24')' onclick='setDay("{{ $dayKey }}", "00:00", "23:59")'>24h</button>
-                                        <button type='button' class='ph-btn xs' title='@lang('pharmacy.profile.hours_quick.closed_title')' onclick='closeDay("{{ $dayKey }}")'>@lang('pharmacy.profile.hours_quick.closed')</button>
-                                    </span>
                                 </div>
                             @endforeach
-                            @error('hours')<span style='color:var(--ph-red);font-size:.8rem;'>{{ $message }}</span>@enderror
+                            @error('hours')
+                                <span class="field-error" style="display:block;">{{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
+
+                    <div class="complete-footer">
+                        <button type="submit" class="btn-submit"><i class="fas fa-save"></i> @lang('pharmacy.profile.complete.save_button')</button>
+                    </div>
+
                 </div>
             </div>
-        </form>
+
+                    </form>
+        </div>
+
     </div>
 
     <script>
         var hoursDays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+        function togglePass(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            btn.classList.toggle('eye-active', show);
+        }
 
         function setDay(day, open, close, closed) {
             var openEl = document.getElementById('open_'+day);
@@ -196,4 +262,253 @@
             }
         }
     </script>
+
+    <style>
+        .complete-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+            padding: 24px;
+        }
+        @media (max-width: 900px) {
+            .complete-layout { grid-template-columns: 1fr; }
+        }
+        .complete-col {
+            background: #f8fafc;
+            border: 1px solid #DEE8E7;
+            border-radius: 14px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        body.dark-mode .complete-col { background: #18181B; border-color: #333338; }
+
+        .complete-hero {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        body.dark-mode .complete-hero { border-color: #3f3f46; }
+        .complete-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            padding: 3px;
+            background: conic-gradient(#1C72A6, #7BC1B7, #3b82f6, #1C72A6);
+            flex-shrink: 0;
+            display: flex;
+        }
+        .complete-avatar > span {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #36a5a5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 26px;
+            font-weight: 700;
+        }
+        .complete-hero-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .complete-hero-text strong { font-size: 17px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        body.dark-mode .complete-hero-text strong { color: #f4f4f5; }
+        .complete-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 999px;
+            width: fit-content;
+            background: rgba(6,182,212,0.12);
+            color: #0891b2;
+        }
+
+        .complete-security-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 26px 0 18px;
+            padding-top: 20px;
+            border-top: 1px solid #E2E8F0;
+        }
+        body.dark-mode .complete-security-head { border-color: #3f3f46; }
+        .complete-security-head .lock-ic {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: rgba(28,114,166,0.1);
+            color: #1C72A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .complete-security-head h3 { margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; }
+        body.dark-mode .complete-security-head h3 { color: #f4f4f5; }
+        .complete-security-head p { margin: 2px 0 0; font-size: 12.5px; color: #64748b; }
+        body.dark-mode .complete-security-head p { color: #a1a1aa; }
+
+        .complete-card {
+            background: #ffffff;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        body.dark-mode .complete-card { background: #232327; border-color: #333338; }
+        .complete-card-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        body.dark-mode .complete-card-head { border-color: #333338; }
+        .complete-card-head h3 { margin: 0; font-size: 14.5px; font-weight: 700; color: #0f172a; }
+        body.dark-mode .complete-card-head h3 { color: #f4f4f5; }
+        .complete-card-ic {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: rgba(28,114,166,0.1);
+            color: #1C72A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .complete-card-body { padding: 16px; }
+
+        .complete-map {
+            height: 220px;
+            border-radius: 10px;
+            border: 1px solid #E2E8F0;
+            overflow: hidden;
+            z-index: 0;
+        }
+        body.dark-mode .complete-map { border-color: #333338; }
+
+        .complete-hours-quickbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .btn-quick {
+            background: rgba(28,114,166,0.08);
+            color: #1C72A6;
+            border: none;
+            border-radius: 9px;
+            padding: 7px 13px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s ease;
+        }
+        .btn-quick:hover { background: rgba(28,114,166,0.16); }
+        .btn-quick-ghost { background: transparent; border: 1px solid #cbd5e1; color: #64748b; }
+        .btn-quick-ghost:hover { background: #f1f5f9; }
+        body.dark-mode .btn-quick-ghost { border-color: #3f3f46; color: #a1a1aa; }
+        body.dark-mode .btn-quick-ghost:hover { background: #232327; }
+
+        .complete-day-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed #E2E8F0;
+            flex-wrap: wrap;
+        }
+        body.dark-mode .complete-day-row { border-color: #333338; }
+        .complete-day-row:last-of-type { border-bottom: none; }
+        .complete-day-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            width: 110px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        body.dark-mode .complete-day-label { color: #E4E4E7; }
+        .complete-day-times {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .complete-day-sep { color: #94a3b8; }
+        .complete-day-times .form-control { padding: 7px 10px; font-size: 12.5px; }
+        .complete-day-quick { display: flex; gap: 5px; }
+        .btn-mini {
+            background: #f1f5f9;
+            border: none;
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #334155;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s ease;
+        }
+        .btn-mini:hover { background: #e2e8f0; }
+        .btn-mini-danger { color: #dc2626; background: #fef2f2; }
+        .btn-mini-danger:hover { background: #fee2e2; }
+        body.dark-mode .btn-mini { background: #232327; color: #e4e4e7; }
+        body.dark-mode .btn-mini:hover { background: #333338; }
+        body.dark-mode .btn-mini-danger { background: rgba(239,68,68,0.12); color: #fca5a5; }
+
+        .complete-footer {
+            margin-top: auto;
+            padding-top: 6px;
+        }
+        .complete-footer .btn-submit { width: 100%; padding: 13px; font-size: 14px; }
+
+        .input-with-icon { position: relative; }
+        .input-with-icon > svg:first-child {
+            position: absolute;
+            inset-inline-start: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .input-with-icon.input-with-icon-top > svg:first-child { top: 20px; transform: none; }
+        .input-with-icon .form-control { padding-inline-start: 38px; }
+        .input-with-icon .form-control[type="password"] { padding-inline-end: 38px; }
+        textarea.form-control { resize: vertical; min-height: 70px; }
+        .field-error { color: #dc2626; font-size: 12px; margin-top: 5px; display: block; }
+        body.dark-mode .field-error { color: #fca5a5; }
+        .hint-under { margin: 6px 0 0; font-size: 12px; color: #94a3b8; }
+        body.dark-mode .hint-under { color: #71717A; }
+        .eye-toggle {
+            position: absolute;
+            inset-inline-end: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: color 0.2s ease, background-color 0.2s ease;
+        }
+        .eye-toggle:hover { color: #1C72A6; background: rgba(28,114,166,0.08); }
+        .eye-toggle.eye-active { color: #1C72A6; }
+    </style>
 @endsection

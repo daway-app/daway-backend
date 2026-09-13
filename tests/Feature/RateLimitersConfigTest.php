@@ -34,6 +34,7 @@ class RateLimitersConfigTest extends TestCase
                 'pharmacy_name' => 'Throttle Test Pharmacy',
                 'phone' => '059900000'.$i,
                 'region' => 'منطقة الاختبار',
+                'password' => 'secret1234',
             ]);
 
             $this->assertNotSame(
@@ -47,6 +48,7 @@ class RateLimitersConfigTest extends TestCase
             'pharmacy_name' => 'Throttle Test Pharmacy',
             'phone' => '0599000009',
             'region' => 'منطقة الاختبار',
+            'password' => 'secret1234',
         ])->assertStatus(429);
     }
 }

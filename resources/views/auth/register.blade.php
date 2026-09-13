@@ -28,7 +28,7 @@
         <!-- الجانب الأيسر: النموذج -->
         <div class="auth-form-side">
             <h1 class="form-title">إنشاء حساب صيدلية</h1>
-            <p class="form-subtitle">عبّئ بيانات صيدليتك، وبعد موافقة الإدارة رح يظهرلك معرّف الدخول.</p>
+            <p class="form-subtitle">عبّئ بيانات صيدليتك، وبعد موافقة الإدارة رح يوصلك معرّف الدخول.</p>
 
             <form id="registerForm" action="{{ route('register') }}" method="POST">
                 @csrf
@@ -64,9 +64,22 @@
                     @enderror
                 </div>
 
+                <!-- كلمة المرور -->
+                <div class="fg">
+                    <label class="fl" for="password">كلمة المرور <span style="color:#D64545">*</span></label>
+                    <div class="fc-wrapper">
+                        <input class="fc @error('password') is-invalid @enderror" type="password" id="password"
+                            name="password" placeholder="8 أحرف على الأقل" required>
+                        <button type="button" class="toggle-btn" onclick="togglePass('password', this)">إظهار</button>
+                    </div>
+                    @error('password')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <div class="info-hint">
-                    💡 بعد إنشاء الحساب رح يتم <strong>تسليمك بيانات الدخول</strong>
-                    (Pharmacy ID وكلمة المرور) فور <strong>موافقة الإدارة</strong> — احتفظ برقم هاتفك.
+                    💡 بعد موافقة الإدارة رح يوصلك <strong>معرّف الدخول (Pharmacy ID)</strong> —
+                    استخدمه مع <strong>كلمة المرور يلي اخترتها هون</strong> لتسجيل الدخول.
                 </div>
 
                 <button type="submit" class="btn-p" id="submitBtn" style="margin-top:18px">إنشاء الحساب</button>

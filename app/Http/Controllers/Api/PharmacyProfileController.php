@@ -107,11 +107,39 @@ class PharmacyProfileController extends Controller
             }
         });
 
+        // توحيد مع الويب: حين تكتمل بيانات الصيدلية (هاتف + عنوان + منطقة + موقع
+        // + يوم دوام مفتوح واحد على الأقل) نضبط profile_completed_at مرة واحدة —
+        // حتى لا تنحبس الصيدلية المسجّلة من الموبايل بصفحة الإكمال عند دخولها الويب.
+        // C1: الحقل الحساس يُضبط صراحةً (خارج $fillable).
+        $fresh = $pharmacy->fresh(['hours']);
+        if ($fresh->profile_completed_at === null && $this->isProfileComplete($fresh)) {
+            $fresh->profile_completed_at = now();
+            $fresh->save();
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'تم تحديث الملف الشخصي بنجاح',
-            'data' => $this->payload($pharmacy->fresh('hours')),
+            'data' => $this->payload($fresh),
         ]);
+    }
+
+    /**
+     * هل اكتملت بيانات الصيدلية؟ نفس شروط صفحة الإكمال على الويب
+     * (بدون كلمة المرور — يديرها must_change_password عبر change-password).
+     */
+    private function isProfileComplete(Pharmacy $pharmacy): bool
+    {
+        if (empty($pharmacy->phone_number) || empty($pharmacy->address) || empty($pharmacy->region)) {
+            return false;
+        }
+
+        if ($pharmacy->latitude === null || $pharmacy->longitude === null) {
+            return false;
+        }
+
+        // يوم دوام مفتوح واحد على الأقل
+        return $pharmacy->hours->contains(fn ($hour) => ! $hour->is_closed && $hour->open_time && $hour->close_time);
     }
 
     /**

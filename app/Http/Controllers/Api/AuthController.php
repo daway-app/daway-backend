@@ -77,9 +77,9 @@ class AuthController extends Controller
     /**
      * إنشاء حساب صيدلية جديد من تطبيق الموبايل (بانتظار موافقة الإدارة).
      *
-     * الحساب يُنشأ غير مفعّل مع كلمة مرور عشوائية، وبانات الدخول (Pharmacy ID
-     * + كلمة المرور) تُسلَّم فوراً في الاستجابة — نفس نمط OTP تبع المريض
-     * (بدل SMS حتى تُضاف مكتبة الرسائل). الحساب يبقى بلا دخول حتى يوافق الأدمن.
+     * صاحب الصيدلية يختار كلمة مروره بنفسه. الحساب يُنشأ غير مفعّل، ولا يُعاد
+     * أي معرّف في الاستجابة — بعد موافقة الأدمن تُرسل بيانات الدخول (Pharmacy ID
+     * + كلمة المرور) للصيدلية عبر رسالة (SMS لاحقاً).
      */
     public function pharmacyRegister(Request $request)
     {
@@ -87,6 +87,7 @@ class AuthController extends Controller
             'pharmacy_name' => 'required|string|max:150',
             'phone' => 'required|string|max:20|unique:users,phone',
             'region' => 'required|string|max:150',
+            'password' => 'required|string|min:8',
         ], [
             'phone.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
         ]);
@@ -104,10 +105,8 @@ class AuthController extends Controller
                 'pharmacy_name' => $request->string('pharmacy_name')->trim()->toString(),
                 'phone' => $request->phone,
                 'region' => $request->string('region')->trim()->toString(),
+                'password' => $request->password,
             ]);
-
-            // التسليم فوراً في الاستجابة (نمط OTP) — idempotent عبر delivered_at
-            $credentials = (new \App\Services\PharmacyRegistrationService)->deliver($pharmacy);
         } catch (\RuntimeException $e) {
             return response()->json([
                 'success' => false,
@@ -124,10 +123,8 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'تم إنشاء حساب الصيدلية بنجاح. احفظ بيانات الدخول — الحساب ينتظر موافقة الإدارة.',
+            'message' => 'تم إنشاء حساب الصيدلية بنجاح. بعد موافقة الإدارة ستصلك بيانات الدخول (Pharmacy ID وكلمة المرور) عبر رسالة.',
             'data' => [
-                'pharmacy_id' => $credentials['pharmacy_id'],
-                'password' => $credentials['password'],
                 'pharmacy_name' => $pharmacy->pharmacy_name,
                 'phone' => $request->phone,
                 'is_active' => false,

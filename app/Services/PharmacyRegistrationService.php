@@ -2,19 +2,20 @@
 
 namespace App\Services;
 
-use App\Models\OtpCode;
 use App\Models\Pharmacy;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * خدمة تسجيل الصيدليات (إنشاء + تسليم بيانات الدخول).
  *
- * الحساب يُنشأ غير مفعّل (is_active=false) مع كلمة مرور عشوائية.
- * لا يُسلّم الـ Pharmacy ID إلا بعد موافقة الأدمن (toggleStatus).
+ * صاحب الصيدلية يختار كلمة مروره بنفسه عند التسجيل. الحساب يُنشأ غير مفعّل
+ * (is_active=false) وكلمة المرور تُخزّن hash كالمعتاد، مع نسخة مشفّرة قابلة
+ * للاسترجاع (Crypt) على pharmacies.pending_password لغرض واحد فقط: إرسالها
+ * في رسالة التسليم بعد موافقة الأدمن. فور التسليم تُصفَّر النسخة المشفّرة.
  * التسليم يتم مرة واحدة فقط (idempotent عبر delivered_at).
  */
 class PharmacyRegistrationService
@@ -22,7 +23,7 @@ class PharmacyRegistrationService
     /**
      * إنشاء صيدلية جديدة بانتظار موافقة الأدمن.
      *
-     * @param  array  $data  ['pharmacy_name','phone','region','address'?]
+     * @param  array  $data  ['pharmacy_name','phone','region','password','address'?]
      * @return Pharmacy
      *
      * @throws \RuntimeException إذا فشل توليد الـ ID
@@ -36,14 +37,12 @@ class PharmacyRegistrationService
             throw new \RuntimeException('تعذر توليد معرّف صيدلية فريد.');
         }
 
-        $plainPassword = Str::random(32);
-
-        $pharmacy = DB::transaction(function () use ($data, $pharmacyCustomId, $plainPassword) {
+        $pharmacy = DB::transaction(function () use ($data, $pharmacyCustomId) {
             $user = User::create([
                 'name' => $data['pharmacy_name'],
                 'email' => null,
                 'phone' => $data['phone'],
-                'password' => Hash::make($plainPassword),
+                'password' => Hash::make($data['password']),
             ]);
 
             $user->role = 'pharmacy';
@@ -65,14 +64,9 @@ class PharmacyRegistrationService
             // delivered_at يبقى null → لم تُسلّم بعد
             $pharmacy->save();
 
-            // نخزّن بيانات الدخول في otp_codes (نفس سلوك تسليم OTP للمريض)
-            OtpCode::updateOrCreate(
-                ['phone' => $data['phone']],
-                [
-                    'otp' => Hash::make($plainPassword),
-                    'expires_at' => now()->addYear(), // صلاحية طويلة حتى يوافق الأدمن
-                ]
-            );
+            // نسخة مشفّرة قابلة للاسترجاع لرسالة التسليم — تُصفَّر فور التسليم
+            $pharmacy->pending_password = Crypt::encryptString($data['password']);
+            $pharmacy->save();
 
             return $pharmacy;
         });
@@ -81,9 +75,10 @@ class PharmacyRegistrationService
     }
 
     /**
-     * تسليم بيانات الدخول للصيدلية (Pharmacy ID + كلمة المرور).
+     * تسليم بيانات الدخول للصيدلية (Pharmacy ID + كلمة المرور التي اختارها).
      *
-     * يُستدعى من toggleStatus عند تفعيل صيدلية مسجّلة حديثاً.
+     * يُستدعى من toggleStatus عند تفعيل صيدلية مسجّلة ذاتياً — البيانات تُعرض
+     * للأدمن مرة واحدة ليرسلها للصيدلية (رسالة/واتساب الآن، SMS لاحقاً).
      * idempotent — لو استُدعي مرة ثانية لا يُعيد التسليم.
      *
      * @return array|null  ['pharmacy_id','password'] أو null لو سبق التسليم
@@ -95,64 +90,19 @@ class PharmacyRegistrationService
             return null;
         }
 
-        $user = $pharmacy->user;
-        if (! $user) {
+        if ($pharmacy->pending_password === null) {
             return null;
         }
 
-        // نسترجع كلمة المرور من otp_codes (مخزّنة hashed)
-        $otpRecord = OtpCode::where('phone', $user->phone)->first();
-        $plainPassword = null;
-
-        if ($otpRecord) {
-            // otp_codes.otp مخزّن hashed → ما نقدر نرجّع النص الصريح
-            // لكن عند إنشاء الحساب نستخدم كلمة مرور عشوائية — هنا نولّد كلمة مرور جديدة
-            // 8 أحرف (حروف كبيرة/صغيرة + أرقام) قابلة للكتابة من الموبايل
-            $plainPassword = $this->readablePassword();
-            $user->password = Hash::make($plainPassword);
-            $user->save();
-
-            // نحدّث otp_codes بالجديدة
-            $otpRecord->update([
-                'otp' => Hash::make($plainPassword),
-                'expires_at' => now()->addYear(),
-            ]);
-        } else {
-            // fallback: لو otp_codes مفقود، نولّد جديدة
-            $plainPassword = $this->readablePassword();
-            $user->password = Hash::make($plainPassword);
-            $user->save();
-
-            OtpCode::create([
-                'phone' => $user->phone,
-                'otp' => Hash::make($plainPassword),
-                'expires_at' => now()->addYear(),
-            ]);
-        }
+        $plainPassword = Crypt::decryptString($pharmacy->pending_password);
 
         $pharmacy->delivered_at = now();
+        $pharmacy->pending_password = null;
         $pharmacy->save();
 
         return [
             'pharmacy_id' => $pharmacy->pharmacy_custom_id,
             'password' => $plainPassword,
         ];
-    }
-
-    /**
-     * كلمة مرور 8 أحرف قابلة للقراءة/الكتابة من الموبايل
-     * (حروف كبيرة + صغيرة + أرقام — بدون رموز مربكة مثل l/1/O/0).
-     */
-    private function readablePassword(): string
-    {
-        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-        $length = strlen($alphabet);
-        $password = '';
-
-        for ($i = 0; $i < 8; $i++) {
-            $password .= $alphabet[random_int(0, $length - 1)];
-        }
-
-        return $password;
     }
 }

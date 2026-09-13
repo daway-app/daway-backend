@@ -4,15 +4,16 @@ namespace Tests\Feature\Api;
 
 use App\Models\Pharmacy;
 use App\Models\User;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
  * التسجيل الذاتي للصيدليات عبر API الموبايل.
  *
- * الحساب يُنشأ غير مفعّل، وبانات الدخول (Pharmacy ID + كلمة المرور) تُسلَّم
- * فوراً في استجابة التسجيل — نفس نمط OTP تبع المريض (بدل SMS حالياً).
- * الحساب يبقى بلا دخول حتى يوافق الأدمن.
+ * صاحب الصيدلية يختار كلمة مروره بنفسه. الحساب يُنشأ غير مفعّل، ولا تُعاد
+ * بيانات دخول في الاستجابة — بعد موافقة الأدمن تُسلَّم (Pharmacy ID + كلمة
+ * المرور التي اختارها) عبر رسالة التسليم.
  */
 class PharmacyRegistrationTest extends TestCase
 {
@@ -22,10 +23,11 @@ class PharmacyRegistrationTest extends TestCase
             'pharmacy_name' => 'صيدلية النور',
             'phone' => '0599123456',
             'region' => 'الرمال',
+            'password' => 'secret1234',
         ], $overrides);
     }
 
-    public function test_pharmacy_can_register_and_receives_credentials_in_json(): void
+    public function test_pharmacy_can_register_without_receiving_credentials(): void
     {
         $response = $this->postJson('/api/register/pharmacy', $this->validData());
 
@@ -34,21 +36,15 @@ class PharmacyRegistrationTest extends TestCase
             ->assertJsonPath('data.status', 'pending_approval')
             ->assertJsonPath('data.is_active', false)
             ->assertJsonPath('data.pharmacy_name', 'صيدلية النور')
-            ->assertJsonPath('data.phone', '0599123456');
-
-        $this->assertMatchesRegularExpression('/^PH-[A-Z0-9]{4}$/', $response->json('data.pharmacy_id'));
-        // كلمة مرور 8 أحرف قابلة للكتابة — ليست كلمة المرور الأولية العشوائية الطويلة
-        $this->assertMatchesRegularExpression('/^[A-Za-z0-9]{8}$/', $response->json('data.password'));
-
-        // التسليم فوراً → delivered_at مضبوط (idempotent لاحقاً)
-        $pharmacy = Pharmacy::where('phone_number', '0599123456')->firstOrFail();
-        $this->assertNotNull($pharmacy->delivered_at);
+            ->assertJsonPath('data.phone', '0599123456')
+            // لا تُعاد بيانات الدخول — تُسلَّم عبر الرسالة بعد موافقة الأدمن
+            ->assertJsonMissingPath('data.pharmacy_id')
+            ->assertJsonMissingPath('data.password');
     }
 
-    public function test_registration_creates_inactive_pharmacy_with_delivered_password(): void
+    public function test_registration_creates_inactive_pharmacy_with_user_chosen_password(): void
     {
-        $plainPassword = $this->postJson('/api/register/pharmacy', $this->validData())
-            ->json('data.password');
+        $this->postJson('/api/register/pharmacy', $this->validData());
 
         $user = User::where('phone', '0599123456')->first();
 
@@ -57,21 +53,29 @@ class PharmacyRegistrationTest extends TestCase
         $this->assertFalse((bool) $user->is_active);
         $this->assertFalse((bool) $user->must_change_password);
         $this->assertTrue($user->hasRole('pharmacy'));
-        $this->assertTrue(Hash::check($plainPassword, $user->password), 'كلمة المرور المسلَّمة يجب أن تطابق المخزّنة');
+        // كلمة المرور هي التي اختارها المستخدم — لا كلمة عشوائية
+        $this->assertTrue(Hash::check('secret1234', $user->password));
 
         $pharmacy = Pharmacy::where('user_id', $user->id)->first();
         $this->assertNotNull($pharmacy);
         $this->assertFalse((bool) $pharmacy->is_active);
+        $this->assertNull($pharmacy->delivered_at);
         $this->assertNull($pharmacy->profile_completed_at);
+
+        // نسخة مشفّرة قابلة للاسترجاع لرسالة التسليم — تُقرأ وتطابق اختيار المستخدم
+        $this->assertNotNull($pharmacy->pending_password);
+        $this->assertSame('secret1234', Crypt::decryptString($pharmacy->pending_password));
     }
 
-    public function test_pending_login_returns_plain_403_without_credentials(): void
+    public function test_pending_login_returns_plain_403(): void
     {
-        $data = $this->postJson('/api/register/pharmacy', $this->validData())->json('data');
+        $this->postJson('/api/register/pharmacy', $this->validData());
+
+        $pharmacy = Pharmacy::where('phone_number', '0599123456')->firstOrFail();
 
         $this->postJson('/api/login/pharmacy', [
-            'pharmacy_id' => $data['pharmacy_id'],
-            'password' => $data['password'],
+            'pharmacy_id' => $pharmacy->pharmacy_custom_id,
+            'password' => 'secret1234',
         ])->assertStatus(403)
             ->assertJsonPath('code', 'account_inactive')
             ->assertJsonMissingPath('credentials');
@@ -98,37 +102,47 @@ class PharmacyRegistrationTest extends TestCase
                 'pharmacy_name',
                 'phone',
                 'region',
+                'password',
             ]);
     }
 
-    public function test_approved_pharmacy_can_login_with_delivered_credentials(): void
+    public function test_short_password_is_rejected(): void
     {
-        $data = $this->postJson('/api/register/pharmacy', $this->validData())->json('data');
+        $this->postJson('/api/register/pharmacy', $this->validData(['password' => 'short']))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['password']);
+    }
 
-        // الأدمن يوافق — بيانات الدخول سُلّمت عند التسجيل فلا يُعاد تسليمها
-        $pharmacy = Pharmacy::where('pharmacy_custom_id', $data['pharmacy_id'])->firstOrFail();
+    public function test_approved_pharmacy_can_login_with_chosen_password(): void
+    {
+        $this->postJson('/api/register/pharmacy', $this->validData());
+
+        $pharmacy = Pharmacy::where('phone_number', '0599123456')->firstOrFail();
+
+        // الأدمن يوافق (toggleStatus يسلّم بيانات الدخول — خارج نطاق هذا الـ endpoint)
         $pharmacy->is_active = true;
         $pharmacy->save();
         $pharmacy->user->is_active = true;
         $pharmacy->user->save();
 
         $this->postJson('/api/login/pharmacy', [
-            'pharmacy_id' => $data['pharmacy_id'],
-            'password' => $data['password'],
+            'pharmacy_id' => $pharmacy->pharmacy_custom_id,
+            'password' => 'secret1234',
         ])
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.user.pharmacy_id', $data['pharmacy_id']);
+            ->assertJsonPath('data.user.pharmacy_id', $pharmacy->pharmacy_custom_id);
     }
 
     public function test_pharmacy_ids_are_unique_across_registrations(): void
     {
-        $first = $this->postJson('/api/register/pharmacy', $this->validData())->json('data.pharmacy_id');
+        $this->postJson('/api/register/pharmacy', $this->validData());
+        $this->postJson('/api/register/pharmacy', $this->validData(['phone' => '0599000000']));
 
-        $second = $this->postJson('/api/register/pharmacy', $this->validData([
-            'phone' => '0599000000',
-        ]))->json('data.pharmacy_id');
+        $ids = Pharmacy::whereIn('phone_number', ['0599123456', '0599000000'])
+            ->pluck('pharmacy_custom_id')
+            ->unique();
 
-        $this->assertNotSame($first, $second);
+        $this->assertSame(2, $ids->count());
     }
 }

@@ -61,11 +61,12 @@ class PharmacyProvisioningTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
 
-        // صيدلية مسجّلة ذاتياً (بانتظار موافقة)
+        // صيدلية مسجّلة ذاتياً (بانتظار موافقة) — كلمة المرور اختارها صاحب الصيدلية
         $pharmacy = (new \App\Services\PharmacyRegistrationService)->createPending([
             'pharmacy_name' => 'Self Registered Pharmacy',
             'phone' => '0599111222',
             'region' => 'منطقة الاختبار',
+            'password' => 'chosen-pass-123',
         ]);
 
         $this->assertNull($pharmacy->delivered_at);
@@ -77,11 +78,16 @@ class PharmacyProvisioningTest extends TestCase
 
         $response->assertRedirect(route('pharmacies.index'));
         $response->assertSessionHas('delivered_pharmacy_id');
-        $response->assertSessionHas('delivered_password');
+        // كلمة المرور المسلَّمة هي التي اختارها صاحب الصيدلية — لا كلمة عشوائية
+        $response->assertSessionHas('delivered_password', 'chosen-pass-123');
 
         $pharmacy->refresh();
         $this->assertTrue((bool) $pharmacy->is_active);
         $this->assertNotNull($pharmacy->delivered_at);
+        // النسخة المشفّرة صُفِّرت فور التسليم
+        $this->assertNull($pharmacy->pending_password);
+        // وكلمة المرور المخزّنة hash تظل مطابقة لاختيار المستخدم
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('chosen-pass-123', $pharmacy->user->password));
 
         // idempotent — تفعيل مرة ثانية لا يُعيد التسليم (toggleStatus = PATCH)
         $response2 = $this->actingAs($admin)

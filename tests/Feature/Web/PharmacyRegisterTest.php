@@ -4,6 +4,8 @@ namespace Tests\Feature\Web;
 
 use App\Models\Pharmacy;
 use App\Models\User;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
@@ -17,6 +19,7 @@ class PharmacyRegisterTest extends TestCase
             'pharmacy_name' => 'صيدلية الشفاء',
             'phone' => '0598765432',
             'region' => 'الشجاعية',
+            'password' => 'secret1234',
         ], $overrides);
     }
 
@@ -58,6 +61,10 @@ class PharmacyRegisterTest extends TestCase
         $this->assertSame('pharmacy', $user->role);
         $this->assertFalse((bool) $user->is_active);
         $this->assertTrue($user->hasRole('pharmacy'));
+        // كلمة المرور هي التي اختارها المستخدم
+        $this->assertTrue(Hash::check('secret1234', $user->password));
+        // نسخة مشفّرة لرسالة التسليم بعد موافقة الأدمن
+        $this->assertSame('secret1234', Crypt::decryptString($pharmacy->pending_password));
     }
 
     public function test_registration_does_not_log_the_pharmacy_in(): void
@@ -106,6 +113,16 @@ class PharmacyRegisterTest extends TestCase
                 'pharmacy_name',
                 'phone',
                 'region',
+                'password',
             ]);
+    }
+
+    public function test_short_password_fails(): void
+    {
+        $this->from(route('register.show'))
+            ->post(route('register'), $this->validData(['password' => 'short']))
+            ->assertSessionHasErrors('password');
+
+        $this->assertDatabaseMissing('users', ['phone' => '0598765432']);
     }
 }

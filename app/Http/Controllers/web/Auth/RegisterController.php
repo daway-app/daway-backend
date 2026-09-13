@@ -38,6 +38,7 @@ class RegisterController extends Controller
             'pharmacy_name' => ['required', 'string', 'max:150'],
             'phone' => ['required', 'string', 'max:20', 'unique:users,phone'],
             'region' => ['required', 'string', 'max:150'],
+            'password' => ['required', 'string', 'min:8'],
         ], [
             'phone.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
         ]);
@@ -47,6 +48,7 @@ class RegisterController extends Controller
                 'pharmacy_name' => $validated['pharmacy_name'],
                 'phone' => $validated['phone'],
                 'region' => $validated['region'],
+                'password' => $validated['password'],
             ]);
         } catch (\RuntimeException $e) {
             return back()
