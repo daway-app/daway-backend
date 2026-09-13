@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\CategoryMedicineLink;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
 use App\Support\CategoryCatalogCache;
@@ -127,11 +128,21 @@ class CategoryController extends Controller
         $pageItems = collect($items->items());
         $localMedicineIds = Medicine::idsByTradeName($pageItems->pluck('trade_name')->all());
 
+        // بيانات التصنيف (source/confidence/needs_review) من category_medicine_links
+        // تُحسب خارج الكاش أيضاً — تتغير مع كل sync/admin تعديل، والـcache version
+        // يضمن الاتساق لأن مفتاح الكاش يشمل categoryVersion.
+        $linkMeta = $this->fetchLinkMeta($model->id, $pageItems);
+
         return response()->json([
             'success' => true,
             'message' => 'تم جلب أدوية القسم بنجاح',
             'data' => $pageItems->map(fn (MohMedicine $m) => $this->mohPayload($m)
-                + ['medicine_id' => $localMedicineIds[$m->trade_name] ?? null]),
+                + ['medicine_id' => $localMedicineIds[$m->trade_name] ?? null]
+                + ($linkMeta[$m->moh_product_id] ?? $linkMeta['d:'.$m->moh_drug_id] ?? [
+                    'source' => null,
+                    'confidence' => null,
+                    'needs_review' => null,
+                ])),
             'pagination' => [
                 'total' => $items->total(),
                 'per_page' => $items->perPage(),
@@ -207,5 +218,50 @@ class CategoryController extends Controller
             'availability' => $m->availability,
             'price_updated_at' => $m->price_updated_at?->toDateString(),
         ];
+    }
+
+    /**
+     * يجلب بيانات التصنيف (source/confidence/needs_review) من category_medicine_links
+     * لأدوية الصفحة الحالية. يُرجع map مفاتيحه moh_product_id أو 'd:'.moh_drug_id.
+     *
+     * @param  int  $categoryId
+     * @param  \Illuminate\Support\Collection  $pageItems
+     * @return array<string, array{source:?string,confidence:?int,needs_review:?bool}>
+     */
+    private function fetchLinkMeta(int $categoryId, $pageItems): array
+    {
+        $productIds = $pageItems->pluck('moh_product_id')->filter()->unique()->values()->all();
+        $drugIds = $pageItems->pluck('moh_drug_id')->filter()->unique()->values()->all();
+
+        if (empty($productIds) && empty($drugIds)) {
+            return [];
+        }
+
+        $query = CategoryMedicineLink::query()->where('category_id', $categoryId);
+        $query->where(function ($q) use ($productIds, $drugIds) {
+            if (! empty($productIds)) {
+                $q->orWhereIn('moh_product_id', $productIds);
+            }
+            if (! empty($drugIds)) {
+                $q->orWhereIn('moh_drug_id', $drugIds);
+            }
+        });
+
+        $meta = [];
+        foreach ($query->get() as $link) {
+            $entry = [
+                'source' => $link->source,
+                'confidence' => (int) $link->confidence,
+                'needs_review' => (bool) $link->needs_review,
+            ];
+            if ($link->moh_product_id !== null) {
+                $meta[$link->moh_product_id] = $entry;
+            }
+            if ($link->moh_drug_id !== null) {
+                $meta['d:'.$link->moh_drug_id] = $entry;
+            }
+        }
+
+        return $meta;
     }
 }

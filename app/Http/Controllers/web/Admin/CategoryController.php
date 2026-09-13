@@ -24,6 +24,9 @@ class CategoryController extends Controller
 
         $categories = Category::query()
             ->withCount('categoryMedicineLinks')
+            ->withCount(['categoryMedicineLinks as needs_review_count' => function ($query) {
+                $query->where('needs_review', true);
+            }])
             ->when($q !== '', fn ($query) => $query->where(fn ($w) => $w
                 ->where('name_ar', 'like', "%{$q}%")
                 ->orWhere('name_en', 'like', "%{$q}%")))
@@ -35,6 +38,7 @@ class CategoryController extends Controller
             'total' => Category::count(),
             'active' => Category::where('is_active', true)->count(),
             'links' => CategoryMedicineLink::count(),
+            'needs_review' => CategoryMedicineLink::where('needs_review', true)->count(),
         ];
 
         return view('categories.index', compact('categories', 'stats', 'q'));

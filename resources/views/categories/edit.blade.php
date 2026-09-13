@@ -3,7 +3,7 @@
 @section('title', __('categories.edit_title', ['name' => $category->name_ar]))
 
 @section('content')
-    @vite(['resources/css/pages/medicines_edit.css'])
+    @vite(['resources/css/pages/medicines_edit.css', 'resources/css/pages/categories.css'])
 
     <div class="edit-medicine-page-wrapper">
         <div class="page-heading">
@@ -20,18 +20,15 @@
             @csrf
             @method('PUT')
 
-            <div class="premium-card">
-                <div class="card-head">
-                    <div class="card-head-content">
-                        <div class="card-icon teal">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                        </div>
-                        <div>
-                            <h2>@lang('categories.basic_data')</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
+            <!-- Section 1: Basic -->
+            <details class="cat-accordion" open>
+                <summary class="cat-accordion-summary">
+                    <span class="cat-accordion-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    </span>
+                    <span>@lang('categories.section_basic')</span>
+                </summary>
+                <div class="cat-accordion-body">
                     <div class="form-row">
                         <div class="fg">
                             <label class="fl" for="name_ar">@lang('categories.name_ar_label') <span class="req">*</span></label>
@@ -52,28 +49,39 @@
                             @error('slug')<span style="display:block;color:#e11d48;font-size:.8rem;margin-top:4px;">{{ $message }}</span>@enderror
                         </div>
                         <div class="fg">
-                            <label class="fl" for="sort_order">@lang('categories.sort_order_label')</label>
-                            <input class="fc" type="number" id="sort_order" name="sort_order" value="{{ old('sort_order', $category->sort_order) }}" min="0">
-                            @error('sort_order')<span style="display:block;color:#e11d48;font-size:.8rem;margin-top:4px;">{{ $message }}</span>@enderror
+                            <label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" value="1" {{ old('is_active', $category->is_active ? 1 : 0) == 1 ? 'checked' : '' }}>
+                                <span>@lang('categories.is_active_label')</span>
+                            </label>
                         </div>
                     </div>
                     <div class="fg">
-                        <label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                            <input type="hidden" name="is_active" value="0">
-                            <input type="checkbox" name="is_active" value="1" {{ old('is_active', $category->is_active ? 1 : 0) == 1 ? 'checked' : '' }}>
-                            <span>@lang('categories.is_active_label')</span>
-                        </label>
-                    </div>
-                    <div class="fg">
                         <label class="fl" for="image">@lang('categories.image_label')</label>
-                        @if($category->image)
-                            <img src="{{ \App\Support\Image::thumbUrl($category->image, 144, 144) }}" alt="{{ $category->name_ar }}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:10px;margin-bottom:8px;">
-                        @endif
+                        <img id="existing-image" src="{{ $category->image ? \App\Support\Image::thumbUrl($category->image, 144, 144) : '' }}" alt="{{ $category->name_ar }}" width="72" height="72" style="{{ $category->image ? 'display:block;' : 'display:none;' }}width:72px;height:72px;object-fit:cover;border-radius:10px;margin-bottom:8px;">
+                        <img id="image-preview" src="" alt="" style="display:none;width:72px;height:72px;object-fit:cover;border-radius:10px;margin-bottom:8px;">
                         <input class="fc" type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" style="height:auto;padding:10px;">
                         @error('image')<span style="display:block;color:#e11d48;font-size:.8rem;margin-top:4px;">{{ $message }}</span>@enderror
                     </div>
                 </div>
-            </div>
+            </details>
+
+            <!-- Section 2: Advanced -->
+            <details class="cat-accordion">
+                <summary class="cat-accordion-summary">
+                    <span class="cat-accordion-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </span>
+                    <span>@lang('categories.section_advanced')</span>
+                </summary>
+                <div class="cat-accordion-body">
+                    <div class="fg">
+                        <label class="fl" for="sort_order">@lang('categories.sort_order_label')</label>
+                        <input class="fc" type="number" id="sort_order" name="sort_order" value="{{ old('sort_order', $category->sort_order) }}" min="0">
+                        @error('sort_order')<span style="display:block;color:#e11d48;font-size:.8rem;margin-top:4px;">{{ $message }}</span>@enderror
+                    </div>
+                </div>
+            </details>
 
             <div class="form-actions">
                 <a href="{{ route('categories.index') }}" class="btn-cancel">@lang('categories.cancel_button')</a>
@@ -81,4 +89,43 @@
             </div>
         </form>
     </div>
+
+    <script>
+    (function() {
+        // Slug auto-generation from name_en
+        var nameEn = document.getElementById('name_en');
+        var slug = document.getElementById('slug');
+        if (nameEn && slug) {
+            var slugTouched = slug.value.trim() !== '';
+            slug.addEventListener('input', function() { slugTouched = true; });
+            nameEn.addEventListener('input', function() {
+                if (slugTouched) return;
+                slug.value = nameEn.value
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/[\s_]+/g, '-')
+                    .replace(/-+/g, '-')
+                    .replace(/^-|-$/g, '');
+            });
+        }
+
+        // Image preview — replaces existing image when a new file is selected
+        var imageInput = document.getElementById('image');
+        var imagePreview = document.getElementById('image-preview');
+        var existingImage = document.getElementById('existing-image');
+        if (imageInput && imagePreview) {
+            imageInput.addEventListener('change', function() {
+                if (imageInput.files && imageInput.files[0]) {
+                    imagePreview.src = URL.createObjectURL(imageInput.files[0]);
+                    imagePreview.style.display = 'block';
+                    if (existingImage) existingImage.style.display = 'none';
+                } else {
+                    imagePreview.style.display = 'none';
+                    if (existingImage && existingImage.src) existingImage.style.display = 'block';
+                }
+            });
+        }
+    })();
+    </script>
 @endsection

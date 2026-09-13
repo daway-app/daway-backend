@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينة تسجيل الصيدليات — دواك</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .preview-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1C72A6 0%, #12B4D6 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        .preview-header h1 { font-size: 24px; margin-bottom: 8px; }
+        .preview-header p { opacity: 0.9; font-size: 14px; }
+        .section { margin-bottom: 40px; }
+        .section-title {
+            font-size: 18px;
+            color: #1C72A6;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: white;
+            border-right: 4px solid #12B4D6;
+            border-radius: 0 8px 8px 0;
+        }
+        .mockup-frame {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .mockup-header {
+            background: #1C72A6;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .mockup-header .logo { font-size: 28px; }
+        .mockup-header h2 { font-size: 16px; font-weight: 600; }
+        .mockup-body {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #12B4D6;
+        }
+        .info-hint {
+            background: #e6f7f5;
+            border: 1px solid #12B4D6;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 13px;
+            color: #0d5c56;
+            margin: 15px 0;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1C72A6 0%, #12B4D6 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .auth-footer {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 13px;
+            color: #666;
+        }
+        .auth-footer a {
+            color: #1C72A6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .notice-box {
+            background: #e6f7f5;
+            border: 1px solid #12B4D6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #0d5c56;
+        }
+        .notice-box strong { color: #1C72A6; }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .badge-inactive {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+        .credentials-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .credentials-box h3 {
+            color: #856404;
+            margin-bottom: 12px;
+        }
+        .credential-item {
+            background: white;
+            padding: 10px 16px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-family: monospace;
+            font-size: 16px;
+            border: 1px dashed #ffc107;
+        }
+        .label {
+            display: inline-block;
+            background: #1C72A6;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        @media (max-width: 768px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="preview-header">
+        <h1>معاينة تسجيل الصيدليات الذاتي</h1>
+        <p>ثلاث حالات رئيسية: التسجيل → انتظار الموافقة → تفعيل الأدمن</p>
+    </div>
+
+    <!-- Section 1: Register Page -->
+    <div class="section">
+        <div class="section-title">
+            <span class="label">1</span>
+            صفحة التسجيل — بدون كلمة مرور ولا معرّف
+        </div>
+        <div class="mockup-frame">
+            <div class="mockup-header">
+                <div class="logo">💊</div>
+                <h2>إنشاء حساب صيدلية</h2>
+            </div>
+            <div class="mockup-body">
+                <p style="color:#666; margin-bottom:20px; font-size:14px;">
+                    عبّئ بيانات صيدليتك، وبعد موافقة الإدارة رح يظهرلك معرّف الدخول.
+                </p>
+
+                <div class="form-group">
+                    <label>اسم الصيدلية <span style="color:#D64545">*</span></label>
+                    <input type="text" placeholder="مثال: صيدلية النور" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>رقم الهاتف <span style="color:#D64545">*</span></label>
+                    <input type="text" placeholder="0599 000 000" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>المنطقة <span style="color:#D64545">*</span></label>
+                    <input type="text" placeholder="مثال: الرمال" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>الشارع / العنوان <span style="color:#D64545">*</span></label>
+                    <input type="text" placeholder="مثال: شارع فلسطين" readonly>
+                </div>
+
+                <div class="info-hint">
+                    💡 بعد إنشاء الحساب <strong>لا يظهر أي معرّف</strong> — بيانات الدخول (Pharmacy ID + كلمة المرور)
+                    رح تُرسل لك عبر رسالة نصية فور <strong>موافقة الإدارة</strong>.
+                </div>
+
+                <button class="btn-primary">إنشاء الحساب</button>
+
+                <div class="auth-footer">
+                    عندك حساب بالفعل؟ <a href="#">تسجيل الدخول</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Login with Pending Notice -->
+    <div class="section">
+        <div class="section-title">
+            <span class="label">2</span>
+            صفحة الدخول — بعد التسجيل (رسالة انتظار)
+        </div>
+        <div class="mockup-frame">
+            <div class="mockup-header">
+                <div class="logo">🔐</div>
+                <h2>تسجيل الدخول</h2>
+            </div>
+            <div class="mockup-body">
+                <div class="form-group">
+                    <label>نوع الحساب</label>
+                    <input type="text" value="صيدلية" readonly style="background:#f8f9fa;">
+                </div>
+
+                <div class="form-group">
+                    <label>معرف الصيدلية (Pharmacy ID)</label>
+                    <input type="text" placeholder="أدخل Pharmacy ID الخاص بالصيدلية" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" placeholder="••••••••" readonly>
+                </div>
+
+                <button class="btn-primary">تسجيل الدخول</button>
+
+                <div class="notice-box">
+                    ✅ تم إنشاء حساب <strong>صيدلية النور</strong> بنجاح.<br>
+                    الحساب بانتظار موافقة الإدارة، وبعد الموافقة رح تصلك رسالة ببيانات الدخول.
+                </div>
+
+                <div class="auth-footer">
+                    ليس لديك حساب؟ <a href="#">إنشاء حساب صيدلية</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Admin Panel with Pending Badge -->
+    <div class="section">
+        <div class="section-title">
+            <span class="label">3</span>
+            لوحة الأدمن — قائمة الصيدليات (مع حالة "بانتظار الموافقة")
+        </div>
+        <div class="mockup-frame">
+            <div class="mockup-header">
+                <div class="logo">⚙️</div>
+                <h2>إدارة الصيدليات</h2>
+            </div>
+            <div class="mockup-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الصيدلية</th>
+                            <th>المنطقة</th>
+                            <th>الحالة</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>صيدلية النور</strong><br><small style="color:#888;">0599-000-000</small></td>
+                            <td>الرمال</td>
+                            <td><span class="badge badge-pending">⏳ بانتظار الموافقة</span></td>
+                            <td><button style="padding:6px 14px; background:#1C72A6; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px;">تفعيل</button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>صيدلية الأمل</strong><br><small style="color:#888;">0599-111-111</small></td>
+                            <td>الرمال</td>
+                            <td><span class="badge badge-active">✅ نشط</span></td>
+                            <td><button style="padding:6px 14px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px;">تعطيل</button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>صيدلية الشفاء</strong><br><small style="color:#888;">0599-222-222</small></td>
+                            <td>الشجاعية</td>
+                            <td><span class="badge badge-inactive">❌ معطل</span></td>
+                            <td><button style="padding:6px 14px; background:#1C72A6; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px;">تفعيل</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Admin Activation with Credentials -->
+    <div class="section">
+        <div class="section-title">
+            <span class="label">4</span>
+            بعد تفعيل الأدمن — بيانات الدخول تظهر للأدمن (مرة واحدة فقط)
+        </div>
+        <div class="mockup-frame">
+            <div class="mockup-header">
+                <div class="logo">🔑</div>
+                <h2>تم تفعيل صيدلية النور</h2>
+            </div>
+            <div class="mockup-body">
+                <div class="credentials-box">
+                    <h3>🔐 بيانات الدخول (انسخها وأرسلها للصيدلية)</h3>
+                    <div style="text-align:right; margin-top:15px;">
+                        <div style="margin-bottom:8px; color:#666; font-size:13px;">معرف الصيدلية:</div>
+                        <div class="credential-item">PH-A7K2</div>
+                        <div style="margin:12px 0 8px; color:#666; font-size:13px;">كلمة المرور:</div>
+                        <div class="credential-item">xK9mP2vLqR5nW8jH3bC6fA4tY7uE1wQ9</div>
+                    </div>
+                    <p style="margin-top:15px; font-size:12px; color:#856404;">
+                        ⚠️ هذه البيانات تُعرض مرة واحدة فقط. تأكد من إرسالها للصيدلية قبل مغادرة الصفحة.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 5: API JSON Flow -->
+    <div class="section">
+        <div class="section-title">
+            <span class="label">5</span>
+            تدفق الـ API (للموبايل)
+        </div>
+        <div class="mockup-frame">
+            <div class="mockup-body">
+                <div class="two-col">
+                    <div>
+                        <h4 style="color:#1C72A6; margin-bottom:12px;">① تسجيل جديد (201)</h4>
+                        <pre style="background:#f8f9fa; padding:15px; border-radius:8px; font-size:13px; overflow:auto; direction:ltr; text-align:left;">POST /api/register/pharmacy
+{
+  "pharmacy_name": "صيدلية النور",
+  "phone": "0599000000",
+  "address": "شارع فلسطين",
+  "region": "الرمال"
+}
+
+→ Response: { "success": true, "message": "..." }
+   (لا يوجد pharmacy_id في الرد)</pre>
+                    </div>
+                    <div>
+                        <h4 style="color:#1C72A6; margin-bottom:12px;">② أول login قبل التفعيل (403)</h4>
+                        <pre style="background:#f8f9fa; padding:15px; border-radius:8px; font-size:13px; overflow:auto; direction:ltr; text-align:left;">POST /api/login/pharmacy
+{ "pharmacy_id": "PH-A7K2", "password": "..." }
+
+→ Response (403):
+{
+  "message": "Account is inactive",
+  "code": "account_inactive",
+  "credentials": {
+    "pharmacy_id": "PH-A7K2",
+    "password": "xK9mP2vLqR5..."
+  }
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align:center; margin-top:30px; color:#888; font-size:13px;">
+        💡 هذه معاينة ثابتة — التصميم الفعلي يتبع نظام CSS الحالي في المشروع
+    </div>
+
+</body>
+</html>

@@ -26,6 +26,7 @@ export default defineConfig({
                 'resources/css/pages/medicines.css',
                 'resources/css/pages/medicines_create.css',
                 'resources/css/pages/medicines_edit.css',
+                'resources/css/pages/categories.css',
                 'resources/css/pages/patients.css',
                 'resources/css/pages/pharmacies.css',
                 'resources/css/pages/pharmacies_create.css',

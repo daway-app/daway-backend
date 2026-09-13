@@ -152,6 +152,15 @@
     "src": "resources/css/layout/topbar.css",
     "isEntry": true
   },
+  "resources/css/pages/categories.css": {
+    "file": "assets/categories-vI9siBLF.css",
+    "name": "categories",
+    "names": [
+      "categories.css"
+    ],
+    "src": "resources/css/pages/categories.css",
+    "isEntry": true
+  },
   "resources/css/pages/dashboard.css": {
     "file": "assets/dashboard-AnyN2ntB.css",
     "name": "dashboard",

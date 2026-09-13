@@ -1,0 +1,4903 @@
+{
+  "generated_at_utc": "2026-09-13T10:04:33.103470Z",
+  "source_file": "database/data/moh_medicines.json",
+  "sample_method": "Up to 20 evenly spaced records per category in source order; up to 20 needs-review and multi-category records.",
+  "category_samples": {
+    "medicines": [
+      {
+        "moh_product_id": 20831,
+        "moh_drug_id": null,
+        "trade_name": "OZEMPIC 1 MG PRE-FILLED PEN",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "Solution for injection (S.C)",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18094,
+        "moh_drug_id": null,
+        "trade_name": "GASTREX INJECTION",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "Concentrate for solution for intravenous Injection or infusion",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15734,
+        "moh_drug_id": null,
+        "trade_name": "BISCOSAM 5MG SUPPOSITORIES",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "Suppositories for rectal use",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 13752,
+        "moh_drug_id": null,
+        "trade_name": "KAYEXALATE POWDER FOR SUSPENSION",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "Powder for suspension for oral or rectal administration",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11979,
+        "moh_drug_id": null,
+        "trade_name": "PRYSOLINE TABLETS",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "tablet",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 10317,
+        "moh_drug_id": null,
+        "trade_name": "LUSTRAL TABLETS 100 MG TABLET",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "film coated tablet",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 8526,
+        "moh_drug_id": null,
+        "trade_name": "BUDESONIDE STERINEBS TEVA 0.5 MG/2 ML",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "Sterile suspension for inhalation by nebulization.",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 5582,
+        "moh_drug_id": null,
+        "trade_name": "TEGRETOL CR 400MG TABLET",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "Controlled release tablet",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 1150,
+        "moh_drug_id": 1179,
+        "trade_name": "SULFAPRIM TAB",
+        "generic_name": "Sulfamethoxazole 400 mg/tabletTrimethoprim 80 mg/tablet",
+        "product_class": "Human Drug Products",
+        "dosage_form": "tablet",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 400,
+        "moh_drug_id": null,
+        "trade_name": "PROTHIAZINE SYRUP.",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "syrup",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 1192,
+        "trade_name": "VIVAXIN 500 mg",
+        "generic_name": "Levofloxacin (hemihydrate) 500 mg/tablet",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 2433,
+        "trade_name": "KLARICARE XL 500 EXTENDED RELEASE TABLETS (7 TAB)",
+        "generic_name": "Clarithromycin 500mg",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 4430,
+        "trade_name": "Divinus 5",
+        "generic_name": "Dapagliflozin",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 2953,
+        "trade_name": "CLOTHREE 200MG",
+        "generic_name": "Clotrimazole",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 4557,
+        "trade_name": "SKYRIZI 150MG SYRINGE",
+        "generic_name": "RISANKIZUMAB 150MG",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 4103,
+        "trade_name": "KADCYLA 100MG - 15ML",
+        "generic_name": "TRASTUZUMAB EMTANSINE 100mg",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 986,
+        "trade_name": "PRIMOLUT-NOR 5 MG 30 TAB",
+        "generic_name": "Norethisterone acetate",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 5822,
+        "trade_name": "METRONIDAZOLE B.BRAUN 5 MG/ML 100 ML",
+        "generic_name": "METRONIDAZOLE",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 1403,
+        "trade_name": "AMOXITID 400MG GRAN",
+        "generic_name": "AMOXICILLIN 400",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 3610,
+        "trade_name": "FexoEZ 180 mg (20 Tab)",
+        "generic_name": "Fexofenadine",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "dental-care": [
+      {
+        "moh_product_id": 20785,
+        "moh_drug_id": null,
+        "trade_name": "ORAL-B ADVANCED ENAML STRENGTHENING TOOTHPASTE, MINT.",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 20401,
+        "moh_drug_id": null,
+        "trade_name": "PASTA DEL CAPITANO PLAQUE & CAVITIES TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 19695,
+        "moh_drug_id": null,
+        "trade_name": "CHLORHEXIL 0.20% GINGIVAL GEL.",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18955,
+        "moh_drug_id": null,
+        "trade_name": "WATER DENT WATER & FLOSSER RINSE ANTIBACTERIAL MOUTHWASH",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18506,
+        "moh_drug_id": null,
+        "trade_name": "SENSI LACER MILD MINT FLAVORED GEL TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18221,
+        "moh_drug_id": null,
+        "trade_name": "PRESIDENT CLASSIC MOUTHWASH",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 17517,
+        "moh_drug_id": null,
+        "trade_name": "LACALUT KIDS 4-8 TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16919,
+        "moh_drug_id": null,
+        "trade_name": "SILVERCARE CONTINUED PROTECTION TOOTHPASTE GEL",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15818,
+        "moh_drug_id": null,
+        "trade_name": "DENTISSIMO KIDS 2-6 CARAMEL TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15409,
+        "moh_drug_id": null,
+        "trade_name": "ORAL-B KIDS MINT TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14734,
+        "moh_drug_id": null,
+        "trade_name": "ORAL-B GENTLE CLEAN GUM & ENAMEL REPAIR TOOTHPASTE, FOR SENSITIVE TEETH",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 13612,
+        "moh_drug_id": null,
+        "trade_name": "ORAL-B PRO-EXPERT PROFESSIONAL PROTECTION FRESH MINT MOUTHWASH",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 12936,
+        "moh_drug_id": null,
+        "trade_name": "LACALUT TEENS 8+ TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11288,
+        "moh_drug_id": null,
+        "trade_name": "ASTERA POWER WHITE MOUTHWASH",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 10111,
+        "moh_drug_id": null,
+        "trade_name": "SNOW WHITE FRESHER TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9088,
+        "moh_drug_id": null,
+        "trade_name": "LACALUT FRESH MOUTH WASH CONCENTRATE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7923,
+        "moh_drug_id": null,
+        "trade_name": "NEW NBF GINGIVAL GEL³ TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6113,
+        "moh_drug_id": null,
+        "trade_name": "ZACT SMOKERS` TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 5138,
+        "moh_drug_id": null,
+        "trade_name": "DENTISTE PLUS WHITE NIGHTTIME TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 1507,
+        "trade_name": "GINGIVAL SOLUTION",
+        "generic_name": "CHLORHEXIDINE GLUCONATE",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "first-aid": [
+      {
+        "moh_product_id": 19246,
+        "moh_drug_id": null,
+        "trade_name": "BEPANGEL, WOUND HEALING GEL",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18778,
+        "moh_drug_id": null,
+        "trade_name": "PRONTOSAN WOUND GEL X",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18777,
+        "moh_drug_id": null,
+        "trade_name": "PRONTOSAN WOUND IRRIGATION SOLUTION",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 17411,
+        "moh_drug_id": null,
+        "trade_name": "OZOLIVA R WOUND & BURN CREAM",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "cream",
+        "categories": [
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11612,
+        "moh_drug_id": null,
+        "trade_name": "FARMACTIVE (ALGINATE DRESSING, STERILE HYDROGEL NON ADHESIVE DRESSING, HYDROCOLLOID WOUND DRESSING, AMORPHOUS HYDROGEL PASTE, POLYURETHANE FOAM DRESSING, WOUND CONTACT NON ADHESIVE LAYER (SILICONE), SILVER SPRAY WITH HYALURONIC ACID)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11611,
+        "moh_drug_id": null,
+        "trade_name": "MED+S FARMACTIVE (SPRAY PLASTER, DRESSING FOR SCARES, HYDROGEL OVAL PLASTER, STERILE HYDROGEL BURN DRESSING)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7756,
+        "moh_drug_id": null,
+        "trade_name": "SUNDEN SOLUTION",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "first aid topical solution",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 1528,
+        "moh_drug_id": null,
+        "trade_name": "CARE FIRST AID 15%",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "topical solution for hospital use",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 2381,
+        "trade_name": "CARE FIRST AID 15% 1 LIT",
+        "generic_name": "Each 100 ml contains 15 gr cetrimide and 1.5 gr chlorohexidine gluconate.",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 2380,
+        "trade_name": "CARE FIRST AID 15% 4 LTR.",
+        "generic_name": "Each 100 ml contains 15 gr cetrimide and 1.5 gr chlorohexidine gluconate.",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 3,
+            "name_ar": "الإسعافات الأولية",
+            "slug": "first-aid",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "mother-and-child": [
+      {
+        "moh_product_id": 20547,
+        "moh_drug_id": null,
+        "trade_name": "BABARIA SUNSCREEN KIDS SPRAY SPF 50+",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 19744,
+        "moh_drug_id": null,
+        "trade_name": "NAPPIA MOTHER&BABY DAILY CARE HYGIENIC WET TOWELS",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18911,
+        "moh_drug_id": null,
+        "trade_name": "AFTAMED JUNIOR ORAL GEL",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18179,
+        "moh_drug_id": null,
+        "trade_name": "NEW SLEEPY ADVANTAGE BABY WET WIPES",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16952,
+        "moh_drug_id": null,
+        "trade_name": "KODOMO KIDS HEAD TO TOE WASH. (FRUITY BERRY, APPLE PEACH, BLUE CANDY, MAGIC PURPLE, HAPPY RED BERRY).",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15775,
+        "moh_drug_id": null,
+        "trade_name": "FREE NOSE ISOTONIC SEAWATER SOFT FORCE PEDIATRIC + 0 MONTHS NASAL SPRAY, PRESSURIZED SPRAY OF 120ML",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "nasal Spray",
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14974,
+        "moh_drug_id": null,
+        "trade_name": "COOL & COOL BABY MOISTURIZING CREAM, CHAMOMILE & VITAMIN B5",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14115,
+        "moh_drug_id": null,
+        "trade_name": "NIVEA SUN KIDS PROTECT& CARE SUN LOTION SPF50+ (#: 85486)",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 13426,
+        "moh_drug_id": null,
+        "trade_name": "JOHNSON`S BABY ULTIMATE CLEAN WIPES",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 12195,
+        "moh_drug_id": null,
+        "trade_name": "JOHNSON`S HEAD-TO-TOE BABY MASSAGE LOTION",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11469,
+        "moh_drug_id": null,
+        "trade_name": "MISTER BABY GENTLE SHAMPOO",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 10792,
+        "moh_drug_id": null,
+        "trade_name": "BIOBALANCE KIDS SUN PROTECTION MILK SPF 50",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9991,
+        "moh_drug_id": null,
+        "trade_name": "KLACID PAEDIATRIC 125MG/15ML SUSPENSION",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "Granules for the preparation of an oral suspension",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 8952,
+        "moh_drug_id": null,
+        "trade_name": "SANOSAN BABY CARE CREAM",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7518,
+        "moh_drug_id": null,
+        "trade_name": "AROMA BABY SHAMPOO AND BATH",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6345,
+        "moh_drug_id": null,
+        "trade_name": "ALGABO BABY WIPES",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 4450,
+        "moh_drug_id": null,
+        "trade_name": "MY TEDDY BABY BATH FOAM",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 3354,
+        "moh_drug_id": null,
+        "trade_name": "DALIN BABY TALC POWDER (90GM, 400GM \"HDPE\" PLASTIC BOTTLE)",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 2828,
+        "trade_name": "ACAMOLI BIG KIDS FRUTI250 SYRUP",
+        "generic_name": "Paracetamol",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 5865,
+        "trade_name": "Nurofen for children strawberry suspension 150ml",
+        "generic_name": "Ibuprofen 100mg",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "personal-care-and-beauty": [
+      {
+        "moh_product_id": 20872,
+        "moh_drug_id": null,
+        "trade_name": "DR. MANAR ALARAJ ROSEMARY SHAMPOO, FOR OILY HAIR",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 20139,
+        "moh_drug_id": null,
+        "trade_name": "OLIVE PLUS TRIPLE ACTION HAIR CONDITIONER, FOR DRY, DAMAGED, OR COLORED TREATED HAIR.",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 19459,
+        "moh_drug_id": null,
+        "trade_name": "HERBAL ESSENCES GENTLE CLEAN MINT SCENT SHAMPOO",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18743,
+        "moh_drug_id": null,
+        "trade_name": "CLARINS RE-CHARGE RELAXING SLEEP MASK",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18042,
+        "moh_drug_id": null,
+        "trade_name": "EVDERMIA SANDAL SHAMPOO, OILY HAIR.",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 17287,
+        "moh_drug_id": null,
+        "trade_name": "CELENES BY SWEDEN THERMAL CLEANSING FOAMING GEL, OILY/COMBINATION SKIN.",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16540,
+        "moh_drug_id": null,
+        "trade_name": "SINOZ CELLULITE GEL, FOR ALL SKIN TYPES.",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15720,
+        "moh_drug_id": null,
+        "trade_name": "SENSODYNE PRONAMEL DAILY PROTECTION TOOTHPASTE",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 2,
+            "name_ar": "العناية بالأسنان",
+            "slug": "dental-care",
+            "confidence": 94,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14940,
+        "moh_drug_id": null,
+        "trade_name": "BEAUTY FORMULAS AUSTRALIAN TEA TREE BLACKHEAD CLEARING FACIAL SCRUB",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14129,
+        "moh_drug_id": null,
+        "trade_name": "BOURJOIS PARIS LE PETIT STROBER HIGHLIGHTER (UNIVERSAL GLOW)",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 13306,
+        "moh_drug_id": null,
+        "trade_name": "ALFAPARF STYLE STORIES ORIGINAL HAIR SPRAY",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 12502,
+        "moh_drug_id": null,
+        "trade_name": "PBF CAREFORCOLOR SAVE MY BLONDE SHAMPOO",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11473,
+        "moh_drug_id": null,
+        "trade_name": "LA RIVE DEODORANT SPRAY FOR MEN (BRAVE, CABANA, CASH, MEN`S WORLD, RED LINE, PASSWORD, EXTREME STORY, GAME, GREY POINT, THE HUNTING MAN, 315 PRESTIGE)",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 10448,
+        "moh_drug_id": null,
+        "trade_name": "ROUGI+ CAPELLI FORFORA, FOR HAIR DANDRUFF",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9573,
+        "moh_drug_id": null,
+        "trade_name": "CATHERINE ARLEY SILKY TOUCH EYE LINER (BLACK)",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 8471,
+        "moh_drug_id": null,
+        "trade_name": "DELIA ULTRA DELICATE HAIR REMOVAL CREAM, FOR SENSITIVE SKIN.",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7588,
+        "moh_drug_id": null,
+        "trade_name": "PARIS COLLECTION INTENSIVE MOISTURISING GLYCERIN CREAM",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6687,
+        "moh_drug_id": null,
+        "trade_name": "GUTTO ACAI BERRY WEIGHT LOSS GEL.",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 4706,
+        "moh_drug_id": null,
+        "trade_name": "CLAIROL HERBAL ESSENCES SHAMPOO EXTRA BODY FOR FINE HAIR",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 2472,
+        "trade_name": "SCABICARE LOTION 100 ML",
+        "generic_name": "Each 100 ml contains 25 ml (28 g) benzyl benzoate.",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 78,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "medical-supplies": [
+      {
+        "moh_product_id": 20801,
+        "moh_drug_id": null,
+        "trade_name": "OPERA REV SKIN BOOSTER",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 20219,
+        "moh_drug_id": null,
+        "trade_name": "JUVELOOK SOFT TISSUE INJECTABLE IMPLANT",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 19587,
+        "moh_drug_id": null,
+        "trade_name": "OCI POLYETHERSULFONE HOLLOW FIBER HEMODIALYZER (HIGH-FLUX, LOW-FLUX, HOLLOW FIBER: MEMBRANE HEMODIALYZER, DIALYZER, HEMODIAFILTER)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18853,
+        "moh_drug_id": null,
+        "trade_name": "AFTAMED ORAL GEL",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "oral gel",
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 17852,
+        "moh_drug_id": null,
+        "trade_name": "HONEY NOSE (PROPOLIS NASAL SPRAY FOR KIDS)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16766,
+        "moh_drug_id": null,
+        "trade_name": "ATROXENE® FLEX EMULGEL",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16200,
+        "moh_drug_id": null,
+        "trade_name": "CROWN VISC 1.4% STERILE SOLUTION FOR INTRAOCULAR USE",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15633,
+        "moh_drug_id": null,
+        "trade_name": "REDULEX BABY RECTAL SUPPOSITORIES",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "Suppositories",
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14902,
+        "moh_drug_id": null,
+        "trade_name": "MEDEVSON RHINNUS NASAL OINTMENT",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 13944,
+        "moh_drug_id": null,
+        "trade_name": "BALONIX MED EMULSION",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 12871,
+        "moh_drug_id": null,
+        "trade_name": "GLYCEROL MICRO-ENEMA ADULTS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 12384,
+        "moh_drug_id": null,
+        "trade_name": "FREZYDERM AQUA CARE GEL",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 12151,
+        "moh_drug_id": null,
+        "trade_name": "IN VITRO FERTILIZATION MEDIA SUITE",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11461,
+        "moh_drug_id": null,
+        "trade_name": "ALLERMED KIDS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 4,
+            "name_ar": "الأم والطفل",
+            "slug": "mother-and-child",
+            "confidence": 90,
+            "source": "rules",
+            "needs_review": false
+          },
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11035,
+        "moh_drug_id": null,
+        "trade_name": "ISOMAR OCCHI PLUS EYE DROPS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 10746,
+        "moh_drug_id": null,
+        "trade_name": "NAZALEZE ALLERGY BLOCKER POWDER FOR NASAL SPRAY",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "nasal spray",
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9724,
+        "moh_drug_id": null,
+        "trade_name": "COMFORT SHIELD MDS EYE DROPS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "eye drops",
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 8099,
+        "moh_drug_id": null,
+        "trade_name": "FESS LITTLE NOSES SPRAY",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7268,
+        "moh_drug_id": null,
+        "trade_name": "OTIKON EAR SPRAY",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6512,
+        "moh_drug_id": null,
+        "trade_name": "JPH-ACID CONCENTRATES SOLUTION",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "solution",
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "eye-care": [
+      {
+        "moh_product_id": 20759,
+        "moh_drug_id": null,
+        "trade_name": "PHENYLEPHRINE VISION 2.5% EYE DROPS",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "eye drops, solution",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 19751,
+        "moh_drug_id": null,
+        "trade_name": "I VIVA PLUS EYE DROPS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18550,
+        "moh_drug_id": null,
+        "trade_name": "BLINK INTENSIVE TEARS PROTECTIVE EYE DROPS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 17110,
+        "moh_drug_id": null,
+        "trade_name": "ALLERDEP EYE DROPS 0.5ML",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "eye drops",
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16399,
+        "moh_drug_id": null,
+        "trade_name": "MORNING-Q 55 UV SOFT CONTACT LENS FOR DAILY USE",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15602,
+        "moh_drug_id": null,
+        "trade_name": "SYSTANE HYDRATION LUBRICANT EYE DROPS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "eye drops",
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15211,
+        "moh_drug_id": null,
+        "trade_name": "AQUASOFT INTENSIVE TEARS EYE DROPS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14136,
+        "moh_drug_id": null,
+        "trade_name": "UNODROPS HY 0.2% EYE DROPS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "eye drops",
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 12477,
+        "moh_drug_id": 3578,
+        "trade_name": "AZARGA EYE DROPS",
+        "generic_name": "Brinzolamide 10 mg / ml & Timolol 5 mg/ ml",
+        "product_class": "Human Drug Products",
+        "dosage_form": "eye drops, suspension",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11906,
+        "moh_drug_id": null,
+        "trade_name": "V-ZOLINE EYE DROPS",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "eye drops, solution",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 10835,
+        "moh_drug_id": null,
+        "trade_name": "LACRIMILLA EYE DROPS",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": "eye drops",
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9663,
+        "moh_drug_id": null,
+        "trade_name": "BIONIKE DEFENCE COLOR VOLUME FALSE LASH EFFECT MASCARA - BLACK, SENSITIVE EYES AND CONTACT LENS WEAVES",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 8442,
+        "moh_drug_id": null,
+        "trade_name": "LOCALIN OPHTHALMIC DROPS",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "ophthalmic solution drops",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7389,
+        "moh_drug_id": null,
+        "trade_name": "YOKO EYE GEL",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6509,
+        "moh_drug_id": null,
+        "trade_name": "RESTASIS OPHTHALMIC EMULSION",
+        "generic_name": null,
+        "product_class": "Human Drug Products",
+        "dosage_form": "ophthalmic emulsion",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 1064,
+        "moh_drug_id": 1107,
+        "trade_name": "KETOFEN EYE DROPS",
+        "generic_name": "Ketotifen (H-Fumarate) 0.25mg/ml",
+        "product_class": "Human Drug Products",
+        "dosage_form": "sterile eye drops",
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 96,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 98,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 2534,
+        "trade_name": "Lyteers Ophthalmic Drops 15ml",
+        "generic_name": "Hydroxyethylcellulose 0.19%",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 5151,
+        "trade_name": "LEVODEX EYE DROP",
+        "generic_name": "1mg/1ml Dexamethasone and 5mg/1ml Levofloxacin",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 1180,
+        "trade_name": "TARICIN EYE DROP",
+        "generic_name": "Ofloxacin 0.30%",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 5007,
+        "trade_name": "DEXA-ALISON EYE DROP 0.1% 5 ML",
+        "generic_name": "Dexamethasone Phosphate (as sodium)",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 7,
+            "name_ar": "العناية بالعيون",
+            "slug": "eye-care",
+            "confidence": 91,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "health-and-wellness": [
+      {
+        "moh_product_id": 18785,
+        "moh_drug_id": null,
+        "trade_name": "SINOCARE SAFE AQ VOICE , BOOLD GLUCOSE MONITORING SYSTEM (CONSISTING OF: BLOOD GLUCOSE METER, BLOOD GLUCOSE TEST STRIPS, LANCING DEVICE, LANCETS)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16154,
+        "moh_drug_id": null,
+        "trade_name": "ACCU-CHEK INSTANT, BLOOD GLUCOSE MONITORING SYSTEM, CONSISTING OF (BLOOD GLUCOSE METER, LANCING DEVICE, LANCETS)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15335,
+        "moh_drug_id": null,
+        "trade_name": "HIGEEN ANTI-BACTERIAL HAND SANITIZER GEL (FRAGRANCE FREE, LEMON VERBENA, FRESH MARACUJA, FRESH LEMON)",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15202,
+        "moh_drug_id": null,
+        "trade_name": "SMART HAND SANITIZER GEL",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15118,
+        "moh_drug_id": null,
+        "trade_name": "OXY PLUS FOAMING HAND SANITIZER",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15104,
+        "moh_drug_id": null,
+        "trade_name": "ONLY FOR YOU ANTIBACTERIAL HAND SANITIZER GEL",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15017,
+        "moh_drug_id": null,
+        "trade_name": "UNEPASCO HAND SANITIZER GEL",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14988,
+        "moh_drug_id": null,
+        "trade_name": "MIX HAND SANITIZER GEL",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14898,
+        "moh_drug_id": null,
+        "trade_name": "FOREVER HAND SANITIZER (SKU318)",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11205,
+        "moh_drug_id": null,
+        "trade_name": "ON CALL EXTRA BLOOD GLUCOSE MONITORING SYSTEM (BLOOD GLUCOSE METER, BLOOD GLUCOSE TEST STRIPS, CONTROL SOLUTION, LANCING DEVICE, STERILE LANCETS)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11023,
+        "moh_drug_id": null,
+        "trade_name": "ACCU-CHEK ACTIVE, BOOD GLUCOSE MONITORING SYSTEM, CONSISTING OF (BLOOD GLUCOSE METER, TEST STRIPS, LANCING DEVICE, LANCETS)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 10326,
+        "moh_drug_id": null,
+        "trade_name": "FRANO ANTIBACTERIAL HAND SOAP",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9595,
+        "moh_drug_id": null,
+        "trade_name": "PLUSMED BLOOD GLUCOSE MONITORING SYSTEM (BLOOD GLUCOSE METER, STRIPS, LANCING DEVICE, LANCETS)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9309,
+        "moh_drug_id": null,
+        "trade_name": "ACNACID 1A ANTIBACTERIAL WASHING GEL",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 8753,
+        "moh_drug_id": null,
+        "trade_name": "SUN GEL 4 HOUR PROTECTION ULTIMATE HAND SANITIZER-LOLO PLUS",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7973,
+        "moh_drug_id": null,
+        "trade_name": "HIGEEN ANTI-BACTERIAL HAND SANITIZER GEL WITH VITAMIN BEADS. (ORIGINAL, GREEN TEA & CUCUMBER, DAMASK ROSE, RED FRUITS, OUD, LEMON, PAPAYA, JASMINE, ,WILD BERRY, TOGETHER IN LOVE,BLUE FLOWERS, PASSION FLOWER, FRAGRANCE FREE).",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7257,
+        "moh_drug_id": null,
+        "trade_name": "FREESTYLE FREEDOM LITE BLOOD GLUCOSE MONITORING SYSTEM, CONSISTING OF: (FREESTYLE FREEDOM LITE METER, LANCING DEVICE, LANCETS (10), BLOOD GLUCOSE TEST STRIPS (10)",
+        "generic_name": null,
+        "product_class": "Medical Devices",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 6,
+            "name_ar": "مستلزمات طبية",
+            "slug": "medical-supplies",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6568,
+        "moh_drug_id": null,
+        "trade_name": "KIREI KIREI ANTIBACTERIAL HAND SANITIZER",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 5923,
+        "moh_drug_id": null,
+        "trade_name": "LIFEBUOY ANTIBACTERIAL HAND WASH (COOL FRESH, TOTAL 10, MILD CARE, LEMON FRESH, MATCHA, SEA M",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 1224,
+        "moh_drug_id": null,
+        "trade_name": "ALCOGEL INSTANT HAND SANITIZER (ORIGINAL, GREEN APPLE, COCONUT, PEACH, STRAWBERRY, FRUIT).",
+        "generic_name": null,
+        "product_class": "Cosmetic Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          },
+          {
+            "id": 8,
+            "name_ar": "الصحة والعافية",
+            "slug": "health-and-wellness",
+            "confidence": 82,
+            "source": "combined_rules",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "vitamins-and-dietary-supplements": [
+      {
+        "moh_product_id": 20835,
+        "moh_drug_id": null,
+        "trade_name": "SUPER B12 TABLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "sublingual tablet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 20505,
+        "moh_drug_id": null,
+        "trade_name": "DOPPELHERZ SYSTEM KOLLAGEN ORAL LIQUID",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "oral Liquid",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18940,
+        "moh_drug_id": null,
+        "trade_name": "MAGNE D' ORO B-COMPLEX CAPSULE",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "Hard gelatin capsule",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18021,
+        "moh_drug_id": null,
+        "trade_name": "SPIRIT SPIRI-FOLIC TABLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "tablet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16961,
+        "moh_drug_id": null,
+        "trade_name": "IMUNAQUEST IMUNASTEROLS TABLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "tablet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16355,
+        "moh_drug_id": null,
+        "trade_name": "PGX DAILY ULTRA MATRIX SOFTGELS",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 15514,
+        "moh_drug_id": null,
+        "trade_name": "BETAVITEVIT FOLIC 400 + VITAMIN B12 TABLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "tablet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14778,
+        "moh_drug_id": null,
+        "trade_name": "JAMIESON VITACARE 24 CAPLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "caplet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14002,
+        "moh_drug_id": null,
+        "trade_name": "JAMIESON B12 1200MCG TIMED RELEASE TABLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "timed release tablet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 12963,
+        "moh_drug_id": null,
+        "trade_name": "KARMACARE CHROMIUM PICOLINATE",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "tablet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 12187,
+        "moh_drug_id": null,
+        "trade_name": "FEE RED CAPSULE",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "capsule",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11540,
+        "moh_drug_id": null,
+        "trade_name": "B-NEUROL TABLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 10736,
+        "moh_drug_id": null,
+        "trade_name": "VITAFARM PRENAVITAL CAPLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "caplet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9490,
+        "moh_drug_id": null,
+        "trade_name": "JAMIESON E 400 IU CAPSULE",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "soft gelatin capsule",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9143,
+        "moh_drug_id": null,
+        "trade_name": "TOP-12",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "sublingual tablet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 8594,
+        "moh_drug_id": null,
+        "trade_name": "SPIRIT SPIRICAL CAPLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "tablet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7936,
+        "moh_drug_id": null,
+        "trade_name": "ACIDOPHILUS PLUS 4 BILLION",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "capsule",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7610,
+        "moh_drug_id": null,
+        "trade_name": "RE-JOINT TABLET",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "tablet",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6808,
+        "moh_drug_id": null,
+        "trade_name": "MAPLELIFE GLUCOSAMINE AND CHONDROITIN SULFATE CAPSULE",
+        "generic_name": null,
+        "product_class": "Food Supplement",
+        "dosage_form": "hard gelatin capsule",
+        "categories": [
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": null,
+        "moh_drug_id": 1494,
+        "trade_name": "FERGOLE 30 TAB",
+        "generic_name": "FERROUS GLUCONATE 106 MG ELEMENTAL IRON & FOLIC ACID 1 MG",
+        "product_class": null,
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 1,
+            "name_ar": "الأدوية",
+            "slug": "medicines",
+            "confidence": 90,
+            "source": "combined_rules",
+            "needs_review": false
+          },
+          {
+            "id": 9,
+            "name_ar": "الفيتامينات والمكملات الغذائية",
+            "slug": "vitamins-and-dietary-supplements",
+            "confidence": 82,
+            "source": "rules",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "veterinary": [
+      {
+        "moh_product_id": 20752,
+        "moh_drug_id": null,
+        "trade_name": "SPECTINO-LINE DANA ORAL POWDER",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "oral powder",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 18803,
+        "moh_drug_id": null,
+        "trade_name": "METRODANA 20% ORAL POWDER",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "oral powder",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 17486,
+        "moh_drug_id": null,
+        "trade_name": "TYLOSATE 100% ORAL POWDER",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "oral powder",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 16278,
+        "moh_drug_id": null,
+        "trade_name": "GENTAMOX-VET INJECTABLE SUSPENSION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "Injectable Suspension",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 14828,
+        "moh_drug_id": null,
+        "trade_name": "SIPROSEEL 10% ORAL SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "oral solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 13822,
+        "moh_drug_id": null,
+        "trade_name": "SPIRAMYCIN DANA INJECTABLE SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "Injectable Solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 13000,
+        "moh_drug_id": null,
+        "trade_name": "SENSIZAL 2% INJECTABLE SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "Injectable Solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 11161,
+        "moh_drug_id": null,
+        "trade_name": "NEOAQUAPRO 10% ORAL SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "oral solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9563,
+        "moh_drug_id": null,
+        "trade_name": "TENALINE LA INJECTABLE SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "Injectable Solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 9031,
+        "moh_drug_id": null,
+        "trade_name": "BARA-DOXITINE ORAL POWDER",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "Oral powder",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 8560,
+        "moh_drug_id": null,
+        "trade_name": "LEVAVET 10% INJECTABLE SOLUTION.",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "injectable solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 8290,
+        "moh_drug_id": null,
+        "trade_name": "OXANTEL ORAL SUSPENSION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "oral suspension",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 7497,
+        "moh_drug_id": null,
+        "trade_name": "COGLAVAX INJECTABLE SUSPENSION VACCINE",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "injectable suspension",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6976,
+        "moh_drug_id": null,
+        "trade_name": "PULMOVET 250 ORAL SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "oral solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6563,
+        "moh_drug_id": null,
+        "trade_name": "NEONUR-VET 20% WSP",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "water soluble powder",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 6253,
+        "moh_drug_id": null,
+        "trade_name": "IODODANA 10% TOPICAL SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "Topical solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 4892,
+        "moh_drug_id": null,
+        "trade_name": "IVOMECTIN 1% INJECTABLE SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "injectable solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 4868,
+        "moh_drug_id": null,
+        "trade_name": "OXIN 200 LA INJECTABLE SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "injection solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 4842,
+        "moh_drug_id": null,
+        "trade_name": "DEXON INJECTABLE SOLUTION",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "injectable solution",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 4820,
+        "moh_drug_id": null,
+        "trade_name": "AMOXISOL 15% INJECTABLE SUSP",
+        "generic_name": null,
+        "product_class": "Veterinary Products",
+        "dosage_form": "Injectable Suspension",
+        "categories": [
+          {
+            "id": 10,
+            "name_ar": "الأدوية البيطرية",
+            "slug": "veterinary",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      }
+    ],
+    "herbal-products": [
+      {
+        "moh_product_id": 20732,
+        "moh_drug_id": null,
+        "trade_name": "NEOHEALAR OINTMENT",
+        "generic_name": null,
+        "product_class": "Herbal Products",
+        "dosage_form": "ointment",
+        "categories": [
+          {
+            "id": 11,
+            "name_ar": "المنتجات العشبية",
+            "slug": "herbal-products",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 20731,
+        "moh_drug_id": null,
+        "trade_name": "NEOHEALAR SUPPOSITORIES",
+        "generic_name": null,
+        "product_class": "Herbal Products",
+        "dosage_form": "Suppositories",
+        "categories": [
+          {
+            "id": 11,
+            "name_ar": "المنتجات العشبية",
+            "slug": "herbal-products",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": false
+          }
+        ]
+      },
+      {
+        "moh_product_id": 19837,
+        "moh_drug_id": null,
+        "trade_name": "VATIKA COLOR PROTECT CONDITIONER, GRAPESEED & ROSEMARY OIL.",
+        "generic_name": null,
+        "product_class": "Herbal Products",
+        "dosage_form": null,
+        "categories": [
+          {
+            "id": 5,
+            "name_ar": "العناية الشخصية والجمال",
+            "slug": "personal-care-and-beauty",
+            "confidence": 84,
+            "source": "rules",
+            "needs_review": true
+          },
+          {
+            "id": 11,
+            "name_ar": "المنتجات العشبية",
+            "slug": "herbal-products",
+            "confidence": 99,
+            "source": "product_class",
+            "needs_review": true
+          }
+        ]
+      }
+    ]
+  },
+  "needs_review_samples": [
+    {
+      "moh_product_id": 19837,
+      "moh_drug_id": null,
+      "trade_name": "VATIKA COLOR PROTECT CONDITIONER, GRAPESEED & ROSEMARY OIL.",
+      "generic_name": null,
+      "product_class": "Herbal Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 84,
+          "source": "rules",
+          "needs_review": true
+        },
+        {
+          "id": 11,
+          "name_ar": "المنتجات العشبية",
+          "slug": "herbal-products",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": true
+        }
+      ]
+    },
+    {
+      "moh_product_id": 4412,
+      "moh_drug_id": null,
+      "trade_name": "LESENS PERFUME SPRAY FOR MEN ( XXL, BLUE, LESENS) / ALL SIZES",
+      "generic_name": null,
+      "product_class": "Recalls & Alerts",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 78,
+          "source": "rules",
+          "needs_review": true
+        }
+      ]
+    }
+  ],
+  "multi_category_samples": [
+    {
+      "moh_product_id": 20785,
+      "moh_drug_id": null,
+      "trade_name": "ORAL-B ADVANCED ENAML STRENGTHENING TOOTHPASTE, MINT.",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 2,
+          "name_ar": "العناية بالأسنان",
+          "slug": "dental-care",
+          "confidence": 94,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 19972,
+      "moh_drug_id": null,
+      "trade_name": "BIMATOPROST TEVA EYE DROPS",
+      "generic_name": null,
+      "product_class": "Human Drug Products",
+      "dosage_form": "Eye drops, solution",
+      "categories": [
+        {
+          "id": 1,
+          "name_ar": "الأدوية",
+          "slug": "medicines",
+          "confidence": 96,
+          "source": "product_class",
+          "needs_review": false
+        },
+        {
+          "id": 7,
+          "name_ar": "العناية بالعيون",
+          "slug": "eye-care",
+          "confidence": 98,
+          "source": "combined_rules",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 19101,
+      "moh_drug_id": null,
+      "trade_name": "ONE DROP ONLY KIDS TOOTH PASTE, 0-6 YEARS",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 2,
+          "name_ar": "العناية بالأسنان",
+          "slug": "dental-care",
+          "confidence": 94,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 4,
+          "name_ar": "الأم والطفل",
+          "slug": "mother-and-child",
+          "confidence": 90,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 18493,
+      "moh_drug_id": null,
+      "trade_name": "CHICCO BABY MOMENTS BODY LOTION, BABY SKIN",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 4,
+          "name_ar": "الأم والطفل",
+          "slug": "mother-and-child",
+          "confidence": 90,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 17577,
+      "moh_drug_id": null,
+      "trade_name": "CURASEPT ANTI DISCOLORATION SYSTEM ADS PROTECTIVE GEL-TOOTHPASTE",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 2,
+          "name_ar": "العناية بالأسنان",
+          "slug": "dental-care",
+          "confidence": 94,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 16694,
+      "moh_drug_id": null,
+      "trade_name": "SYSTEMA 0% ALCOHOL FRESH FOREST MOUTHWASH",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 2,
+          "name_ar": "العناية بالأسنان",
+          "slug": "dental-care",
+          "confidence": 94,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 15603,
+      "moh_drug_id": null,
+      "trade_name": "SYSTANE BALANCE LUBRICANT EYE DROPS",
+      "generic_name": null,
+      "product_class": "Medical Devices",
+      "dosage_form": "eye drops",
+      "categories": [
+        {
+          "id": 6,
+          "name_ar": "مستلزمات طبية",
+          "slug": "medical-supplies",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        },
+        {
+          "id": 7,
+          "name_ar": "العناية بالعيون",
+          "slug": "eye-care",
+          "confidence": 98,
+          "source": "combined_rules",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 15030,
+      "moh_drug_id": null,
+      "trade_name": "IBOO 2% FOR CHILDREN SUSPENSION",
+      "generic_name": null,
+      "product_class": "Human Drug Products",
+      "dosage_form": "oral suspension",
+      "categories": [
+        {
+          "id": 1,
+          "name_ar": "الأدوية",
+          "slug": "medicines",
+          "confidence": 96,
+          "source": "product_class",
+          "needs_review": false
+        },
+        {
+          "id": 4,
+          "name_ar": "الأم والطفل",
+          "slug": "mother-and-child",
+          "confidence": 90,
+          "source": "rules",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 14274,
+      "moh_drug_id": null,
+      "trade_name": "ACUVUE OASYS 1-DAY WITH HYDRALUXE (BRAND CONTACT LENSES BOX OF 30, 90)",
+      "generic_name": null,
+      "product_class": "Medical Devices",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 6,
+          "name_ar": "مستلزمات طبية",
+          "slug": "medical-supplies",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        },
+        {
+          "id": 7,
+          "name_ar": "العناية بالعيون",
+          "slug": "eye-care",
+          "confidence": 91,
+          "source": "rules",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 13423,
+      "moh_drug_id": null,
+      "trade_name": "BELUX BABY WET TOWELS",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 4,
+          "name_ar": "الأم والطفل",
+          "slug": "mother-and-child",
+          "confidence": 90,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 12194,
+      "moh_drug_id": null,
+      "trade_name": "JOHNSON`S HEAD-TO-TOE BABY WASH",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 4,
+          "name_ar": "الأم والطفل",
+          "slug": "mother-and-child",
+          "confidence": 90,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 11029,
+      "moh_drug_id": null,
+      "trade_name": "ISOMAR NOSE BABY SPRAY",
+      "generic_name": null,
+      "product_class": "Medical Devices",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 4,
+          "name_ar": "الأم والطفل",
+          "slug": "mother-and-child",
+          "confidence": 90,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 6,
+          "name_ar": "مستلزمات طبية",
+          "slug": "medical-supplies",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 10113,
+      "moh_drug_id": null,
+      "trade_name": "BRUSH UP TOOTHPASTE + MOUTHWASH {ICE BLUEMINTYL GEL, STRONG GREEN MINTYL GEL, RED SPICE MINTYL GEL)",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 2,
+          "name_ar": "العناية بالأسنان",
+          "slug": "dental-care",
+          "confidence": 94,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 9116,
+      "moh_drug_id": null,
+      "trade_name": "TARODENT MOUTH WASH",
+      "generic_name": null,
+      "product_class": "Human Drug Products",
+      "dosage_form": "Mint flavor Mouth wash, Solution",
+      "categories": [
+        {
+          "id": 1,
+          "name_ar": "الأدوية",
+          "slug": "medicines",
+          "confidence": 96,
+          "source": "product_class",
+          "needs_review": false
+        },
+        {
+          "id": 2,
+          "name_ar": "العناية بالأسنان",
+          "slug": "dental-care",
+          "confidence": 94,
+          "source": "rules",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 8113,
+      "moh_drug_id": null,
+      "trade_name": "SIGNAL COMPLETE 8 ACTIONS HERBAL TOOTHPASTE FOR STRENGTHENING GUM",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 2,
+          "name_ar": "العناية بالأسنان",
+          "slug": "dental-care",
+          "confidence": 94,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 6836,
+      "moh_drug_id": null,
+      "trade_name": "NEMDIL KIDS BABY WET WIPES",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 4,
+          "name_ar": "الأم والطفل",
+          "slug": "mother-and-child",
+          "confidence": 90,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 5138,
+      "moh_drug_id": null,
+      "trade_name": "DENTISTE PLUS WHITE NIGHTTIME TOOTHPASTE",
+      "generic_name": null,
+      "product_class": "Cosmetic Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 2,
+          "name_ar": "العناية بالأسنان",
+          "slug": "dental-care",
+          "confidence": 94,
+          "source": "rules",
+          "needs_review": false
+        },
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": 1109,
+      "moh_drug_id": null,
+      "trade_name": "NOVOCORT EYE OINTMENT",
+      "generic_name": null,
+      "product_class": "Human Drug Products",
+      "dosage_form": "light yellow ophthalmic ointment",
+      "categories": [
+        {
+          "id": 1,
+          "name_ar": "الأدوية",
+          "slug": "medicines",
+          "confidence": 96,
+          "source": "product_class",
+          "needs_review": false
+        },
+        {
+          "id": 7,
+          "name_ar": "العناية بالعيون",
+          "slug": "eye-care",
+          "confidence": 98,
+          "source": "combined_rules",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": null,
+      "moh_drug_id": 696,
+      "trade_name": "FERRIFOL100MG TABS/30",
+      "generic_name": "Ferrous as Iron III hydroxide polymatose complex+ Folic acid",
+      "product_class": null,
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 1,
+          "name_ar": "الأدوية",
+          "slug": "medicines",
+          "confidence": 90,
+          "source": "combined_rules",
+          "needs_review": false
+        },
+        {
+          "id": 9,
+          "name_ar": "الفيتامينات والمكملات الغذائية",
+          "slug": "vitamins-and-dietary-supplements",
+          "confidence": 82,
+          "source": "rules",
+          "needs_review": false
+        }
+      ]
+    },
+    {
+      "moh_product_id": null,
+      "moh_drug_id": 1494,
+      "trade_name": "FERGOLE 30 TAB",
+      "generic_name": "FERROUS GLUCONATE 106 MG ELEMENTAL IRON & FOLIC ACID 1 MG",
+      "product_class": null,
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 1,
+          "name_ar": "الأدوية",
+          "slug": "medicines",
+          "confidence": 90,
+          "source": "combined_rules",
+          "needs_review": false
+        },
+        {
+          "id": 9,
+          "name_ar": "الفيتامينات والمكملات الغذائية",
+          "slug": "vitamins-and-dietary-supplements",
+          "confidence": 82,
+          "source": "rules",
+          "needs_review": false
+        }
+      ]
+    }
+  ]
+}

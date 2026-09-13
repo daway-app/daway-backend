@@ -1,0 +1,418 @@
+{
+  "generated_at_utc": "2026-09-13T10:04:33.103470Z",
+  "source_file": "database/data/moh_medicines.json",
+  "output_file": "database/data/moh_medicines_categorized.json",
+  "source_sha256": "44b64677126b920f857a79782cd0c6054ecbbc2267526cb89b4542996a7d96f8",
+  "total_products": 17295,
+  "categorized_products": 17295,
+  "uncategorized_products": 0,
+  "needs_review_count": 2,
+  "multi_category_count": 1001,
+  "categories": [
+    {
+      "id": 1,
+      "name_ar": "الأدوية",
+      "slug": "medicines",
+      "count": 5124,
+      "needs_review_count": 0,
+      "average_confidence": 92.94
+    },
+    {
+      "id": 2,
+      "name_ar": "العناية بالأسنان",
+      "slug": "dental-care",
+      "count": 391,
+      "needs_review_count": 0,
+      "average_confidence": 94.0
+    },
+    {
+      "id": 3,
+      "name_ar": "الإسعافات الأولية",
+      "slug": "first-aid",
+      "count": 10,
+      "needs_review_count": 0,
+      "average_confidence": 94.0
+    },
+    {
+      "id": 4,
+      "name_ar": "الأم والطفل",
+      "slug": "mother-and-child",
+      "count": 353,
+      "needs_review_count": 0,
+      "average_confidence": 90.0
+    },
+    {
+      "id": 5,
+      "name_ar": "العناية الشخصية والجمال",
+      "slug": "personal-care-and-beauty",
+      "count": 10462,
+      "needs_review_count": 2,
+      "average_confidence": 98.97
+    },
+    {
+      "id": 6,
+      "name_ar": "مستلزمات طبية",
+      "slug": "medical-supplies",
+      "count": 954,
+      "needs_review_count": 0,
+      "average_confidence": 99.0
+    },
+    {
+      "id": 7,
+      "name_ar": "العناية بالعيون",
+      "slug": "eye-care",
+      "count": 210,
+      "needs_review_count": 0,
+      "average_confidence": 94.75
+    },
+    {
+      "id": 8,
+      "name_ar": "الصحة والعافية",
+      "slug": "health-and-wellness",
+      "count": 39,
+      "needs_review_count": 0,
+      "average_confidence": 84.87
+    },
+    {
+      "id": 9,
+      "name_ar": "الفيتامينات والمكملات الغذائية",
+      "slug": "vitamins-and-dietary-supplements",
+      "count": 474,
+      "needs_review_count": 0,
+      "average_confidence": 98.53
+    },
+    {
+      "id": 10,
+      "name_ar": "الأدوية البيطرية",
+      "slug": "veterinary",
+      "count": 310,
+      "needs_review_count": 0,
+      "average_confidence": 99.0
+    },
+    {
+      "id": 11,
+      "name_ar": "المنتجات العشبية",
+      "slug": "herbal-products",
+      "count": 3,
+      "needs_review_count": 1,
+      "average_confidence": 99.0
+    }
+  ],
+  "products_per_category": {
+    "medicines": 5124,
+    "dental-care": 391,
+    "first-aid": 10,
+    "mother-and-child": 353,
+    "personal-care-and-beauty": 10462,
+    "medical-supplies": 954,
+    "eye-care": 210,
+    "health-and-wellness": 39,
+    "vitamins-and-dietary-supplements": 474,
+    "veterinary": 310,
+    "herbal-products": 3
+  },
+  "confidence_distribution": {
+    "category_assignments": {
+      "95-100": 14792,
+      "80-94": 3523,
+      "60-79": 15,
+      "0-59": 0
+    },
+    "products_by_lowest_assignment": {
+      "95-100": 13875,
+      "80-94": 3405,
+      "60-79": 15,
+      "0-59": 0,
+      "unclassified": 0
+    }
+  },
+  "additional_categories_discovered": [
+    {
+      "id": 10,
+      "name_ar": "الأدوية البيطرية",
+      "slug": "veterinary",
+      "reason": "القيمة Veterinary Products موجودة فعليًا كـ product_class مستقل.",
+      "count": 310
+    },
+    {
+      "id": 11,
+      "name_ar": "المنتجات العشبية",
+      "slug": "herbal-products",
+      "reason": "القيمة Herbal Products موجودة فعليًا كـ product_class مستقل.",
+      "count": 3
+    }
+  ],
+  "classification_priority": [
+    "product_class",
+    "dosage_form",
+    "generic_name",
+    "trade_name",
+    "manufacturer/company (inspection only; not used for a category without stronger evidence)"
+  ],
+  "classification_rules_used": [
+    {
+      "category": "medicines",
+      "rule": "Human Drug Products; or price-list record with moh_drug_id + generic_name",
+      "sources": [
+        "product_class",
+        "combined_rules"
+      ]
+    },
+    {
+      "category": "dental-care",
+      "rule": "Strict dental/oral-care terms in trade_name or generic_name; generic oral dosage alone is excluded",
+      "sources": [
+        "rules"
+      ]
+    },
+    {
+      "category": "first-aid",
+      "rule": "Wound, bandage, gauze, plaster, medical/surgical dressing, hemostatic or non-cosmetic antiseptic indicators",
+      "sources": [
+        "rules",
+        "combined_rules"
+      ]
+    },
+    {
+      "category": "mother-and-child",
+      "rule": "Baby, infant, newborn, pediatric/paediatric, child, kids, maternity, nappy or diaper indicators",
+      "sources": [
+        "rules"
+      ]
+    },
+    {
+      "category": "personal-care-and-beauty",
+      "rule": "Cosmetic Products; plus strict personal-care terms for non-drug records",
+      "sources": [
+        "product_class",
+        "rules",
+        "combined_rules"
+      ]
+    },
+    {
+      "category": "medical-supplies",
+      "rule": "Medical Devices product_class (the source already provides a clear dedicated class)",
+      "sources": [
+        "product_class"
+      ]
+    },
+    {
+      "category": "eye-care",
+      "rule": "Ophthalmic/ocular/eye-drop/contact-lens evidence; plain cosmetic eye wording is excluded",
+      "sources": [
+        "dosage_form",
+        "rules",
+        "combined_rules"
+      ]
+    },
+    {
+      "category": "health-and-wellness",
+      "rule": "Strict monitoring, pregnancy/ovulation test, condom, oximeter, orthopedic or sanitizer indicators; bare wellness branding is excluded",
+      "sources": [
+        "rules",
+        "combined_rules"
+      ]
+    },
+    {
+      "category": "vitamins-and-dietary-supplements",
+      "rule": "Food Supplement; or explicit vitamin/multivitamin/omega/folic-acid evidence with injection/infusion/topical false-positive exclusions",
+      "sources": [
+        "product_class",
+        "rules",
+        "combined_rules"
+      ]
+    },
+    {
+      "category": "veterinary",
+      "rule": "Veterinary Products product_class only",
+      "sources": [
+        "product_class"
+      ]
+    },
+    {
+      "category": "herbal-products",
+      "rule": "Herbal Products product_class only; herbal wording in cosmetics is not enough",
+      "sources": [
+        "product_class"
+      ]
+    }
+  ],
+  "top_ambiguous_products": [
+    {
+      "moh_product_id": 19837,
+      "moh_drug_id": null,
+      "trade_name": "VATIKA COLOR PROTECT CONDITIONER, GRAPESEED & ROSEMARY OIL.",
+      "generic_name": null,
+      "product_class": "Herbal Products",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 84,
+          "source": "rules",
+          "needs_review": true
+        },
+        {
+          "id": 11,
+          "name_ar": "المنتجات العشبية",
+          "slug": "herbal-products",
+          "confidence": 99,
+          "source": "product_class",
+          "needs_review": true
+        }
+      ],
+      "reasons": [
+        "product_class_and_product_purpose_conflict"
+      ]
+    },
+    {
+      "moh_product_id": 4412,
+      "moh_drug_id": null,
+      "trade_name": "LESENS PERFUME SPRAY FOR MEN ( XXL, BLUE, LESENS) / ALL SIZES",
+      "generic_name": null,
+      "product_class": "Recalls & Alerts",
+      "dosage_form": null,
+      "categories": [
+        {
+          "id": 5,
+          "name_ar": "العناية الشخصية والجمال",
+          "slug": "personal-care-and-beauty",
+          "confidence": 78,
+          "source": "rules",
+          "needs_review": true
+        }
+      ],
+      "reasons": [
+        "source_product_class_is_recalls_and_alerts"
+      ]
+    }
+  ],
+  "source_data_inspection": {
+    "root_type": "array",
+    "requested_but_absent_fields": [
+      "aliases",
+      "active_ingredient"
+    ],
+    "fields": [
+      "availability",
+      "company",
+      "created_at",
+      "dosage_form",
+      "generic_name",
+      "manufacturer",
+      "moh_drug_id",
+      "moh_product_id",
+      "official_price",
+      "origin",
+      "packaging",
+      "price_updated_at",
+      "product_class",
+      "trade_name",
+      "updated_at"
+    ],
+    "field_stats": {
+      "availability": {
+        "present_count": 17295,
+        "null_count": 14537,
+        "non_null_count": 2758
+      },
+      "company": {
+        "present_count": 17295,
+        "null_count": 14537,
+        "non_null_count": 2758
+      },
+      "created_at": {
+        "present_count": 17295,
+        "null_count": 0,
+        "non_null_count": 17295
+      },
+      "dosage_form": {
+        "present_count": 17295,
+        "null_count": 13722,
+        "non_null_count": 3573
+      },
+      "generic_name": {
+        "present_count": 17295,
+        "null_count": 14537,
+        "non_null_count": 2758
+      },
+      "manufacturer": {
+        "present_count": 17295,
+        "null_count": 2616,
+        "non_null_count": 14679
+      },
+      "moh_drug_id": {
+        "present_count": 17295,
+        "null_count": 14537,
+        "non_null_count": 2758
+      },
+      "moh_product_id": {
+        "present_count": 17295,
+        "null_count": 2616,
+        "non_null_count": 14679
+      },
+      "official_price": {
+        "present_count": 17295,
+        "null_count": 14537,
+        "non_null_count": 2758
+      },
+      "origin": {
+        "present_count": 17295,
+        "null_count": 2616,
+        "non_null_count": 14679
+      },
+      "packaging": {
+        "present_count": 17295,
+        "null_count": 14537,
+        "non_null_count": 2758
+      },
+      "price_updated_at": {
+        "present_count": 17295,
+        "null_count": 17277,
+        "non_null_count": 18
+      },
+      "product_class": {
+        "present_count": 17295,
+        "null_count": 2616,
+        "non_null_count": 14679
+      },
+      "trade_name": {
+        "present_count": 17295,
+        "null_count": 0,
+        "non_null_count": 17295
+      },
+      "updated_at": {
+        "present_count": 17295,
+        "null_count": 0,
+        "non_null_count": 17295
+      }
+    },
+    "product_class_distribution": {
+      "Cosmetic Products": 10446,
+      "Food Supplement": 457,
+      "Human Drug Products": 2508,
+      "Medical Devices": 954,
+      "Veterinary Products": 310,
+      "Herbal Products": 3,
+      "Recalls & Alerts": 1,
+      "null": 2616
+    },
+    "dosage_form_distinct_non_null": 1058
+  },
+  "validation": {
+    "input_records": 17295,
+    "output_records": 17295,
+    "input_equals_output_count": true,
+    "lost_records": 0,
+    "duplicate_identity_records_input": 0,
+    "duplicate_identity_records_output": 0,
+    "records_without_stable_id": 0,
+    "original_fields_and_values_preserved": true,
+    "record_order_preserved": true,
+    "source_file_unchanged_sha256_verified": true,
+    "identity_precedence": "moh_drug_id first; moh_product_id fallback; both original fields preserved",
+    "database_auto_increment_id_used": false
+  }
+}
