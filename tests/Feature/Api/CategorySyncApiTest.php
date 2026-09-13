@@ -21,8 +21,8 @@ class CategorySyncApiTest extends TestCase
     }
 
     /**
-     * يبني سجلات moh_medicines مطابقة للـfixture كي يعمل الـjoin
-     * في CategoryController::medicines() (الـendpoint يفحص whereExists على moh_medicines).
+     * ظٹط¨ظ†ظٹ ط³ط¬ظ„ط§طھ moh_medicines ظ…ط·ط§ط¨ظ‚ط© ظ„ظ„ظ€fixture ظƒظٹ ظٹط¹ظ…ظ„ ط§ظ„ظ€join
+     * ظپظٹ CategoryController::medicines() (ط§ظ„ظ€endpoint ظٹظپط­طµ whereExists ط¹ظ„ظ‰ moh_medicines).
      */
     private function seedMohMedicinesFromFixture(): void
     {
@@ -44,7 +44,7 @@ class CategorySyncApiTest extends TestCase
 
     public function test_api_index_exposes_real_medicines_count_after_sync(): void
     {
-        // قبل sync: counts كلها 0
+        // ظ‚ط¨ظ„ sync: counts ظƒظ„ظ‡ط§ 0
         $before = $this->getJson('/api/categories')->json('data');
         foreach ($before as $cat) {
             $this->assertSame(0, $cat['medicines_count'], "{$cat['slug']} should be 0 before sync");
@@ -52,12 +52,12 @@ class CategorySyncApiTest extends TestCase
 
         // sync
         Artisan::call('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ]);
 
-        // بعد sync: counts حقيقية. حسب الـfixture:
+        // ط¨ط¹ط¯ sync: counts ط­ظ‚ظٹظ‚ظٹط©. ط­ط³ط¨ ط§ظ„ظ€fixture:
         // medicines: 1 (row1)
-        // skin-care-beauty: 2 (row2, row5, row6) — alias من personal-care-and-beauty
+        // skin-care-beauty: 2 (row2, row5, row6) â€” alias ظ…ظ† personal-care-and-beauty
         // mother-baby: 1 (row3)
         // vitamins-supplements: 1 (row3)
         // herbal: 1 (row5)
@@ -77,7 +77,7 @@ class CategorySyncApiTest extends TestCase
         $this->seedMohMedicinesFromFixture();
 
         Artisan::call('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ]);
 
         $skinCare = Category::where('slug', 'skin-care-beauty')->firstOrFail();
@@ -96,7 +96,7 @@ class CategorySyncApiTest extends TestCase
         $this->assertContains('VATIKA COLOR PROTECT', $names);
         $this->assertContains('PERFUME SPRAY FOR MEN', $names);
 
-        // التحقق من بيانات التصنيف (classification metadata)
+        // ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† ط¨ظٹط§ظ†ط§طھ ط§ظ„طھطµظ†ظٹظپ (classification metadata)
         $byName = collect($response->json('data'))->keyBy('trade_name');
 
         // SKINGLOW: source=rules, confidence=84, needs_review=false
@@ -123,7 +123,7 @@ class CategorySyncApiTest extends TestCase
         $this->seedMohMedicinesFromFixture();
 
         Artisan::call('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ]);
 
         $skinCare = Category::where('slug', 'skin-care-beauty')->firstOrFail();
@@ -144,13 +144,13 @@ class CategorySyncApiTest extends TestCase
 
         // sync
         Artisan::call('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ]);
 
         $versionAfter = CategoryCatalogCache::version();
         $this->assertGreaterThan($versionBefore, $versionAfter);
 
-        // الطلب الجديد يكشف البيانات الجديدة (counts بعد sync)
+        // ط§ظ„ط·ظ„ط¨ ط§ظ„ط¬ط¯ظٹط¯ ظٹظƒط´ظپ ط§ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¬ط¯ظٹط¯ط© (counts ط¨ط¹ط¯ sync)
         $fresh = $this->getJson('/api/categories')->json('data');
         $bySlug = collect($fresh)->keyBy('slug');
         $this->assertSame(1, $bySlug['medicines']['medicines_count']);
@@ -159,10 +159,10 @@ class CategorySyncApiTest extends TestCase
     public function test_sync_then_admin_link_attaches_correctly(): void
     {
         Artisan::call('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ]);
 
-        // admin link جديد بعد sync
+        // admin link ط¬ط¯ظٹط¯ ط¨ط¹ط¯ sync
         $medicines = Category::where('slug', 'medicines')->firstOrFail();
         CategoryMedicineLink::create([
             'category_id' => $medicines->id,
@@ -173,9 +173,9 @@ class CategorySyncApiTest extends TestCase
             'needs_review' => false,
         ]);
 
-        // re-sync بـfresh: admin link لازم يبقى
+        // re-sync ط¨ظ€fresh: admin link ظ„ط§ط²ظ… ظٹط¨ظ‚ظ‰
         Artisan::call('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
             '--fresh' => true,
         ]);
 
@@ -192,10 +192,10 @@ class CategorySyncApiTest extends TestCase
 
     public function test_full_pipeline_with_full_categorized_json_consistency(): void
     {
-        // استخدم الملف الكامل 17k صف للتأكد من أن الـsync + الـAPI
-        // يعملان على حجم بيانات حقيقي بنفس النتيجة.
+        // ط§ط³طھط®ط¯ظ… ط§ظ„ظ…ظ„ظپ ط§ظ„ظƒط§ظ…ظ„ 17k طµظپ ظ„ظ„طھط£ظƒط¯ ظ…ظ† ط£ظ† ط§ظ„ظ€sync + ط§ظ„ظ€API
+        // ظٹط¹ظ…ظ„ط§ظ† ط¹ظ„ظ‰ ط­ط¬ظ… ط¨ظٹط§ظ†ط§طھ ط­ظ‚ظٹظ‚ظٹ ط¨ظ†ظپط³ ط§ظ„ظ†طھظٹط¬ط©.
         Artisan::call('moh:sync-categories', [
-            '--source' => base_path('database/data/moh_medicines_categorized.json'),
+            '--file' => 'database/data/moh_medicines_categorized.json',
         ]);
 
         $this->assertSame(18330, CategoryMedicineLink::count());
@@ -203,7 +203,7 @@ class CategorySyncApiTest extends TestCase
 
         $bySlug = collect($this->getJson('/api/categories')->json('data'))->keyBy('slug');
 
-        // التحقق من 4 أقسام رئيسية
+        // ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† 4 ط£ظ‚ط³ط§ظ… ط±ط¦ظٹط³ظٹط©
         $this->assertSame(5124, $bySlug['medicines']['medicines_count']);
         $this->assertSame(10462, $bySlug['skin-care-beauty']['medicines_count']);
         $this->assertSame(474, $bySlug['vitamins-supplements']['medicines_count']);

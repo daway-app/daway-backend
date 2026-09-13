@@ -39,10 +39,10 @@ class CategorySyncCommandTest extends TestCase
     public function test_sync_creates_links_with_metadata_from_json(): void
     {
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ])->assertSuccessful();
 
-        // row 1: AMOXIDRUG → medicines (product_class, 90, no review)
+        // row 1: AMOXIDRUG â†’ medicines (product_class, 90, no review)
         $link = $this->linkFor(1001, 'medicines');
         $this->assertNotNull($link);
         $this->assertSame('product_class', $link->source);
@@ -50,9 +50,9 @@ class CategorySyncCommandTest extends TestCase
         $this->assertFalse($link->needs_review);
         $this->assertSame(11, (int) $link->moh_drug_id);
 
-        // row 2: SKINGLOW → personal-care-and-beauty maps to skin-care-beauty (alias)
+        // row 2: SKINGLOW â†’ personal-care-and-beauty maps to skin-care-beauty (alias)
         $link = $this->linkFor(1002, 'skin-care-beauty');
-        $this->assertNotNull($link, 'alias map should map personal-care-and-beauty → skin-care-beauty');
+        $this->assertNotNull($link, 'alias map should map personal-care-and-beauty â†’ skin-care-beauty');
         $this->assertSame('rules', $link->source);
         $this->assertSame(84, $link->confidence);
     }
@@ -60,30 +60,30 @@ class CategorySyncCommandTest extends TestCase
     public function test_sync_is_idempotent_on_second_run(): void
     {
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ])->assertSuccessful();
 
         $countFirst = CategoryMedicineLink::count();
         $this->assertSame(7, $countFirst, '6 rows: row1=1, row2=1, row3=2, row5=2, row6=1 = 7 links');
 
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ])->assertSuccessful();
 
-        $this->assertSame($countFirst, CategoryMedicineLink::count(), 'idempotent — no duplicates');
+        $this->assertSame($countFirst, CategoryMedicineLink::count(), 'idempotent â€” no duplicates');
     }
 
     public function test_fresh_deletes_non_admin_links_but_preserves_admin(): void
     {
         $medicinesId = $this->categoryId('medicines');
 
-        // أول sync بدون admin link
+        // ط£ظˆظ„ sync ط¨ط¯ظˆظ† admin link
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ])->assertSuccessful();
         $countAfterFirst = CategoryMedicineLink::count();
 
-        // الآن نضيف admin link — هذا لا يوجد في الـJSON ويجب أن يبقى بعد --fresh
+        // ط§ظ„ط¢ظ† ظ†ط¶ظٹظپ admin link â€” ظ‡ط°ط§ ظ„ط§ ظٹظˆط¬ط¯ ظپظٹ ط§ظ„ظ€JSON ظˆظٹط¬ط¨ ط£ظ† ظٹط¨ظ‚ظ‰ ط¨ط¹ط¯ --fresh
         $adminLink = CategoryMedicineLink::create([
             'category_id' => $medicinesId,
             'moh_product_id' => 9999,
@@ -93,9 +93,9 @@ class CategorySyncCommandTest extends TestCase
             'needs_review' => false,
         ]);
 
-        // re-sync بـfresh: يحذف 7 non-admin، يُنشئ 7، ويبقى admin
+        // re-sync ط¨ظ€fresh: ظٹط­ط°ظپ 7 non-adminطŒ ظٹظڈظ†ط´ط¦ 7طŒ ظˆظٹط¨ظ‚ظ‰ admin
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
             '--fresh' => true,
         ])->assertSuccessful();
 
@@ -105,7 +105,7 @@ class CategorySyncCommandTest extends TestCase
             'moh_product_id' => 9999,
         ]);
 
-        // admin link واحد + 7 من الـJSON = 8 = $countAfterFirst + 1
+        // admin link ظˆط§ط­ط¯ + 7 ظ…ظ† ط§ظ„ظ€JSON = 8 = $countAfterFirst + 1
         $this->assertSame($countAfterFirst + 1, CategoryMedicineLink::count());
     }
 
@@ -115,15 +115,15 @@ class CategorySyncCommandTest extends TestCase
 
         CategoryMedicineLink::create([
             'category_id' => $medicinesId,
-            'moh_product_id' => 1001,  // AMOXIDRUG — موجود في الـJSON بثقة 90
+            'moh_product_id' => 1001,  // AMOXIDRUG â€” ظ…ظˆط¬ظˆط¯ ظپظٹ ط§ظ„ظ€JSON ط¨ط«ظ‚ط© 90
             'moh_drug_id' => 11,
             'source' => 'admin',
-            'confidence' => 50,  // أقل من 90
+            'confidence' => 50,  // ط£ظ‚ظ„ ظ…ظ† 90
             'needs_review' => false,
         ]);
 
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ])->assertSuccessful();
 
         $link = $this->linkFor(1001, 'medicines');
@@ -135,10 +135,10 @@ class CategorySyncCommandTest extends TestCase
     public function test_unknown_json_slug_is_skipped_without_creating_category(): void
     {
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ])->assertSuccessful();
 
-        // row 4 (RECALL ITEM X) عندها slug="unknown-future-category" — لازم تُتجاهَل
+        // row 4 (RECALL ITEM X) ط¹ظ†ط¯ظ‡ط§ slug="unknown-future-category" â€” ظ„ط§ط²ظ… طھظڈطھط¬ط§ظ‡ظژظ„
         $this->assertSame(0, CategoryMedicineLink::where('moh_product_id', 1004)->count());
         $this->assertSame(0, Category::where('slug', 'unknown-future-category')->count());
     }
@@ -149,7 +149,7 @@ class CategorySyncCommandTest extends TestCase
         $this->assertSame(0, $before);
 
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
             '--dry-run' => true,
         ])->assertSuccessful();
 
@@ -159,7 +159,7 @@ class CategorySyncCommandTest extends TestCase
     public function test_needs_review_links_are_preserved_with_correct_flag(): void
     {
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ])->assertSuccessful();
 
         // 3 needs_review links: row5 x2 + row6 x1
@@ -187,10 +187,10 @@ class CategorySyncCommandTest extends TestCase
     public function test_multi_category_medicine_creates_multiple_links(): void
     {
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ])->assertSuccessful();
 
-        // BABY MULTIVIT (row 3) — two categories: mother-and-child + vitamins-and-dietary-supplements
+        // BABY MULTIVIT (row 3) â€” two categories: mother-and-child + vitamins-and-dietary-supplements
         $baby = $this->linkFor(1003, 'mother-baby');
         $vitamin = $this->linkFor(1003, 'vitamins-supplements');
 
@@ -203,10 +203,10 @@ class CategorySyncCommandTest extends TestCase
 
     public function test_transaction_rolls_back_on_error(): void
     {
-        // نختبر rollback فعلي: JSON فيه صفّان كلاهما سيُنشئ link.
-        // نُسجّل model event على CategoryMedicineLink يرمي استثناء عند إنشاء
-        // الـlink الثاني (moh_product_id=5002). الـcommand يلفّ الـsync بـ
-        // DB::transaction() فيجب أن يتراجع كل شيء — حتى الـlink الأول.
+        // ظ†ط®طھط¨ط± rollback ظپط¹ظ„ظٹ: JSON ظپظٹظ‡ طµظپظ‘ط§ظ† ظƒظ„ط§ظ‡ظ…ط§ ط³ظٹظڈظ†ط´ط¦ link.
+        // ظ†ظڈط³ط¬ظ‘ظ„ model event ط¹ظ„ظ‰ CategoryMedicineLink ظٹط±ظ…ظٹ ط§ط³طھط«ظ†ط§ط، ط¹ظ†ط¯ ط¥ظ†ط´ط§ط،
+        // ط§ظ„ظ€link ط§ظ„ط«ط§ظ†ظٹ (moh_product_id=5002). ط§ظ„ظ€command ظٹظ„ظپظ‘ ط§ظ„ظ€sync ط¨ظ€
+        // DB::transaction() ظپظٹط¬ط¨ ط£ظ† ظٹطھط±ط§ط¬ط¹ ظƒظ„ ط´ظٹط، â€” ط­طھظ‰ ط§ظ„ظ€link ط§ظ„ط£ظˆظ„.
 
         $testJson = base_path('storage/app/testing/fixtures/categorized_rollback.json');
         file_put_contents($testJson, json_encode([
@@ -216,7 +216,7 @@ class CategorySyncCommandTest extends TestCase
                 'moh_product_id' => 5001,
                 'moh_drug_id' => null,
                 'categories' => [
-                    ['id' => 1, 'name_ar' => 'الأدوية', 'slug' => 'medicines', 'confidence' => 90, 'source' => 'product_class', 'needs_review' => false],
+                    ['id' => 1, 'name_ar' => 'ط§ظ„ط£ط¯ظˆظٹط©', 'slug' => 'medicines', 'confidence' => 90, 'source' => 'product_class', 'needs_review' => false],
                 ],
             ],
             [
@@ -225,12 +225,12 @@ class CategorySyncCommandTest extends TestCase
                 'moh_product_id' => 5002,
                 'moh_drug_id' => null,
                 'categories' => [
-                    ['id' => 1, 'name_ar' => 'الأدوية', 'slug' => 'medicines', 'confidence' => 85, 'source' => 'rules', 'needs_review' => false],
+                    ['id' => 1, 'name_ar' => 'ط§ظ„ط£ط¯ظˆظٹط©', 'slug' => 'medicines', 'confidence' => 85, 'source' => 'rules', 'needs_review' => false],
                 ],
             ],
         ]));
 
-        // سجّل event يرمي عند محاولة إنشاء link لـ moh_product_id=5002
+        // ط³ط¬ظ‘ظ„ event ظٹط±ظ…ظٹ ط¹ظ†ط¯ ظ…ط­ط§ظˆظ„ط© ط¥ظ†ط´ط§ط، link ظ„ظ€ moh_product_id=5002
         $triggerProductId = 5002;
         CategoryMedicineLink::creating(function (CategoryMedicineLink $link) use ($triggerProductId) {
             if ((int) ($link->moh_product_id ?? 0) === $triggerProductId) {
@@ -238,12 +238,12 @@ class CategorySyncCommandTest extends TestCase
             }
         });
 
-        // الـsync يبدأ transaction، يُنشئ link1 بنجاح، ثم يحاول إنشاء link2
-        // فيرمي الـevent استثناء → transaction rollback → لا links إطلاقاً
+        // ط§ظ„ظ€sync ظٹط¨ط¯ط£ transactionطŒ ظٹظڈظ†ط´ط¦ link1 ط¨ظ†ط¬ط§ط­طŒ ط«ظ… ظٹط­ط§ظˆظ„ ط¥ظ†ط´ط§ط، link2
+        // ظپظٹط±ظ…ظٹ ط§ظ„ظ€event ط§ط³طھط«ظ†ط§ط، â†’ transaction rollback â†’ ظ„ط§ links ط¥ط·ظ„ط§ظ‚ط§ظ‹
         $threw = false;
         try {
             $this->artisan('moh:sync-categories', [
-                '--source' => $testJson,
+                '--file' => 'storage/app/testing/fixtures/categorized_rollback.json',
             ]);
         } catch (\RuntimeException $e) {
             $threw = true;
@@ -251,12 +251,12 @@ class CategorySyncCommandTest extends TestCase
             @unlink($testJson);
         }
 
-        // Transaction rollback: لا يوجد أي link — حتى link1 الذي أُنشئ قبل الفشل
+        // Transaction rollback: ظ„ط§ ظٹظˆط¬ط¯ ط£ظٹ link â€” ط­طھظ‰ link1 ط§ظ„ط°ظٹ ط£ظڈظ†ط´ط¦ ظ‚ط¨ظ„ ط§ظ„ظپط´ظ„
         $this->assertTrue($threw, 'sync must throw when the event fires');
         $this->assertSame(0, CategoryMedicineLink::where('moh_product_id', 5001)->count(),
-            'link1 must not exist — transaction rolled back');
+            'link1 must not exist â€” transaction rolled back');
         $this->assertSame(0, CategoryMedicineLink::where('moh_product_id', 5002)->count(),
-            'link2 must not exist — transaction rolled back');
+            'link2 must not exist â€” transaction rolled back');
     }
 
     public function test_sync_bumps_cache_version(): void
@@ -264,7 +264,7 @@ class CategorySyncCommandTest extends TestCase
         $before = CategoryCatalogCache::version();
 
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
+            '--file' => self::FIXTURE,
         ])->assertSuccessful();
 
         $after = CategoryCatalogCache::version();
@@ -277,8 +277,7 @@ class CategorySyncCommandTest extends TestCase
         $this->assertSame(0, $before);
 
         $this->artisan('moh:sync-categories', [
-            '--source' => base_path(self::FIXTURE),
-            '--print-plan' => true,
+            '--file' => self::FIXTURE,
             '--dry-run' => true,
         ])->assertSuccessful();
 
@@ -287,22 +286,23 @@ class CategorySyncCommandTest extends TestCase
 
     public function test_works_with_real_full_categorized_json_in_sqlite(): void
     {
-        // هذه الاختبار الكبير — يستخدم الملف الكامل. يتأكد إن الـcommand ينجح
-        // مع كل الـ18,330 رابط على sqlite in-memory بنفس المنطق.
-        $fullPath = base_path('database/data/moh_medicines_categorized.json');
+        // ظ‡ط°ظ‡ ط§ظ„ط§ط®طھط¨ط§ط± ط§ظ„ظƒط¨ظٹط± â€” ظٹط³طھط®ط¯ظ… ط§ظ„ظ…ظ„ظپ ط§ظ„ظƒط§ظ…ظ„. ظٹطھط£ظƒط¯ ط¥ظ† ط§ظ„ظ€command ظٹظ†ط¬ط­
+        // ظ…ط¹ ظƒظ„ ط§ظ„ظ€18,330 ط±ط§ط¨ط· ط¹ظ„ظ‰ sqlite in-memory ط¨ظ†ظپط³ ط§ظ„ظ…ظ†ط·ظ‚.
+        // مسار نسبي — الكوماند يطبّق base_path() داخلياً على قيمة --file
+        $fullPath = 'database/data/moh_medicines_categorized.json';
 
         $this->artisan('moh:sync-categories', [
-            '--source' => $fullPath,
+            '--file' => $fullPath,
         ])->assertSuccessful();
 
-        // نتوقع 18,330 رابط و 3 needs_review
+        // ظ†طھظˆظ‚ط¹ 18,330 ط±ط§ط¨ط· ظˆ 3 needs_review
         $this->assertSame(18330, CategoryMedicineLink::count());
         $this->assertSame(3, CategoryMedicineLink::where('needs_review', true)->count());
     }
 
     public function test_alias_map_covers_all_differing_json_slugs(): void
     {
-        // الـalias map يجب أن يحتوي على كل الـslugs المختلفة بين JSON والـSeeder
+        // ط§ظ„ظ€alias map ظٹط¬ط¨ ط£ظ† ظٹط­طھظˆظٹ ط¹ظ„ظ‰ ظƒظ„ ط§ظ„ظ€slugs ط§ظ„ظ…ط®طھظ„ظپط© ط¨ظٹظ† JSON ظˆط§ظ„ظ€Seeder
         $expectedAliases = [
             'mother-and-child' => 'mother-baby',
             'personal-care-and-beauty' => 'skin-care-beauty',
