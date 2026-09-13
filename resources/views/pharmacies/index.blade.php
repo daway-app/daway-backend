@@ -501,9 +501,12 @@
                                 </div>
                             </div>
 
-                            <div class="status-indicator-badge {{ $pharmacy->is_active ? 'active' : 'disabled' }}">
+                            @php
+                                $isPending = ! $pharmacy->is_active && $pharmacy->delivered_at === null;
+                            @endphp
+                            <div class="status-indicator-badge {{ $isPending ? 'pending' : ($pharmacy->is_active ? 'active' : 'disabled') }}">
                                 <span class="status-pulse"></span>
-                                <span>@lang('pharmacies.status_' . ($pharmacy->is_active ? 'active' : 'disabled'))</span>
+                                <span>@lang('pharmacies.status_' . ($isPending ? 'pending' : ($pharmacy->is_active ? 'active' : 'disabled')))</span>
                             </div>
                         </div>
 

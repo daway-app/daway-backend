@@ -45,8 +45,23 @@ class AuthController extends Controller
         }
 
         if (! $user->is_active || ! $pharmacy->is_active) {
-            // الحساب غير مفعّل — صيدلية سجّلت حديثاً تنتظر موافقة الإدارة.
-            // نُبقي نص الرسالة كما هو (توافق مع تطبيق Flutter) ونضيف code إضافياً.
+            // حساب مسجّل حديثاً لم تُسلّم له بيانات الدخول بعد → نسلّمها الآن في JSON
+            if ($pharmacy->delivered_at === null) {
+                $credentials = (new \App\Services\PharmacyRegistrationService)->deliver($pharmacy);
+
+                if ($credentials) {
+                    return response()->json([
+                        'message' => 'Account is inactive',
+                        'code' => 'account_inactive',
+                        'credentials' => [
+                            'pharmacy_id' => $credentials['pharmacy_id'],
+                            'password' => $credentials['password'],
+                        ],
+                    ], 403);
+                }
+            }
+
+            // حساب معطّل يدوياً (delivered_at موجود) → بدون credentials
             return response()->json([
                 'message' => 'Account is inactive',
                 'code' => 'account_inactive',
@@ -77,19 +92,18 @@ class AuthController extends Controller
     /**
      * إنشاء حساب صيدلية جديد من تطبيق الموبايل (بانتظار موافقة الإدارة).
      *
-     * نفس منطق تسجيل الويب: الحساب يُنشأ غير مفعّل (is_active = false)،
-     * والأدمن يفعّله لاحقاً. يُعيد Pharmacy ID الذي تدخل به الصيدلية بعد الموافقة.
+     * الحساب يُنشأ غير مفعّل مع كلمة مرور عشوائية.
+     * لا يُعاد Pharmacy ID — يُسلّم فقط بعد موافقة الأدمن (عبر SMS/OTP).
      */
     public function pharmacyRegister(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'pharmacy_name' => 'required|string|max:150',
-            'phone_number' => 'required|string|max:20|unique:users,phone',
-            'address' => 'required|string|max:255',   // الشارع
-            'region' => 'required|string|max:150',    // المنطقة / الحي
-            'password' => 'required|string|min:8|confirmed',
+            'phone' => 'required|string|max:20|unique:users,phone',
+            'address' => 'required|string|max:255',
+            'region' => 'required|string|max:150',
         ], [
-            'phone_number.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
+            'phone.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
         ]);
 
         if ($validator->fails()) {
@@ -100,63 +114,33 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $pharmacyCustomId = Pharmacy::generateUniqueCustomId();
-
-        if ($pharmacyCustomId === null) {
+        try {
+            $pharmacy = (new \App\Services\PharmacyRegistrationService)->createPending([
+                'pharmacy_name' => $request->string('pharmacy_name')->trim()->toString(),
+                'phone' => $request->phone,
+                'address' => $request->string('address')->trim()->toString(),
+                'region' => $request->string('region')->trim()->toString(),
+            ]);
+        } catch (\RuntimeException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'تعذر توليد معرّف صيدلية فريد، حاول مجدداً.',
-                'errors' => ['pharmacy_name' => ['تعذر توليد معرّف صيدلية فريد، حاول مجدداً.']],
+                'message' => $e->getMessage(),
+                'errors' => ['pharmacy_name' => [$e->getMessage()]],
             ], 422);
-        }
-
-        $pharmacyName = $request->string('pharmacy_name')->trim()->toString();
-
-        try {
-            DB::transaction(function () use ($request, $pharmacyCustomId, $pharmacyName) {
-                $user = User::create([
-                    'name' => $pharmacyName,
-                    'email' => null,
-                    'phone' => $request->phone_number,
-                    'password' => Hash::make($request->password),
-                ]);
-
-                // الحقول الحساسة خارج $fillable → تُضبط صراحةً.
-                // حساب جديد = غير مفعّل حتى يوافق الأدمن (نفس ما يفعله toggleStatus).
-                $user->role = 'pharmacy';
-                $user->is_active = false;
-                $user->must_change_password = false;
-                $user->save();
-                $user->syncRoles(['pharmacy']);
-
-                $pharmacy = new Pharmacy([
-                    'pharmacy_name' => $pharmacyName,
-                    'address' => $request->string('address')->trim()->toString(),
-                    'region' => $request->string('region')->trim()->toString(),
-                    'phone_number' => $request->phone_number,
-                ]);
-                $pharmacy->user_id = $user->id;
-                $pharmacy->pharmacy_custom_id = $pharmacyCustomId;
-                $pharmacy->is_active = false;
-                // profile_completed_at يبقى null → أول دخول بعد الموافقة يوجّه لإكمال الملف
-                $pharmacy->save();
-            });
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-            // سباق تسجيل متزامن بنفس رقم الهاتف — قيد users.phone يرفض الخاسر
             return response()->json([
                 'success' => false,
                 'message' => 'بيانات التسجيل غير صحيحة.',
-                'errors' => ['phone_number' => ['رقم الهاتف مستخدم مسبقاً بحساب آخر.']],
+                'errors' => ['phone' => ['رقم الهاتف مستخدم مسبقاً بحساب آخر.']],
             ], 422);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'تم إنشاء حساب الصيدلية بنجاح، بانتظار موافقة الإدارة.',
+            'message' => 'تم إنشاء حساب الصيدلية بنجاح. بانتظار موافقة الإدارة، سيتم إرسال بيانات الدخول لاحقاً.',
             'data' => [
-                'pharmacy_id' => $pharmacyCustomId,
-                'pharmacy_name' => $pharmacyName,
-                'phone_number' => $request->phone_number,
+                'pharmacy_name' => $pharmacy->pharmacy_name,
+                'phone' => $request->phone,
                 'is_active' => false,
                 'status' => 'pending_approval',
             ],

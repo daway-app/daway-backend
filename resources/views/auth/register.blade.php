@@ -46,10 +46,10 @@
 
                 <!-- رقم الهاتف -->
                 <div class="fg">
-                    <label class="fl" for="phone_number">رقم الهاتف <span style="color:#D64545">*</span></label>
-                    <input class="fc @error('phone_number') is-invalid @enderror" type="text" id="phone_number"
-                        name="phone_number" value="{{ old('phone_number') }}" placeholder="0599 000 000" required>
-                    @error('phone_number')
+                    <label class="fl" for="phone">رقم الهاتف <span style="color:#D64545">*</span></label>
+                    <input class="fc @error('phone') is-invalid @enderror" type="text" id="phone"
+                        name="phone" value="{{ old('phone') }}" placeholder="0599 000 000" required>
+                    @error('phone')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
                 </div>
@@ -64,22 +64,9 @@
                     @enderror
                 </div>
 
-                <!-- كلمة المرور -->
-                <div class="fg">
-                    <label class="fl" for="password">كلمة المرور <span style="color:#D64545">*</span></label>
-                    <div class="fc-wrapper">
-                        <input class="fc @error('password') is-invalid @enderror" type="password" id="password"
-                            name="password" placeholder="8 أحرف على الأقل" required>
-                        <button type="button" class="toggle-btn" onclick="togglePass('password', this)">إظهار</button>
-                    </div>
-                    @error('password')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
                 <div class="info-hint">
-                    💡 بعد إنشاء الحساب رح يظهرلك <strong>معرّف الصيدلية (Pharmacy ID)</strong> — احفظه، لأنك رح
-                    تستخدمه لتسجيل الدخول. الحساب بيحتاج <strong>موافقة الإدارة</strong> قبل ما يشتغل.
+                    💡 بعد إنشاء الحساب <strong>لا يظهر أي معرّف</strong> — بيانات الدخول (Pharmacy ID + كلمة المرور)
+                    رح تُرسل لك عبر رسالة نصية فور <strong>موافقة الإدارة</strong>.
                 </div>
 
                 <button type="submit" class="btn-p" id="submitBtn" style="margin-top:18px">إنشاء الحساب</button>

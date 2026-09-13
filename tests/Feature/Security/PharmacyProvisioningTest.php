@@ -53,4 +53,65 @@ class PharmacyProvisioningTest extends TestCase
         $this->assertNotNull($pharmacy);
         $this->assertMatchesRegularExpression('/^PH-[A-Z0-9]{4}$/', $pharmacy->pharmacy_custom_id);
     }
+
+    /**
+     * عند تفعيل صيدلية مسجّلة ذاتياً (delivered_at=null) → يتم تسليم بيانات الدخول مرة واحدة.
+     */
+    public function test_toggle_status_delivers_credentials_for_self_registered_pharmacy(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        // صيدلية مسجّلة ذاتياً (بانتظار موافقة)
+        $pharmacy = (new \App\Services\PharmacyRegistrationService)->createPending([
+            'pharmacy_name' => 'Self Registered Pharmacy',
+            'phone' => '0599111222',
+            'address' => 'شارع الاختبار',
+            'region' => 'منطقة الاختبار',
+        ]);
+
+        $this->assertNull($pharmacy->delivered_at);
+        $this->assertFalse((bool) $pharmacy->is_active);
+
+        // الأدمن يفعّل (toggleStatus = PATCH)
+        $response = $this->actingAs($admin)
+            ->patch(route('pharmacies.toggleStatus', $pharmacy->id));
+
+        $response->assertRedirect(route('pharmacies.index'));
+        $response->assertSessionHas('delivered_pharmacy_id');
+        $response->assertSessionHas('delivered_password');
+
+        $pharmacy->refresh();
+        $this->assertTrue((bool) $pharmacy->is_active);
+        $this->assertNotNull($pharmacy->delivered_at);
+
+        // idempotent — تفعيل مرة ثانية لا يُعيد التسليم (toggleStatus = PATCH)
+        $response2 = $this->actingAs($admin)
+            ->patch(route('pharmacies.toggleStatus', $pharmacy->id));
+
+        $response2->assertSessionMissing('delivered_pharmacy_id');
+    }
+
+    /**
+     * تفعيل صيدلية منشأة من الأدمن (delivered_at موجود مسبقاً) → لا يُعاد التسليم.
+     */
+    public function test_toggle_status_does_not_re_deliver_for_admin_created_pharmacy(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->post(route('pharmacies.store'), [
+            'pharmacy_name' => 'Admin Created Pharmacy',
+        ]);
+
+        $pharmacy = Pharmacy::where('pharmacy_name', 'Admin Created Pharmacy')->firstOrFail();
+        $pharmacy->delivered_at = now(); // الأدمن خلّاها delivered مسبقاً
+        $pharmacy->save();
+
+        // الأدمن يعطّل ثم يفعّل (toggleStatus = PATCH)
+        $this->actingAs($admin)
+            ->patch(route('pharmacies.toggleStatus', $pharmacy->id));
+
+        $this->actingAs($admin)
+            ->patch(route('pharmacies.toggleStatus', $pharmacy->id))
+            ->assertSessionMissing('delivered_pharmacy_id');
+    }
 }

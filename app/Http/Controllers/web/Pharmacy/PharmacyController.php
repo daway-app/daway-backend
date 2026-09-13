@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
 use App\Models\SearchLog;
 use App\Models\User; // Import the User model
+use App\Services\PharmacyRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon; // Import Hash facade
@@ -220,7 +221,8 @@ class PharmacyController extends Controller
     public function toggleStatus(string $id)
     {
         $pharmacy = Pharmacy::findOrFail($id);
-        $pharmacy->is_active = ! $pharmacy->is_active;
+        $willActivate = ! $pharmacy->is_active;
+        $pharmacy->is_active = $willActivate;
         $pharmacy->save();
 
         // ربط حالة مستخدم صاحب الصيدلية بحالة الصيدلية
@@ -230,8 +232,22 @@ class PharmacyController extends Controller
             Cache::forget('users_list_cache');
         }
 
+        // إذا كانت الصيدلية مسجّلة حديثاً (لم تُسلّم بعد) ونُشّطت الآن → نسلّم بيانات الدخول
+        $credentials = null;
+        if ($willActivate && $pharmacy->delivered_at === null) {
+            $credentials = (new PharmacyRegistrationService)->deliver($pharmacy);
+        }
+
         $this->clearPharmaciesIndexCache();
 
-        return redirect()->route('pharmacies.index')->with('success', __('pharmacies.pharmacy_status_updated_success'));
+        $redirect = redirect()->route('pharmacies.index')
+            ->with('success', __('pharmacies.pharmacy_status_updated_success'));
+
+        if ($credentials) {
+            $redirect->with('delivered_pharmacy_id', $credentials['pharmacy_id'])
+                ->with('delivered_password', $credentials['password']);
+        }
+
+        return $redirect;
     }
 }

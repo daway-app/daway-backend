@@ -3,48 +3,30 @@
 namespace App\Http\Controllers\web\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pharmacy;
-use App\Models\User;
+use App\Services\PharmacyRegistrationService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 /**
  * التسجيل الذاتي للصيدليات (إنشاء حساب).
  *
- * الحساب يُنشأ غير مفعّل (is_active = false) وينتظر موافقة الأدمن،
- * والأدمن يفعّله من صفحة الصيدليات (pharmacies.toggleStatus).
- * بعد الموافقة تدخل الصيدلية بـ Pharmacy ID + كلمة المرور التي اختارتها.
+ * الحساب يُنشأ غير مفعّل (is_active = false) مع كلمة مرور عشوائية،
+ * وينتظر موافقة الأدمن. الـ Pharmacy ID + كلمة المرور لا تُعرض أبداً —
+ * تُسلّم للصيدلية (عبر SMS/OTP أو أي قناة) فقط بعد موافقة الأدمن.
  */
 class RegisterController extends Controller
 {
     /**
      * عرض نموذج إنشاء حساب الصيدلية.
+     * نمسح أي flash قديم حتى الرسالة تظهر مرة واحدة فقط.
      */
     public function show(): View
     {
+        session()->forget(['register_pending_notice']);
+
         return view('auth.register');
-    }
-
-    /**
-     * شاشة نجاح التسجيل — تقرأ معرّف الصيدلية من الـ flash فقط
-     * (لا يوجد معرّف بالجلسة = زيارة مباشرة → رجوع للنموذج).
-     */
-    public function success(Request $request): View|RedirectResponse
-    {
-        $pharmacyId = $request->session()->get('registered_pharmacy_id');
-
-        if (! $pharmacyId) {
-            return redirect()->route('register.show');
-        }
-
-        return view('auth.register_success', [
-            'pharmacyId' => $pharmacyId,
-            'pharmacyName' => $request->session()->get('registered_pharmacy_name'),
-        ]);
     }
 
     /**
@@ -54,62 +36,35 @@ class RegisterController extends Controller
     {
         $validated = $request->validate([
             'pharmacy_name' => ['required', 'string', 'max:150'],
-            'phone_number' => ['required', 'string', 'max:20', 'unique:users,phone'],
-            'region' => ['required', 'string', 'max:150'],    // المنطقة / الحي
-            'password' => ['required', 'string', 'min:8'],
+            'phone' => ['required', 'string', 'max:20', 'unique:users,phone'],
+            'address' => ['required', 'string', 'max:255'],
+            'region' => ['required', 'string', 'max:150'],
         ], [
-            'phone_number.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
+            'phone.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
         ]);
 
-        $pharmacyCustomId = Pharmacy::generateUniqueCustomId();
-
-        if ($pharmacyCustomId === null) {
-            return back()
-                ->withErrors(['pharmacy_name' => 'تعذر توليد معرّف صيدلية فريد، حاول مجدداً.'])
-                ->withInput($request->except(['password', 'password_confirmation']));
-        }
-
         try {
-            DB::transaction(function () use ($validated, $pharmacyCustomId) {
-                $user = User::create([
-                    'name' => $validated['pharmacy_name'],
-                    'email' => null,
-                    'phone' => $validated['phone_number'],
-                    'password' => Hash::make($validated['password']),
-                ]);
-
-                // الحقول الحساسة خارج $fillable → تُضبط صراحةً.
-                // حساب جديد = غير مفعّل حتى يوافق الأدمن (نفس ما يفعله toggleStatus).
-                $user->role = 'pharmacy';
-                $user->is_active = false;
-                $user->must_change_password = false;
-                $user->save();
-                $user->syncRoles(['pharmacy']);
-
-                $pharmacy = new Pharmacy([
-                    'pharmacy_name' => $validated['pharmacy_name'],
-                    // الشارع (address) يُكمله صاحب الصيدلية لاحقاً من ملفه — العمود nullable
-                    'region' => $validated['region'],
-                    'phone_number' => $validated['phone_number'],
-                ]);
-                $pharmacy->user_id = $user->id;
-                $pharmacy->pharmacy_custom_id = $pharmacyCustomId;
-                $pharmacy->is_active = false;
-                // profile_completed_at يبقى null → أول دخول بعد الموافقة يوجّه لإكمال الملف
-                $pharmacy->save();
-            });
-        } catch (UniqueConstraintViolationException $e) {
-            // سباق تسجيل متزامن بنفس رقم الهاتف — قيد users.phone يرفض الخاسر
+            $pharmacy = (new PharmacyRegistrationService)->createPending([
+                'pharmacy_name' => $validated['pharmacy_name'],
+                'phone' => $validated['phone'],
+                'address' => $validated['address'],
+                'region' => $validated['region'],
+            ]);
+        } catch (\RuntimeException $e) {
             return back()
-                ->withErrors(['phone_number' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.'])
+                ->withErrors(['pharmacy_name' => $e->getMessage()])
+                ->withInput($request->except(['password', 'password_confirmation']));
+        } catch (UniqueConstraintViolationException $e) {
+            return back()
+                ->withErrors(['phone' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.'])
                 ->withInput($request->except(['password', 'password_confirmation']));
         }
 
         // لا نسجّل دخولاً — الحساب غير مفعّل بعد.
-        // نمرّر المعرّف فقط (لا كلمة المرور — الصيدلية اختارتها بنفسها).
+        // لا نُظهر ID ولا كلمة مرور. نوجّه لصفحة الدخول مع رسالة انتظار.
         return redirect()
-            ->route('register.success')
-            ->with('registered_pharmacy_id', $pharmacyCustomId)
+            ->route('login.show')
+            ->with('register_pending_notice', true)
             ->with('registered_pharmacy_name', $validated['pharmacy_name']);
     }
 }

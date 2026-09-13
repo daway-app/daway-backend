@@ -40,6 +40,7 @@ This is the central instruction file for AI agents working on the Daway project.
 8. **Respect response conventions** — API payloads are hand-built arrays `success/message/data/pagination` with ARABIC messages; match the existing controllers' `payload()` style.
 9. **Don't redesign the UI without being asked** — respect the teal design tokens in `resources/css/app.css`; incremental improvements only.
 10. **Tests must pass** — run `composer test` after changes affecting behavior; never delete tests to make suites green.
+11. **NEVER push, and never run any command that publishes to a remote.** Push to `develop` (or any branch) requires عبود's **explicit, per-instance approval**. The following are **forbidden** without it: `git push`, `git push --force`, creating a remote/repo, `gh repo create`, `gh pr create`, uploading tags, or any equivalent. Commits too: do not `git commit` unless asked. **Read-only git is always fine**: `git status`, `git diff`, `git log`, `git show`, `git ls-remote`, `git fetch` (downloads only, publishes nothing). When a task involves shipping code, stop at "changes are in the working tree" and tell the user — do not offer to push, and do not push "to be helpful".
 
 ## Known issues (from the latest audit findings — treat as facts until fixed)
 

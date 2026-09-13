@@ -67,7 +67,8 @@ Route::middleware('guest')->group(function () {
     ])->middleware(['throttle:login', 'throttle:login-account'])->name('login');
 
     // ==================== PHARMACY SELF-REGISTRATION ====================
-    // إنشاء حساب صيدلية (بانتظار موافقة الأدمن) — يظهر بعدها معرّف الدخول PH-XXXX
+    // إنشاء حساب صيدلية (بانتظار موافقة الأدمن) — لا يظهر ID ولا كلمة مرور.
+    // بيانات الدخول تُسلّم فور موافقة الأدمن (عبر SMS/OTP أو أي قناة).
 
     Route::get('/register', [
         RegisterController::class,
@@ -78,11 +79,6 @@ Route::middleware('guest')->group(function () {
         RegisterController::class,
         'store',
     ])->middleware('throttle:register')->name('register');
-
-    Route::get('/register/success', [
-        RegisterController::class,
-        'success',
-    ])->name('register.success');
 });
 
 // ==================== ADMIN ONLY ====================

@@ -15,10 +15,9 @@ class PharmacyRegisterTest extends TestCase
     {
         return array_merge([
             'pharmacy_name' => 'صيدلية الشفاء',
-            'phone_number' => '0598765432',
+            'phone' => '0598765432',
+            'address' => 'شارع الوحدة',
             'region' => 'الشجاعية',
-            'password' => 'secret1234',
-            'password_confirmation' => 'secret1234',
         ], $overrides);
     }
 
@@ -40,21 +39,19 @@ class PharmacyRegisterTest extends TestCase
     {
         $response = $this->post(route('register'), $this->validData());
 
-        $response->assertRedirect(route('register.success'));
-        $response->assertSessionHas('registered_pharmacy_id');
+        // بعد التسجيل → redirect لصفحة الدخول مع رسالة انتظار (بلا ID)
+        $response->assertRedirect(route('login.show'));
+        $response->assertSessionHas('register_pending_notice');
 
-        $pharmacyCustomId = $response->getSession()->get('registered_pharmacy_id');
-        $this->assertMatchesRegularExpression('/^PH-[A-Z0-9]{4}$/', $pharmacyCustomId);
-
-        $pharmacy = Pharmacy::where('pharmacy_custom_id', $pharmacyCustomId)->first();
+        $pharmacy = Pharmacy::where('phone_number', '0598765432')->first();
 
         $this->assertNotNull($pharmacy);
         $this->assertSame('صيدلية الشفاء', $pharmacy->pharmacy_name);
-        // الشارع لم يعد يُجمع في التسجيل — يُكمله صاحب الصيدلية من ملفه لاحقاً
-        $this->assertNull($pharmacy->address);
+        $this->assertSame('شارع الوحدة', $pharmacy->address);
         $this->assertSame('الشجاعية', $pharmacy->region);
         $this->assertSame('0598765432', $pharmacy->phone_number);
         $this->assertFalse((bool) $pharmacy->is_active);
+        $this->assertNull($pharmacy->delivered_at);
 
         $user = $pharmacy->user;
         $this->assertNotNull($user);
@@ -70,37 +67,24 @@ class PharmacyRegisterTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_success_page_shows_pharmacy_id(): void
+    public function test_login_page_shows_pending_notice_after_registration(): void
     {
-        $response = $this->post(route('register'), $this->validData());
-        $pharmacyCustomId = $response->getSession()->get('registered_pharmacy_id');
+        $this->post(route('register'), $this->validData());
 
-        $this->withSession([
-            'registered_pharmacy_id' => $pharmacyCustomId,
-            'registered_pharmacy_name' => 'صيدلية الشفاء',
-        ])
-            ->get(route('register.success'))
+        $this->get(route('login.show'))
             ->assertOk()
-            ->assertSee($pharmacyCustomId)
-            ->assertSee('موافقة الإدارة');
+            ->assertSee('بانتظار موافقة الإدارة');
     }
 
-    public function test_success_page_redirects_without_session(): void
+    public function test_login_page_does_not_show_id(): void
     {
-        $this->get(route('register.success'))
-            ->assertRedirect(route('register.show'));
-    }
+        $this->post(route('register'), $this->validData());
 
-    public function test_password_mismatch_is_no_longer_a_concept(): void
-    {
-        // تأكيد كلمة المرور أُزيل من النموذج — أي قيمة مرسلة تُتجاهل ولا يوجد حقل errors
-        $this->from(route('register.show'))
-            ->post(route('register'), $this->validData([
-                'password_confirmation' => 'nope12345',
-            ]))
-            ->assertRedirect(route('register.success'));
+        $pharmacy = Pharmacy::where('phone_number', '0598765432')->firstOrFail();
 
-        $this->assertDatabaseHas('users', ['phone' => '0598765432']);
+        $this->get(route('login.show'))
+            ->assertOk()
+            ->assertDontSee($pharmacy->pharmacy_custom_id);
     }
 
     public function test_duplicate_phone_fails(): void
@@ -109,7 +93,7 @@ class PharmacyRegisterTest extends TestCase
 
         $this->from(route('register.show'))
             ->post(route('register'), $this->validData())
-            ->assertSessionHasErrors('phone_number');
+            ->assertSessionHasErrors('phone');
 
         $this->assertDatabaseMissing('pharmacies', ['pharmacy_name' => 'صيدلية الشفاء']);
     }
@@ -120,9 +104,9 @@ class PharmacyRegisterTest extends TestCase
             ->post(route('register'), [])
             ->assertSessionHasErrors([
                 'pharmacy_name',
-                'phone_number',
+                'phone',
+                'address',
                 'region',
-                'password',
             ]);
     }
 }

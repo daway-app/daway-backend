@@ -38,6 +38,7 @@ class Pharmacy extends Model
             'avg_rating' => 'decimal:2', // نفس دقة العمود بالداتابيز (3,2)
             'is_active' => 'boolean',
             'profile_completed_at' => 'datetime',
+            'delivered_at' => 'datetime',
         ];
     }
 

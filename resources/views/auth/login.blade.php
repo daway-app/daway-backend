@@ -86,6 +86,14 @@
                 <button type="submit" class="btn-p" id="submitBtn">تسجيل الدخول</button>
             </form>
 
+            {{-- رسالة انتظار الموافقة بعد التسجيل — تظهر مرة واحدة فقط --}}
+            @if(session('register_pending_notice'))
+                <div class="info-hint" style="margin-top:14px; border-color:var(--teal-light); background:rgba(123,193,183,.10);">
+                    ✅ تم إنشاء حساب <strong>{{ session('registered_pharmacy_name') }}</strong> بنجاح.
+                    الحساب بانتظار موافقة الإدارة، وبعد الموافقة رح تصلك رسالة ببيانات الدخول.
+                </div>
+            @endif
+
             <div class="auth-footer">
                 ليس لديك حساب؟ <a href="{{ route('register.show') }}">إنشاء حساب صيدلية</a>
             </div>
