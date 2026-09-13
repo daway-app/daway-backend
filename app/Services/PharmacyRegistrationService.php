@@ -22,7 +22,7 @@ class PharmacyRegistrationService
     /**
      * إنشاء صيدلية جديدة بانتظار موافقة الأدمن.
      *
-     * @param  array  $data  ['pharmacy_name','phone','address','region']
+     * @param  array  $data  ['pharmacy_name','phone','region','address'?]
      * @return Pharmacy
      *
      * @throws \RuntimeException إذا فشل توليد الـ ID
@@ -54,7 +54,8 @@ class PharmacyRegistrationService
 
             $pharmacy = new Pharmacy([
                 'pharmacy_name' => $data['pharmacy_name'],
-                'address' => $data['address'],
+                // الشارع يُكمله صاحب الصيدلية من ملفه لاحقاً — العمود nullable
+                'address' => $data['address'] ?? null,
                 'region' => $data['region'],
                 'phone_number' => $data['phone'],
             ]);
@@ -105,9 +106,9 @@ class PharmacyRegistrationService
 
         if ($otpRecord) {
             // otp_codes.otp مخزّن hashed → ما نقدر نرجّع النص الصريح
-            // لكن عند إنشاء الحساب نستخدم كلمة مرور عشوائية 32 حرف
-            // هنا نولّد كلمة مرور جديدة ونحدّثها
-            $plainPassword = Str::random(32);
+            // لكن عند إنشاء الحساب نستخدم كلمة مرور عشوائية — هنا نولّد كلمة مرور جديدة
+            // 8 أحرف (حروف كبيرة/صغيرة + أرقام) قابلة للكتابة من الموبايل
+            $plainPassword = $this->readablePassword();
             $user->password = Hash::make($plainPassword);
             $user->save();
 
@@ -118,7 +119,7 @@ class PharmacyRegistrationService
             ]);
         } else {
             // fallback: لو otp_codes مفقود، نولّد جديدة
-            $plainPassword = Str::random(32);
+            $plainPassword = $this->readablePassword();
             $user->password = Hash::make($plainPassword);
             $user->save();
 
@@ -136,5 +137,22 @@ class PharmacyRegistrationService
             'pharmacy_id' => $pharmacy->pharmacy_custom_id,
             'password' => $plainPassword,
         ];
+    }
+
+    /**
+     * كلمة مرور 8 أحرف قابلة للقراءة/الكتابة من الموبايل
+     * (حروف كبيرة + صغيرة + أرقام — بدون رموز مربكة مثل l/1/O/0).
+     */
+    private function readablePassword(): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        $length = strlen($alphabet);
+        $password = '';
+
+        for ($i = 0; $i < 8; $i++) {
+            $password .= $alphabet[random_int(0, $length - 1)];
+        }
+
+        return $password;
     }
 }

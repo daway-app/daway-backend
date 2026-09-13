@@ -16,7 +16,6 @@ class PharmacyRegisterTest extends TestCase
         return array_merge([
             'pharmacy_name' => 'صيدلية الشفاء',
             'phone' => '0598765432',
-            'address' => 'شارع الوحدة',
             'region' => 'الشجاعية',
         ], $overrides);
     }
@@ -47,7 +46,8 @@ class PharmacyRegisterTest extends TestCase
 
         $this->assertNotNull($pharmacy);
         $this->assertSame('صيدلية الشفاء', $pharmacy->pharmacy_name);
-        $this->assertSame('شارع الوحدة', $pharmacy->address);
+        // الشارع لم يعد يُجمع في التسجيل — يُكمله صاحب الصيدلية من ملفه لاحقاً
+        $this->assertNull($pharmacy->address);
         $this->assertSame('الشجاعية', $pharmacy->region);
         $this->assertSame('0598765432', $pharmacy->phone_number);
         $this->assertFalse((bool) $pharmacy->is_active);
@@ -105,7 +105,6 @@ class PharmacyRegisterTest extends TestCase
             ->assertSessionHasErrors([
                 'pharmacy_name',
                 'phone',
-                'address',
                 'region',
             ]);
     }

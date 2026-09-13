@@ -332,6 +332,48 @@
         <div class="ambient-glow glow-1"></div>
         <div class="ambient-glow glow-2"></div>
 
+        {{-- بيانات دخول صيدلية مسجّلة ذاتياً بعد موافقة الأدمن — تظهر مرة واحدة فقط --}}
+        @if(session('delivered_pharmacy_id') && session('delivered_password'))
+            <div id="deliveredCredentialsBox" style="max-width:520px;margin:14px auto 0;background:linear-gradient(135deg,#0c4a6e,#155E85);color:#fff;border-radius:16px;padding:20px 22px;box-shadow:0 12px 30px rgba(21,94,133,.35);position:relative;z-index:5;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                    <span style="font-size:22px;">🔑</span>
+                    <strong style="font-size:16px;">تم تفعيل الصيدلية — بيانات الدخول</strong>
+                </div>
+                <p style="margin:0 0 14px;font-size:13px;opacity:.9;">انسخها الآن وأرسلها لصاحب الصيدلية — <strong>لن تظهر مرة أخرى</strong>.</p>
+                <div style="background:rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <div>
+                        <div style="font-size:11px;opacity:.75;">Pharmacy ID</div>
+                        <code id="deliveredId" class="bidi-text" style="font-size:18px;font-weight:700;letter-spacing:1px;">{{ session('delivered_pharmacy_id') }}</code>
+                    </div>
+                </div>
+                <div style="background:rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <div>
+                        <div style="font-size:11px;opacity:.75;">كلمة المرور</div>
+                        <code id="deliveredPassword" class="bidi-text" style="font-size:18px;font-weight:700;letter-spacing:1px;">{{ session('delivered_password') }}</code>
+                    </div>
+                </div>
+                <button type="button" onclick="copyDeliveredCredentials()" style="width:100%;border:none;border-radius:10px;padding:11px;background:#fff;color:#155E85;font-weight:700;cursor:pointer;font-size:14px;">
+                    📋 نسخ البيانات للإرسال
+                </button>
+            </div>
+            <script>
+                function copyDeliveredCredentials() {
+                    const text = 'Pharmacy ID: ' + document.getElementById('deliveredId').innerText
+                        + '\nكلمة المرور: ' + document.getElementById('deliveredPassword').innerText;
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(text);
+                    } else {
+                        const ta = document.createElement('textarea');
+                        ta.value = text; document.body.appendChild(ta); ta.select();
+                        document.execCommand('copy'); ta.remove();
+                    }
+                    const btn = event.currentTarget;
+                    btn.innerText = '✅ تم النسخ';
+                    setTimeout(() => { btn.innerText = '📋 نسخ البيانات للإرسال'; }, 2000);
+                }
+            </script>
+        @endif
+
         <div class="top-header-bar animate-fade-down">
             <div class="header-title-section">
                 <div class="header-title-flex">

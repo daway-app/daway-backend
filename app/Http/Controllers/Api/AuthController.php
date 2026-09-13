@@ -45,23 +45,8 @@ class AuthController extends Controller
         }
 
         if (! $user->is_active || ! $pharmacy->is_active) {
-            // حساب مسجّل حديثاً لم تُسلّم له بيانات الدخول بعد → نسلّمها الآن في JSON
-            if ($pharmacy->delivered_at === null) {
-                $credentials = (new \App\Services\PharmacyRegistrationService)->deliver($pharmacy);
-
-                if ($credentials) {
-                    return response()->json([
-                        'message' => 'Account is inactive',
-                        'code' => 'account_inactive',
-                        'credentials' => [
-                            'pharmacy_id' => $credentials['pharmacy_id'],
-                            'password' => $credentials['password'],
-                        ],
-                    ], 403);
-                }
-            }
-
-            // حساب معطّل يدوياً (delivered_at موجود) → بدون credentials
+            // حساب غير مفعّل — صيدلية مسجّلة تنتظر موافقة الإدارة، أو معطّلة يدوياً.
+            // بيانات الدخول سُلّمت عند التسجيل (نمط OTP) — لا نعيد إرسالها هنا.
             return response()->json([
                 'message' => 'Account is inactive',
                 'code' => 'account_inactive',
@@ -92,15 +77,15 @@ class AuthController extends Controller
     /**
      * إنشاء حساب صيدلية جديد من تطبيق الموبايل (بانتظار موافقة الإدارة).
      *
-     * الحساب يُنشأ غير مفعّل مع كلمة مرور عشوائية.
-     * لا يُعاد Pharmacy ID — يُسلّم فقط بعد موافقة الأدمن (عبر SMS/OTP).
+     * الحساب يُنشأ غير مفعّل مع كلمة مرور عشوائية، وبانات الدخول (Pharmacy ID
+     * + كلمة المرور) تُسلَّم فوراً في الاستجابة — نفس نمط OTP تبع المريض
+     * (بدل SMS حتى تُضاف مكتبة الرسائل). الحساب يبقى بلا دخول حتى يوافق الأدمن.
      */
     public function pharmacyRegister(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'pharmacy_name' => 'required|string|max:150',
             'phone' => 'required|string|max:20|unique:users,phone',
-            'address' => 'required|string|max:255',
             'region' => 'required|string|max:150',
         ], [
             'phone.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
@@ -118,9 +103,11 @@ class AuthController extends Controller
             $pharmacy = (new \App\Services\PharmacyRegistrationService)->createPending([
                 'pharmacy_name' => $request->string('pharmacy_name')->trim()->toString(),
                 'phone' => $request->phone,
-                'address' => $request->string('address')->trim()->toString(),
                 'region' => $request->string('region')->trim()->toString(),
             ]);
+
+            // التسليم فوراً في الاستجابة (نمط OTP) — idempotent عبر delivered_at
+            $credentials = (new \App\Services\PharmacyRegistrationService)->deliver($pharmacy);
         } catch (\RuntimeException $e) {
             return response()->json([
                 'success' => false,
@@ -137,8 +124,10 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'تم إنشاء حساب الصيدلية بنجاح. بانتظار موافقة الإدارة، سيتم إرسال بيانات الدخول لاحقاً.',
+            'message' => 'تم إنشاء حساب الصيدلية بنجاح. احفظ بيانات الدخول — الحساب ينتظر موافقة الإدارة.',
             'data' => [
+                'pharmacy_id' => $credentials['pharmacy_id'],
+                'password' => $credentials['password'],
                 'pharmacy_name' => $pharmacy->pharmacy_name,
                 'phone' => $request->phone,
                 'is_active' => false,

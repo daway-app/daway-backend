@@ -65,7 +65,6 @@ class PharmacyProvisioningTest extends TestCase
         $pharmacy = (new \App\Services\PharmacyRegistrationService)->createPending([
             'pharmacy_name' => 'Self Registered Pharmacy',
             'phone' => '0599111222',
-            'address' => 'شارع الاختبار',
             'region' => 'منطقة الاختبار',
         ]);
 

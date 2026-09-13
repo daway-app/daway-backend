@@ -65,8 +65,8 @@
                 </div>
 
                 <div class="info-hint">
-                    💡 بعد إنشاء الحساب <strong>لا يظهر أي معرّف</strong> — بيانات الدخول (Pharmacy ID + كلمة المرور)
-                    رح تُرسل لك عبر رسالة نصية فور <strong>موافقة الإدارة</strong>.
+                    💡 بعد إنشاء الحساب رح يتم <strong>تسليمك بيانات الدخول</strong>
+                    (Pharmacy ID وكلمة المرور) فور <strong>موافقة الإدارة</strong> — احتفظ برقم هاتفك.
                 </div>
 
                 <button type="submit" class="btn-p" id="submitBtn" style="margin-top:18px">إنشاء الحساب</button>

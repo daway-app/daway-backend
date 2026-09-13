@@ -32,11 +32,8 @@ class RateLimitersConfigTest extends TestCase
         for ($i = 0; $i < 5; $i++) {
             $response = $this->postJson('/api/register/pharmacy', [
                 'pharmacy_name' => 'Throttle Test Pharmacy',
-                'phone_number' => '059900000'.$i,
-                'address' => 'شارع الاختبار',
+                'phone' => '059900000'.$i,
                 'region' => 'منطقة الاختبار',
-                'password' => 'secret1234',
-                'password_confirmation' => 'secret1234',
             ]);
 
             $this->assertNotSame(
@@ -48,11 +45,8 @@ class RateLimitersConfigTest extends TestCase
 
         $this->postJson('/api/register/pharmacy', [
             'pharmacy_name' => 'Throttle Test Pharmacy',
-            'phone_number' => '0599000009',
-            'address' => 'شارع الاختبار',
+            'phone' => '0599000009',
             'region' => 'منطقة الاختبار',
-            'password' => 'secret1234',
-            'password_confirmation' => 'secret1234',
         ])->assertStatus(429);
     }
 }

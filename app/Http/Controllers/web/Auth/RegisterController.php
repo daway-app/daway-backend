@@ -37,7 +37,6 @@ class RegisterController extends Controller
         $validated = $request->validate([
             'pharmacy_name' => ['required', 'string', 'max:150'],
             'phone' => ['required', 'string', 'max:20', 'unique:users,phone'],
-            'address' => ['required', 'string', 'max:255'],
             'region' => ['required', 'string', 'max:150'],
         ], [
             'phone.unique' => 'رقم الهاتف مستخدم مسبقاً بحساب آخر.',
@@ -47,7 +46,6 @@ class RegisterController extends Controller
             $pharmacy = (new PharmacyRegistrationService)->createPending([
                 'pharmacy_name' => $validated['pharmacy_name'],
                 'phone' => $validated['phone'],
-                'address' => $validated['address'],
                 'region' => $validated['region'],
             ]);
         } catch (\RuntimeException $e) {
