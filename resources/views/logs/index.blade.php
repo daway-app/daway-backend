@@ -3,18 +3,25 @@
 @section('title', __('logs.title'))
 
 @section('content')
-    @vite(['resources/css/pages/logs.css'])
+    @vite(['resources/css/pages/logs.css', 'resources/css/pages/medicines.css'])
 
     <div class="logs-wrapper">
-        <div class="logs-header">
-            <div class="logs-title-group">
-                <h2>@lang('logs.main_heading')</h2>
+        {{-- الترويسة المشتركة نفس نمط صفحات الأدمن الأخرى --}}
+        <div class="top-header-bar">
+            <div class="header-title-section">
+                <h1>@lang('logs.main_heading')</h1>
                 <p>@lang('logs.main_description', ['site_name' => session('app_settings.site_name', 'DAWAK')])</p>
             </div>
-
-            <a href="{{ route('logs.export.excel') }}" class="btn-export-excel">
-                @lang('logs.export_excel_button')
-            </a>
+            <div class="header-actions">
+                <a href="{{ route('logs.export.excel') }}" class="btn-export-excel">
+                    @lang('logs.export_excel_button')
+                </a>
+            </div>
+        </div>
+        <div class="breadcrumb-trail">
+            <a href="{{ route('dashboard') }}">@lang('categories.breadcrumb_main')</a>
+            <span>‹</span>
+            <span>@lang('logs.main_heading')</span>
         </div>
 
         <!-- Filter and Search Tools -->

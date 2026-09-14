@@ -14,7 +14,7 @@ class InventoryController extends Controller
         $medicines = Medicine::withSum('pharmacyMedicines', 'quantity')
             ->withCount('pharmacyMedicines')
             ->latest()
-            ->paginate(7)
+            ->paginate(50)
             ->withQueryString();
 
         // نفس العقد الذي يتوقعه الـ view (كائنات بنفس الحقول السابقة).

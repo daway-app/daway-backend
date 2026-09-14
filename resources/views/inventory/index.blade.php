@@ -3,9 +3,23 @@
 @section('title', __('inventory.title'))
 
 @section('content')
-    @vite(['resources/css/pages/inventory.css'])
+    {{-- medicines.css يوفر كلاسات الترويسة/Breadcrumb المشتركة بين صفحات الأدمن --}}
+    @vite(['resources/css/pages/inventory.css', 'resources/css/pages/medicines.css'])
 
     <div>
+        <!-- 0. الترويسة المشتركة -->
+        <div class="top-header-bar">
+            <div class="header-title-section">
+                <h1>@lang('inventory.main_heading')</h1>
+                <p>@lang('inventory.main_description')</p>
+            </div>
+        </div>
+        <div class="breadcrumb-trail">
+            <a href="{{ route('dashboard') }}">@lang('categories.breadcrumb_main')</a>
+            <span>‹</span>
+            <span>@lang('inventory.main_heading')</span>
+        </div>
+
         <!-- 1. كروت الإحصائيات -->
         <div class="stats-container">
             <div class="stat-item">

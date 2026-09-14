@@ -360,3 +360,123 @@ body.dark-mode tbody tr:hover { background: rgba(28, 114, 166, 0.06); }
         transition-duration: .001ms !important;
     }
 }
+
+/* ==========================================================
+   Pagination skin — عام لكل الصفحات (أدمن + صيدلية)
+   نفس شكل صفحة المرضى: شرائح دائرية، النشط أزرق، يرث الـdark mode.
+   الصفحات التي لها skin خاص (medicines/users/patients) تتجاوز هذا الأساس.
+   ========================================================== */
+.pagination-container,
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    box-sizing: border-box;
+}
+
+body.dark-mode .pagination-container,
+body.dark-mode .pagination-wrapper {
+    background: #232327;
+    border-top-color: #333338;
+}
+
+.pagination-container nav,
+.pagination-wrapper nav {
+    display: block;
+    text-align: center;
+    width: 100%;
+}
+
+.pagination-container nav div:first-child,
+.pagination-wrapper nav div:first-child {
+    display: none;
+}
+
+.pagination-container ul,
+.pagination-wrapper ul,
+.pagination-container nav > div:last-child,
+.pagination-wrapper nav > div:last-child {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-wrap: wrap;
+}
+
+.pagination-container li,
+.pagination-wrapper li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+}
+
+.pagination-container nav span[aria-current="page"],
+.pagination-container nav a,
+.pagination-wrapper nav span[aria-current="page"],
+.pagination-wrapper nav a,
+.pagination-container .page-item,
+.pagination-container a,
+.pagination-container span:not([class]) {
+    position: static;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 12px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+body.dark-mode .pagination-container nav span[aria-current="page"],
+body.dark-mode .pagination-container nav a,
+body.dark-mode .pagination-wrapper nav span[aria-current="page"],
+body.dark-mode .pagination-wrapper nav a,
+body.dark-mode .pagination-container .page-item,
+body.dark-mode .pagination-container a,
+body.dark-mode .pagination-container span:not([class]) {
+    background-color: #333338;
+    border-color: #3F3F46;
+    color: #cbd5e1;
+}
+
+.pagination-container nav a:hover:not(.active),
+.pagination-wrapper nav a:hover:not(.active) {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.pagination-container .active span,
+.pagination-wrapper .active span,
+.pagination-container span[aria-current="page"],
+.pagination-wrapper span[aria-current="page"] {
+    background-color: #1C72A6 !important;
+    color: #ffffff !important;
+    border-color: #1C72A6 !important;
+}
+
+.pagination-container .disabled span,
+.pagination-wrapper .disabled span,
+.pagination-container .disabled,
+.pagination-wrapper .disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

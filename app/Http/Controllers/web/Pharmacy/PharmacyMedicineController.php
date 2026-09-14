@@ -74,7 +74,7 @@ class PharmacyMedicineController extends Controller
             });
         }
 
-        $pharmacyMedicines = $query->orderByDesc('id')->paginate(7)->withQueryString();
+        $pharmacyMedicines = $query->orderByDesc('id')->paginate(50)->withQueryString();
 
         $availableCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->where('is_available', true)

@@ -51,7 +51,7 @@ class PharmacyInquiryController extends Controller
             });
         }
 
-        $inquiries = $query->paginate(7)->withQueryString();
+        $inquiries = $query->paginate(50)->withQueryString();
         $newCount = $pharmacy->patientInquiries()->where('status', 'new')->count();
         $answeredCount = $pharmacy->patientInquiries()->where('status', 'answered')->count();
         $closedCount = $pharmacy->patientInquiries()->where('status', 'closed')->count();

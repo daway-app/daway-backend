@@ -59,7 +59,7 @@ class PharmacyInventoryController extends Controller
             });
         }
 
-        $items = $rows->orderByDesc('id')->paginate(7)->withQueryString();
+        $items = $rows->orderByDesc('id')->paginate(50)->withQueryString();
 
         $trendLabels = [];
         $trendData = [];

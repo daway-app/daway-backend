@@ -53,7 +53,7 @@ class PharmacyAlternativeController extends Controller
         // الصفحة الحالية فقط — لا نحمّل كل أدوية الصيدلية دفعة واحدة.
         $pharmacyMedicines = $query
             ->orderByDesc('id')
-            ->paginate(7)
+            ->paginate(50)
             ->withQueryString();
 
         // مرشّحو البدائل لكل المواد الفعالة في الصفحة — استعلام واحد بدل استعلامين لكل صف.

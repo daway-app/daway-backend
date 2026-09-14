@@ -2,6 +2,8 @@
 
 return [
     'title' => 'Inventory Management',
+    'main_heading' => 'Inventory Management',
+    'main_description' => 'Track medicine availability across all pharmacies.',
     'total_items' => 'Total Items',
     'in_stock' => 'In Stock',
     'low_stock' => 'Low Stock',

@@ -42,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // ترقيم الصفحات الموحّد — نفس الclasses في app.css فتتزهّن
+        // أزرار التنقل في كل صفحات الأدمن والصيدلية تلقائياً.
+        \Illuminate\Pagination\Paginator::defaultView('partials.pagination');
+        \Illuminate\Pagination\Paginator::defaultSimpleView('partials.pagination');
+
         if (app()->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }

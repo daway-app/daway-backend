@@ -57,7 +57,7 @@ class LogController extends Controller
             $query->whereDate('created_at', $date);
         }
 
-        $logs = $query->latest()->paginate(7)->withQueryString();
+        $logs = $query->latest()->paginate(50)->withQueryString();
 
         return view('logs.index', compact('logs', 'q', 'event', 'date'));
     }

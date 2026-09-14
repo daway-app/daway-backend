@@ -24,7 +24,7 @@ class PatientController extends Controller
                 });
             })
             ->latest()
-            ->paginate(7)
+            ->paginate(50)
             ->withQueryString();
 
         $totalPatients = User::where('role', 'patient')->count();

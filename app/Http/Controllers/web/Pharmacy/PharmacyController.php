@@ -34,7 +34,7 @@ class PharmacyController extends Controller
             ->when($status === 'active', fn ($query) => $query->where('is_active', true))
             ->when($status === 'disabled', fn ($query) => $query->where('is_active', false))
             ->latest()
-            ->paginate(7)
+            ->paginate(50)
             ->withQueryString();
 
         // الإحصائيات والرسوم من استعلامات مستقلة على الجدول الكامل — أبداً من صفحة الـ paginator.

@@ -33,7 +33,7 @@ class PharmacyRatingController extends Controller
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
 
         // Load ratings for the pharmacy
-        $ratings = $pharmacy->ratings()->with('user')->latest()->paginate(7)->withQueryString(); // Assuming 'user' relationship on Rating model
+        $ratings = $pharmacy->ratings()->with('user')->latest()->paginate(50)->withQueryString(); // Assuming 'user' relationship on Rating model
 
         // Calculate average rating
         $averageRating = $pharmacy->ratings()->avg('stars_rating');
