@@ -26,9 +26,9 @@ class AdminShowPaginationTest extends TestCase
 
     private const PER_PAGE = 20;
 
-    private const ALTERNATIVES_PER_PAGE = 7;
+    private const ALTERNATIVES_PER_PAGE = 50; // 7 -> 50 بقرار الأدمن الموحد لكل قوائم الويب
 
-    private const TOTAL = 25;
+    private const TOTAL = 60; // 50/صفحة: يجب أن تتجاوز البيانات حدود الصفحة الأولى
 
     private function admin(): User
     {
@@ -74,8 +74,9 @@ class AdminShowPaginationTest extends TestCase
         );
 
         $page2->assertOk()
-            ->assertSee('MED-1</strong>', false)
-            ->assertSee('MED-5</strong>', false);
+            // TOTAL=60 و20 لكل صفحة → الصفحة الثانية تظهر 40..21
+            ->assertSee('MED-40</strong>', false)
+            ->assertSee('MED-21</strong>', false);
 
         // ماركب الترقيم موجود (nav role="navigation" هو ما تعتمد عليه قواعد CSS
         // العالمية في app_layout.css لتصغير أسهم SVG — راجع تعليق القسم هناك).
@@ -117,7 +118,7 @@ class AdminShowPaginationTest extends TestCase
             route('medicines.show', ['medicine' => $medicine->id, 'page' => 2])
         );
 
-        $page2->assertOk()->assertSee('PH-1</strong>', false);
+        $page2->assertOk()->assertSee('PH-40</strong>', false);
     }
 
     public function test_pharmacy_alternatives_index_paginates_without_n_plus_one(): void
@@ -159,7 +160,7 @@ class AdminShowPaginationTest extends TestCase
         $this->assertSame(
             self::ALTERNATIVES_PER_PAGE,
             substr_count($response->getContent(), "class='ph-card ph-alt-block'"),
-            'الصفحة الأولى يجب أن تعرض 7 بطاقات فقط'
+            'الصفحة الأولى يجب أن تعرض 50 بطاقة فقط'
         );
 
         $page2 = $this->actingAs($user)->get(
@@ -174,7 +175,7 @@ class AdminShowPaginationTest extends TestCase
         $user = User::factory()->pharmacy()->create();
         $pharmacy = Pharmacy::factory()->create(['user_id' => $user->id]);
 
-        for ($i = 1; $i <= 8; $i++) {
+        for ($i = 1; $i <= self::ALTERNATIVES_PER_PAGE + 8; $i++) {
             $medicine = Medicine::factory()->create([
                 'trade_name' => 'SEARCH-ALT-'.$i,
                 'active_ingredient' => 'ING-SEARCH-'.$i,
