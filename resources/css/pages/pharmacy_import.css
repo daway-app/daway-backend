@@ -41,6 +41,8 @@
 
 /* --- بطاقة الرفع --- */
 .pi-drop {
+    display: block;
+    cursor: pointer;
     border: 2px dashed var(--ph-line);
     border-radius: var(--ph-r-lg);
     padding: 34px 20px;
