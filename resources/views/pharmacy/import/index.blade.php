@@ -48,7 +48,7 @@
 
         <div class='pi-steps'>
             <div class='pi-step'><span class='pi-step-no'>1</span> @lang('pharmacy_import.step_download')</div>
-            <div class='pi-step is-active'><span class='pi-step-no'>2</span> @lang('pharmacy_import.step_upload')</div>
+            <div class='pi-step'><span class='pi-step-no'>2</span> @lang('pharmacy_import.step_upload')</div>
             <div class='pi-step'><span class='pi-step-no'>3</span> @lang('pharmacy_import.step_review')</div>
             <div class='pi-step'><span class='pi-step-no'>4</span> @lang('pharmacy_import.step_confirm')</div>
         </div>

@@ -29,15 +29,17 @@ class InventoryTemplateExport implements FromArray, ShouldAutoSize, WithHeadings
 
     public const MODE_CURRENT = 'current';
 
-    /** ترتيب الأعمدة الملزم — مصدر واحد للحقيقة. */
+    /** ترتيب الأعمدة الملزم — مصدر واحد للحقيقة.
+     *  barcode/min_stock أُزيل بناءً على قرار الأدمن: بلا ارتباط فعلي
+     *  (الباركود غير مخزّن، وmin_stock لا يغيّر حد التنبيه الذي
+     *  يعتمد LOW_STOCK_THRESHOLD) — لا مكان لهما في الاستيراد.
+     */
     public const COLUMNS = [
         'trade_name',
         'trade_name_ar',
         'active_ingredient',
         'price',
         'quantity',
-        'barcode',
-        'min_stock',
         'is_available',
     ];
 
@@ -80,8 +82,6 @@ class InventoryTemplateExport implements FromArray, ShouldAutoSize, WithHeadings
                 (string) ($medicine->active_ingredient ?? ''),
                 (float) $item->price,
                 (int) $item->quantity,
-                '', // الباركود غير مخزّن حالياً في الكتالوج — نُبقي العمود فارغاً
-                $item->min_stock,
                 $item->is_available ? 1 : 0,
             ];
         }

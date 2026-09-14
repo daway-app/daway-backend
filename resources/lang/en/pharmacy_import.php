@@ -14,10 +14,10 @@ return [
     'back_to_inventory' => 'Back to inventory',
 
     // --- Steps ---
-    'step_download' => '1) Download template',
-    'step_upload' => '2) Upload file',
-    'step_review' => '3) Review results',
-    'step_confirm' => '4) Confirm import',
+    'step_download' => 'Download template',
+    'step_upload' => 'Upload file',
+    'step_review' => 'Review results',
+    'step_confirm' => 'Confirm import',
 
     // --- Template ---
     'template_title' => 'File template',
