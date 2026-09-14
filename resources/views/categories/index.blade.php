@@ -13,6 +13,13 @@
                 <p>@lang('categories.main_description')</p>
             </div>
             <div class="header-actions">
+                <form method="POST" action="{{ route('categories.sync') }}" style="display:inline;"
+                      onsubmit="return confirm('ستتم مزامنة أقسام الكتالوج مع الأدوية (18,330 رابطاً). المزامنة تدوم دقائق — متأكد؟');">
+                    @csrf
+                    <button type="submit" class="btn-add-pharmacy" style="background:#0ea5a4;">
+                        <span>مزامنة الكتالوج</span>
+                    </button>
+                </form>
                 <a href="{{ route('categories.create') }}" class="btn-add-pharmacy hover-shimmer">
                     <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>

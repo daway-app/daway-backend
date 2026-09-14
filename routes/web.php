@@ -138,6 +138,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         'approveReview',
     ])->name('categories.review.approve');
 
+    Route::post('/categories/sync', [
+        CatalogImportController::class,
+        'syncCategories',
+    ])->name('categories.sync');
+
     // ==================== USERS ====================
 
     Route::patch('/users/{user}/toggle-status', [
