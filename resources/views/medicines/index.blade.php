@@ -9,8 +9,13 @@
         <!-- 1. Top Header -->
         <div class="top-header-bar">
             <div class="header-title-section">
-                <h1>@lang('medicines.main_heading')</h1>
-                <p>@lang('medicines.main_description')</p>
+                <div class="header-title-flex">
+                    <span class="header-icon-glow"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 0-7.07l3.18-3.18a1 1 0 0 1 1.42 0l9.64 9.64a1 1 0 0 1 0 1.42l-3.17 3.19a5 5 0 0 1-7.07 0Z"></path><path d="m8 8 6 6"></path></svg></span>
+                    <div>
+                        <h1>@lang('medicines.main_heading')</h1>
+                        <p>@lang('medicines.main_description')</p>
+                    </div>
+                </div>
             </div>
             <div class="header-actions">
                 <a href="{{ route('medicines.create') }}" class="btn-add-pharmacy hover-shimmer">

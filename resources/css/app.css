@@ -347,6 +347,25 @@ body.dark-mode tbody tr:hover { background: rgba(28, 114, 166, 0.06); }
 .breadcrumb-trail a:hover, .breadcrumb-nav a:hover { color: var(--teal-deep); }
 .breadcrumb-trail .current, .breadcrumb-nav .cur { color: var(--ink); font-weight: 700; }
 
+/* -- أيقونة العنوان في الترويسة (نفس نمط الصيدليات/المرضى) -- */
+.header-title-flex {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.header-icon-glow {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+    color: #0369a1;
+    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.1);
+    flex-shrink: 0;
+}
+
 /* -- ط¥طھط§ط­ط© ط§ظ„ظˆطµظˆظ„ -- */
 :focus-visible {
     outline: 2px solid var(--teal-primary);

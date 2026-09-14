@@ -21,7 +21,7 @@ class MedicineController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = 7;
+        $perPage = 50;
         $q = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
 
