@@ -7,6 +7,7 @@ use App\Models\CategoryMedicineLink;
 use App\Support\CategoryCatalogCache;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -54,7 +55,10 @@ class SyncMohCategories extends Command
         {--file=database/data/moh_medicines_categorized.json : ملف التصنيف المصدر}
         {--fresh : حذف الروابط الآلية (source != admin) قبل المزامنة}
         {--chunk=500 : حجم الدفعات عند المعالجة}
-        {--dry-run : عرض الأعداد المتوقعة دون كتابة أي رابط}';
+        {--dry-run : عرض الأعداد المتوقعة دون كتابة أي رابط}
+        {--offset=0 : بداية الشريحة (وضع القطع — المتصفح المتسلسل)}
+        {--limit=0 : عدد سجلات الشريحة (0 = الكل في تشغيل واحد)}
+        {--state= : مفتاح Cache لحالة المزامنة المكوّن عبر قطع متتالية}';
 
     protected $description = 'مزامنة التصنيف من ملف الكتالوج المصنّف إلى category_medicine_links (المصدر: ملف الـJSON — يدوي، idempotent، يحفظ روابط admin)';
 
@@ -151,7 +155,18 @@ class SyncMohCategories extends Command
         }
 
         $total = count($rows);
-        $bar = $this->output->createProgressBar($total);
+
+        // وضع القطع (الوزن المستخدم على Render المجاني): request المتصفح
+        // يُقطع عند ~100 ثانية فالمزامنة تعمل عبر قطع متتالية — كل قطعة
+        // تعالج slice معين وتخزّن العدّادات التراكمية في Cache.
+        $offset = max(0, (int) $this->option('offset'));
+        $limit = max(0, (int) $this->option('limit'));
+        $stateKey = (string) $this->option('state');
+
+        if ($offset > 0 || $limit > 0) {
+            $rows = array_slice($rows, $offset, $limit > 0 ? $limit : null);
+        }
+        $bar = $this->output->createProgressBar(count($rows));
         $bar->start();
 
         // all-or-nothing: فشل أي صف (خطأ DB مثلاً) يلغي المزامنة كاملة —
@@ -242,6 +257,20 @@ class SyncMohCategories extends Command
 
         $bar->finish();
         $this->newLine(2);
+
+        // دمج العدّادات في حالة المزامنة التراكمية (وضع القطع عبر المتصفح):
+        // $counters هنا خاصة بالشريحة فقط — الحالة التراكمية تُبنى دفعةً دفعة،
+        // و total هو مجموع الملف كاملاً (قبل التقطيع).
+        if ($stateKey !== '') {
+            $state = Cache::get($stateKey) ?? [];
+            foreach ($counters as $key => $value) {
+                $state[$key] = ($state[$key] ?? 0) + $value;
+            }
+            $state['total'] = $total;
+            $state['offset'] = $offset + count($rows);
+
+            Cache::put($stateKey, $state, now()->addHours(6));
+        }
 
         // إبطال كاش الكتالوج — الأدمن والـAPI يرون التغيير فوراً
         if (! $dryRun) {

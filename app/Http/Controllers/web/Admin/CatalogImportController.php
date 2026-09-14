@@ -7,7 +7,10 @@ use App\Models\MohMedicine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
+use Throwable;
 
 class CatalogImportController extends Controller
 {
@@ -46,49 +49,52 @@ class CatalogImportController extends Controller
     }
 
     /**
-     * مزامنة أقسام الكتالوج (تشغيل moh:sync-categories من زرّ الأدمن
-     * لأن خطة Render المجانية لا توفر shell).
-     * الأمر idempotent ويحافظ على روابط admin.
+     * مزامنة أقسام الكتالوج — تشغيل moh:sync-categories من زرّ الأدمن.
+     * Render المجاني يقطع request بعد ~100 ثانية فالعمل يعتمد وضع «القطع»:
+     * كل طلب يعالج شريحة (--offset/--limit) ثم يُعاد تلقائياً لرصد تقدم حي،
+     * إلى أن تكتمل (offset >= total) فيُستدعى Cache lock ويُعرض النجاح.
      */
-    public function syncCategories(Request $request): RedirectResponse
+    public function syncCategories(Request $request): RedirectResponse|View
     {
         set_time_limit(0);
 
-        // قفل بسيط: منع تشغيل مزدوج بنفس الوقت (المزامنة دامغة لكن ثقيلة)
-        $lockKey = 'category-sync-running';
-        if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
-            return $this->backToCategoriesTab()->with('error', 'المزامنة قيد التنفيذ حالياً — انتظر قليلاً ثم حاول مجدداً.');
+        $stateKey = 'category-sync-state';
+        $state = Cache::get($stateKey);
+        $chunkLimit = 1500;
+
+        // حالة تامة؟ ابدأ جولة جديدة إنها منتهية أو منهكة بعد ساعة
+        if ($state !== null && ($state['offset'] ?? 0) >= ($state['total'] ?? PHP_INT_MAX)) {
+            $state = null;
         }
-        \Illuminate\Support\Facades\Cache::put($lockKey, true, now()->addMinutes(15));
 
         try {
-            Log::info('CatalogImportController: بدء مزامنة أقسام الكتالوج من زر الأدمن');
-
-            $exitCode = Artisan::call('moh:sync-categories');
-
-            $output = trim(Artisan::output());
-            $linkCount = \App\Models\CategoryMedicineLink::count();
-
-            Log::info('CatalogImportController: انتهاء moh:sync-categories', [
-                'exit_code' => $exitCode,
-                'link_count' => $linkCount,
-                'output' => $output,
+            Artisan::call('moh:sync-categories', [
+                '--offset' => (int) ($state['offset'] ?? 0),
+                '--limit' => $chunkLimit,
+                '--state' => $stateKey,
             ]);
+        } catch (Throwable $e) {
+            Log::error('CatalogImportController: فشلت شريحة مزامنة الأقسام', ['e' => $e]);
+            Cache::forget($stateKey);
 
-            if ($exitCode === 0 && $linkCount > 0) {
-                return $this->backToCategoriesTab()->with(
-                    'success',
-                    'تمت مزامنة الأقسام بنجاح ('.number_format($linkCount).' رابطاً).'
-                );
-            }
-
-            return $this->backToCategoriesTab()->with(
-                'error',
-                'فشلت مزامنة الأقسام'.($output ? ' ('.$output.')' : '')
-            );
-        } finally {
-            \Illuminate\Support\Facades\Cache::forget($lockKey);
+            return redirect()->route('categories.index')
+                ->with('error', 'فشلت مزامنة الأقسام — أعد المحاولة: '.$e->getMessage());
         }
+
+        $state = Cache::get($stateKey) ?? [];
+
+        if (($state['offset'] ?? 0) >= ($state['total'] ?? 0) && $state['total'] > 0) {
+            Cache::forget($stateKey);
+
+            return redirect()->route('categories.index')->with(
+                'success',
+                'تمت مزامنة الأقسام بنجاح: '.$state['processed'].' سجلاً، '.
+                    ($state['created'] ?? 0).' رابطاً منشأً و'.($state['updated'] ?? 0).' محدثاً.'
+            );
+        }
+
+        // شريحة وسيطة: صفحة تقدم تفعل من نفسها عبر طلب POST جديد تلقائياً
+        return view('categories.sync-progress', ['state' => $state]);
     }
 
     private function backToCategoriesTab(): RedirectResponse
