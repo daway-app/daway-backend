@@ -90,6 +90,23 @@ class SyncMohCategories extends Command
             return self::FAILURE;
         }
 
+        // ضمان وجود الأقسام الافتراضية (يدوي على Render بلا shell كان ينقص البذر)
+        // الزر idempotent: يستعيد المحذوف ناعماً ولا ينتج duplicates.
+        if (! $dryRun) {
+            app(CategorySeeder::class)->run();
+        } else {
+            $missing = [];
+            $existingSlugs = Category::withTrashed()->pluck('slug')->all();
+            foreach (['medicines', 'dental-care', 'first-aid', 'mother-baby', 'skin-care-beauty', 'medical-supplies', 'eye-care', 'health-safety', 'vitamins-supplements', 'veterinary', 'herbal'] as $slug) {
+                if (! in_array($slug, $existingSlugs, true)) {
+                    $missing[] = $slug;
+                }
+            }
+            if ($missing) {
+                $this->warn('أقسام ناقصة ستُنشأ عند التشغيل الفعلي: '.implode(', ', $missing));
+            }
+        }
+
         // withTrashed: قسم moh-medicine slug ناعم الحذف يُستعاد تلقائياً
         // (المواصفة: soft-deleted → restore بدل إنشاء duplicate)
         $categoriesBySlug = Category::withTrashed()->get(['id', 'slug', 'deleted_at'])
