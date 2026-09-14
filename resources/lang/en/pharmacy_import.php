@@ -168,7 +168,7 @@ return [
     // The limit guards actions (upload/decide/commit/cancel), not page loads.
     'error_too_many_requests' => 'You have exceeded the inventory import rate limit. You can try again in :seconds seconds.',
     'error_too_many_requests_generic' => 'You have exceeded the inventory import rate limit. Please try again shortly.',
-    'rate_limit_remaining' => 'Import actions left this hour: :count of :limit.',
+    'rate_limit_remaining' => ':count of :limit imports left this hour.',
     'rate_limit_exhausted' => 'You have used up your import quota. It resets automatically in :minutes minutes — no need to reload the page.',
     'rate_limit_retrying' => 'Rate limit reached — retrying automatically in :seconds seconds…',
 

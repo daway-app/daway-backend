@@ -13,10 +13,14 @@
                 <p>@lang('categories.main_description')</p>
             </div>
             <div class="header-actions">
-                <form method="POST" action="{{ route('categories.sync') }}" style="display:inline;"
+                <form method="POST" action="{{ route('categories.sync') }}"
                       onsubmit="return confirm('ستتم مزامنة أقسام الكتالوج مع الأدوية (18,330 رابطاً). المزامنة تدوم دقائق — متأكد؟');">
                     @csrf
-                    <button type="submit" class="btn-add-pharmacy" style="background:#0ea5a4;">
+                    <button type="submit" class="btn-sync-catalog">
+                        <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                            <polyline points="21 3 21 9 15 9"></polyline>
+                        </svg>
                         <span>مزامنة الكتالوج</span>
                     </button>
                 </form>

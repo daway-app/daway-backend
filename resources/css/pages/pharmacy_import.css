@@ -412,8 +412,32 @@
     margin: 0;
 }
 
-/* مؤشّر حصة الاستيراد (وقاية من HTTP 429): معلومة هادئة، وتنبيه عند الاستنفاد. */
-.pi-rate-limit { margin-block-start: 6px; }
-.pi-rate-limit.is-exhausted { color: var(--ph-orange); font-weight: 600; }
+/* مؤشّر حصة الاستيراد (وقاية من HTTP 429): شارة هادئة، وتنبيه عند الاستنفاد. */
+.pi-rate-limit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-block-start: 10px;
+    padding: 8px 14px;
+    background: var(--ph-teal-mist, #e6f4f1);
+    border: 1px solid rgba(13, 148, 136, .25);
+    border-radius: 999px;
+    color: var(--ph-ink-soft, #334155);
+}
+.pi-rate-limit::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ph-teal, #0d9488);
+    flex-shrink: 0;
+}
+.pi-rate-limit.is-exhausted {
+    background: #fff7ed;
+    border-color: rgba(234, 88, 12, .35);
+    color: var(--ph-orange, #ea580c);
+    font-weight: 600;
+}
+.pi-rate-limit.is-exhausted::before { background: var(--ph-orange, #ea580c); }
 
 .pi-recent td { font-size: .84rem; }

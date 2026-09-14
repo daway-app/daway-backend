@@ -116,6 +116,29 @@ body.dark-mode .header-title-section h1 {
     gap: 12px;
 }
 
+/* زر ثانوي (outline) للأفعال الثقيلة/الإدارية بجانب الزر الأساسي */
+.btn-sync-catalog {
+    background: #ffffff;
+    color: #1C72A6;
+    border: 1.5px solid #1C72A6;
+    padding: 11px 20px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.btn-sync-catalog:hover {
+    background: #1C72A6;
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(28, 114, 166, 0.35);
+    transform: translateY(-2px);
+}
+
 .btn-add-pharmacy {
     position: relative;
     background: linear-gradient(135deg, #1C72A6, #155E85);
