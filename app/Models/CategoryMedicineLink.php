@@ -44,4 +44,16 @@ class CategoryMedicineLink extends Model
     {
         return $this->belongsTo(Medicine::class);
     }
+
+    /** كتالوج الوزارة المطابق بمفتاح moh_product_id */
+    public function mohProduct(): BelongsTo
+    {
+        return $this->belongsTo(MohMedicine::class, 'moh_product_id', 'moh_product_id');
+    }
+
+    /** كتالوج الوزارة المطابق بمفتاح moh_drug_id (صفوف وكالات بلا moh_product_id) */
+    public function mohDrug(): BelongsTo
+    {
+        return $this->belongsTo(MohMedicine::class, 'moh_drug_id', 'moh_drug_id');
+    }
 }

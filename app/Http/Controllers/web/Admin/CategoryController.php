@@ -97,6 +97,15 @@ class CategoryController extends Controller
             ->where('category_id', $category->id)
             ->when($review, fn ($query) => $query->where('needs_review', true))
             ->when($source !== '', fn ($query) => $query->where('source', $source))
+            // البحث النصي يفلتر جدول الروابط نفسه (اسم الدواء عبر مفاتيح الكتالوج/المحلي)
+            ->when($q !== '' && mb_strlen($q) >= 2, fn ($query) => $query->where(fn ($w) => $w
+                ->whereHas('mohProduct', fn ($m) => $m->where(fn ($x) => $x
+                    ->where('trade_name', 'like', "%{$q}%")
+                    ->orWhere('generic_name', 'like', "%{$q}%")))
+                ->orWhereHas('mohDrug', fn ($m) => $m->where(fn ($x) => $x
+                    ->where('trade_name', 'like', "%{$q}%")
+                    ->orWhere('generic_name', 'like', "%{$q}%")))
+                ->orWhereHas('medicine', fn ($m) => $m->where('trade_name', 'like', "%{$q}%"))))
             ->orderByDesc('needs_review')
             ->orderBy('id')
             // 50 رابطاً لكل صفحة داخل القسم
