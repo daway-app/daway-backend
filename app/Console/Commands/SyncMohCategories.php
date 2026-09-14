@@ -90,8 +90,22 @@ class SyncMohCategories extends Command
             return self::FAILURE;
         }
 
-        $categoriesBySlug = Category::query()->get(['id', 'slug'])
+        // withTrashed: قسم moh-medicine slug ناعم الحذف يُستعاد تلقائياً
+        // (المواصفة: soft-deleted → restore بدل إنشاء duplicate)
+        $categoriesBySlug = Category::withTrashed()->get(['id', 'slug', 'deleted_at'])
             ->keyBy(fn ($c) => $c->slug);
+
+        $resolveCategory = function (string $dbSlug) use ($categoriesBySlug) {
+            $category = $categoriesBySlug->get($dbSlug);
+            if ($category === null) {
+                return null;
+            }
+            if ($category->trashed()) {
+                $category->restore();
+            }
+
+            return $category;
+        };
 
         $counters = [
             'processed' => 0,
@@ -125,7 +139,8 @@ class SyncMohCategories extends Command
 
         // all-or-nothing: فشل أي صف (خطأ DB مثلاً) يلغي المزامنة كاملة —
         // لا يُترك الكتالوج بحالة نصف مُزامنة، وإعادة التشغيل idempotent.
-        DB::transaction(function () use ($rows, $chunkSize, $bar, &$counters, &$perCategory, &$unknownSlugs, $dryRun, $categoriesBySlug) {
+        // ملاحظة: يجب تمرير resolveCategory (Closure) صراحةً إلى الـtransaction.
+        DB::transaction(function () use ($rows, $chunkSize, $bar, &$counters, &$perCategory, &$unknownSlugs, $dryRun, $categoriesBySlug, $resolveCategory) {
         foreach (array_chunk($rows, $chunkSize) as $batch) {
             foreach ($batch as $row) {
                 $counters['processed']++;
@@ -154,7 +169,7 @@ class SyncMohCategories extends Command
                     }
 
                     $dbSlug = self::SLUG_ALIASES[$fileSlug] ?? $fileSlug;
-                    $category = $categoriesBySlug->get($dbSlug);
+                    $category = $resolveCategory($dbSlug);
                     if ($category === null) {
                         $counters['unknown_slug']++;
                         $unknownSlugs[$fileSlug] = ($unknownSlugs[$fileSlug] ?? 0) + 1;
