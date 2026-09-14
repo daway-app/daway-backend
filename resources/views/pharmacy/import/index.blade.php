@@ -94,6 +94,8 @@
                 <p>@lang('pharmacy_import.upload_hint', ['max' => $maxFileMb, 'rows' => number_format($maxRows)])</p>
             </div>
             <div class='ph-card-body' style='padding:20px 22px;'>
+                @include('pharmacy.import._rate_limit_note', ['rateLimit' => $rateLimit ?? null])
+
                 <form method='POST' action='{{ route('pharmacy.inventory.import.preview') }}' enctype='multipart/form-data' id='pi-upload-form'>
                     @csrf
 

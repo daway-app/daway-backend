@@ -242,51 +242,55 @@ Route::middleware(['auth', 'role:pharmacy', 'profile.complete'])->group(function
 
     // ==================== PHARMACY BULK INVENTORY IMPORT ====================
     // الاستيراد الجماعي: مسار منفصل تماماً عن نقاط الكتابة العادية.
-    // الـ throttle مخصّص (user_id + pharmacy_id) ولا يمسّ الـ limiter العام 'writes'.
+    //
+    // ⚠️ قاعدة الحد (أُصلحت بعد بلاغ 429):
+    //    `throttle:inventory-import` يحرس **الأفعال** فقط — رفع/قرارات/تنفيذ/إلغاء.
+    //    لا يحرس تحميل الصفحات (index/show) ولا التنزيلات (template/errors).
+    //
+    //    كان مطبَّقاً على المجموعة كلها، فكان مجرّد *فتح صفحة الاستيراد* يستهلك
+    //    من حصة الساعة (10/ساعة) — أي 11 فتحة صفحة = HTTP 429 بلا رفع واحد.
+    //    الصفحات محميّة بـ auth + role:pharmacy، والحمل الثقيل كله في POST.
 
-    Route::middleware('throttle:inventory-import')->group(function () {
+    Route::get('/pharmacy/inventory/import', [
+        PharmacyImportController::class,
+        'index',
+    ])->name('pharmacy.inventory.import.index');
 
-        Route::get('/pharmacy/inventory/import', [
-            PharmacyImportController::class,
-            'index',
-        ])->name('pharmacy.inventory.import.index');
+    Route::get('/pharmacy/inventory/import/template', [
+        PharmacyImportController::class,
+        'template',
+    ])->name('pharmacy.inventory.import.template');
 
-        Route::get('/pharmacy/inventory/import/template', [
-            PharmacyImportController::class,
-            'template',
-        ])->name('pharmacy.inventory.import.template');
+    Route::post('/pharmacy/inventory/import', [
+        PharmacyImportController::class,
+        'preview',
+    ])->middleware('throttle:inventory-import')->name('pharmacy.inventory.import.preview');
 
-        Route::post('/pharmacy/inventory/import', [
-            PharmacyImportController::class,
-            'preview',
-        ])->name('pharmacy.inventory.import.preview');
+    // uuid وليس المفتاح الرقمي — لا تعداد للجلسات
+    Route::get('/pharmacy/inventory/import/{import}', [
+        PharmacyImportController::class,
+        'show',
+    ])->name('pharmacy.inventory.import.show');
 
-        // uuid وليس المفتاح الرقمي — لا تعداد للجلسات
-        Route::get('/pharmacy/inventory/import/{import}', [
-            PharmacyImportController::class,
-            'show',
-        ])->name('pharmacy.inventory.import.show');
+    Route::post('/pharmacy/inventory/import/{import}/decide', [
+        PharmacyImportController::class,
+        'decide',
+    ])->middleware('throttle:inventory-import')->name('pharmacy.inventory.import.decide');
 
-        Route::post('/pharmacy/inventory/import/{import}/decide', [
-            PharmacyImportController::class,
-            'decide',
-        ])->name('pharmacy.inventory.import.decide');
+    Route::post('/pharmacy/inventory/import/{import}/commit', [
+        PharmacyImportController::class,
+        'commit',
+    ])->middleware('throttle:inventory-import')->name('pharmacy.inventory.import.commit');
 
-        Route::post('/pharmacy/inventory/import/{import}/commit', [
-            PharmacyImportController::class,
-            'commit',
-        ])->name('pharmacy.inventory.import.commit');
+    Route::get('/pharmacy/inventory/import/{import}/errors', [
+        PharmacyImportController::class,
+        'errors',
+    ])->name('pharmacy.inventory.import.errors');
 
-        Route::get('/pharmacy/inventory/import/{import}/errors', [
-            PharmacyImportController::class,
-            'errors',
-        ])->name('pharmacy.inventory.import.errors');
-
-        Route::post('/pharmacy/inventory/import/{import}/cancel', [
-            PharmacyImportController::class,
-            'cancel',
-        ])->name('pharmacy.inventory.import.cancel');
-    });
+    Route::post('/pharmacy/inventory/import/{import}/cancel', [
+        PharmacyImportController::class,
+        'cancel',
+    ])->middleware('throttle:inventory-import')->name('pharmacy.inventory.import.cancel');
 
     // ==================== PHARMACY INQUIRIES ====================
 

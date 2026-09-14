@@ -380,6 +380,7 @@
                     <div class='pi-pending-note' id='pi-pending-note'></div>
                     <div class='pi-ready-note' id='pi-ready-note'></div>
                     <p class='pi-inline-note' style='margin-block-start:6px;'>@lang('pharmacy_import.confirm_hint')</p>
+                    @include('pharmacy.import._rate_limit_note', ['rateLimit' => $rateLimit ?? null])
                 </div>
                 <div class='pi-confirm-actions'>
                     <button type='button' class='ph-btn ghost' id='pi-save'>
@@ -405,8 +406,12 @@
         @csrf
     </form>
 
-    <script id='pi-config' type='application/json'>
-        @json([
+    @php
+        // ⚠️ لا تستخدم @json([...]) مباشرةً هنا: توجيه @json يقسم التعبير على
+        // أول فاصلة (explode(',', ...)) ويأخذ الجزء الأول فقط — فأي مصفوفة
+        // متعددة المفاتيح تُقصّ بصمت وتُنتج PHP غير صالح. نبني المصفوفة أولاً
+        // ثم نمرّرها كمتغيّر واحد بلا فواصل.
+        $piConfig = [
             'decideUrl' => route('pharmacy.inventory.import.decide', ['import' => $import->uuid]),
             'searchUrl' => route('pharmacy.medicines.search'),
             'csrf' => csrf_token(),
@@ -420,10 +425,15 @@
                 'error' => __('pharmacy_import.error_commit_failed'),
                 'saving' => __('pharmacy_import.upload_processing'),
             ],
-        ])
+        ];
+    @endphp
+
+    <script id='pi-config' type='application/json'>
+        @json($piConfig)
     </script>
 
     @push('scripts')
+        @include('pharmacy.import._rate_limit')
         <script>
             (function () {
                 var configEl = document.getElementById('pi-config');
@@ -581,6 +591,15 @@
                             resultsBox.appendChild(empty);
                         } else {
                             list.forEach(function (item) {
+                                // رسالة نظام (مثل تجاوز حد المعدل) لا نتيجة قابلة للاختيار
+                                if (item.type === 'note') {
+                                    var note = document.createElement('div');
+                                    note.className = 'pi-no-results';
+                                    note.textContent = item.text || '';
+                                    resultsBox.appendChild(note);
+                                    return;
+                                }
+
                                 if (item.type !== 'medicine') { return; }
 
                                 var btn = document.createElement('button');
@@ -614,12 +633,20 @@
 
                         clearTimeout(timer);
                         timer = setTimeout(function () {
-                            fetch(config.searchUrl + '?q=' + encodeURIComponent(q), {
+                            // نمرّ عبر المساعد الموحّد: 429 هنا لا يجب أن يظهر
+                            // كـ «لا نتائج مطابقة» — وهذا ما كان يحدث سابقاً.
+                            window.DawayRateLimit.request(config.searchUrl + '?q=' + encodeURIComponent(q), {
                                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                                 credentials: 'same-origin'
                             })
-                                .then(function (r) { return r.ok ? r.json() : []; })
-                                .then(open)
+                                .then(function (res) {
+                                    if (res.status === 429) {
+                                        open([{ type: 'note', text: res.message }]);
+                                        return;
+                                    }
+
+                                    open(Array.isArray(res.body) ? res.body : []);
+                                })
                                 .catch(close);
                         }, 250);
 
@@ -653,7 +680,10 @@
                         merges: collectMerges()
                     };
 
-                    return fetch(config.decideUrl, {
+                    // المساعد الموحّد يتكفّل بـ 429: يقرأ Retry-After، ويعيد
+                    // المحاولة مرة واحدة إذا كان الانتظار قصيراً، وإلا يعيد
+                    // رسالة عربية واضحة بالثواني بدل «فشل التنفيذ» المبهمة.
+                    return window.DawayRateLimit.request(config.decideUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -663,11 +693,16 @@
                         },
                         credentials: 'same-origin',
                         body: JSON.stringify(payload)
-                    }).then(function (r) {
-                        return r.json().then(function (body) {
-                            return { ok: r.ok, body: body };
-                        });
                     });
+                }
+
+                /** نص الخطأ المعروض: رسالة الحد أولاً، ثم رسالة الخادم، ثم العام. */
+                function errorText(res) {
+                    if (!res) { return config.messages.error; }
+
+                    return res.message
+                        || (res.body && res.body.message)
+                        || config.messages.error;
                 }
 
                 function busy(btn, on) {
@@ -680,7 +715,7 @@
                     busy(saveBtn, true);
                     save()
                         .then(function (res) {
-                            if (!res.ok) { alert(res.body.message || config.messages.error); return; }
+                            if (!res.ok) { alert(errorText(res)); return; }
                             refreshCounters();
                         })
                         .catch(function () { alert(config.messages.error); })
@@ -701,7 +736,7 @@
                         .then(function (res) {
                             if (!res.ok) {
                                 busy(commitBtn, false);
-                                alert(res.body.message || config.messages.error);
+                                alert(errorText(res));
                                 return;
                             }
 

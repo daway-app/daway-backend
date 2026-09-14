@@ -12,7 +12,9 @@ use App\Models\PharmacyMedicine;
 use App\Models\PharmacyMedicineAlias;
 use App\Models\User;
 use App\Services\Ai\MedicineResolver;
+use App\Support\InventoryImportThrottle;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -106,13 +108,25 @@ class PharmacyInventoryImportTest extends TestCase
     /** @param array<int, array<string, mixed>> $rows */
     private function preview(array $rows, User $user, string $filename = 'inventory.csv'): InventoryImport
     {
-        $this->actingAs($user)
-            ->post(route('pharmacy.inventory.import.preview'), [
-                'file' => UploadedFile::fake()->createWithContent($filename, $this->csvFrom($rows)),
-            ])
-            ->assertRedirect();
+        $response = $this->postPreview($user, $rows, $filename);
+
+        // نتحقق من الوجهة لا من كونها 302 فقط: الحجب (429) يُعيد أيضاً 302
+        // إلى صفحة الرفع، فـ assertRedirect() وحدها تُخفي الحجب بصمت.
+        $response->assertRedirect();
+        $this->assertStringContainsString(
+            '/pharmacy/inventory/import/',
+            (string) $response->headers->get('Location')
+        );
 
         return InventoryImport::latest('id')->firstOrFail();
+    }
+
+    /** رفع خام — يُعيد الاستجابة كما هي لفحص الحدود ورسائل الحجب. */
+    private function postPreview(User $user, array $rows, string $filename = 'inventory.csv'): \Illuminate\Testing\TestResponse
+    {
+        return $this->actingAs($user)->post(route('pharmacy.inventory.import.preview'), [
+            'file' => UploadedFile::fake()->createWithContent($filename, $this->csvFrom($rows)),
+        ]);
     }
 
     /** @param array<int, array<string, mixed>> $decisions */
@@ -968,47 +982,231 @@ class PharmacyInventoryImportTest extends TestCase
     }
 
     /* =====================================================================
-     | حد المعدل
+     | حد المعدل (HTTP 429)
+     |
+     | القاعدة المُصلَحة: الحد يحرس **الأفعال** (رفع/قرارات/تنفيذ/إلغاء) لا
+     | تحميل الصفحات. قبل الإصلاح كان مجرّد فتح الصفحة 11 مرة بالساعة يحجب
+     | الصيدلي بـ 429 بلا أن يرفع ملفاً واحداً.
      ===================================================================== */
 
-    public function test_the_import_throttle_is_keyed_by_user_not_ip(): void
+    public function test_opening_the_import_pages_never_consumes_the_import_quota(): void
     {
-        [$userA] = $this->pharmacyUser();
-        [$userB] = $this->pharmacyUser();
-
         config(['inventory_import.rate_limit_per_hour' => 3]);
 
-        for ($i = 0; $i < 3; $i++) {
-            $this->actingAs($userA)
+        [$user] = $this->pharmacyUser();
+
+        // 12 فتحة صفحة = أربعة أضعاف الحصة، وكلها يجب أن تنجح
+        for ($i = 0; $i < 12; $i++) {
+            $this->actingAs($user)
                 ->get(route('pharmacy.inventory.import.index'))
                 ->assertOk();
         }
 
-        // المستخدم نفسه تجاوز الحد
-        $this->actingAs($userA)
-            ->get(route('pharmacy.inventory.import.index'))
-            ->assertStatus(429);
-
-        // مستخدم آخر من نفس الـ IP لا يتأثر — المفتاح ليس IP
-        $this->actingAs($userB)
-            ->get(route('pharmacy.inventory.import.index'))
+        // تنزيل القالب أيضاً قراءة لا فعل — لا يستهلك الحصة
+        $this->actingAs($user)
+            ->get(route('pharmacy.inventory.import.template', ['mode' => 'empty']))
             ->assertOk();
+
+        // ولا استُهلك منها شيء أصلاً
+        $this->assertSame(3, InventoryImportThrottle::remaining($user->fresh()));
     }
 
-    public function test_the_import_throttle_does_not_consume_the_general_writes_limiter(): void
+    public function test_the_import_quota_is_keyed_by_user_and_pharmacy_not_ip(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 2]);
+
+        [$userA] = $this->pharmacyUser();
+        [$userB] = $this->pharmacyUser();
+
+        $rows = [['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]];
+
+        $this->postPreview($userA, $rows)->assertRedirect();
+        $this->postPreview($userA, $rows)->assertRedirect();
+
+        // حصة userA استُهلكت
+        $this->assertSame(0, InventoryImportThrottle::remaining($userA->fresh()));
+
+        // userB (نفس الـ IP في الاختبار) غير متأثر — المفتاح ليس IP
+        $this->postPreview($userB, $rows)->assertRedirect();
+
+        $this->assertSame(1, InventoryImportThrottle::remaining($userB->fresh()));
+    }
+
+    public function test_a_blocked_upload_returns_the_user_to_the_page_with_a_clear_message(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 1]);
+
+        // الرسالة تُعرض للصيدلي بالعربية — نطلب اللغة صراحةً كما يفعل المتصفح
+        $this->withHeaders(['Accept-Language' => 'ar']);
+
+        [$user] = $this->pharmacyUser();
+
+        $rows = [['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]];
+
+        $this->postPreview($user, $rows)->assertRedirect();
+
+        $blocked = $this->postPreview($user, $rows);
+
+        // لا صفحة 429 خام: عودة إلى صفحة الرفع مع رسالة مفهومة
+        $blocked->assertRedirect(route('pharmacy.inventory.import.index'));
+        $blocked->assertSessionHasErrors('file');
+
+        $message = session('errors')->get('file')[0];
+
+        $this->assertStringContainsString('تجاوزت الحد المسموح', $message);
+        // الرسالة تحمل عدد الثواني الفعلي القادم من Retry-After
+        $this->assertMatchesRegularExpression('/\d+ ثانية/u', $message);
+        $this->assertGreaterThan(0, (int) session('retry_after'));
+        // وليست رسالة الإطار الافتراضية
+        $this->assertStringNotContainsString('Too Many Attempts', $message);
+    }
+
+    public function test_a_blocked_decision_returns_json_with_retry_after(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 1]);
+
+        $this->withHeaders(['Accept-Language' => 'ar']);
+
+        [$user] = $this->pharmacyUser();
+        $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        // الرفع يستهلك الحصة الوحيدة
+        $import = $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]], $user);
+
+        $blocked = $this->decide($user, $import, [
+            ['row' => 2, 'action' => 'link', 'medicine_id' => $medicine->id],
+        ]);
+
+        // طلب JSON → 429 حقيقي مع retry_after حتى يعيد العميل المحاولة بذكاء
+        $blocked->assertStatus(429)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('retry_after', fn ($value) => (int) $value > 0);
+
+        $this->assertStringContainsString('تجاوزت الحد المسموح', (string) $blocked->json('message'));
+    }
+
+    public function test_the_page_still_opens_when_the_quota_is_exhausted(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 1]);
+
+        [$user] = $this->pharmacyUser();
+
+        $rows = [['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]];
+
+        $this->postPreview($user, $rows)->assertRedirect();
+        $this->postPreview($user, $rows)->assertRedirect(route('pharmacy.inventory.import.index'));
+
+        // الحصة صفر — ومع ذلك الصفحة تُفتح عادي (هذا هو جوهر الإصلاح)،
+        // وتُعرض مدة التجديد بدل حجب الصيدلي عن واجهته.
+        $this->actingAs($user)
+            ->get(route('pharmacy.inventory.import.index'))
+            ->assertOk()
+            ->assertSee(__('pharmacy_import.rate_limit_exhausted', ['minutes' => 60]), false);
+    }
+
+    public function test_the_import_page_shows_the_remaining_quota_after_the_first_action(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 5]);
+
+        [$user] = $this->pharmacyUser();
+
+        // قبل أي فعل: لا نُظهر شيئاً — لا ضجيج بصري
+        $this->actingAs($user)
+            ->get(route('pharmacy.inventory.import.index'))
+            ->assertOk()
+            ->assertDontSee(__('pharmacy_import.rate_limit_remaining', ['count' => 5, 'limit' => 5]), false);
+
+        $this->postPreview($user, [['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]])
+            ->assertRedirect();
+
+        $this->actingAs($user)
+            ->get(route('pharmacy.inventory.import.index'))
+            ->assertOk()
+            ->assertSee(__('pharmacy_import.rate_limit_remaining', ['count' => 4, 'limit' => 5]), false);
+    }
+
+    public function test_the_review_page_renders_with_the_retry_helper(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 5]);
+
+        [$user] = $this->pharmacyUser();
+        Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        $import = $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]], $user);
+
+        $response = $this->actingAs($user)
+            ->get(route('pharmacy.inventory.import.show', ['import' => $import->uuid]))
+            ->assertOk();
+
+        // مساعد إعادة المحاولة محمَّل فعلاً — بدونه لا يُعالج 429 في المتصفح
+        // أصلاً، ولو انكسر الـ include لما ظهر أي خطأ واضح.
+        $response->assertSee('window.DawayRateLimit', false);
+
+        // وحفظ القرارات يمرّ فعلاً من المساعد، لا من fetch خام يتجاهل 429
+        $response->assertSee('DawayRateLimit.request(config.decideUrl', false);
+        $response->assertDontSee('fetch(config.decideUrl', false);
+
+        // ومؤشّر الحصة يظهر بعد رفع واحد: 4 متبقية من 5
+        $response->assertSee(
+            __('pharmacy_import.rate_limit_remaining', ['count' => 4, 'limit' => 5]),
+            false
+        );
+    }
+
+    public function test_the_result_page_renders_after_a_commit_and_after_a_cancel(): void
     {
         [$user] = $this->pharmacyUser();
         Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
 
-        config(['inventory_import.rate_limit_per_hour' => 50]);
+        // (١) بعد التنفيذ: صفحة نتيجة فيها الملخّص
+        $import = $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]], $user);
 
-        // استهلاك كامل لحد الاستيراد لا يجب أن يمسّ 'writes'
-        for ($i = 0; $i < 25; $i++) {
-            $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 4]], $user);
-        }
+        $this->decide($user, $import, [
+            ['row' => 2, 'action' => 'link', 'medicine_id' => Medicine::firstOrFail()->id],
+        ])->assertOk();
+
+        $this->commit($user, $import)->assertRedirect();
 
         $this->actingAs($user)
-            ->get(route('pharmacy.inventory.import.index'))
-            ->assertOk();
+            ->get(route('pharmacy.inventory.import.show', ['import' => $import->uuid]))
+            ->assertOk()
+            ->assertSee(__('pharmacy_import.done_title'))
+            ->assertSee(__('pharmacy_import.done_committed_rows'));
+
+        // (٢) بعد الإلغاء: صفحة نتيجة تقول إن الجلسة انتهت
+        $second = $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]], $user);
+
+        $this->actingAs($user)
+            ->post(route('pharmacy.inventory.import.cancel', ['import' => $second->uuid]))
+            ->assertRedirect();
+
+        $this->actingAs($user)
+            ->get(route('pharmacy.inventory.import.show', ['import' => $second->uuid]))
+            ->assertOk()
+            ->assertSee(__('pharmacy_import.error_expired'))
+            // ولا نقول له «نُفِّذت مسبقاً» — لم يُنفَّذ شيء، وهذا تضليل صريح
+            ->assertDontSee(__('pharmacy_import.error_already_committed'));
+    }
+
+    public function test_the_import_throttle_does_not_consume_the_general_writes_limiter(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 3]);
+
+        [$user] = $this->pharmacyUser();
+        Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        $rows = [['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 4]];
+
+        for ($i = 0; $i < 3; $i++) {
+            $this->postPreview($user, $rows)->assertRedirect();
+        }
+
+        // حصة الاستيراد استُهلكت بالكامل
+        $this->postPreview($user, $rows)
+            ->assertRedirect(route('pharmacy.inventory.import.index'));
+
+        // ومع ذلك 'writes' لم يُلمس: الحدّان منفصلان تماماً.
+        // مفتاح 'writes' = md5('writes' . (user_id ?: ip)) كما يحسبه ThrottleRequests.
+        $this->assertSame(0, RateLimiter::attempts(md5('writes'.$user->id)));
     }
 }

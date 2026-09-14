@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "test:js": "node tests/js/sw-navigation.test.mjs && node tests/js/sync-reachability.test.mjs"
+        "test:js": "node tests/js/sw-navigation.test.mjs && node tests/js/sync-reachability.test.mjs && node tests/js/rate-limit-helper.test.mjs"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

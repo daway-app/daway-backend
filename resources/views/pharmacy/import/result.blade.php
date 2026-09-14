@@ -7,6 +7,12 @@
 
     @php
         $committed = $import->isCommitted();
+
+        // الجلسة غير القابلة للتنفيذ إمّا فشل تنفيذها أو أُلغيت/انتهت مدّتها.
+        // ⚠️ كانت تعرض «هذه الجلسة نُفِّذت مسبقاً» لكل حالة غير مُنفَّذة — وهي
+        // رسالة مضلِّلة تماماً لجلسة أُلغيت (لم يُنفَّذ شيء إطلاقاً). اكتُشف عند
+        // تغطية هذا القالب باختبار؛ لم يكن يُختبر من قبل.
+        $failed = $import->status === \App\Models\InventoryImport::STATUS_FAILED;
     @endphp
 
     <div class='ph-page'>
@@ -60,12 +66,8 @@
                 </div>
             </div>
         @else
-            <div class='pi-alert {{ $import->isExpired() ? 'is-warn' : 'is-info' }}'>
-                @if ($import->isExpired())
-                    @lang('pharmacy_import.error_expired')
-                @else
-                    @lang('pharmacy_import.error_already_committed')
-                @endif
+            <div class='pi-alert {{ $failed ? 'is-error' : 'is-warn' }}'>
+                @lang($failed ? 'pharmacy_import.error_commit_failed' : 'pharmacy_import.error_expired')
             </div>
 
             <div class='ph-card'>

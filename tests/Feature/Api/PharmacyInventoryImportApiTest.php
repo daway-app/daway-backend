@@ -11,7 +11,9 @@ use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\User;
 use App\Services\Ai\MedicineResolver;
+use App\Support\InventoryImportThrottle;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -247,5 +249,99 @@ class PharmacyInventoryImportApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonStructure(['data', 'pagination' => ['total', 'per_page', 'current_page', 'last_page']]);
+    }
+
+    /* =====================================================================
+     | حد المعدل (HTTP 429) عبر الـ API
+     |
+     | العقد مع Flutter: 429 دائماً JSON فيه `retry_after` بالثواني، حتى
+     | يعرف التطبيق كم ينتظر بدل أن يعرض «فشل غير معروف».
+     ===================================================================== */
+
+    public function test_the_import_limit_returns_json_with_retry_after_over_the_api(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 1]);
+
+        // التطبيق يطلب العربية عبر Accept-Language كما في الإنتاج
+        $this->withHeaders(['Accept-Language' => 'ar']);
+
+        [$user] = $this->pharmacyUser();
+
+        $rows = [['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]];
+
+        // الأول ينجح ويستهلك الحصة
+        $this->post('/api/pharmacy/inventory/import', [
+            'file' => UploadedFile::fake()->createWithContent('inventory.csv', $this->csvFrom($rows)),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        $blocked = $this->post('/api/pharmacy/inventory/import', [
+            'file' => UploadedFile::fake()->createWithContent('inventory.csv', $this->csvFrom($rows)),
+        ], ['Accept' => 'application/json']);
+
+        $blocked->assertStatus(429)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('retry_after', fn ($value) => (int) $value > 0)
+            ->assertJsonStructure(['success', 'message', 'retry_after']);
+
+        $this->assertStringContainsString('تجاوزت الحد المسموح', (string) $blocked->json('message'));
+
+        // الترويسات موجودة لمن يقرأ الترويسات بدل الجسم
+        $blocked->assertHeader('Retry-After');
+
+        $this->assertSame(0, InventoryImportThrottle::remaining($user->fresh()));
+    }
+
+    public function test_api_reads_do_not_consume_the_import_quota(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 2]);
+
+        [$user] = $this->pharmacyUser();
+        Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        $import = $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 3]]);
+
+        // قراءات متكررة: قالب + جلسة + تقرير أخطاء — 8 دورات
+        for ($i = 0; $i < 8; $i++) {
+            $this->getJson('/api/pharmacy/inventory/import/template')->assertOk();
+            $this->getJson('/api/pharmacy/inventory/import/'.$import->uuid)->assertOk();
+            $this->getJson('/api/pharmacy/inventory/import/'.$import->uuid.'/errors')->assertOk();
+        }
+
+        // الرفع الواحد فقط هو ما استُهلك من الحصة
+        $this->assertSame(1, InventoryImportThrottle::used($user->fresh()));
+    }
+
+    public function test_exhausting_the_import_quota_leaves_the_writes_limiter_untouched(): void
+    {
+        config(['inventory_import.rate_limit_per_hour' => 1]);
+
+        [$user, $pharmacy] = $this->pharmacyUser();
+        $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        $stock = PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 3,
+        ]);
+
+        $rows = [['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 4]];
+
+        $this->preview($rows);
+
+        // الحصة استُهلكت
+        $this->post('/api/pharmacy/inventory/import', [
+            'file' => UploadedFile::fake()->createWithContent('inventory.csv', $this->csvFrom($rows)),
+        ], ['Accept' => 'application/json'])->assertStatus(429);
+
+        // ونقطة كتابة قديمة (throttle:writes) تعمل عادي — العزل سلوكي لا نظري
+        $this->putJson('/api/pharmacy/inventory/'.$stock->id, ['quantity' => 11])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertSame(11, (int) $stock->fresh()->quantity);
+
+        // 'writes' استُهلك مرة واحدة فقط — الكتابة أعلاه. كل حركة الاستيراد
+        // (الرفع الناجح + المحجوب) لم تلمس دلو 'writes' إطلاقاً.
+        $this->assertSame(1, RateLimiter::attempts(md5('writes'.$user->id)));
     }
 }

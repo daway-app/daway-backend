@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\InventoryImport;
 use App\Models\Pharmacy;
 use App\Services\InventoryImport\InventoryImportService;
+use App\Support\InventoryImportThrottle;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,6 +56,8 @@ class PharmacyImportController extends Controller
             'maxFileMb' => round(((int) config('inventory_import.max_file_kb', 5120)) / 1024, 1),
             'maxRows' => (int) config('inventory_import.max_rows', 5000),
             'columns' => InventoryTemplateExport::COLUMNS,
+            // الحصة المتبقية — تُعرض للصيدلي وقايةً من مفاجأة 429.
+            'rateLimit' => InventoryImportThrottle::status(Auth::user()),
         ]);
     }
 
@@ -118,6 +121,7 @@ class PharmacyImportController extends Controller
             'merges' => $model->mergeDecisions(),
             'decisions' => $this->service->decisionSummary($model),
             'unknownColumns' => (array) ($model->rows_payload['unknown_columns'] ?? []),
+            'rateLimit' => InventoryImportThrottle::status(Auth::user()),
         ]);
     }
 

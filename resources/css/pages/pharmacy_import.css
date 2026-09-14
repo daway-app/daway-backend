@@ -412,4 +412,8 @@
     margin: 0;
 }
 
+/* مؤشّر حصة الاستيراد (وقاية من HTTP 429): معلومة هادئة، وتنبيه عند الاستنفاد. */
+.pi-rate-limit { margin-block-start: 6px; }
+.pi-rate-limit.is-exhausted { color: var(--ph-orange); font-weight: 600; }
+
 .pi-recent td { font-size: .84rem; }

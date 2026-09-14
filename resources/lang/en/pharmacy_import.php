@@ -164,6 +164,14 @@ return [
     'error_no_data_rows' => 'The file contains no data rows.',
     'error_unreadable_file' => 'The file could not be read. Make sure it is not corrupted and is in a supported format.',
 
+    // --- Rate limit (HTTP 429) ---
+    // The limit guards actions (upload/decide/commit/cancel), not page loads.
+    'error_too_many_requests' => 'You have exceeded the inventory import rate limit. You can try again in :seconds seconds.',
+    'error_too_many_requests_generic' => 'You have exceeded the inventory import rate limit. Please try again shortly.',
+    'rate_limit_remaining' => 'Import actions left this hour: :count of :limit.',
+    'rate_limit_exhausted' => 'You have used up your import quota. It resets automatically in :minutes minutes — no need to reload the page.',
+    'rate_limit_retrying' => 'Rate limit reached — retrying automatically in :seconds seconds…',
+
     // --- Error report headings ---
     'export_errors_title' => 'Import error report',
     'export_status' => 'Status',
