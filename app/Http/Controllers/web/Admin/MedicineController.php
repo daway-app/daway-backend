@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Favorite;
 use App\Models\Medicine;
 use App\Support\Cloudinary;
+use App\Support\MedicineCatalogCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redirect;
 
 class MedicineController extends Controller
@@ -92,13 +92,6 @@ class MedicineController extends Controller
         return view('medicines.index', compact('medicines', 'stats', 'q', 'status'));
     }
 
-    private function clearMedicinesIndexCache()
-    {
-        Cache::forget('medicines_list_cache');
-        Cache::forget('medicines_list_cache_v2');
-        Cache::forget('medicines_list_cache_v3');
-    }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -138,10 +131,7 @@ class MedicineController extends Controller
             $medicine->alternatives()->sync($request->alternatives);
         }
 
-        $this->clearMedicinesIndexCache();
-
-        Cache::add('med_medicines_version', 1, 3600 * 24 * 30);
-        Cache::increment('med_medicines_version');
+        MedicineCatalogCache::bump();
 
         return Redirect::route('medicines.index')->with('success', 'تم إضافة الدواء بنجاح!');
     }
@@ -208,10 +198,7 @@ class MedicineController extends Controller
             $medicine->alternatives()->detach();
         }
 
-        $this->clearMedicinesIndexCache();
-
-        Cache::add('med_medicines_version', 1, 3600 * 24 * 30);
-        Cache::increment('med_medicines_version');
+        MedicineCatalogCache::bump();
 
         return Redirect::route('medicines.index')->with('success', 'تم تحديث الدواء بنجاح!');
     }
@@ -227,10 +214,7 @@ class MedicineController extends Controller
             ->delete();
 
         Medicine::destroy($id);
-        $this->clearMedicinesIndexCache();
-
-        Cache::add('med_medicines_version', 1, 3600 * 24 * 30);
-        Cache::increment('med_medicines_version');
+        MedicineCatalogCache::bump();
 
         return Redirect::route('medicines.index')->with('success', 'تم حذف الدواء بنجاح!');
     }

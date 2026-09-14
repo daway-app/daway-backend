@@ -229,6 +229,192 @@ final class MedicineResolver
     }
 
     /**
+     * نسخة مجمّعة من lookupMapping: مسح واحد لملف الـ mapping لكل الاستعلامات.
+     *
+     * السبب: lookupMapping تمسح ملف ~13MB لكل استعلام على حدة. في استيراد
+     * جماعي بـ 5000 صف يصبح ذلك 5000 مسحة للملف — انفجار وقت وذاكرة.
+     * هنا نمسح الملف مرة واحدة ونفحص كل سجل مقابل كل الاستعلامات.
+     *
+     * الأداء: لكل سجل نجهّز نص بحث واحداً (مرة واحدة)، ثم نستخدم str_contains
+     * كبوّابة رخيصة قبل تشغيل المطابق الكامل. النتيجة **مطابقة تماماً** لما
+     * يعطيه lookupMapping لكل استعلام — لأن المطابق نفسه هو recordMatchesNeedle.
+     *
+     * @param  array<int, string>  $queries
+     * @return array<string, array<int, array{moh_product_id:?int, moh_drug_id:?int, name_en:string, name_ar:?string}>>
+     *         مفتاحه الاستعلام بعد التطبيع (normalizeArabic).
+     */
+    public function lookupMappingBatch(array $queries, int $limitPerQuery = 3): array
+    {
+        $buckets = [];
+
+        foreach ($queries as $query) {
+            $needle = self::normalizeArabic((string) $query);
+
+            if (mb_strlen($needle) < 2 || isset($buckets[$needle])) {
+                continue;
+            }
+
+            $needleSkel = self::skeletonOf($needle);
+
+            $buckets[$needle] = [
+                'needle' => $needle,
+                'skel' => $needleSkel,
+                'skel_glued' => str_replace(' ', '', $needleSkel),
+                'words' => preg_split('/\s+/u', $needleSkel, -1, PREG_SPLIT_NO_EMPTY) ?: [],
+                'hits' => [],
+            ];
+        }
+
+        if ($buckets === []) {
+            return [];
+        }
+
+        $path = $this->mappingPath ?? base_path('database/data/chatbot_medicines.json');
+
+        if (! is_file($path)) {
+            return [];
+        }
+
+        $handle = fopen($path, 'r');
+
+        if ($handle === false) {
+            return [];
+        }
+
+        try {
+            while (($line = fgets($handle)) !== false) {
+                $line = trim($line, " \t\r\n,");
+
+                if ($line === '' || $line === '[' || $line === ']') {
+                    continue;
+                }
+
+                $decoded = json_decode($line, true);
+
+                if (! is_array($decoded)) {
+                    continue;
+                }
+
+                // الملف عادة سطر لكل سجل (JSONL)، لكن نتقبّل أيضاً مصفوفة كاملة في سطر واحد
+                $records = array_is_list($decoded) ? $decoded : [$decoded];
+
+                foreach ($records as $record) {
+                    if (! is_array($record)) {
+                        continue;
+                    }
+
+                    $haystack = $this->recordHaystack($record);
+
+                    foreach ($buckets as &$bucket) {
+                        if (count($bucket['hits']) >= $limitPerQuery) {
+                            continue;
+                        }
+
+                        if (! $this->haystackMayMatch($haystack, $bucket)) {
+                            continue;
+                        }
+
+                        if ($this->recordMatchesNeedle($record, $bucket['needle'], $bucket['skel'])) {
+                            $bucket['hits'][] = $this->mappingHitPayload($record);
+                        }
+                    }
+                    unset($bucket);
+                }
+
+                if ($this->allBucketsFull($buckets, $limitPerQuery)) {
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('mapping batch lookup failed', ['error' => $e->getMessage()]);
+        } finally {
+            fclose($handle);
+        }
+
+        $result = [];
+
+        foreach ($buckets as $key => $bucket) {
+            $result[$key] = $bucket['hits'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * نص بحث واحد للسجل — يُبنى مرة واحدة لكل سجل بدل تطبيع الـ aliases لكل استعلام.
+     *
+     * @return array{plain: string, skel: string}
+     */
+    private function recordHaystack(array $record): array
+    {
+        $parts = [];
+
+        foreach ((array) ($record['aliases'] ?? []) as $alias) {
+            if (! is_string($alias) || $alias === '') {
+                continue;
+            }
+
+            $normalized = strpbrk($alias, 'أإآؤئى') === false
+                ? mb_strtolower($alias)
+                : self::normalizeArabic($alias);
+
+            $parts[] = $normalized;
+            $parts[] = self::skeletonOf($normalized);
+        }
+
+        $joined = implode("\n", $parts);
+
+        return [
+            'plain' => $joined,
+            'skel' => str_replace(["\n", ' '], '', $joined),
+        ];
+    }
+
+    /**
+     * بوّابة رخيصة: هل يستحق هذا السجل تشغيل المطابق الكامل؟
+     *
+     * آمنة كـ superset للمراحل الثلاث: لو أعادت false فالمطابق الكامل كان
+     * سيعيد false حتماً — فلا نتائج مفقودة، فقط فحص أقل بكثير.
+     */
+    private function haystackMayMatch(array $haystack, array $bucket): bool
+    {
+        // المرحلة 1
+        if (str_contains($haystack['plain'], $bucket['needle'])) {
+            return true;
+        }
+
+        // المرحلتان 2 و3 (الاسم الملزوق بدون مسافات)
+        if (str_contains($haystack['skel'], $bucket['skel_glued'])) {
+            return true;
+        }
+
+        // المرحلة 3 قد تطابق كلمات موزّعة على aliases مختلفة — نفحص كل كلمة.
+        if ($bucket['words'] === []) {
+            return false;
+        }
+
+        foreach ($bucket['words'] as $word) {
+            if (! str_contains($haystack['skel'], $word)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** هل امتلأت كل الدلاء؟ (توقّف مبكر عن مسح الملف) */
+    private function allBucketsFull(array $buckets, int $limitPerQuery): bool
+    {
+        foreach ($buckets as $bucket) {
+            if (count($bucket['hits']) < $limitPerQuery) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * يفحص سجل mapping واحداً ويضيفه للنتائج إن طابق الاستعلام عبر aliases.
      * الملف لا يحتوي نسخاً ملزوقة (بدون مسافات) — تُبنى وقت المطابقة من الـ
      * aliases متعددة الكلمات حتى تضمن حدود الكلمات ولا تسبب تطابقات كاذبة.
@@ -245,6 +431,25 @@ final class MedicineResolver
             return;
         }
 
+        if ($this->recordMatchesNeedle($record, $needle, $needleSkel)) {
+            $hits[] = $this->mappingHitPayload($record);
+        }
+    }
+
+    /**
+     * هل يطابق سجل mapping واحد استعلاماً واحداً؟ (دالة نقية بلا حالة)
+     *
+     * استُخرجت من collectMappingHit حرفياً لتُعاد استخدامها في المسار المجمّع
+     * lookupMappingBatch — بلا تكرار للمنطق وبلا أي تغيير في السلوك.
+     *
+     * المراحل:
+     *  1) مطابقة مباشرة بعد التطبيع (همزات/تشكيل/مسافات).
+     *  2) استعلام ملزوق (بدون مسافات، ≥ 8 أحرف): نلصق الـ aliases متعددة الكلمات
+     *     ونقارن الهياكل — "بنادولتابليت" ↔ لصق "بانادول تابليت".
+     *  3) مطابقة هيكلية كلمة-بكلمة تحذف الألف — "بنادول" ↔ "بانادول".
+     */
+    private function recordMatchesNeedle(array $record, string $needle, string $needleSkel): bool
+    {
         $normalize = static fn (string $a): string => strpbrk($a, 'أإآؤئى') === false
             ? mb_strtolower($a)
             : self::normalizeArabic($a);
@@ -254,9 +459,7 @@ final class MedicineResolver
         // المرحلة 1: مطابقة مباشرة
         foreach ($aliases as $alias) {
             if (str_contains($normalize($alias), $needle)) {
-                $hits[] = $this->mappingHitPayload($record);
-
-                return;
+                return true;
             }
         }
 
@@ -271,9 +474,7 @@ final class MedicineResolver
                 }
 
                 if (str_contains(self::skeletonOf(str_replace(' ', '', $normalized)), $needleSkel)) {
-                    $hits[] = $this->mappingHitPayload($record);
-
-                    return;
+                    return true;
                 }
             }
             // بلا return هنا — المرحلة 3 تبقى شبكة أمان للاستعلامات الملزوقة غير المطابقة
@@ -310,13 +511,13 @@ final class MedicineResolver
                     }
 
                     if ($allWordsMatched) {
-                        $hits[] = $this->mappingHitPayload($record);
-
-                        return;
+                        return true;
                     }
                 }
             }
         }
+
+        return false;
     }
 
     private function mappingHitPayload(array $record): array
@@ -332,8 +533,11 @@ final class MedicineResolver
     /**
      * تطبيع الاستعلام العربي للمطابقة:
      * أ/إ/آ → ا، ؤ → و، ئ/ى → ي + إزالة التشكيل + توحيد المسافات + lowercase.
+     *
+     * عامّة (public) عن قصد: تُعاد استخدامها في مسار الاستيراد الجماعي
+     * لبناء مفاتيح بحث موحّدة — بدل تكرار قواعد التطبيع في مكانين.
      */
-    private static function normalizeArabic(string $s): string
+    public static function normalizeArabic(string $s): string
     {
         $s = MedicineNameMapper::clean($s);
         $s = strtr($s, [

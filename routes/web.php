@@ -25,6 +25,7 @@ use App\Http\Controllers\web\Pharmacy\PharmacyAlternativeController;
 use App\Http\Controllers\web\Pharmacy\PharmacyController;
 use App\Http\Controllers\web\Pharmacy\PharmacyDashboardController;
 use App\Http\Controllers\web\Pharmacy\PharmacyInquiryController;
+use App\Http\Controllers\web\Pharmacy\PharmacyImportController;
 use App\Http\Controllers\web\Pharmacy\PharmacyInventoryController;
 use App\Http\Controllers\web\Pharmacy\PharmacyMedicineController;
 use App\Http\Controllers\web\Pharmacy\PharmacyProfileController;
@@ -238,6 +239,54 @@ Route::middleware(['auth', 'role:pharmacy', 'profile.complete'])->group(function
         PharmacyInventoryController::class,
         'update',
     ])->name('pharmacy.inventory.update');
+
+    // ==================== PHARMACY BULK INVENTORY IMPORT ====================
+    // الاستيراد الجماعي: مسار منفصل تماماً عن نقاط الكتابة العادية.
+    // الـ throttle مخصّص (user_id + pharmacy_id) ولا يمسّ الـ limiter العام 'writes'.
+
+    Route::middleware('throttle:inventory-import')->group(function () {
+
+        Route::get('/pharmacy/inventory/import', [
+            PharmacyImportController::class,
+            'index',
+        ])->name('pharmacy.inventory.import.index');
+
+        Route::get('/pharmacy/inventory/import/template', [
+            PharmacyImportController::class,
+            'template',
+        ])->name('pharmacy.inventory.import.template');
+
+        Route::post('/pharmacy/inventory/import', [
+            PharmacyImportController::class,
+            'preview',
+        ])->name('pharmacy.inventory.import.preview');
+
+        // uuid وليس المفتاح الرقمي — لا تعداد للجلسات
+        Route::get('/pharmacy/inventory/import/{import}', [
+            PharmacyImportController::class,
+            'show',
+        ])->name('pharmacy.inventory.import.show');
+
+        Route::post('/pharmacy/inventory/import/{import}/decide', [
+            PharmacyImportController::class,
+            'decide',
+        ])->name('pharmacy.inventory.import.decide');
+
+        Route::post('/pharmacy/inventory/import/{import}/commit', [
+            PharmacyImportController::class,
+            'commit',
+        ])->name('pharmacy.inventory.import.commit');
+
+        Route::get('/pharmacy/inventory/import/{import}/errors', [
+            PharmacyImportController::class,
+            'errors',
+        ])->name('pharmacy.inventory.import.errors');
+
+        Route::post('/pharmacy/inventory/import/{import}/cancel', [
+            PharmacyImportController::class,
+            'cancel',
+        ])->name('pharmacy.inventory.import.cancel');
+    });
 
     // ==================== PHARMACY INQUIRIES ====================
 

@@ -10,6 +10,7 @@ return [
         'pharmacy_profile' => 'ملف الصيدلية',
         'ratings' => 'التقييمات',
         'inventory' => 'إدارة المخزون',
+        'bulk_import' => 'استيراد المخزون بالجملة',
         'inquiries' => 'استفسارات التوفر',
     ],
 
@@ -385,6 +386,8 @@ return [
             'password_section' => 'تغيير كلمة المرور',
             'new_password' => 'كلمة المرور الجديدة',
             'password_hint' => '8 أحرف على الأقل',
+            'password_optional_hint' => 'اختياري — اتركها فارغة إذا أردت الإبقاء على كلمة مرورك الحالية.',
+            'password_optional_placeholder' => 'اتركها فارغة للإبقاء على الحالية',
             'confirm_password' => 'تأكيد كلمة المرور الجديدة',
             'save_button' => 'حفظ والبدء',
             'required_message' => 'يجب إكمال بيانات الصيدلية قبل المتابعة.',

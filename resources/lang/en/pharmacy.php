@@ -10,6 +10,7 @@ return [
         'pharmacy_profile' => 'Pharmacy Profile',
         'ratings' => 'Ratings',
         'inventory' => 'Manage Inventory',
+        'bulk_import' => 'Bulk Inventory Import',
         'inquiries' => 'Availability Inquiries',
     ],
 
@@ -386,6 +387,8 @@ return [
             'password_section' => 'Change Password',
             'new_password' => 'New Password',
             'password_hint' => 'At least 8 characters',
+            'password_optional_hint' => 'Optional — leave empty to keep your current password.',
+            'password_optional_placeholder' => 'Leave empty to keep current',
             'confirm_password' => 'Confirm New Password',
             'save_button' => 'Save & Start',
             'required_message' => 'Please complete your pharmacy profile before continuing.',

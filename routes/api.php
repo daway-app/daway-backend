@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\PharmacyController;
 use App\Http\Controllers\Api\PharmacyDashboardController;
 use App\Http\Controllers\Api\PharmacyInquiryController;
 use App\Http\Controllers\Api\PharmacyInventoryController;
+use App\Http\Controllers\Api\PharmacyInventoryImportController;
 use App\Http\Controllers\Api\PharmacyMedicineController;
 use App\Http\Controllers\Api\PharmacyProfileController;
 use App\Http\Controllers\Api\PharmacyRatingController;
@@ -129,6 +130,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('inventory', [PharmacyInventoryController::class, 'index']);
         Route::put('inventory/{medicine}', [PharmacyInventoryController::class, 'update'])->middleware('throttle:writes');
         Route::post('inventory/bulk', [PharmacyInventoryController::class, 'bulkUpdate'])->middleware('throttle:writes');
+
+        // ==================== BULK INVENTORY IMPORT ====================
+        // مسار منفصل بحد معدل مخصّص (user_id + pharmacy_id) — لا يمسّ 'writes'.
+        // مُسجَّل قبل inventory/{medicine} الضمني حتى لا يُلتقط 'import' كمعرّف.
+
+        Route::middleware('throttle:inventory-import')->group(function () {
+            Route::get('inventory/import/template', [PharmacyInventoryImportController::class, 'template']);
+            Route::post('inventory/import', [PharmacyInventoryImportController::class, 'preview']);
+            Route::get('inventory/import/{import}', [PharmacyInventoryImportController::class, 'show']);
+            Route::post('inventory/import/{import}/decide', [PharmacyInventoryImportController::class, 'decide']);
+            Route::post('inventory/import/{import}/commit', [PharmacyInventoryImportController::class, 'commit']);
+            Route::get('inventory/import/{import}/errors', [PharmacyInventoryImportController::class, 'errors']);
+            Route::post('inventory/import/{import}/cancel', [PharmacyInventoryImportController::class, 'cancel']);
+        });
 
         Route::get('alternatives', [PharmacyAlternativeController::class, 'index']);
         Route::post('alternatives', [PharmacyAlternativeController::class, 'store']);

@@ -38,6 +38,7 @@ export default defineConfig({
                 'resources/css/pages/users_create.css',
                 'resources/js/pharmacy_dashboard.js',
                 'resources/css/pages/pharmacy_hub.css',
+                'resources/css/pages/pharmacy_import.css',
                 'resources/js/pharmacy_hub.js',
                 'resources/js/offline/index.js',
             ],

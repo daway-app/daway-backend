@@ -102,6 +102,26 @@ $app->booted(function () {
 
     // M-9: حد مخصص لنقاط الكتابة المعرضة للإساءة (استفسارات، تقييمات، مزامنة، مخزون)
     RateLimiter::for('writes', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()));
+
+    // الاستيراد الجماعي: حد منفصل تماماً عن 'writes'.
+    // السبب: الاستيراد عملية ثقيلة بطبيعتها، ورفع الحد العام 'writes' يفتح
+    // كل نقاط الكتابة الأخرى للإساءة. هنا نرفع السقف لكن على مفتاح أضيق.
+    //
+    // المفتاح = user_id + pharmacy_id (وليس IP): خلف موازن Render يشترك كثير
+    // من المستخدمين في نفس IP، فالمفتاح المعتمد على IP يصبح دلو مشتركاً
+    // يحجب مستخدمين أبرياء. الحساب نفسه هو الوحدة الصحيحة للحد هنا.
+    RateLimiter::for('inventory-import', function (Request $request) {
+        $user = $request->user();
+
+        if ($user === null) {
+            return Limit::perMinute(5)->by('ip|'.$request->ip());
+        }
+
+        $pharmacyId = (int) ($user->pharmacy?->id ?? 0);
+
+        return Limit::perHour(max(1, (int) config('inventory_import.rate_limit_per_hour', 10)))
+            ->by('import|'.$user->id.'|'.$pharmacyId);
+    });
 });
 
 return $app;
