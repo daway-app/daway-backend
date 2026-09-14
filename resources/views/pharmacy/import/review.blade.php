@@ -121,7 +121,7 @@
                 <a href='{{ route('pharmacy.inventory.import.errors', ['import' => $import->uuid]) }}' class='ph-btn outline'>
                     <i class='fas fa-file-csv'></i> @lang('pharmacy_import.download_errors')
                 </a>
-                <a href='{{ route('pharmacy.inventory.import.index') }}' class='ph-btn ghost'>
+                <a href='{{ route('pharmacy.inventory.import.index') }}' class='ph-btn outline'>
                     <i class='fas fa-arrow-right'></i> @lang('pharmacy_import.back_to_inventory')
                 </a>
             </div>

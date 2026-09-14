@@ -25,7 +25,7 @@
                 <p>@lang('pharmacy_import.subtitle')</p>
             </div>
             <div class='ph-actions'>
-                <a href='{{ route('pharmacy.inventory.index') }}' class='ph-btn ghost'>
+                <a href='{{ route('pharmacy.inventory.index') }}' class='ph-btn outline'>
                     <i class='fas fa-arrow-right'></i> @lang('pharmacy_import.back_to_inventory')
                 </a>
             </div>
@@ -48,7 +48,7 @@
 
         <div class='pi-steps'>
             <div class='pi-step'><span class='pi-step-no'>1</span> @lang('pharmacy_import.step_download')</div>
-            <div class='pi-step'><span class='pi-step-no'>2</span> @lang('pharmacy_import.step_upload')</div>
+            <div class='pi-step is-active'><span class='pi-step-no'>2</span> @lang('pharmacy_import.step_upload')</div>
             <div class='pi-step'><span class='pi-step-no'>3</span> @lang('pharmacy_import.step_review')</div>
             <div class='pi-step'><span class='pi-step-no'>4</span> @lang('pharmacy_import.step_confirm')</div>
         </div>
@@ -147,7 +147,7 @@
                                     <td>{{ (int) $session->total_rows }}</td>
                                     <td>
                                         @if ($session->canCommit())
-                                            <a href='{{ route('pharmacy.inventory.import.show', ['import' => $session->uuid]) }}' class='ph-btn ghost'>
+                                            <a href='{{ route('pharmacy.inventory.import.show', ['import' => $session->uuid]) }}' class='ph-btn outline'>
                                                 <i class='fas fa-eye'></i> @lang('pharmacy_import.step_review')
                                             </a>
                                         @endif

@@ -25,6 +25,14 @@
     font-weight: 600;
     font-size: .88rem;
     color: var(--ph-ink-soft);
+    transition: var(--ph-tr);
+}
+
+/* الخطوة الحالية في الساحر — إبراز واضح */
+.pi-step.is-active {
+    border-color: var(--ph-teal);
+    box-shadow: 0 0 0 3px var(--ph-teal-mist);
+    color: var(--ph-ink);
 }
 
 .pi-step .pi-step-no {
@@ -33,10 +41,18 @@
     border-radius: var(--ph-r-full);
     background: var(--ph-teal-mist);
     color: var(--ph-teal);
+    border: 1.5px solid transparent;
     display: grid;
     place-items: center;
     font-weight: 700;
     flex-shrink: 0;
+    transition: var(--ph-tr);
+}
+
+.pi-step.is-active .pi-step-no {
+    background: var(--ph-teal);
+    color: #fff;
+    border-color: var(--ph-teal-deep);
 }
 
 /* --- بطاقة الرفع --- */
