@@ -31,7 +31,8 @@ class CategoryController extends Controller
                 ->where('name_ar', 'like', "%{$q}%")
                 ->orWhere('name_en', 'like', "%{$q}%")))
             ->ordered()
-            ->paginate(7)
+            // الأقسام لا تتجاوز حفنة — عرضها كلها في صفحة واحدة
+            ->paginate(50)
             ->withQueryString();
 
         $stats = [
@@ -98,7 +99,8 @@ class CategoryController extends Controller
             ->when($source !== '', fn ($query) => $query->where('source', $source))
             ->orderByDesc('needs_review')
             ->orderBy('id')
-            ->paginate(7)
+            // 50 رابطاً لكل صفحة داخل القسم
+            ->paginate(50)
             ->withQueryString();
 
         // resolve كل صفوف الصفحة الحالية باستعلام واحد لكل نوع
