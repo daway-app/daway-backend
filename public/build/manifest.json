@@ -135,7 +135,7 @@
     "isEntry": true
   },
   "resources/css/layout/sidebar.css": {
-    "file": "assets/sidebar-Cb1AZUy7.css",
+    "file": "assets/sidebar-BNxYr5r5.css",
     "name": "sidebar",
     "names": [
       "sidebar.css"
@@ -242,6 +242,15 @@
     "src": "resources/css/pages/pharmacies_create.css",
     "isEntry": true
   },
+  "resources/css/pages/pharmacy_accounting.css": {
+    "file": "assets/pharmacy_accounting-Us3JbBDl.css",
+    "name": "pharmacy_accounting",
+    "names": [
+      "pharmacy_accounting.css"
+    ],
+    "src": "resources/css/pages/pharmacy_accounting.css",
+    "isEntry": true
+  },
   "resources/css/pages/pharmacy_dashboard.css": {
     "file": "assets/pharmacy_dashboard-CYxg-X0C.css",
     "name": "pharmacy_dashboard",
@@ -321,6 +330,54 @@
       "tokens.css"
     ],
     "src": "resources/css/tokens.css",
+    "isEntry": true
+  },
+  "resources/js/accounting/accounting-barcode.js": {
+    "file": "assets/accounting-barcode-DnnTfIWw.js",
+    "name": "accounting-barcode",
+    "src": "resources/js/accounting/accounting-barcode.js",
+    "isEntry": true
+  },
+  "resources/js/accounting/accounting-invoice.js": {
+    "file": "assets/accounting-invoice-CrVOtOro.js",
+    "name": "accounting-invoice",
+    "src": "resources/js/accounting/accounting-invoice.js",
+    "isEntry": true
+  },
+  "resources/js/accounting/accounting-overview.js": {
+    "file": "assets/accounting-overview-Dci4GEVO.js",
+    "name": "accounting-overview",
+    "src": "resources/js/accounting/accounting-overview.js",
+    "isEntry": true
+  },
+  "resources/js/accounting/accounting-phone-scanner.js": {
+    "file": "assets/accounting-phone-scanner-BjNsBmkU.js",
+    "name": "accounting-phone-scanner",
+    "src": "resources/js/accounting/accounting-phone-scanner.js",
+    "isEntry": true
+  },
+  "resources/js/accounting/accounting-pos.js": {
+    "file": "assets/accounting-pos-DkLHgNH8.js",
+    "name": "accounting-pos",
+    "src": "resources/js/accounting/accounting-pos.js",
+    "isEntry": true
+  },
+  "resources/js/accounting/accounting-sales.js": {
+    "file": "assets/accounting-sales-BbtFcfI1.js",
+    "name": "accounting-sales",
+    "src": "resources/js/accounting/accounting-sales.js",
+    "isEntry": true
+  },
+  "resources/js/accounting/accounting-scanner-session.js": {
+    "file": "assets/accounting-scanner-session-CILYmZP7.js",
+    "name": "accounting-scanner-session",
+    "src": "resources/js/accounting/accounting-scanner-session.js",
+    "isEntry": true
+  },
+  "resources/js/accounting/accounting-shared.js": {
+    "file": "assets/accounting-shared-D71O8K4b.js",
+    "name": "accounting-shared",
+    "src": "resources/js/accounting/accounting-shared.js",
     "isEntry": true
   },
   "resources/js/offline/index.js": {

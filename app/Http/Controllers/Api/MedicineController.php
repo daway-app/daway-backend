@@ -9,6 +9,7 @@ use App\Models\MohMedicine;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
+use App\Models\Subcategory;
 use App\Services\Ai\MedicineResolver;
 use App\Support\CategoryCatalogCache;
 use App\Support\DosageFormNormalizer;
@@ -139,6 +140,8 @@ class MedicineController extends Controller
             // category_id غير صالح → يُتجاهل بصمت (مثل dosage_form) بدل 422 —
             // عميل بدون Accept: application/json كان يأخذ redirect بدل JSON.
             'category_id' => 'nullable|integer|min:1',
+            'subcategory_id' => 'nullable|integer|min:1',
+            'subcategory' => 'nullable|string|max:180',
             'dosage_form' => 'nullable|string|max:50',
         ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
@@ -151,6 +154,22 @@ class MedicineController extends Controller
         }
         // قيمة dosage_form غير معروفة → null → تُتجاهل الفلترة بصمت
         $dosageForm = isset($validated['dosage_form']) ? DosageFormNormalizer::forInput($validated['dosage_form']) : null;
+
+        // القسم الفرعي يُقبل بمعرّف رقمي أو slug. النشط فقط (مثل الأقسام
+        // الرئيسية في مسارات الأقسام)، ويُقيَّد بقسمه الرئيسي عند تمريره معاً
+        // حتى لا يختلط فلتران متناقضان.
+        $subcategoryId = null;
+        $subcategorySelector = $validated['subcategory_id'] ?? $validated['subcategory'] ?? null;
+        if ($subcategorySelector !== null && $subcategorySelector !== '') {
+            $subcategoryQuery = Subcategory::query()->active();
+            if ($categoryId !== null) {
+                $subcategoryQuery->where('category_id', $categoryId);
+            }
+            $subcategory = is_numeric($subcategorySelector)
+                ? $subcategoryQuery->find((int) $subcategorySelector)
+                : $subcategoryQuery->where('slug', (string) $subcategorySelector)->first();
+            $subcategoryId = $subcategory?->id;
+        }
 
         // null-safe: كل ارتباط يُقيَّد بـ whereNotNull داخلي، والمفاتيح مستقرة فقط
         // (moh_product_id / moh_drug_id) — لا يُشار إلى moh_medicines.id مطلقاً.
@@ -167,6 +186,26 @@ class MedicineController extends Controller
                         ->from('category_medicine_links')
                         ->whereColumn('category_medicine_links.moh_drug_id', 'moh_medicines.moh_drug_id')
                         ->where('category_medicine_links.category_id', $categoryId)
+                        ->whereNotNull('category_medicine_links.moh_drug_id');
+                });
+            });
+        }
+
+        // فلتر القسم الفرعي: يُقيَّد صراحةً بـsubcategory_id (لا يكفي category_id
+        // لأن الرابط الفرعي يحمل نفس المفاتيح المستقرة للرابط الرئيسي).
+        if ($subcategoryId !== null) {
+            $query->where(function ($outer) use ($subcategoryId) {
+                $outer->whereExists(function ($sub) use ($subcategoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links')
+                        ->whereColumn('category_medicine_links.moh_product_id', 'moh_medicines.moh_product_id')
+                        ->where('category_medicine_links.subcategory_id', $subcategoryId)
+                        ->whereNotNull('category_medicine_links.moh_product_id');
+                })->orWhereExists(function ($sub) use ($subcategoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links')
+                        ->whereColumn('category_medicine_links.moh_drug_id', 'moh_medicines.moh_drug_id')
+                        ->where('category_medicine_links.subcategory_id', $subcategoryId)
                         ->whereNotNull('category_medicine_links.moh_drug_id');
                 });
             });
@@ -195,6 +234,9 @@ class MedicineController extends Controller
         if ($categoryId !== null) {
             $categoryVersion = CategoryCatalogCache::version();
             $filterKeySuffix .= "|cv{$categoryVersion}|cat{$categoryId}";
+        }
+        if ($subcategoryId !== null) {
+            $filterKeySuffix .= '|sub'.$subcategoryId;
         }
         if ($dosageForm !== null) {
             $filterKeySuffix .= '|df'.array_search($dosageForm, DosageFormNormalizer::facets(), true);

@@ -137,6 +137,9 @@
                         <span class="nav-text">@lang('pharmacy.sidebar.ratings')</span>
                     </a>
                 </div>
+
+                <!-- Section: Accounting (قسم قابل للطيّ) -->
+                @include('components.sidebar-accounting')
             @endif
         @endauth
     </div>

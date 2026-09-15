@@ -10,6 +10,13 @@
                 <div>
                     <strong>{{ $category->name_ar }}</strong><br>
                     <small style="color: #94a3b8; font-size: 11px;">{{ $category->name_en }} • {{ $category->slug }}</small>
+                    @if($category->subcategories->isNotEmpty())
+                        <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">
+                            @foreach($category->subcategories as $sub)
+                                <span style="font-size:10px;background:var(--field-bg,#F1F5F9);color:#64748b;border-radius:6px;padding:2px 6px;">{{ $sub->name_ar }}</span>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             </div>
         </td>

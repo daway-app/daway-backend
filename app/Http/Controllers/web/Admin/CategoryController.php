@@ -27,6 +27,8 @@ class CategoryController extends Controller
             ->withCount(['categoryMedicineLinks as needs_review_count' => function ($query) {
                 $query->where('needs_review', true);
             }])
+            // الأقسام الفرعية تُعرض كشرائح تحت اسم القسم — eager لتفادي N+1
+            ->with(['subcategories' => fn ($query) => $query->active()->ordered()])
             ->when($q !== '', fn ($query) => $query->where(fn ($w) => $w
                 ->where('name_ar', 'like', "%{$q}%")
                 ->orWhere('name_en', 'like', "%{$q}%")))

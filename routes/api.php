@@ -184,3 +184,7 @@ Route::get('/categories/{category}/medicines', [CategoryController::class, 'medi
 
 // ط£ط´ظƒط§ظ„ ط§ظ„ط¬ط±ط¹ط§طھ (ظ‚ط§ط¦ظ…ط© ط£ط¹ط±ط§ظپ canonical ظ„ط§ط³طھط®ط¯ط§ظ…ظ‡ط§ ظ…ط¹ ظپظ„طھط± dosage_form)
 Route::get('/dosage-forms', [CategoryController::class, 'dosageForms']);
+
+// كل خيارات فلاتر الكتالوج في نداء واحد (أقسام + أقسام فرعية + أشكال دوائية +
+// فئات عمرية) مع عدد الأدوية لكل خيار — تبني منه الواجهة شاشة "تصفية النتائج".
+Route::get('/medicine-filters', [CategoryController::class, 'filters']);

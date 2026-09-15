@@ -3,7 +3,9 @@
 use App\Models\Medicine;
 use App\Models\MohMedicine;
 
-for ($i = 1; $i <= 20; $i++) {
+$N = 100; // 100 عيّنة على sqlite — تكافئ التشغيل --limit=100 بالفعل
+
+for ($i = 1; $i <= $N; $i++) {
     MohMedicine::updateOrCreate(
         ['moh_product_id' => 80000 + $i],
         [
@@ -25,5 +27,5 @@ for ($i = 1; $i <= 20; $i++) {
     );
 }
 
-echo 'moh: '.MohMedicine::whereBetween('moh_product_id', [80001, 80020])->count().'/20, '.
-     'local: '.Medicine::where('trade_name', 'like', 'PANADOL EXTRA%')->count().'/20';
+echo 'moh: '.MohMedicine::whereBetween('moh_product_id', [80001, 80000 + $N])->count()."/$N".
+     ', local: '.Medicine::where('trade_name', 'like', 'PANADOL EXTRA%')->count()."/$N";

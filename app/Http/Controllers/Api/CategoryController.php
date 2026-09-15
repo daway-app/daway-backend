@@ -7,12 +7,14 @@ use App\Models\Category;
 use App\Models\CategoryMedicineLink;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
+use App\Models\Subcategory;
 use App\Support\CategoryCatalogCache;
 use App\Support\DosageFormNormalizer;
 use App\Support\Image;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * أقسام الكتالوج العامة — عامة بدون مصادقة (بيانات وصفية للكتالوج).
@@ -38,6 +40,7 @@ class CategoryController extends Controller
                 ->active()
                 ->ordered()
                 ->withCount('categoryMedicineLinks')
+                ->with(['subcategories' => fn ($q) => $q->active()->ordered()])
                 ->get()
                 ->map(fn (Category $category) => $this->payload($category))
                 ->values()
@@ -80,10 +83,32 @@ class CategoryController extends Controller
             return response()->json(['success' => false, 'message' => 'القسم غير موجود'], 404);
         }
 
-        $validated = $request->validate(['per_page' => 'nullable|integer|min:1|max:100']);
+        $validated = $request->validate([
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'subcategory_id' => 'nullable|integer|min:1',
+            'subcategory' => 'nullable|string|max:180',
+            'dosage_form' => 'nullable|string|max:50',
+        ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
         $page = (int) $request->get('page', 1);
         $q = trim((string) $request->get('q', ''));
+
+        // القسم الفرعي: رقمي أو slug، ويُقيَّد حصراً بقسمه الرئيسي (المُحلّ من
+        // المسار) — فلا يمكن تمرير قسم فرعي تابع لقسم آخر.
+        $subcategorySelector = $validated['subcategory_id'] ?? $validated['subcategory'] ?? null;
+        $subcategoryId = null;
+        if ($subcategorySelector !== null && $subcategorySelector !== '') {
+            $subcategoryQuery = Subcategory::query()
+                ->active()
+                ->where('category_id', $model->id);
+            $subcategory = is_numeric($subcategorySelector)
+                ? $subcategoryQuery->find((int) $subcategorySelector)
+                : $subcategoryQuery->where('slug', (string) $subcategorySelector)->first();
+            $subcategoryId = $subcategory?->id;
+        }
+
+        // قيمة غير معروفة → null → تُتجاهل بصمت (نفس سلوك category_id في MedicineController)
+        $dosageForm = isset($validated['dosage_form']) ? DosageFormNormalizer::forInput($validated['dosage_form']) : null;
 
         $query = MohMedicine::query();
 
@@ -106,6 +131,40 @@ class CategoryController extends Controller
             });
         });
 
+        // فلتر القسم الفرعي
+        if ($subcategoryId !== null) {
+            $query->where(function ($outer) use ($subcategoryId) {
+                $outer->whereExists(function ($sub) use ($subcategoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links')
+                        ->whereColumn('category_medicine_links.moh_product_id', 'moh_medicines.moh_product_id')
+                        ->where('category_medicine_links.subcategory_id', $subcategoryId)
+                        ->whereNotNull('category_medicine_links.moh_product_id');
+                })->orWhereExists(function ($sub) use ($subcategoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links')
+                        ->whereColumn('category_medicine_links.moh_drug_id', 'moh_medicines.moh_drug_id')
+                        ->where('category_medicine_links.subcategory_id', $subcategoryId)
+                        ->whereNotNull('category_medicine_links.moh_drug_id');
+                });
+            });
+        }
+
+        // الشكل الدوائي — نفس منطق MedicineController (tokens قياسية + استثناءات)
+        if ($dosageForm !== null) {
+            $query->where(function ($builder) use ($dosageForm) {
+                foreach (DosageFormNormalizer::likeTokens($dosageForm) as $i => $token) {
+                    $i === 0
+                        ? $builder->where('moh_medicines.dosage_form', 'like', "%{$token}%")
+                        : $builder->orWhere('moh_medicines.dosage_form', 'like', "%{$token}%");
+                }
+
+                foreach (DosageFormNormalizer::excludeTokens($dosageForm) as $excluded) {
+                    $builder->where('moh_medicines.dosage_form', 'not like', "%{$excluded}%");
+                }
+            });
+        }
+
         // بحث اختياري بسيط داخل أدوية القسم (LIKE — بديل مبسّط لـ fulltextOrLike)
         if (mb_strlen($q) >= 2) {
             $query->where(function ($builder) use ($q) {
@@ -117,6 +176,12 @@ class CategoryController extends Controller
         $catalogVersion = (int) Cache::get('med_catalog_version', 1);
         $categoryVersion = CategoryCatalogCache::version();
         $key = "api_cat_meds|v{$catalogVersion}|cv{$categoryVersion}|cat{$model->id}|{$page}|{$perPage}";
+        if ($subcategoryId !== null) {
+            $key .= '|sub'.$subcategoryId;
+        }
+        if ($dosageForm !== null) {
+            $key .= '|df'.array_search($dosageForm, DosageFormNormalizer::facets(), true);
+        }
         if (mb_strlen($q) >= 2) {
             $key .= '|q'.str_replace('|', ' ', (string) preg_replace('/\s+/u', ' ', mb_substr($q, 0, 100)));
         }
@@ -167,6 +232,138 @@ class CategoryController extends Controller
     }
 
     /**
+     * كل خيارات فلاتر الكتالوج في نداء واحد — الأقسام (مع أقسامها الفرعية)
+     * وأشكال الجرعات.
+     *
+     * الغرض: الواجهة تبني شاشة "تصفية النتائج" من نداء واحد بدل عدة نداءات،
+     * وكل خيار يحمل عدد الأدوية المتوفرة فعلاً تحته (facets_counts) حتى لا
+     * تعرض الواجهة فلتراً يرجع صفراً.
+     *
+     * الأقسام غير النشطة تُستبعد (نفس index)، وكذلك الأقسام الفرعية غير النشطة.
+     */
+    public function filters(): JsonResponse
+    {
+        $categoryVersion = CategoryCatalogCache::version();
+        $catalogVersion = (int) Cache::get('med_catalog_version', 1);
+        $cacheKey = "api_medicine_filters|v{$catalogVersion}|cv{$categoryVersion}";
+
+        $payload = Cache::remember($cacheKey, self::CACHE_TTL, function () {
+            $categories = Category::query()
+                ->active()
+                ->ordered()
+                ->with(['subcategories' => fn ($q) => $q->active()->ordered()])
+                ->get();
+
+            return [
+                'categories' => $categories->map(fn (Category $category) => [
+                    'id' => $category->id,
+                    'name_ar' => $category->name_ar,
+                    'name_en' => $category->name_en,
+                    'slug' => $category->slug,
+                    'medicines_count' => $this->categoryMedicinesCount($category->id),
+                    'subcategories' => $category->subcategories->map(fn (Subcategory $sub) => [
+                        'id' => $sub->id,
+                        'name_ar' => $sub->name_ar,
+                        'name_en' => $sub->name_en,
+                        'slug' => $sub->slug,
+                        'group_key' => $sub->group_key,
+                        'medicines_count' => $this->subcategoryMedicinesCount($sub->id),
+                    ])->values()->all(),
+                ])->values()->all(),
+                'dosage_forms' => $this->dosageFormFacets(),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب خيارات الفلاتر بنجاح',
+            'data' => $payload,
+        ]);
+    }
+
+    /**
+     * عدد الأدوية في قسم رئيسي — يُحسب من الروابط (سواء على مستوى القسم أو
+     * على مستوى قسم فرعي) بنفس منطق المفاتيح المستقرة المستخدم في الفلترة.
+     */
+    private function categoryMedicinesCount(int $categoryId): int
+    {
+        return (int) DB::table('moh_medicines as m')
+            ->where(function ($outer) use ($categoryId) {
+                $outer->whereExists(function ($sub) use ($categoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links as l')
+                        ->whereColumn('l.moh_product_id', 'm.moh_product_id')
+                        ->where('l.category_id', $categoryId)
+                        ->whereNotNull('l.moh_product_id');
+                })->orWhereExists(function ($sub) use ($categoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links as l')
+                        ->whereColumn('l.moh_drug_id', 'm.moh_drug_id')
+                        ->where('l.category_id', $categoryId)
+                        ->whereNotNull('l.moh_drug_id');
+                });
+            })
+            ->count();
+    }
+
+    /** عدد الأدوية المرتبطة بقسم فرعي بعينه */
+    private function subcategoryMedicinesCount(int $subcategoryId): int
+    {
+        return (int) DB::table('moh_medicines as m')
+            ->where(function ($outer) use ($subcategoryId) {
+                $outer->whereExists(function ($sub) use ($subcategoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links as l')
+                        ->whereColumn('l.moh_product_id', 'm.moh_product_id')
+                        ->where('l.subcategory_id', $subcategoryId)
+                        ->whereNotNull('l.moh_product_id');
+                })->orWhereExists(function ($sub) use ($subcategoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links as l')
+                        ->whereColumn('l.moh_drug_id', 'm.moh_drug_id')
+                        ->where('l.subcategory_id', $subcategoryId)
+                        ->whereNotNull('l.moh_drug_id');
+                });
+            })
+            ->count();
+    }
+
+    /**
+     * أشكال الجرعات مع عدد الأدوية لكل شكل — نفس منطق الفلترة حرفياً
+     * (tokens موجبة + استثناءات) حتى لا يختلف الرقم المعروض عن نتيجة الفلتر.
+     *
+     * @return array<int, array{value: string, name_ar: string, medicines_count: int}>
+     */
+    private function dosageFormFacets(): array
+    {
+        $out = [];
+
+        foreach (DosageFormNormalizer::facets() as $canonical) {
+            $count = (int) DB::table('moh_medicines')
+                ->where(function ($builder) use ($canonical) {
+                    foreach (DosageFormNormalizer::likeTokens($canonical) as $i => $token) {
+                        $i === 0
+                            ? $builder->where('dosage_form', 'like', "%{$token}%")
+                            : $builder->orWhere('dosage_form', 'like', "%{$token}%");
+                    }
+
+                    foreach (DosageFormNormalizer::excludeTokens($canonical) as $excluded) {
+                        $builder->where('dosage_form', 'not like', "%{$excluded}%");
+                    }
+                })
+                ->count();
+
+            $out[] = [
+                'value' => $canonical,
+                'name_ar' => $canonical,
+                'medicines_count' => $count,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * {category} يقبل id أو slug — يُحل يدوياً (بدون route model binding)
      * والنشط فقط للعام. SoftDeletes يستبعد المحذوف تلقائياً.
      */
@@ -174,7 +371,8 @@ class CategoryController extends Controller
     {
         $query = Category::query()
             ->active()
-            ->withCount('categoryMedicineLinks');
+            ->withCount('categoryMedicineLinks')
+            ->with(['subcategories' => fn ($q) => $q->active()->ordered()]);
 
         return ctype_digit($idOrSlug)
             ? $query->find((int) $idOrSlug)
@@ -192,6 +390,27 @@ class CategoryController extends Controller
             'is_active' => (bool) $category->is_active,
             'sort_order' => (int) $category->sort_order,
             'medicines_count' => (int) ($category->category_medicine_links_count ?? 0),
+            // الأقسام الفرعية النشطة — تُحمَّل مسبقاً (eager) عند توفرها على الموديل
+            // حتى لا يتحول العرض إلى N+1 على قائمة الأقسام.
+            'subcategories' => $category->relationLoaded('subcategories')
+                ? $category->subcategories->map(fn (Subcategory $sub) => $this->subcategoryPayload($sub))->values()->all()
+                : [],
+        ];
+    }
+
+    /**
+     * شكل القسم الفرعي في الـAPI.
+     */
+    private function subcategoryPayload(Subcategory $subcategory): array
+    {
+        return [
+            'id' => $subcategory->id,
+            'name_ar' => $subcategory->name_ar,
+            'name_en' => $subcategory->name_en,
+            'slug' => $subcategory->slug,
+            'group_key' => $subcategory->group_key,
+            'sort_order' => (int) $subcategory->sort_order,
+            'medicines_count' => (int) ($subcategory->category_medicine_links_count ?? 0),
         ];
     }
 

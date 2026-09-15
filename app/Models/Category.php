@@ -45,6 +45,11 @@ class Category extends Model
         return $this->hasMany(CategoryMedicineLink::class);
     }
 
+    public function subcategories(): HasMany
+    {
+        return $this->hasMany(Subcategory::class);
+    }
+
     public function getMedicinesCountAttribute(): int
     {
         return $this->categoryMedicineLinks()->count();

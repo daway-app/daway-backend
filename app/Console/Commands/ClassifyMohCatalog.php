@@ -5,9 +5,11 @@ namespace App\Console\Commands;
 use App\Models\Category;
 use App\Models\CategoryMedicineLink;
 use App\Models\MohMedicine;
+use App\Models\Subcategory;
 use App\Support\CategoryCatalogCache;
 use App\Support\MedicineNameMapper;
 use Database\Seeders\CategorySeeder;
+use Database\Seeders\SubcategorySeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -44,6 +46,18 @@ use Illuminate\Support\Facades\Log;
  *
  * needs_review: تُفعَّل على روابط الصف إذا كان أعلى ثقة في تطابقاته أقل من 70
  * (أي لا يوجد إلا تطابقات ضعيفة) — يُربط مع تخطيطه للمراجعة البشرية.
+ *
+ * STEP C — الأقسام الفرعية (subcategories):
+ *  الأقسام الفرعية تُطبَّق بقواعد SubcategorySeeder::matchRules() على نفس
+ *  نص المطابقة، لكن **محصورة داخل `product_class = Food Supplement`** فقط
+ *  (انظر subcategoryCandidates) — لأن القواعد النصية وحدها تطابق منتجات
+ *  التجميل (شامبو/كريم/سيروم) بخطأ يقارب 4×.
+ *  الرابط الفرعي يُنشأ بـ**نفس مفاتيح** الرابط الرئيسي (moh_product_id /
+ *  moh_drug_id) مع subcategory_id، فيمكن لنفس الدواء أن يظهر في "فيتامينات
+ *  الشعر" و"مكملات البروتين" معاً بدون تعارض مع فهرس
+ *  (category_id + subcategory_id + المفتاح).
+ *  روابط الأقسام الفرعية تُحفظ فقط لأقسامها الفرعية النشطة التابعة لأقسام
+ *  رئيسية نشطة، ولا تُنشأ لقسم فرعي غير مطابق في القاعدة.
  *
  * غير المصنّفين (قرار تصميمي — قائمة المراجعة):
  *  الصفوف التي لم تطابق أي قاعدة لا تُربط بأي قسم ولا يُخترع لها قسم، بل تُعرض في لوحة الأدمن
@@ -108,6 +122,9 @@ class ClassifyMohCatalog extends Command
     private const CONF_TOPICAL_SECONDARY = 60;
     private const CONF_REVIEW_THRESHOLD = 70;
 
+    /** ثقة روابط الأقسام الفرعية — أعلى من عتبة المراجعة لأن القواعد محدّدة الصلة */
+    private const CONF_SUBCATEGORY = 75;
+
     public function handle(): int
     {
         ini_set('memory_limit', '512M');
@@ -132,9 +149,17 @@ class ClassifyMohCatalog extends Command
     {
         // ضمان وجود الأقسام الـ 11 بنفس قائمة CategorySeeder
         $this->call(CategorySeeder::class);
+        // الأقسام الفرعية (فلاتر الواجهة) — نفس نمط البذر التلقائي
+        $this->call(SubcategorySeeder::class);
 
         $categories = Category::query()->orderBy('sort_order')->get(['id', 'slug', 'name_ar']);
         $categoryIds = $categories->pluck('id', 'slug')->all();
+
+        // الأقسام الفرعية مفهرسة بـslug — تُستخدم في STEP C
+        $subcategories = Subcategory::query()
+            ->active()
+            ->get(['id', 'slug', 'category_id'])
+            ->keyBy('slug');
 
         $removedAuto = 0;
         if ($fresh) {
@@ -154,14 +179,16 @@ class ClassifyMohCatalog extends Command
             'created' => 0,
             'updated' => 0,
             'skipped_admin' => 0,
+            'sub_linked' => 0,
         ];
         $perCategory = [];
+        $perSubcategory = [];
         $warnedSlugs = [];
 
         $bar = $this->output->createProgressBar($total);
         $bar->start();
 
-        MohMedicine::query()->chunkById($chunkSize, function ($medicines) use (&$counters, &$perCategory, &$warnedSlugs, $categoryIds, $bar): void {
+        MohMedicine::query()->chunkById($chunkSize, function ($medicines) use (&$counters, &$perCategory, &$perSubcategory, &$warnedSlugs, $categoryIds, $subcategories, $bar): void {
             foreach ($medicines as $medicine) {
                 $counters['processed']++;
 
@@ -197,8 +224,10 @@ class ClassifyMohCatalog extends Command
                         continue;
                     }
 
+                    $categoryId = (int) $categoryIds[$candidate['slug']];
+
                     $result = $this->upsertLink(
-                        (int) $categoryIds[$candidate['slug']],
+                        $categoryId,
                         $productId,
                         $drugId,
                         $candidate['source'],
@@ -227,6 +256,20 @@ class ClassifyMohCatalog extends Command
                     $counters['unclassified']++;
                 }
 
+                // STEP C-ب — الأقسام الفرعية
+                $subLinkedSlugs = $this->linkSubcategories(
+                    $medicine,
+                    $productId,
+                    $drugId,
+                    $subcategories,
+                    $needsReview
+                );
+
+                foreach ($subLinkedSlugs as $slug) {
+                    $counters['sub_linked']++;
+                    $perSubcategory[$slug] = ($perSubcategory[$slug] ?? 0) + 1;
+                }
+
                 $bar->advance();
             }
         });
@@ -241,8 +284,16 @@ class ClassifyMohCatalog extends Command
         }
         $this->table(['القسم', 'الروابط'], $rows);
 
+        // ملخص الأقسام الفرعية (فلاتر الواجهة)
+        $subRows = [];
+        foreach ($subcategories as $slug => $subcategory) {
+            $subRows[] = [$subcategory->id, $slug, $perSubcategory[$slug] ?? 0];
+        }
+        $this->table(['القسم الفرعي', 'Slug', 'الروابط'], $subRows);
+
         $this->info("إجمالي السجلات المعالجة: {$counters['processed']}");
         $this->info("سجلات أُنشئت/حُدّثت روابطها: {$counters['linked']} (روابط جديدة: {$counters['created']}، محدّثة: {$counters['updated']})");
+        $this->info("روابط الأقسام الفرعية: {$counters['sub_linked']}");
         $this->info("سجلات غير مصنّفة (بدون أي رابط — قائمة مراجعة الأدمن): {$counters['unclassified']}");
         $this->info("سجلات تحتاج مراجعة بشرية (needs_review): {$counters['needs_review']}");
         $this->info("محاولات كتابة تُم تخطّيها احتراماً لروابط admin: {$counters['skipped_admin']}");
@@ -259,15 +310,149 @@ class ClassifyMohCatalog extends Command
             'created' => $counters['created'],
             'updated' => $counters['updated'],
             'skipped_admin' => $counters['skipped_admin'],
+            'sub_linked' => $counters['sub_linked'],
             'removed_auto' => $removedAuto,
             'admin_preserved' => $adminLinksPreserved,
             'per_category' => $perCategory,
+            'per_subcategory' => $perSubcategory,
         ]);
 
         // التصنيف يكتب روابط feed نفس كاش الأقسام — بدونه تبقى النتائج قديمة 15 دقيقة
         CategoryCatalogCache::bump();
 
         return self::SUCCESS;
+    }
+
+    /**
+     * STEP C: يربط الصف بالأقسام الفرعية المطابقة لقواعده.
+     *
+     * ⚠️ **محصور داخل `product_class = Food Supplement`** — قياس على البيانات
+     * الحقيقية (17,295 صفاً) أثبت أن القواعد النصية وحدها تطابق منتجات التجميل
+     * (`Cosmetic Products`) بخطأ يقارب 4×: `hair-vitamins` وحدها طابقت 1,817
+     * صفاً بينما قسم الفيتامينات كله 457 — والمطابقات كانت شامبو/بلسم/سيروم
+     * (`ROSEMARY SHAMPOO`, `PROTEIN & KERATIN CONDITIONER`, `VITAMIN C FACIAL SERUM`).
+     * السبب: كلمات مثل hair/protein/vitamin ترد في أسماء مستحضرات التجميل كما
+     * ترد في المكملات، ولا يفصلها إلا `product_class`.
+     *
+     * يستخدم نفس المفتاح المستقر للربط الرئيسي (moh_product_id / moh_drug_id)،
+     * مع subcategory_id. لا يُنشئ أقساماً فرعية ولا روابط لقسم فرعي غير مطابق.
+     * روابط admin على مستوى القسم الفرعي محميّة مثل نظيرها الرئيسي.
+     *
+     * @param  \Illuminate\Support\Collection  $subcategories  مفهرسة بـslug
+     * @return list<string> slugs الأقسام الفرعية التي رُبطت فعلاً
+     */
+    private function linkSubcategories(MohMedicine $medicine, ?int $productId, ?int $drugId, $subcategories, bool $needsReview): array
+    {
+        // بلا مفتاح مستقر لا يمكن الربط (نفس قاعدة الروابط الرئيسية)
+        if ($productId === null && $drugId === null) {
+            return [];
+        }
+
+        // بوابة product_class — قبل أي مطابقة نصية
+        if (! $this->isFoodSupplement($medicine)) {
+            return [];
+        }
+
+        $haystack = $this->buildHaystack($medicine);
+        $linked = [];
+
+        foreach (SubcategorySeeder::matchRules() as $slug => $rule) {
+            $subcategory = $subcategories->get($slug);
+
+            // قسم فرعي غير مُبذَر/غير نشط ⇒ لا رابط
+            if ($subcategory === null) {
+                continue;
+            }
+
+            if (! $this->ruleMatches($rule, $haystack)) {
+                continue;
+            }
+
+            $result = $this->upsertSubcategoryLink(
+                (int) $subcategory->category_id,
+                (int) $subcategory->id,
+                $productId,
+                $drugId,
+                $needsReview
+            );
+
+            if ($result !== 'admin') {
+                $linked[] = $slug;
+            }
+        }
+
+        return $linked;
+    }
+
+    /**
+     * هل الصف مكمّل غذائي؟ — مطابقة حرفية بعد trim، مطابقة لمنطق STEP A.
+     * الصفوف بلا product_class لا تُعدّ مكمّلات (لا نخمّن).
+     */
+    private function isFoodSupplement(MohMedicine $medicine): bool
+    {
+        return trim((string) $medicine->product_class) === 'Food Supplement';
+    }
+
+    /**
+     * إدراج/تحديث رابط قسم فرعي بشكل آمن.
+     *
+     * - يفحص الروابط الموجودة للقسم الفرعي بأيٍّ من المفتاحين.
+     * - وجود رابط admin ⇒ تخطٍّ كامل (لا تعديل ولا حذف ولا تخفيض ثقة).
+     * - التكرارات التلقائية القديمة تُنظَّف قبل التحديث لتفادي تعارض الفهارس.
+     *
+     * @return string 'created'|'updated'|'admin'
+     */
+    private function upsertSubcategoryLink(int $categoryId, int $subcategoryId, ?int $productId, ?int $drugId, bool $needsReview): string
+    {
+        $existing = CategoryMedicineLink::query()
+            ->where('subcategory_id', $subcategoryId)
+            ->where(function ($query) use ($productId, $drugId): void {
+                if ($productId !== null) {
+                    $query->orWhere('moh_product_id', $productId);
+                }
+                if ($drugId !== null) {
+                    $query->orWhere('moh_drug_id', $drugId);
+                }
+            })
+            ->get();
+
+        if ($existing->contains(fn (CategoryMedicineLink $link): bool => $link->source === CategoryMedicineLink::SOURCE_ADMIN)) {
+            return 'admin';
+        }
+
+        $chosen = $existing->first(fn (CategoryMedicineLink $link): bool => $productId !== null && (int) $link->moh_product_id === $productId)
+            ?? $existing->first(fn (CategoryMedicineLink $link): bool => $drugId !== null && (int) $link->moh_drug_id === $drugId)
+            ?? $existing->first();
+
+        if ($chosen === null) {
+            CategoryMedicineLink::create([
+                'category_id' => $categoryId,
+                'subcategory_id' => $subcategoryId,
+                'moh_product_id' => $productId,
+                'moh_drug_id' => $drugId,
+                'source' => CategoryMedicineLink::SOURCE_RULES,
+                'confidence' => self::CONF_SUBCATEGORY,
+                'needs_review' => $needsReview,
+            ]);
+
+            return 'created';
+        }
+
+        $existing->reject(fn (CategoryMedicineLink $link): bool => $link->is($chosen))->each->delete();
+
+        $chosen->category_id = $categoryId;
+        $chosen->source = CategoryMedicineLink::SOURCE_RULES;
+        $chosen->confidence = self::CONF_SUBCATEGORY;
+        $chosen->needs_review = $needsReview;
+        if ($productId !== null) {
+            $chosen->moh_product_id = $productId;
+        }
+        if ($drugId !== null) {
+            $chosen->moh_drug_id = $drugId;
+        }
+        $chosen->save();
+
+        return 'updated';
     }
 
     /**

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Phone Scanner — Visual Verification Harness</title>
+
+<!-- ⚠️ حِزَم البناء الفعلية من public/build/assets — لا نسخ CSS هنا.
+     عند إعادة البناء: بدّل الهاشات أدناه. -->
+<link rel="stylesheet" href="../public/build/assets/tokens-kKaA9aHp.css">
+<link rel="stylesheet" href="../public/build/assets/app_layout-C9C_a71q.css">
+<link rel="stylesheet" href="../public/build/assets/pharmacy_hub--80yWf-e.css">
+<link rel="stylesheet" href="../public/build/assets/pharmacy_accounting-Us3JbBDl.css">
+
+<style>
+  /* الحاملة فقط: نمنع أي CSS عام يُفسد التخطيط أو الثيم */
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--ph-canvas); font-family: 'Cairo', system-ui, sans-serif; }
+  .harness-wrap { padding: 28px; max-width: 1180px; margin: 0 auto; }
+  .harness-title {
+    font-size: 1.1rem; font-weight: 800; color: var(--ph-ink);
+    margin: 0 0 6px; display: flex; align-items: center; gap: 10px;
+  }
+  .harness-title span {
+    font-size: .74rem; font-weight: 700; padding: 3px 10px;
+    border-radius: 999px; background: var(--ph-teal-mist); color: var(--ph-teal-text);
+  }
+  .harness-sub { margin: 0 0 22px; font-size: .84rem; color: var(--ph-ink-faint); }
+  .harness-section { margin-block-end: 34px; }
+  .harness-label {
+    font-size: .78rem; font-weight: 800; color: var(--ph-ink-faint);
+    text-transform: uppercase; letter-spacing: .06em; margin-block-end: 12px;
+  }
+  .harness-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .harness-panel {
+    background: var(--ph-paper); border: 1px solid var(--ph-line-soft);
+    border-radius: var(--ph-r-lg); padding: 20px;
+  }
+  html.dark-mode, body.dark-mode { background: var(--ph-canvas); }
+</style>
+</head>
+<body>
+
+<div class="harness-wrap">
+  <h1 class="harness-title">المسح بالهاتف — تحقّق بصري <span>حِزَم البناء الفعلية</span></h1>
+  <p class="harness-sub">يعرض مكوّنات الميزة الفعلية بحالاتها الثمانية في الوضعين.</p>
+
+  <!-- ============ 1) زر المسح بالهاتف + صفّ الإدخال ============ -->
+  <section class="harness-section">
+    <div class="harness-label">1 · صفّ طرق الإدخال (ثلاث طرق بنفس الوزن)</div>
+    <div class="harness-panel">
+      <div class="ac-scan-actions">
+        <button type="button" class="ac-scan-btn is-outline" data-barcode-scan>
+          <span class="ac-scan-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><line x1="3" y1="12" x2="21" y2="12"></line></svg>
+          </span>
+          <span class="ac-scan-text">مسح الباركود</span>
+        </button>
+
+        <button type="button" class="ac-phone-scan-btn">
+          <span class="ac-phone-scan-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="2"></rect><line x1="10" y1="18" x2="14" y2="18"></line><path d="M9 8h1M11 8h1M13 8h1M9 11h1M11 11h1M13 11h1"></path></svg>
+          </span>
+          <span class="ac-phone-scan-text">المسح بالهاتف</span>
+        </button>
+
+        <button type="button" class="ac-phone-scan-btn">
+          <span class="ac-phone-scan-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="2"></rect><line x1="10" y1="18" x2="14" y2="18"></line><path d="M9 8h1M11 8h1M13 8h1M9 11h1M11 11h1M13 11h1"></path></svg>
+          </span>
+          <span class="ac-phone-scan-text">المسح بالهاتف</span>
+          <span class="ac-phone-scan-dot"></span>
+        </button>
+
+        <span class="ac-scan-or">أو</span>
+
+        <button type="button" class="ph-btn ghost sm">
+          <i class="fas fa-magnifying-glass"></i> ابحث بالاسم
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2) الحالات الثمانية ============ -->
+  <section class="harness-section">
+    <div class="harness-label">2 · الحالات الثمانية لمؤشّر الجلسة</div>
+    <div class="harness-grid">
+      <div class="ac-session-status is-waiting">
+        <span class="ac-session-dot"></span><span class="ac-session-label">بانتظار الهاتف…</span><span class="ac-session-timer">4:58</span>
+      </div>
+      <div class="ac-session-status is-connecting">
+        <span class="ac-session-dot"></span><span class="ac-session-label">جارٍ الاتصال…</span>
+      </div>
+      <div class="ac-session-status is-connected">
+        <span class="ac-session-dot"></span><span class="ac-session-label">الهاتف متصل — جاهز للمسح</span>
+      </div>
+      <div class="ac-session-status is-scanning">
+        <span class="ac-session-dot"></span><span class="ac-session-label">وصل باركود، جارٍ البحث…</span>
+      </div>
+      <div class="ac-session-status is-received">
+        <span class="ac-session-dot"></span><span class="ac-session-label">تم استلام الباركود</span>
+      </div>
+      <div class="ac-session-status is-disconnected">
+        <span class="ac-session-dot"></span><span class="ac-session-label">انقطع الاتصال بالهاتف</span>
+      </div>
+      <div class="ac-session-status is-expired">
+        <span class="ac-session-dot"></span><span class="ac-session-label">انتهت صلاحية الجلسة</span>
+      </div>
+      <div class="ac-session-status is-error">
+        <span class="ac-session-dot"></span><span class="ac-session-label">خطأ في الاتصال</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3) بطاقة الاقتران ============ -->
+  <section class="harness-section">
+    <div class="harness-label">3 · بطاقة الاقتران (QR مؤقّت + رمز قصير)</div>
+    <div class="harness-panel">
+      <div class="ac-pair-card">
+        <div class="ac-pair-qr">
+          <div class="ac-pair-qr-placeholder" role="img" aria-label="رمز الـQR غير متاح بعد">
+            <span class="ac-pair-qr-grid" aria-hidden="true"></span>
+          </div>
+          <p class="ac-pair-qr-cap is-pending">سيظهر رمز الـQR عند تفعيل نقطة الاقتران.</p>
+        </div>
+        <div class="ac-pair-code-box">
+          <span class="ac-pair-code-label">رمز الاقتران</span>
+          <output class="ac-pair-code" dir="ltr">A7K92F</output>
+          <p class="ac-pair-code-hint">أدخله في تطبيق الهاتف إن تعذّر مسح الـQR.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4) الباركود الوارد + الطابور ============ -->
+  <section class="harness-section">
+    <div class="harness-label">4 · الباركود الوارد وطابور المسح</div>
+    <div class="harness-panel">
+      <div class="ac-received">
+        <span class="ac-received-label">تم استلام الباركود</span>
+        <output class="ac-received-code" dir="ltr">6281234567890</output>
+        <span class="ac-received-hint">جارٍ البحث…</span>
+      </div>
+
+      <div class="ac-queue">
+        <span class="ac-queue-label">طابور المسح</span>
+        <ul class="ac-queue-list">
+          <li class="ac-queue-item is-current">→ 6281234567890</li>
+          <li class="ac-queue-item">1 · …</li>
+          <li class="ac-queue-item">2 · …</li>
+        </ul>
+      </div>
+
+      <div class="ac-scan-found">
+        <span class="ac-scan-found-body">
+          <span class="ac-scan-found-name">بنادول 500mg</span>
+          <span class="ac-scan-found-meta">Paracetamol · 24.00 ₪</span>
+        </span>
+        <span class="ac-bcode-badge is-pending is-sm"><span class="ac-bcode-dot"></span><span class="ac-bcode-label">بانتظار التوثيق</span></span>
+        <button type="button" class="ph-btn primary sm"><i class="fas fa-plus"></i> أضف إلى الفاتورة</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5) الأجهزة ============ -->
+  <section class="harness-section">
+    <div class="harness-label">5 · الأجهزة المرتبطة وطلب اقتران جهاز آخر</div>
+    <div class="harness-panel">
+      <ul class="ac-devices-list">
+        <li class="ac-device-row is-active">
+          <span class="ac-device-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"></rect><line x1="10" y1="18" x2="14" y2="18"></line></svg></span>
+          <span class="ac-device-name">هاتف أحمد</span>
+          <span class="ac-device-badge">الجهاز النشط</span>
+          <button type="button" class="ph-btn xs ghost">فصل</button>
+        </li>
+      </ul>
+
+      <div class="ac-device-request" style="margin-block-start:12px;">
+        <p class="ac-device-request-title">جهاز آخر يريد الاتصال</p>
+        <p class="ac-device-request-name">هاتف سارة</p>
+        <div class="ac-device-request-actions">
+          <button type="button" class="ph-btn primary sm">سماح</button>
+          <button type="button" class="ph-btn ghost sm">رفض</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 6) شارات حالة الباركود الأربع ============ -->
+  <section class="harness-section">
+    <div class="harness-label">6 · شارات حالة الباركود — «غير مرتبط» محايدة لا حمراء</div>
+    <div class="harness-panel" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+      <span class="ac-bcode-badge is-unknown"><span class="ac-bcode-dot"></span><span class="ac-bcode-label">غير مرتبط بعد</span></span>
+      <span class="ac-bcode-badge is-pending"><span class="ac-bcode-dot"></span><span class="ac-bcode-label">بانتظار التوثيق</span></span>
+      <span class="ac-bcode-badge is-verified"><span class="ac-bcode-dot"></span><span class="ac-bcode-label">موثَّق</span></span>
+      <span class="ac-bcode-badge is-conflict"><span class="ac-bcode-dot"></span><span class="ac-bcode-label">مرتبط بدواء آخر</span></span>
+      <span class="ac-bcode-none">بلا باركود</span>
+    </div>
+  </section>
+
+  <!-- ============ 7) Vite/JS: نتحقق أن الملفات تُحمّل وتُصدِّر ما تتوقّعه ============ -->
+  <section class="harness-section">
+    <div class="harness-label">7 · فحص تصدير JS</div>
+    <div class="harness-panel">
+      <div id="__M__" style="font-family:monospace;font-size:.8rem;direction:ltr;color:var(--ph-ink-soft);"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // الوضع الداكن يُفعَّل بـ?dark=1 — الشرط الحقيقي في المشروع هو صنف
+  // `.dark-mode` على **<html> و<body> معًا** (الأسماء المستعارة تُحسب على
+  // العنصر الذي تُعرَّف فيه، فإغفال أحدهما يُنتج ثيمًا هجينًا).
+  if (location.search.indexOf('dark=1') !== -1) {
+    document.documentElement.classList.add('dark-mode');
+    document.body.classList.add('dark-mode');
+  }
+</script>
+
+<script>
+  // نوسّع شبكة الـQR المؤقّتة (64 خانة) — الحاملة فقط
+  (function () {
+    var grid = document.querySelector('.ac-pair-qr-grid');
+    if (!grid) return;
+    for (var i = 0; i < 64; i++) {
+      var c = document.createElement('span');
+      c.className = 'ac-pair-qr-cell' + ([0,2,3,6,7].indexOf(i % 9) !== -1 ? ' is-on' : '');
+      grid.appendChild(c);
+    }
+  })();
+</script>
+
+<script>window.acAccountingConfig = { endpoints: {}, scanSessionMock: true, scanSessionMockBarcodes: ['6281234567890'] };</script>
+<script>window.acBarcodeI18n = {}; window.acScannerI18n = { states: {} };</script>
+<script src="../public/build/assets/accounting-shared-D71O8K4b.js"></script>
+<script src="../public/build/assets/accounting-barcode-DnnTfIWw.js"></script>
+<script src="../public/build/assets/accounting-scanner-session-CILYmZP7.js"></script>
+<script src="../public/build/assets/accounting-phone-scanner-BjNsBmkU.js"></script>
+
+<script>
+  // نكتب نتائج الفحص في #__M__ ليُقرأ بـ--dump-dom (لا تخمين من لقطة)
+  (function () {
+    var out = [];
+    function ck(name, cond) { out.push((cond ? 'PASS ' : 'FAIL ') + name); }
+
+    ck('AccountingUtil', typeof window.AccountingUtil === 'object');
+    ck('AccountingApi', typeof window.AccountingApi === 'object');
+    ck('AccountingBarcode', typeof window.AccountingBarcode === 'object');
+    ck('AccountingScanSession', typeof window.AccountingScanSession === 'object');
+    ck('AccountingPhoneScanner', typeof window.AccountingPhoneScanner === 'object');
+
+    // الميزة الأساسية: آلة الحالة موجودة بحالاتها
+    if (window.AccountingScanSession) {
+      ck('states=9', window.AccountingScanSession.allStates().length === 9);
+      ck('polling-default', window.AccountingScanSession.Transport.kind() === 'polling');
+      var c = window.AccountingScanSession.createController();
+      ck('controller-ok', typeof c.enqueue === 'function' && typeof c.resolve === 'function');
+    }
+
+    // لا كاميرا في الويب — تأكيد نهائي على مستوى الـscripts المحمّلة
+    ck('no-getUserMedia', document.documentElement.innerHTML.indexOf('getUserMedia') === -1);
+
+    document.getElementById('__M__').textContent = out.join(' | ');
+  })();
+</script>
+</body>
+</html>

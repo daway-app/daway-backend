@@ -19,6 +19,7 @@ class CategoryMedicineLink extends Model
 
     protected $fillable = [
         'category_id',
+        'subcategory_id',
         'moh_product_id',
         'moh_drug_id',
         'medicine_id',
@@ -38,6 +39,11 @@ class CategoryMedicineLink extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function subcategory(): BelongsTo
+    {
+        return $this->belongsTo(Subcategory::class);
     }
 
     public function medicine(): BelongsTo

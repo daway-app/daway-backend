@@ -21,6 +21,7 @@ use App\Http\Controllers\web\General\ProfileController;
 use App\Http\Controllers\web\Patient\PatientController;
 use App\Http\Controllers\web\Patient\PatientInquiryController;
 // Pharmacy Controllers
+use App\Http\Controllers\web\Pharmacy\AccountingController;
 use App\Http\Controllers\web\Pharmacy\PharmacyAlternativeController;
 use App\Http\Controllers\web\Pharmacy\PharmacyController;
 use App\Http\Controllers\web\Pharmacy\PharmacyDashboardController;
@@ -357,6 +358,24 @@ Route::middleware(['auth', 'role:pharmacy', 'profile.complete'])->group(function
         PharmacyRatingController::class,
         'index',
     ])->name('pharmacy.ratings.index');
+
+    // ==================== PHARMACY ACCOUNTING ====================
+    // وحدة محاسبة الصيدلية — Frontend-only حاليًا (لا Backend محاسبة).
+    // middleware: auth + role:pharmacy + profile.complete (نفس مسارات الصيدلية أعلاه).
+    // المسارات المضافة هي المتاحة فعليًا؛ وبقية شجرة المحاسبة (المشتريات/المصروفات/
+    // الموردون/العملاء/الصندوق/المدفوعات/الأرباح/التقارير) تُضاف عند بناء صفحاتها.
+
+    Route::prefix('pharmacy/accounting')->name('pharmacy.accounting.')->group(function () {
+        Route::get('/', [AccountingController::class, 'overview'])->name('overview');
+
+        // المبيعات
+        Route::get('/sales', [AccountingController::class, 'sales'])->name('sales.index');
+        Route::get('/sales/create', [AccountingController::class, 'saleCreate'])->name('sales.create');
+        // ملاحظة: يأتي بعد /sales/create حتى لا يبتلع {number} المسار الثابت
+        Route::get('/sales/{number}', [AccountingController::class, 'saleShow'])
+            ->where('number', '[A-Za-z0-9\-]+')
+            ->name('sales.show');
+    });
 });
 
 // ==================== ANY AUTHENTICATED USER ====================
