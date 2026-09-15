@@ -324,6 +324,13 @@ Route::middleware(['auth', 'role:pharmacy', 'profile.complete'])->group(function
     // دعم pre-select من صفحة تعديل الدواء: route صريح بـ path param
     // {pharmacyMedicine?} لازم يسبق الـ resource لأن Laravel يُرجع أول
     // route بنفس الاسم. هذا يحلّ bug قديم كان يمرر الـ id في query string.
+    //
+    // ملاحظة مهمة (١): الـ resource أدناه مُستثنى من 'create' عمدًا لأن الـ
+    // route الصريح فوق يحمل نفس الاسم (pharmacy.alternatives.create). وجود
+    // نسختين بنفس الاسم يمنع `php artisan route:cache` من العمل:
+    //   "Unable to prepare route [pharmacy/alternatives/create] for
+    //    serialization. Another route has already been assigned name"
+    // وهذا كان يُفشل النشر على Render.
     Route::get('pharmacy/alternatives/create/{pharmacyMedicine?}', [
         PharmacyAlternativeController::class,
         'create',
@@ -332,7 +339,7 @@ Route::middleware(['auth', 'role:pharmacy', 'profile.complete'])->group(function
     Route::resource(
         'pharmacy/alternatives',
         PharmacyAlternativeController::class
-    )->only(['index', 'create', 'store'])
+    )->only(['index', 'store'])
         ->names('pharmacy.alternatives');
 
     Route::delete('pharmacy/alternatives/{pharmacyMedicine}/{alternative}', [
