@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daway — إصلاح عيوب الوضع الداكن (الست لقطات)</title>
+<style>
+  :root{
+    --navy-900:#050C12; --navy-800:#0A1A2E; --navy-700:#112433; --navy-600:#1E3A5F;
+    --line:#DEE8E7; --line-2:#EEF4F3; --ink:#0C2224; --ink-2:#4C6669; --ink-3:#5C7073;
+    --teal:#1C72A6; --teal-2:#155E85; --teal-mist:#EAF5F4;
+    --ok:#14702F; --ok-bg:#DCFCE7; --warn:#B45309; --warn-bg:#FEF9C3;
+    --bad:#B91C1C; --bad-bg:#FEE2E2; --info:#0369A1; --info-bg:#E0F2FE;
+    --paper:#FFFFFF; --canvas:#F5FAF9;
+    --r:14px; --sh:0 1px 3px rgba(12,34,36,.06), 0 8px 24px -12px rgba(12,34,36,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--canvas); color:var(--ink);
+    font-family:'Segoe UI',Tajawal,Cairo,system-ui,-apple-system,sans-serif;
+    line-height:1.85; padding:32px 18px 72px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px;margin:0 auto}
+  header{
+    background:linear-gradient(150deg,var(--navy-600) 0%,var(--navy-800) 55%,var(--navy-900) 100%);
+    color:#EAF4F8; border-radius:20px; padding:34px 32px; margin-bottom:26px;
+    box-shadow:0 20px 44px -22px rgba(5,12,18,.55);
+  }
+  header .eyebrow{font-size:.76rem;letter-spacing:2.4px;text-transform:uppercase;color:#7CC4EC;font-weight:700}
+  header h1{font-size:1.75rem;margin:10px 0 8px;font-weight:800;line-height:1.45}
+  header p{color:#9DBACB;font-size:.93rem;max-width:74ch}
+  header .meta{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+  header .meta span{
+    background:rgba(56,189,248,.13); border:1px solid rgba(56,189,248,.30);
+    color:#BFE3F7; padding:5px 13px; border-radius:9999px; font-size:.78rem; font-weight:600;
+  }
+  h2{font-size:1.16rem;margin:38px 0 14px;font-weight:800;display:flex;align-items:center;gap:10px}
+  h2::before{content:"";width:5px;height:20px;background:var(--teal);border-radius:3px;flex:none}
+  h3{font-size:1rem;margin:0 0 6px;font-weight:700}
+  p{margin:0 0 12px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:8px}
+  .kpi{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh)}
+  .kpi b{display:block;font-size:1.9rem;font-weight:800;color:var(--teal-2);line-height:1.2}
+  .kpi span{font-size:.82rem;color:var(--ink-3);font-weight:600}
+  .kpi.ok b{color:var(--ok)} .kpi.bad b{color:var(--bad)} .kpi.warn b{color:var(--warn)}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:22px 24px;margin-bottom:16px;box-shadow:var(--sh)}
+  .card.fix{border-inline-start:5px solid var(--teal)}
+  .tag{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:9999px;vertical-align:middle}
+  .t-ok{background:var(--ok-bg);color:var(--ok)}
+  .t-bad{background:var(--bad-bg);color:var(--bad)}
+  .t-warn{background:var(--warn-bg);color:var(--warn)}
+  .t-info{background:var(--info-bg);color:var(--info)}
+  table{width:100%;border-collapse:collapse;font-size:.87rem;margin:6px 0 4px}
+  th,td{text-align:start;padding:10px 12px;border-bottom:1px solid var(--line-2);vertical-align:top}
+  th{background:var(--teal-mist);font-weight:700;color:var(--teal-2);font-size:.8rem;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  code{background:var(--line-2);padding:2px 7px;border-radius:6px;font-size:.83em;font-family:Consolas,monospace;direction:ltr;display:inline-block}
+  pre{background:var(--navy-800);color:#CFE7F5;padding:16px 18px;border-radius:12px;overflow-x:auto;font-size:.8rem;line-height:1.7;direction:ltr;text-align:left;margin:10px 0}
+  pre .g{color:#6EE7B7} pre .y{color:#FCD34D} pre .d{color:#7E9CB0}
+  figure{margin:14px 0 4px}
+  figure img{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+  figcaption{font-size:.78rem;color:var(--ink-3);margin-top:7px;text-align:center}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.two{grid-template-columns:1fr}}
+  .note{background:var(--info-bg);border:1px solid #BAE0F5;border-radius:12px;padding:14px 18px;font-size:.87rem;color:#04597F;margin:14px 0}
+  .alert{background:var(--bad-bg);border:1px solid #F8C9C9;border-radius:12px;padding:14px 18px;font-size:.87rem;color:#8A1717;margin:14px 0}
+  .win{background:var(--ok-bg);border:1px solid #B7EFC9;border-radius:12px;padding:14px 18px;font-size:.87rem;color:#0E5423;margin:14px 0}
+  ul{margin:6px 0 12px;padding-inline-start:22px}
+  li{margin-bottom:6px}
+  .ratio{font-family:Consolas,monospace;font-weight:700;direction:ltr;display:inline-block}
+  .ratio.p{color:var(--ok)} .ratio.f{color:var(--bad)}
+  footer{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);font-size:.82rem;color:var(--ink-3);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Daway · Pharmacy Hub</div>
+  <h1>إصلاح عيوب الوضع الداكن — الست لقطات</h1>
+  <p>
+    معالجة الستّ مشاكل التي رصدها عبود في لقطات الشاشة، مع تشخيص السبب الجذري لكل واحدة
+    والتحقّق منها برسم فعلي عبر Chrome على حِزَم البناء الحقيقية — لا بالتخمين.
+  </p>
+  <div class="meta">
+    <span>15 سبتمبر 2026</span>
+    <span>6/6 مشاكل مُصلَحة ومُتحقَّق منها</span>
+    <span>3/3 سكربتات تدقيق تنجح</span>
+    <span>لم يُرفع شيء</span>
+  </div>
+</header>
+
+<div class="kpis">
+  <div class="kpi ok"><b>6 / 6</b><span>مشاكل مُصلَحة</span></div>
+  <div class="kpi"><b>1697</b><span>زوج تباين مفحوص (كان 1691)</span></div>
+  <div class="kpi ok"><b>0</b><span>إخفاق WCAG 2.1 AA</span></div>
+  <div class="kpi warn"><b dir="ltr">6.75 → 7.96</b><span>تباين الشريحة الكهرمانية</span></div>
+  <div class="kpi warn"><b dir="ltr">25 KB</b><span>كود ميت مكتشَف (يُبنى بلا فائدة)</span></div>
+</div>
+
+<div class="note">
+  <strong>ملاحظة منهجية مهمة:</strong> اللقطات الست التي أرسلها عبود التُقطت من نسخة بناء
+  <em>قديمة</em> (بعض قيم <code>--ph-paper:#232327</code> الرمادية لا تزال موجودة في
+  <code>public/build/assets/</code> القديمة). لذلك لم أعتمد عليها كمرجع للحالة الراهنة،
+  بل بنيت <strong>حاملة تحقّق</strong> (<code>outputs/dark-verify-harness.html</code>)
+  تُحمِّل حِزَم البناء الحالية وترسم نفس بنية الصفحات، ثم صوّرتها فعليًّا عبر Chrome
+  وسحبت قيم البكسل. كل نتيجة أدناه مبنية على قياس، لا على انطباع.
+</div>
+
+<h2>ملخّص: ما رآه عبود ← السبب الجذري ← الإصلاح</h2>
+
+<table>
+  <thead>
+    <tr><th style="width:15%">الصفحة</th><th style="width:29%">العَرَض</th><th style="width:33%">السبب الجذري</th><th style="width:23%">الإصلاح</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>pharmacy/import</code></td>
+      <td>الخطوات الأربع تبدو متطابقة — لا يُعرف موقع المستخدم</td>
+      <td><strong>لا شيء يضبط <code>is-active</code> أصلًا.</strong> القاعدة <code>.pi-step.is-active</code> موجودة في CSS لكن قالب Blade لم يضع الصنف على أي خطوة</td>
+      <td>وسم الخطوتين 1 و2 بـ<code>is-active</code> (وهما المُنجَزتان في هذه الصفحة) عبر حلقة <code>@foreach</code></td>
+    </tr>
+    <tr>
+      <td><code>pharmacy/import</code></td>
+      <td>زر رفع الملف يظهر بمنظر النظام الرمادي</td>
+      <td><code>input[type=file]</code> لم يكن له أي تنسيق داكن</td>
+      <td><code>::file-selector-button</code> بلوحة كحلية + إطار</td>
+    </tr>
+    <tr>
+      <td><code>pharmacy/profile</code></td>
+      <td>حقول النموذج غير مرئية — بنفس لون البطاقة</td>
+      <td>الحقل كان يستخدم <code>--ph-paper</code> (نفس سطح البطاقة) بحدّ <code>#3A6383</code> = <strong>2.49:1</strong> (&lt; 3:1 المطلوب لمكوّنات الواجهة)</td>
+      <td><code>--field-bg</code> خلفية صريحة + <code>--line-strong</code> حدًّا (3.30:1)</td>
+    </tr>
+    <tr>
+      <td><code>pharmacy/ratings</code></td>
+      <td>أشرطة التوزيع تُرسم سوداء صمّاء</td>
+      <td><code>var(--ph-canvas)</code> استُخدم كخلفية لـ<em>مسار</em> الشريط — أي ثقب أسود داخل البطاقة</td>
+      <td>المسار <code>--ph-line-soft</code> والتعبئة <code>--warning</code></td>
+    </tr>
+    <tr>
+      <td><code>pharmacy/ratings</code></td>
+      <td>خطوط شبكة الرسم البياني بيضاء ساطعة</td>
+      <td>قيمة صلبة <code>#eef4f3</code> مكتوبة في JS — لون الوضع الفاتح</td>
+      <td>قراءة <code>--line-soft</code> من التوكنات وقت الرسم</td>
+    </tr>
+    <tr>
+      <td><code>pharmacy/dashboard</code></td>
+      <td>نص مركز الدونات غير مرئي</td>
+      <td>قيمة صلبة <code>#0C2224</code> (حبر الوضع الفاتح) فوق بطاقة كحلية</td>
+      <td>قراءة <code>--ink</code> و<code>--ink-faint</code> وقت الرسم</td>
+    </tr>
+    <tr>
+      <td><code>pharmacy/alternatives</code></td>
+      <td>أيقونة كهرمانية تنافر اللوحة الكحلية</td>
+      <td>تعبئة شفافة <code>rgba(251,191,36,.18)</code> فوق الكحلي ⇒ قرص رمادي-زيتوني <code>#383C33</code> لا ينتمي للوحة</td>
+      <td>تعبئات داكنة <strong>صلبة</strong> ⇒ كهرماني مقصود <code>#3A2E14</code> <span class="ratio p">7.96:1 ✓</span></td>
+    </tr>
+    <tr>
+      <td>كل الصفحات</td>
+      <td>الرسوم لا تتبع تبديل الثيم</td>
+      <td>لا يوجد أي إعادة رسم عند تبديل الوضع</td>
+      <td><code>MutationObserver</code> على صنف <code>&lt;html&gt;</code> يُعيد بناء كل الرسوم</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>1 · الخطوات الأربع في صفحة الاستيراد</h2>
+<div class="card fix">
+  <p>
+    هذا كان <strong>عطلًا في القالب لا في التنسيق</strong>. القاعدة <code>.pi-step.is-active</code>
+    مكتوبة في <code>pharmacy_import.css</code> (إطار تيل + هالة + رقم معبّأ) لكن
+    <code>index.blade.php</code> كان يطبع أربع خطوات متطابقة بلا أي صنف حالة:
+  </p>
+<pre><span class="d">&lt;!-- قبل --&gt;</span>
+&lt;div class='pi-step'&gt;&lt;span class='pi-step-no'&gt;1&lt;/span&gt; ...&lt;/div&gt;
+&lt;div class='pi-step'&gt;&lt;span class='pi-step-no'&gt;2&lt;/span&gt; ...&lt;/div&gt;
+<span class="d">&lt;!-- أربع مرات، بلا is-active على أيٍّ منها --&gt;</span></pre>
+  <p>
+    الخطوتان 1 (تنزيل القالب) و2 (الرفع) تُنجَزان في هذه الصفحة، و3 (المراجعة) و4 (التأكيد)
+    في صفحة المراجعة — فوسمتهما بحلقة صريحة:
+  </p>
+<pre>@php
+    $steps = [
+        1 =&gt; ['key' =&gt; 'step_download', 'active' =&gt; <span class="y">true</span>],
+        2 =&gt; ['key' =&gt; 'step_upload',   'active' =&gt; <span class="y">true</span>],
+        3 =&gt; ['key' =&gt; 'step_review',   'active' =&gt; <span class="y">false</span>],
+        4 =&gt; ['key' =&gt; 'step_confirm',  'active' =&gt; <span class="y">false</span>],
+    ];
+@endphp</pre>
+  <figure>
+    <img src="dark-fix/03-import.png" alt="صفحة الاستيراد بعد الإصلاح">
+    <figcaption>الخطوتان 1 و2 مُبرَزتان بإطار تيل ورقم معبّأ، و3 و4 باهتتان — والمنطقة المتقطّعة صارت حقلًا مرئيًّا وزر الملف بلوحة كحلية</figcaption>
+  </figure>
+</div>
+
+<h2>2 · حقول النموذج غير المرئية (الملف الشخصي)</h2>
+<div class="card fix">
+  <p>
+    الحقل كان <code>background: var(--ph-paper)</code> — أي <strong>نفس سطح البطاقة تمامًا</strong> —
+    وحدّه <code>--ph-line</code> <code>#3A6383</code> الذي يعطي <span class="ratio f">2.49:1</span>
+    مقابل البطاقة، أقلّ من 3:1 المطلوب لـ WCAG 1.4.11. النتيجة: حقل غير مرئي.
+  </p>
+  <p>
+    أضفت كتلة داكنة في <code>pharmacy_hub.css</code> — الملف <em>المشترك</em>، فتغطّي
+    profile وcomplete وimport وratings وdashboard وinventory دفعةً واحدة:
+  </p>
+<pre>body.dark-mode .ph-control,
+body.dark-mode .ph-select,
+body.dark-mode .ph-textarea {
+    background: var(--field-bg);        <span class="d">/* #0C1B28 — سطح صريح مختلف عن البطاقة */</span>
+    border-color: var(--line-strong);   <span class="d">/* #5A8FB5 = 3.30:1 ✓ */</span>
+}</pre>
+  <figure>
+    <img src="dark-fix/05-profile.png" alt="نموذج الملف الشخصي بعد الإصلاح">
+    <figcaption>كل الحقول الآن بإطار مرئي وخلفية أغمق من البطاقة — والنص النائب مقروء</figcaption>
+  </figure>
+</div>
+
+<h2>3 · الرسوم البيانية: الشبكة، الأشرطة، ونص المركز</h2>
+<div class="card fix">
+  <p>
+    المشكلتان (الأشرطة السوداء وخطوط الشبكة البيضاء) لهما نفس السبب: <strong>قيم ألوان
+    صلبة مكتوبة داخل JavaScript</strong>، وهي قيم الوضع الفاتح:
+  </p>
+<pre>grid:  { color: <span class="y">'#eef4f3'</span> }          <span class="d">// أبيض ساطع فوق بطاقة كحلية</span>
+ctx.fillStyle = <span class="y">'#0C2224'</span>;        <span class="d">// حبر فاتح ⇒ غير مرئي على الكحلي</span></pre>
+  <p>
+    المشكلة التقنية: <code>var()</code> <strong>لا يعمل</strong> داخل سياق <code>&lt;canvas&gt;</code>
+    ولا داخل كائن إعدادات Chart.js. الحل: قراءة التوكنات وقت الرسم عبر
+    <code>getComputedStyle</code>، مع قابولية تمرير <em>أسماء</em> التوكنات من القوالب:
+  </p>
+<pre>function phVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function phColor(c){ return (c.slice(0,2) === <span class="y">'--'</span>) ? (phVar(c) || <span class="y">'#94A3B8'</span>) : c; }
+
+<span class="d">// في القالب:</span>
+data-ph-colors='[<span class="y">"--success","--warning","--danger"</span>]'</pre>
+  <p>
+    وأضفت إعادة الرسم عند تبديل الثيم — كانت الرسوم تبقى بألوان الوضع السابق:
+  </p>
+<pre>new MutationObserver(phRedrawCharts)
+    .observe(document.documentElement, { attributes:true, attributeFilter:[<span class="y">'class'</span>] });</pre>
+  <figure>
+    <img src="dark-fix/06-ratings.png" alt="التقييمات بعد الإصلاح">
+    <figcaption>أشرطة التوزيع لها مسار مرئي وتعبئة كهرمانية · خطوط الشبكة صارت كحلية خفيضة · الخط التيل واضح</figcaption>
+  </figure>
+  <figure>
+    <img src="dark-fix/07-dashboard.png" alt="الدونات بعد الإصلاح">
+    <figcaption>نص مركز الدونات <strong>83.6% + متوفر</strong> صار مقروءًا تمامًا</figcaption>
+  </figure>
+  <div class="win">
+    <strong>تحقّق تبديل الثيم:</strong> شغّلت الحاملة في الوضع الداكن ثم أزلت الصنف أثناء العمل.
+    عدد بكسلات التعبئة الداكنة المتبقّية بعد التبديل = <strong>0</strong>، والخلفية صارت
+    <code>rgb(245,250,249)</code> — أي أن الرسوم أُعيد رسمها بالتوكنات الفاتحة فعلًا.
+  </div>
+  <figure>
+    <img src="dark-fix/10-dashboard-light.png" alt="الدونات في الوضع الفاتح">
+    <figcaption>نفس الرسم بعد التبديل للفاتح — الألوان والشبكة والنص كلها اتبعت الثيم</figcaption>
+  </figure>
+</div>
+
+<h2>4 · الأيقونة الكهرمانية — وتصحيح خطأ في مسودة سابقة</h2>
+<div class="card fix">
+  <div class="alert">
+    <strong>تصحيح ذاتي:</strong> في مسودة سابقة من هذا التقرير كتبت أن الزوج الكهرماني كان يفشل عند
+    <code>3.26:1</code> وأن التدقيق «أخفى إخفاقًا». <strong>هذا خطأ مني.</strong> الرقم ناتج عن خطأ
+    حسابي في جمعي (<code>#79683A</code>) بينما القيمة الصحيحة لخلط <code>rgba(251,191,36,.18)</code>
+    فوق قمة التدرّج هي <code>#465254</code>. القياس الفعلي على بكسل اللقطة يعطي <code>#383C33</code>
+    وتباينًا <strong>6.75:1 — أي ناجح أصلًا</strong>. <strong>لم يكن هناك إخفاق WCAG.</strong>
+  </div>
+  <p>
+    المشكلة الحقيقية في العائلة الدلالية كانت <strong>هندسية لا حسابية</strong>: التعبئة الشفافة
+    تجعل التباين <strong>معتمدًا على الحاوية</strong> — نفس التوكن يعطي أرقامًا مختلفة حسب السطح تحته:
+  </p>
+  <table>
+    <thead><tr><th>السطح تحت <code>rgba(251,191,36,.18)</code></th><th>الناتج</th><th>التباين مع <code>#FBBF24</code></th></tr></thead>
+    <tbody>
+      <tr><td><code>--paper</code> <code>#112433</code> — السطح الفعلي للبطاقة</td><td><code>#3B4030</code></td><td><span class="ratio p">6.41</span></td></tr>
+      <tr><td>قمة تدرّج البطاقة <code>#1E3A5F</code> — ما يفترضه سكربت التدقيق</td><td><code>#465254</code></td><td><span class="ratio p">4.85</span></td></tr>
+      <tr><td>القياس الفعلي على بكسل اللقطة</td><td><code>#383C33</code></td><td><span class="ratio p">6.75</span></td></tr>
+    </tbody>
+  </table>
+  <p>
+    فارق <strong>4.85 ↔ 6.75</strong> لنفس التوكن يعني أن أي تغيير مستقبلي في لون الحاوية قد يهبط
+    بالتباين دون أن يلاحظه أحد. التعبئة الصلبة تُلغي هذا الاعتماد تمامًا:
+  </p>
+  <table>
+    <thead><tr><th>التوكن</th><th>قبل (شفاف)</th><th>بعد (صلب)</th><th>النص فوقه</th><th>التباين</th></tr></thead>
+    <tbody>
+      <tr><td><code>--warning-bg</code></td><td><code>rgba(224,168,62,.15)</code></td><td><code>#3A2E14</code></td><td><code>#FBBF24</code></td><td><span class="ratio p">6.75</span> ← <span class="ratio p">7.96 ✓</span></td></tr>
+      <tr><td><code>--success-bg</code></td><td><code>rgba(47,191,143,.15)</code></td><td><code>#0E3226</code></td><td><code>#4ADE80</code></td><td><span class="ratio p">8.02 ✓</span></td></tr>
+      <tr><td><code>--danger-bg</code></td><td><code>rgba(225,92,92,.15)</code></td><td><code>#3A1D1D</code></td><td><code>#FCA5A5</code></td><td><span class="ratio p">8.06 ✓</span></td></tr>
+      <tr><td><code>--info-bg</code></td><td><code>rgba(28,114,166,.15)</code></td><td><code>#12283C</code></td><td><code>#93C5FD</code></td><td><span class="ratio p">8.35 ✓</span></td></tr>
+    </tbody>
+  </table>
+  <p>
+    لكن <strong>شكوى عبود كانت صحيحة بصريًّا</strong>: ما رآه في اللقطة كان قرصًا كهرمانيًّا
+    <strong>مشبعًا</strong> (<code>#FFCB23</code> — قياس فعلي على لقطته، من البناء القديم)، وهو
+    ينافر الكحلي فعلًا. والبناء الحالي كان يخفّفه إلى قرص رمادي-زيتوني <code>#383C33</code> —
+    ليس منافرًا لكنه <strong>لا ينتمي للوحة</strong>. النتيجة الآن: كهرماني داكن مقصود.
+  </p>
+  <div class="two">
+    <figure>
+      <img src="dark-fix/08-chips-dark.png" alt="شرائح الأيقونات">
+      <figcaption>الأربع شرائح الآن بنفس اللغة: سطح داكن صلب + أيقونة دلالية مضيئة</figcaption>
+    </figure>
+    <figure>
+      <img src="dark-fix/09-badges-dark.png" alt="الشارات">
+      <figcaption>شارة «مخزون منخفض» لم تعد رمادية-زيتونية — كهرماني داكن مقصود</figcaption>
+    </figure>
+  </div>
+  <div class="win">
+    <strong>إثبات بالبكسل:</strong> قبل التغيير كان عدد بكسلات <code>#3A2E14</code> = <strong>0</strong>
+    (الشريحة كانت <code>#383C33</code>)، وبعده = <strong>6061</strong> بكسل.
+    والمكسب الهندسي: التباين صار مستقلًّا عن لون الحاوية.
+  </div>
+</div>
+
+<h2>5 · تنظيف بقايا لوحة zinc</h2>
+<div class="card">
+  <p>
+    اللوحة الرمادية (<code>#18181B / #232327 / #27272a / #3f3f46 / #71717A / #A1A1AA</code>)
+    كانت قد أُزيلت من <code>tokens.css</code> لكنها نجت في كتل <code>&lt;style&gt;</code>
+    داخل قوالب Blade وفي ملفات صفحات قليلة. نُظّفت على مرحلتين:
+  </p>
+  <table>
+    <thead><tr><th>الملف</th><th>المرحلة 1</th><th>المرحلة 2</th></tr></thead>
+    <tbody>
+      <tr><td><code>pages/medicines.css</code></td><td>2</td><td>—</td></tr>
+      <tr><td><code>pages/pharmacies.css</code></td><td>4</td><td>1</td></tr>
+      <tr><td><code>pages/inventory.css</code></td><td>—</td><td>1</td></tr>
+      <tr><td><code>pages/settings.css</code></td><td>—</td><td>1</td></tr>
+      <tr><td><code>views/pharmacies/index.blade.php</code></td><td>9</td><td>13</td></tr>
+      <tr><td><code>views/pharmacy/profile/complete.blade.php</code></td><td>5</td><td>9</td></tr>
+      <tr><td><code>views/profile/edit.blade.php</code></td><td>2</td><td>7</td></tr>
+      <tr><td><code>views/dashboard/index.blade.php</code></td><td>—</td><td>4</td></tr>
+      <tr><td><code>js/pharmacy_dashboard.js</code></td><td>1</td><td>3</td></tr>
+    </tbody>
+  </table>
+  <p>
+    قيم JavaScript حُوِّلت إلى <em>قيم داكنة محسوبة</em> (لأن <code>var()</code> غير متاح في سياق JS)،
+    وقيم CSS/Blade إلى <code>var()</code>. المجموع: <strong>62 استبدالًا</strong>.
+    فحص لاحق يؤكّد: <strong>صفر</strong> بقايا في الكود الحيّ.
+  </p>
+  <div class="note">
+    بقايا zinc موجودة في <code>resources/css.bak-*</code> (مجلدات نسخ احتياطي) — <strong>ليست ضمن بناء Vite</strong>،
+    فلا تؤثّر على أي صفحة.
+  </div>
+</div>
+
+<h2>6 · مكتشَفات جانبية</h2>
+
+<div class="card">
+  <h3>أ) كود ميت يُبنى في كل بناء <span class="tag t-warn">25 KB</span></h3>
+  <p>
+    <code>resources/css/pages/pharmacy_dashboard.css</code> (21.5 KB مبنيًا) و
+    <code>resources/js/pharmacy_dashboard.js</code> (3.65 KB) موجودان في مدخلات
+    <code>vite.config.js</code> فيُبنيان في كل مرة، لكن <strong>لا قالب واحد يشير إليهما</strong>:
+  </p>
+  <ul>
+    <li>لا يوجد <code>@vite([...])</code> يذكرهما في أي Blade.</li>
+    <li>لا يوجد صنف <code>pharmacy-dashboard</code> في أي قالب.</li>
+    <li>الملف يحمل <strong>نظام ثيم موازيًا كاملًا</strong> (<code>--dashboard-bg: #f4f8f7</code>) ووضعًا داكنًا بمُشغِّل مختلف: <code>html.dark-dashboard</code> — صنف لا يضبطه شيء.</li>
+  </ul>
+  <p>
+    اكتشفتُه لأنه ضلّلني أولًا: أدرجتُه في حاملة التحقّق فانقلبت خلفية الصفحة إلى الفاتح
+    بسبب <code>html, body { background: var(--dashboard-bg) !important }</code>. إزالته حلّت المشكلة.
+    <strong>التوصية: حذفهما من مدخلات البناء</strong> — القرار لعبود.
+  </p>
+</div>
+
+<div class="card">
+  <h3>ب) قيد في نموذج التدقيق: الأسطح المُركَّبة</h3>
+  <p>
+    زوج <code>--warning-text</code> على <code>--warning-bg</code> كان التدقيق يحسبه على
+    سطح <em>معتم</em> مفترض، فيعطي <span class="ratio p">4.85:1</span> — وهو
+    <strong>رقم صحيح لنموذجه</strong>. لكن السطح الحقيقي كان <em>شفافية فوق تدرّج</em>،
+    فصارت القيمة الفعلية تتغيّر بتغيّر الحاوية: <span dir="ltr">6.41</span> فوق الورق،
+    <span dir="ltr">4.85</span> فوق أعلى التدرّج، <span dir="ltr">6.75</span> عند القياس
+    الفعلي. التدقيق لم يُخفِ إخفاقًا — هو أصلًا لا يستطيع التعبير عن «قيمة تتغيّر بحسب
+    الحاوية».
+  </p>
+  <p>
+    القياس الصريح لـ«كم بكسل من اللون الهدف موجود في الصورة» أكّد الفرق قبل/بعد:
+    <code>#3A2E14</code> = <strong>0 بكسل</strong> قبل الإصلاح و<strong>6061 بكسل</strong>
+    بعده. وبعد التحويل إلى تعبئات <em>صلبة</em> صار الزوج قابلًا للقياس مباشرة بلا
+    افتراضات، وارتفع عدد الأزواج المفحوصة من <span dir="ltr">1691</span> إلى
+    <span dir="ltr">1697</span>.
+  </p>
+</div>
+
+<div class="card">
+  <h3>ج) «الحدود الزرقاء القاسية» لم تكن عيبًا راهنًا</h3>
+  <p>
+    في اللقطة 3 بدت حدود بطاقات الإحصاء زرقاء صارخة. القياس على البناء الحالي يعطي
+    <code>#25445B</code> مقابل بطاقة <code>#172E4E</code> — أي دلتا لونية منخفضة جدًّا
+    (تحديد البطاقة يأتي من فرق الخلفية لا من الحدّ). القيمة الصارخة التي في اللقطة
+    مصدرها البناء القديم. <strong>لم أغيّر شيئًا هنا</strong> لأن لا عيب راهنًا.
+  </p>
+</div>
+
+<h2>سجل التحقّق</h2>
+<div class="card">
+<pre><span class="d"># 1) توازن الأقواس في كل ملفات CSS المعدّلة</span>
+pharmacy_hub.css      braces 319/319  parens  425/425  OK
+pharmacy_import.css   braces  92/92   parens  154/154  OK
+inventory.css         braces  43/43   parens   65/65   OK
+pharmacies.css        braces  57/57   parens  108/108  OK
+settings.css          braces  52/52   parens   36/36   OK
+medicines.css         braces 144/144  parens  205/205  OK
+
+<span class="d"># 2) فحص بناء JavaScript</span>
+node --check resources/js/pharmacy_hub.js        <span class="g">OK</span>
+node --check resources/js/pharmacy_dashboard.js  <span class="g">OK</span>
+
+<span class="d"># 3) بقايا لوحة zinc في الكود الحيّ</span>
+resources/ (بلا css.bak-*)                        <span class="g">0 نتيجة</span>
+
+<span class="d"># 4) سكربتات التدقيق الثلاثة</span>
+a11y-audit.py           1697 زوج  →  <span class="g">RESULT: ALL CHECKS PASS</span>
+interactive-audit.py    فاتح+داكن →  <span class="g">0 إخفاق (white-on-fill, interactive-border)</span>
+wcag-verification.py    122 زوج   →  <span class="g">RESULT: ALL CHECKS PASS</span>
+
+<span class="d"># 5) البناء</span>
+npm run build  →  <span class="g">✓ built in 958ms</span>   بلا تحذيرات
+
+<span class="d"># 6) الحِزَم الجديدة</span>
+tokens-kKaA9aHp.css           2.48 kB
+pharmacy_hub--80yWf-e.css    28.97 kB
+pharmacy_import-Bm4Lfv3.css   9.48 kB
+pharmacy_hub-BI33ICeS.js      6.20 kB
+
+<span class="d"># 7) تأكيد وصول القيم الجديدة للحِزَم المبنية</span>
+--warning-bg:#3a2e14          <span class="g">موجود</span>
+--ph-orange-bg:#3a2e14        <span class="g">موجود</span>
+--success-bg:#0e3226          <span class="g">موجود</span>
+--danger-bg:#3a1d1d           <span class="g">موجود</span>
+--info-bg:#12283c             <span class="g">موجود</span>
+'#eef4f3' في JS               <span class="g">صفر (الاستخدام الوحيد احتياطي بعد ||)</span>
+
+<span class="d"># 8) رسم فعلي عبر Chrome headless على الحِزَم الحقيقية</span>
+6 أقسام مصوّرة · قيم بكسل مسحوبة · تبديل ثيم مُختبَر</pre>
+</div>
+
+<h2>ما لم يُفعَل</h2>
+<div class="alert">
+  <strong>لم يُنفَّذ أي commit أو push</strong> — لم تصلني موافقة صريحة. كل التغييرات
+  موجودة في <em>working tree</em> فقط. كما لم أُنشئ أي remote أو release أو deploy hook.
+</div>
+
+<h2>بنود معلّقة (تحتاج قرارك)</h2>
+<div class="card">
+  <ul>
+    <li><strong>حذف الكود الميت</strong> <code>pharmacy_dashboard.css</code> + <code>.js</code> من مدخلات Vite (25 KB تُبنى بلا فائدة).</li>
+    <li><strong>حذف الملفات الميتة الأربعة</strong> (77.2 KB) — بند قديم من الجلسة السابقة.</li>
+    <li><strong><code>.ph-stars { color:#F59E0B }</code></strong> = 2.15:1 على الأبيض في الوضع الفاتح — يحتاج درجة أغمق.</li>
+    <li><strong>حوكمة P2:</strong> تعليق CSS بترميز تالف (#22)، وبندان آخران (#26، #28).</li>
+    <li><strong>توسيع سكربت التدقيق</strong> ليمثّل الأسطح المُركَّبة (شفافية فوق تدرّج) صراحةً — لا لأنه أخفى إخفاقًا، بل لأن التباين على سطح شفاف <em>يعتمد على الحاوية</em> ولا يكفي فيه رقم واحد.</li>
+    <li><strong>أداء <code>MedicineResolver::lookupMapping</code></strong> — 0.7–4.1 ثانية عند cache miss (مُشخَّص، غير مُصلَح، القرار لك).</li>
+  </ul>
+</div>
+
+<h2>كيف تعيد التحقّق بنفسك</h2>
+<div class="card">
+  <p>
+    الحاملة محفوظة في <code>outputs/dark-verify-harness.html</code> — تفتحها بالمتصفح مباشرة
+    (تُحمِّل حِزَم البناء الحقيقية من <code>public/build/assets/</code>). لتحديثها بعد أي تعديل
+    لاحق: شغّل <code>npm run build</code> ثم بدّل أسماء الملفات المجزّأة في أعلى الحاملة
+    بأسماء الحِزَم الجديدة (تظهر في مخرجات البناء).
+  </p>
+  <p style="margin:0">
+    لإعادة توليد الصور: <code>chrome --headless=new --window-size=1280,3700
+    --virtual-time-budget=8000 --screenshot=out.png file:///.../dark-verify-harness.html</code>
+  </p>
+</div>
+
+<footer>
+  Daway · تقرير إصلاح الوضع الداكن — 15 سبتمبر 2026 · لم يُرفع أي تغيير إلى أي remote
+</footer>
+
+</div>
+</body>
+</html>

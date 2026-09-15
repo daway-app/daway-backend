@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark-mode">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Daway — dark mode verification harness</title>
+
+<!-- ترتيب التحميل مطابق للإنتاج: tokens أولاً ثم التخطيط ثم CSS الصفحة -->
+<link rel="stylesheet" href="../public/build/assets/tokens-kKaA9aHp.css">
+<link rel="stylesheet" href="../public/build/assets/app-BJnrNCDJ.css">
+<link rel="stylesheet" href="../public/build/assets/fonts-B7qq6EhU.css">
+<link rel="stylesheet" href="../public/build/assets/app_layout-C9C_a71q.css">
+<link rel="stylesheet" href="../public/build/assets/topbar-DuGwKilf.css">
+<link rel="stylesheet" href="../public/build/assets/sidebar-Cb1AZUy7.css">
+<link rel="stylesheet" href="../public/build/assets/pharmacy_hub--80yWf-e.css">
+<link rel="stylesheet" href="../public/build/assets/pharmacy_import-Bm4LFuv3.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<style>
+    /* خاص بالهارنس فقط — لا يحاكي أي شيء من الإنتاج */
+    .hx { max-width: 1180px; margin: 0 auto 40px; padding: 0 20px; }
+    .hx-h { font: 700 13px/1 monospace; color: #38BDF8; border-bottom: 1px dashed #3A6383;
+            padding: 14px 0 8px; margin: 0 0 16px; letter-spacing: .5px; }
+</style>
+</head>
+<body class="dark-mode">
+
+<div class="hx"><div class="hx-h">01 · /pharmacy/inventory — تعديل الكميات (stepper + table)</div></div>
+<div class="ph-page" style="padding-top:0;">
+    <div class="ph-stats">
+        <div class="ph-stat"><i class="fas fa-pills teal"></i><div><strong>128</strong><span>إجمالي الأدوية</span></div><span class="ph-stat-progress"></span></div>
+        <div class="ph-stat"><i class="fas fa-xmark red"></i><div><strong>12</strong><span>غير متوفر</span></div><span class="ph-stat-progress"></span></div>
+        <div class="ph-stat"><i class="fas fa-triangle-exclamation orange"></i><div><strong>9</strong><span>مخزون منخفض</span></div><span class="ph-stat-progress"></span></div>
+        <div class="ph-stat"><i class="fas fa-check green"></i><div><strong>107</strong><span>متوفر</span></div><span class="ph-stat-progress"></span></div>
+    </div>
+
+    <form class="ph-filters">
+        <div class="ph-tabs">
+            <button type="button" class="ph-tab active">الكل</button>
+            <button type="button" class="ph-tab">متوفر</button>
+            <button type="button" class="ph-tab">منخفض</button>
+            <button type="button" class="ph-tab">غير متوفر</button>
+        </div>
+        <div class="ph-search" style="flex:1;max-width:340px;">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="ابحث باسم الدواء…" autocomplete="off">
+        </div>
+    </form>
+
+    <div class="ph-card ph-inventory-table">
+        <div class="ph-card-head"><h2><i class="fas fa-boxes-stacked"></i> تعديل الكميات</h2></div>
+        <div class="ph-card-body ph-table-wrap" style="padding:0;">
+            <table class="ph-table">
+                <thead><tr><th>الدواء</th><th>الحالة</th><th>الكمية الحالية</th><th>تعديل</th></tr></thead>
+                <tbody>
+                    <tr data-status="ok">
+                        <td><strong>بنادول اكسترا</strong><br><small style="color:var(--ph-ink-faint);">Paracetamol</small></td>
+                        <td><span class="ph-badge ok">متوفر</span></td>
+                        <td>240</td>
+                        <td><div class="ph-stepper"><button type="button" class="dec"><i class="fas fa-minus"></i></button><input type="number" value="240" min="0"><button type="button" class="inc"><i class="fas fa-plus"></i></button></div></td>
+                    </tr>
+                    <tr data-status="low">
+                        <td><strong>اوجمنتين 1جم</strong><br><small style="color:var(--ph-ink-faint);">Amoxicillin</small></td>
+                        <td><span class="ph-badge low">مخزون منخفض</span></td>
+                        <td>4</td>
+                        <td><div class="ph-stepper"><button type="button" class="dec"><i class="fas fa-minus"></i></button><input type="number" value="4" min="0"><button type="button" class="inc"><i class="fas fa-plus"></i></button></div></td>
+                    </tr>
+                    <tr data-status="out">
+                        <td><strong>فولتارين 50ملجم</strong><br><small style="color:var(--ph-ink-faint);">Diclofenac</small></td>
+                        <td><span class="ph-badge out">غير متوفر</span></td>
+                        <td>0</td>
+                        <td><div class="ph-stepper"><button type="button" class="dec"><i class="fas fa-minus"></i></button><input type="number" value="0" min="0"><button type="button" class="inc"><i class="fas fa-plus"></i></button></div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="hx"><div class="hx-h">02 · /pharmacy/import — الخطوات الأربع + منطقة الرفع</div></div>
+<div class="ph-page" style="padding-top:0;">
+    <div class="pi-steps">
+        <div class="pi-step is-active"><span class="pi-step-no">1</span> تنزيل القالب</div>
+        <div class="pi-step is-active"><span class="pi-step-no">2</span> رفع الملف</div>
+        <div class="pi-step"><span class="pi-step-no">3</span> المراجعة</div>
+        <div class="pi-step"><span class="pi-step-no">4</span> التأكيد</div>
+    </div>
+
+    <div class="ph-card">
+        <div class="ph-card-head"><h2><i class="fas fa-cloud-arrow-up"></i> رفع ملف المخزون</h2><p>الحد الأقصى 5 ميجابايت · 5,000 صف</p></div>
+        <div class="ph-card-body" style="padding:20px 22px;">
+            <label for="pi-file" class="pi-drop" id="pi-drop">
+                <i class="fas fa-file-import pi-drop-icon"></i>
+                <p>اختر ملفًا — xlsx / xls / csv</p>
+                <input type="file" id="pi-file" class="pi-file-input">
+                <div class="pi-file-name" id="pi-file-name"></div>
+            </label>
+            <div style="margin-block-start:18px;">
+                <button type="button" class="ph-btn primary"><i class="fas fa-magnifying-glass-chart"></i> رفع ومعاينة</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="ph-card">
+        <div class="ph-card-head"><h2><i class="fas fa-table-columns"></i> دليل الأعمدة</h2></div>
+        <div class="ph-card-body" style="padding:20px 22px;">
+            <div class="pi-columns">
+                <div class="pi-column"><code>trade_name</code><span class="pi-req">*</span><span class="pi-col-desc">الاسم التجاري</span></div>
+                <div class="pi-column"><code>price</code><span class="pi-req">*</span><span class="pi-col-desc">السعر</span></div>
+                <div class="pi-column"><code>quantity</code><span class="pi-req">*</span><span class="pi-col-desc">الكمية</span></div>
+                <div class="pi-column"><code>barcode</code><span class="pi-col-desc">الباركود</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="hx"><div class="hx-h">03 · /pharmacy/alternatives — بطاقات الإحصاء + شارات</div></div>
+<div class="ph-page" style="padding-top:0;">
+    <div class="ph-stats">
+        <div class="ph-stat"><i class="fas fa-arrows-rotate teal"></i><div><strong>0</strong><span>بدائل محدّدة</span></div></div>
+        <div class="ph-stat"><i class="fas fa-triangle-exclamation orange"></i><div><strong>0</strong><span>أدوية تحتاج بديلًا</span></div></div>
+    </div>
+
+    <div class="ph-card ph-alt-block">
+        <div class="ph-card-head"><h2 style="display:flex;align-items:center;gap:10px;"><i class="fas fa-pills"></i> اوجمنتين 1جم <span class="ph-badge out" style="font-size:.7rem;">غير متوفر</span> <span class="ph-alt-count" style="font-size:.7rem;color:var(--ph-ink-faint);font-weight:400;">(1)</span></h2></div>
+        <div class="ph-card-body" style="display:grid;grid-template-columns:280px 1fr;gap:22px;">
+            <div>
+                <div class="ph-alt-detail">
+                    <div class="row"><span>المادة الفعالة</span><strong>Amoxicillin</strong></div>
+                    <div class="row"><span>الكمية</span><strong style="color:var(--ph-red)">0</strong></div>
+                    <div class="row"><span>آخر تحديث</span><strong>2026-09-15 09:12 ص</strong></div>
+                </div>
+            </div>
+            <div class="ph-table-wrap">
+                <table class="ph-table">
+                    <thead><tr><th>الدواء</th><th>المادة الفعالة</th><th>إجراءات</th></tr></thead>
+                    <tbody>
+                        <tr style="background:rgba(22,163,74,.06);">
+                            <td><strong>هايبيوتك 1جم</strong></td>
+                            <td>Amoxicillin</td>
+                            <td><span class="ph-badge ok" style="font-size:.72rem;">متوفر</span>
+                                <button type="button" class="ph-btn sm" style="background:var(--ph-red);color:#fff;border-color:var(--ph-red);margin-inline-start:8px;"><i class="fas fa-trash"></i> حذف</button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>اموكسيل 500</strong></td>
+                            <td>Amoxicillin</td>
+                            <td><span class="ph-badge low" style="font-size:.72rem;">غير متوفر</span>
+                                <button type="button" class="ph-btn sm outline">اختيار كبديل</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="hx"><div class="hx-h">04 · pharmacy/profile — حقول النموذج (كانت غير مرئية)</div></div>
+<div class="ph-page" style="padding-top:0;">
+    <div class="ph-card">
+        <div class="ph-card-head"><h2><i class="fas fa-pen"></i> بيانات الصيدلية</h2></div>
+        <div class="ph-card-body">
+            <div class="ph-group" style="margin-block-end:18px;">
+                <label class="ph-form-label" for="f1">اسم الصيدلية</label>
+                <input type="text" id="f1" class="ph-control" value="صيدلية النور">
+            </div>
+            <div class="ph-group" style="margin-block-end:18px;">
+                <label class="ph-form-label" for="f2">رقم الهاتف</label>
+                <input type="text" id="f2" class="ph-control" placeholder="0599 000 000">
+            </div>
+            <div class="ph-group" style="margin-block-end:18px;">
+                <label class="ph-form-label" for="f3">المدينة</label>
+                <select id="f3" class="ph-select">
+                    <option>غزة</option><option>خان يونس</option><option>رفح</option>
+                </select>
+            </div>
+            <div class="ph-group" style="margin-block-end:18px;">
+                <label class="ph-form-label" for="f4">نبذة</label>
+                <textarea id="f4" class="ph-textarea" rows="3">صيدلية تخدم المنطقة الوسطى منذ 2015.</textarea>
+            </div>
+            <div class="ph-group">
+                <label class="ph-form-label" for="f5">وقت الافتتاح</label>
+                <div class="ph-hours"><input type="time" id="f5" value="08:00"></div>
+            </div>
+            <div style="margin-block-start:20px;display:flex;gap:10px;">
+                <button type="button" class="ph-btn primary">حفظ</button>
+                <button type="button" class="ph-btn outline">إلغاء</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="hx"><div class="hx-h">05 · /pharmacy/ratings — أشرطة التوزيع + الرسم الخطي</div></div>
+<div class="ph-page" style="padding-top:0;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:20px;margin-block-end:20px;">
+        <div class="ph-card">
+            <div class="ph-card-body" style="text-align:center;">
+                <div style="font-size:2.6rem;font-weight:700;color:var(--ph-ink);line-height:1;">4.6 <span style="font-size:1.1rem;color:var(--ph-ink-faint);font-weight:600;">من 5</span></div>
+                <div class="ph-stars" style="font-size:1.3rem;margin-block:12px;"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p style="color:var(--ph-ink-faint);margin:0;">128 تقييم</p>
+            </div>
+        </div>
+        <div class="ph-card">
+            <div class="ph-card-head"><h2>توزيع التقييمات</h2></div>
+            <div class="ph-card-body">
+                <div style="display:flex;align-items:center;gap:10px;margin-block-end:10px;"><span style="width:56px;font-size:.85rem;color:var(--ph-ink-soft);">5 نجوم</span><div style="flex:1;height:8px;background:var(--ph-line-soft);border-radius:var(--ph-r-full);overflow:hidden;"><div style="width:72%;height:100%;background:var(--warning);border-radius:var(--ph-r-full);"></div></div><span style="width:70px;text-align:end;font-size:.8rem;color:var(--ph-ink-faint);">92 (72%)</span></div>
+                <div style="display:flex;align-items:center;gap:10px;margin-block-end:10px;"><span style="width:56px;font-size:.85rem;color:var(--ph-ink-soft);">4 نجوم</span><div style="flex:1;height:8px;background:var(--ph-line-soft);border-radius:var(--ph-r-full);overflow:hidden;"><div style="width:18%;height:100%;background:var(--warning);border-radius:var(--ph-r-full);"></div></div><span style="width:70px;text-align:end;font-size:.8rem;color:var(--ph-ink-faint);">23 (18%)</span></div>
+                <div style="display:flex;align-items:center;gap:10px;margin-block-end:10px;"><span style="width:56px;font-size:.85rem;color:var(--ph-ink-soft);">3 نجوم</span><div style="flex:1;height:8px;background:var(--ph-line-soft);border-radius:var(--ph-r-full);overflow:hidden;"><div style="width:6%;height:100%;background:var(--warning);border-radius:var(--ph-r-full);"></div></div><span style="width:70px;text-align:end;font-size:.8rem;color:var(--ph-ink-faint);">8 (6%)</span></div>
+                <div style="display:flex;align-items:center;gap:10px;margin-block-end:10px;"><span style="width:56px;font-size:.85rem;color:var(--ph-ink-soft);">2 نجوم</span><div style="flex:1;height:8px;background:var(--ph-line-soft);border-radius:var(--ph-r-full);overflow:hidden;"><div style="width:3%;height:100%;background:var(--warning);border-radius:var(--ph-r-full);"></div></div><span style="width:70px;text-align:end;font-size:.8rem;color:var(--ph-ink-faint);">4 (3%)</span></div>
+                <div style="display:flex;align-items:center;gap:10px;margin-block-end:10px;"><span style="width:56px;font-size:.85rem;color:var(--ph-ink-soft);">1 نجمة</span><div style="flex:1;height:8px;background:var(--ph-line-soft);border-radius:var(--ph-r-full);overflow:hidden;"><div style="width:1%;height:100%;background:var(--warning);border-radius:var(--ph-r-full);"></div></div><span style="width:70px;text-align:end;font-size:.8rem;color:var(--ph-ink-faint);">1 (1%)</span></div>
+            </div>
+        </div>
+        <div class="ph-card">
+            <div class="ph-card-head"><h2>اتجاه التقييمات</h2></div>
+            <div class="ph-card-body"><div class="chart-box chart-sm"><canvas data-ph-chart="line" data-ph-labels='["أيار","حزيران","تموز","آب","أيلول"]' data-ph-data='[4.2,4.4,4.1,4.5,4.6]'></canvas></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="hx"><div class="hx-h">06 · /pharmacy/dashboard — الدونات (نص المركز) + الأعمدة</div></div>
+<div class="ph-page" style="padding-top:0;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;">
+        <div class="ph-card">
+            <div class="ph-card-head"><h2><i class="fas fa-chart-column"></i> حالة المخزون</h2></div>
+            <div class="ph-card-body">
+                <div class="chart-box"><canvas data-ph-chart="bar" data-ph-labels='["متوفر","مخزون منخفض","غير متوفر"]' data-ph-data='[107,9,12]' data-ph-colors='["--success","--warning","--danger"]'></canvas></div>
+            </div>
+        </div>
+        <div class="ph-card">
+            <div class="ph-card-head"><h2><i class="fas fa-clock-rotate-left"></i> نسبة التوفر</h2></div>
+            <div class="ph-card-body">
+                <div class="ph-donut-wrap">
+                    <div class="ph-donut-chart">
+                        <canvas data-ph-chart="donut" data-ph-legend="off"
+                            data-ph-center-value="83.6%"
+                            data-ph-center-label="متوفر"
+                            data-ph-labels='["متوفر","مخزون منخفض","غير متوفر"]'
+                            data-ph-data='[107,9,12]'
+                            data-ph-colors='["--success","--warning","--danger"]'></canvas>
+                    </div>
+                    <ul class="ph-legend">
+                        <li><span class="dot" style="background:var(--success)"></span> متوفر <b>83.6%</b></li>
+                        <li><span class="dot" style="background:var(--warning)"></span> مخزون منخفض <b>7.0%</b></li>
+                        <li><span class="dot" style="background:var(--danger)"></span> غير متوفر <b>9.4%</b></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../public/vendor/chart.umd.js"></script>
+<script src="../public/build/assets/pharmacy_hub-BI33ICeS.js"></script>
+</body>
+</html>
