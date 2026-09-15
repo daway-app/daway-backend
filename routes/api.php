@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\BarcodeLookupController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvailabilityAlertController;
 use App\Http\Controllers\Api\CategoryController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Api\MedicalProfileController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OcrController;
+use App\Http\Controllers\Api\PatientAssistantController;
 use App\Http\Controllers\Api\PatientInquiryController;
 use App\Http\Controllers\Api\PatientProfileController;
 use App\Http\Controllers\Api\PharmacyAlternativeController;
@@ -43,7 +45,10 @@ Route::get('/medicines/{id}/pharmacies', [MedicineController::class, 'pharmacies
 
 // ط­ظ„ظ‘ ط§ط³ظ… ط§ظ„ط¯ظˆط§ط، ظ…ط¨ط§ط´ط±ط© ط¹ط¨ط± MedicineResolver (ط¨ط¯ظˆظ† ط§ظ†طھط¸ط§ط± ط®ط¯ظ…ط© AI)
 // ظ…ظپظٹط¯ ظ„ظ„ط¨ط­ط« ط§ظ„ظپظˆط±ظٹ ظˆط§ظ„طھط·ط¨ظٹظ‚ط§طھ ط§ظ„طھظٹ طھط±ظٹط¯ ظ†طھط§ط¦ط¬ ظپظˆط±ظٹط© ط¨ط§ظ„ط¹ط±ط¨ظٹط©/ط§ظ„ط¥ظ†ط¬ظ„ظٹط²ظٹط©
-Route::post('/medicines/resolve', [MedicineController::class, 'resolve'])->middleware('auth:sanctum')->middleware('throttle:30,1');
+    Route::post('/medicines/resolve', [MedicineController::class, 'resolve'])->middleware('auth:sanctum')->middleware('throttle:30,1');
+
+    // البحث بالباركود (read-only من DB المحلي — لا يضرب مزوّداً خارجياً، بلا auth)
+    Route::get('/medicines/barcode/{barcode}', [BarcodeLookupController::class, 'show'])->middleware('throttle:60,1');
 
 // Pharmacies Routes Public
 Route::get('/pharmacies', [PharmacyController::class, 'index']);
@@ -103,6 +108,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('health-profile', [MedicalProfileController::class, 'show']);
         Route::put('health-profile', [MedicalProfileController::class, 'update']);
+
+        // مساعد المريض النصّي: رسالة حرة → دواء → صيدليات متوفرة فعلاً مرتّبة.
+        // حدّ مخصّص (assistant) لأن كل طلب قد يستدعي خدمة AI خارجية، ولأن
+        // السقف العام 'api' (60/دقيقة) فضفاض لمسار بهذه التكلفة.
+        Route::post('assistant/chat', [PatientAssistantController::class, 'chat'])
+            ->middleware('throttle:assistant');
     });
 
     // Device tokens (FCM) â€” ط®ط§ط±ط¬ prefix('patient') ظ„ط£ظ† ظƒظ„ط§ ط§ظ„ظ€ roles (patient/pharmacy) ظ‚ط¯ ظٹط³ط¬ظ‘ظ„ط§ظ† ط¬ظ‡ط§ط²ط§ظ‹.

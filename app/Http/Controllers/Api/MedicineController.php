@@ -15,6 +15,7 @@ use App\Support\DosageFormNormalizer;
 use App\Support\Haversine;
 use App\Support\Image;
 use App\Support\PharmacyAvailability;
+use App\Support\StockStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -662,18 +663,13 @@ class MedicineController extends Controller
     /**
      * اشتقاق availability_status وفق عتبة المخزون المنخفض الثابتة.
      * القيم المسموحة: available / low_stock / out_of_stock.
+     *
+     * المنطق نفسه انتقل إلى App\Support\StockStatus ليتشاركه مساعد المريض
+     * بدل تكراره — السلوك لم يتغيّر بايت ببايت.
      */
     private function availabilityStatus(PharmacyMedicine $pm, bool $pharmacyActive): string
     {
-        if (! $pm->is_available || $pm->quantity <= 0 || ! $pharmacyActive) {
-            return 'out_of_stock';
-        }
-
-        if ($pm->quantity <= PharmacyMedicine::LOW_STOCK_THRESHOLD) {
-            return 'low_stock';
-        }
-
-        return 'available';
+        return StockStatus::of((bool) $pm->is_available, (int) $pm->quantity, $pharmacyActive);
     }
 
     /**
@@ -742,6 +738,14 @@ class MedicineController extends Controller
         float $lng,
         int $radiusKm
     ): ?array {
+        // Bounding Box خشن (~1 درجة ≈ 111كم) يقلّص الصفوف عبر فهرس الإحداثيات
+        // قبل Haversine — بدل تحميل كل صيدليات الدواء ثم الحساب في PHP.
+        $deltaLat = $radiusKm / 111.045;
+        $cosLat = cos(deg2rad($lat));
+        $deltaLng = abs($cosLat) < 0.000001
+            ? 180.0
+            : min(180.0, $radiusKm / (111.045 * abs($cosLat)));
+
         $rows = DB::table('pharmacy_medicines as pm')
             ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
             ->where('pm.medicine_id', $medicineId)
@@ -750,6 +754,8 @@ class MedicineController extends Controller
             ->where('p.is_active', true)
             ->whereNotNull('p.latitude')
             ->whereNotNull('p.longitude')
+            ->whereBetween('p.latitude', [$lat - $deltaLat, $lat + $deltaLat])
+            ->whereBetween('p.longitude', [$lng - $deltaLng, $lng + $deltaLng])
             ->select('p.id', 'p.pharmacy_name', 'p.latitude as lat', 'p.longitude as lng')
             ->get();
 

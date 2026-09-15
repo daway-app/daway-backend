@@ -13,6 +13,8 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
+                // المصدر الوحيد لـtokens التصميم — يُحمَّل أولاً في كل layout
+                'resources/css/tokens.css',
                 'resources/css/app.css',
                 'resources/css/auth/auth.css',
                 'resources/css/auth/auth_login.css',
