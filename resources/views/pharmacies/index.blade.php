@@ -33,10 +33,10 @@
         }
 
         body.dark-mode {
-            --bg-body: #18181B;
-            --border-color: #333338;
-            --text-main: #E4E4E7;
-            --text-muted: #A1A1AA;
+            --bg-body: var(--canvas);
+            --border-color: var(--line);
+            --text-main: var(--ink);
+            --text-muted: var(--ink-soft);
 
             --icon-edit-bg: rgba(74, 222, 128, 0.1);
             --icon-view-bg: rgba(59, 130, 246, 0.1);
@@ -84,9 +84,9 @@
         }
 
         body.dark-mode .glass-panel {
-            background: rgba(35, 35, 39, 0.75) !important;
-            border: 1px solid rgba(51, 51, 56, 0.8) !important;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), inset 0 1px 1px 0 rgba(51, 51, 56, 0.9) !important;
+            background: rgba(17, 36, 51, 0.85) !important;
+            border: 1px solid rgba(42, 71, 97, 0.8) !important;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), inset 0 1px 1px 0 rgba(42, 71, 97, 0.9) !important;
         }
 
         .animate-fade-down { animation: fadeInDown 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -112,7 +112,7 @@
             -webkit-text-fill-color: transparent;
         }
         body.dark-mode .gradient-text {
-            background: linear-gradient(135deg, #E4E4E7, #A1A1AA);
+            background: linear-gradient(135deg, var(--ink), var(--ink-soft));
             -webkit-background-clip: text;
         }
 
@@ -215,7 +215,7 @@
         .search-input-group .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--primary); }
 
         .pills-group { display: flex; gap: 4px; background: rgba(241, 245, 249, 0.8); padding: 4px; border-radius: 20px; }
-        body.dark-mode .pills-group { background: rgba(35, 35, 39, 0.8); }
+        body.dark-mode .pills-group { background: rgba(17, 36, 51, 0.9); }
         .pill-item { border: none; background: transparent; padding: 6px 16px; border-radius: 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 6px; }
         .pill-item.active { background: var(--primary); color: #ffffff; box-shadow: 0 4px 12px var(--primary-glow); }
         .pill-badge { background: rgba(0, 0, 0, 0.08); padding: 2px 7px; border-radius: 10px; font-size: 11px; }
@@ -228,7 +228,7 @@
         .grid-meta-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .grid-meta-header h3 { font-size: 16px; font-weight: 700; margin: 0; color: var(--text-main); }
         .grid-count-tag { font-size: 12px; color: var(--text-muted); background: #e2e8f0; padding: 2px 8px; border-radius: 10px; }
-        body.dark-mode .grid-count-tag { background: #333338; color: var(--text-muted); }
+        body.dark-mode .grid-count-tag { background: var(--line-soft); color: var(--text-muted); }
 
         .pharmacies-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 20px; }
 
@@ -268,18 +268,18 @@
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .id-copy-strip { display: flex; align-items: center; justify-content: space-between; background: rgba(241, 245, 249, 0.6); padding: 8px 12px; border-radius: 12px; margin: 14px 0; border: 1px solid var(--border-color); }
-        body.dark-mode .id-copy-strip { background: rgba(35, 35, 39, 0.5); }
+        body.dark-mode .id-copy-strip { background: rgba(17, 36, 51, 0.6); }
         .strip-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
         .strip-code-group { display: flex; align-items: center; gap: 8px; }
         .code-text { font-family: monospace; font-size: 12px; font-weight: 700; color: #1C72A6; background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #cbd5e1; }
-        body.dark-mode .code-text { background: #232327; border-color: #333338; color: #A1A1AA; }
+        body.dark-mode .code-text { background: var(--paper); border-color: var(--line); color: var(--ink-soft); }
         .btn-copy-chip { background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 6px; border-radius: 6px; cursor: pointer; color: #64748b; transition: all 0.2s ease; }
-        body.dark-mode .btn-copy-chip { background: #232327; border-color: #333338; color: #A1A1AA; }
+        body.dark-mode .btn-copy-chip { background: var(--paper); border-color: var(--line); color: var(--ink-soft); }
         .btn-copy-chip:hover { background: var(--primary); color: #ffffff; }
 
         .card-info-grid { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 10px; margin-bottom: 14px; }
         .info-tile { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(241, 245, 249, 0.8); border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-        body.dark-mode .info-tile { background: rgba(35, 35, 39, 0.8); border-color: #333338; }
+        body.dark-mode .info-tile { background: rgba(17, 36, 51, 0.9); border-color: var(--line); }
         .tile-content { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
         .tile-header { display: flex; align-items: center; gap: 4px; }
         .tile-icon { font-size: 13px; color: var(--text-muted); }
@@ -289,7 +289,7 @@
         .accent-teal { color: #1C72A6; }
 
         .btn-show-map { background: #f0fdf4; color: #1C72A6; border: 1px solid rgba(28, 114, 166, 0.25); padding: 5px 8px; border-radius: 8px; font-size: 10.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all 0.25s ease; flex-shrink: 0; }
-        body.dark-mode .btn-show-map { background: rgba(161, 161, 170, 0.15); color: #E4E4E7; border-color: rgba(161, 161, 170, 0.3); }
+        body.dark-mode .btn-show-map { background: var(--line-soft); color: var(--ink); border-color: var(--line-strong); }
         .btn-show-map:hover { background: #1C72A6; color: #ffffff; transform: scale(1.05); }
 
         .card-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border-color); }
@@ -309,22 +309,22 @@
         .modal-overlay.active .modal-animate { transform: scale(1) translateY(0); }
 
         .map-modal-container { width: 90%; max-width: 650px; padding: 20px; }
-        body.dark-mode .map-modal-container { background: #232327 !important; color: #E4E4E7 !important; }
+        body.dark-mode .map-modal-container { background: var(--paper) !important; color: var(--ink) !important; }
         .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .modal-title-group h3 { font-size: 16px; font-weight: 700; margin: 0; color: var(--text-main); }
         .close-modal-btn { background: transparent; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; }
         .modal-map-view { height: 320px; width: 100%; border-radius: 14px; border: 1px solid var(--border-color); }
         .modal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
         .btn-external-gmaps { background: #f1f5f9; color: #334155; padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-        body.dark-mode .btn-external-gmaps { background: #333338; color: #E4E4E7; }
+        body.dark-mode .btn-external-gmaps { background: var(--line-soft); color: var(--ink); }
         .close-btn-secondary { background: #e2e8f0; color: #334155; border: 0; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 600; }
-        body.dark-mode .close-btn-secondary { background: #3F3F46; color: #E4E4E7; }
+        body.dark-mode .close-btn-secondary { background: var(--line-soft); color: var(--ink); }
         .pagination-wrapper { margin-top: 20px; }
 
         body.dark-mode div[class*="card"] {
-            background-color: rgba(35, 35, 39, 0.85) !important;
-            color: #E4E4E7 !important;
-            border-color: #333338 !important;
+            background-color: rgba(17, 36, 51, 0.9) !important;
+            color: var(--ink) !important;
+            border-color: var(--line) !important;
         }
     </style>
 

@@ -60,7 +60,7 @@
                         <canvas data-ph-chart='bar'
                             data-ph-labels='{{ $statusLabels }}'
                             data-ph-data='[{{ $available }},{{ $low }},{{ $out }}]'
-                            data-ph-colors='["#16A34A","#CA8A04","#DC2626"]'></canvas>
+                            data-ph-colors='["--success","--warning","--danger"]'></canvas>
                     </div>
                 </div>
             </div>
@@ -77,12 +77,12 @@
                                 data-ph-center-label='{{ __('pharmacy.status.available') }}'
                                 data-ph-labels='{{ $statusLabels }}'
                                 data-ph-data='[{{ $available }},{{ $low }},{{ $out }}]'
-                                data-ph-colors='["#16A34A","#CA8A04","#DC2626"]'></canvas>
+                                data-ph-colors='["--success","--warning","--danger"]'></canvas>
                         </div>
                         <ul class='ph-legend'>
-                            <li><span class='dot' style='background:#16A34A'></span> @lang('pharmacy.status.available') <b>{{ $availablePct }}%</b></li>
-                            <li><span class='dot' style='background:#CA8A04'></span> @lang('pharmacy.status.low_stock') <b>{{ $lowPct }}%</b></li>
-                            <li><span class='dot' style='background:#DC2626'></span> @lang('pharmacy.status.out') <b>{{ $outPct }}%</b></li>
+                            <li><span class='dot' style='background:var(--success)'></span> @lang('pharmacy.status.available') <b>{{ $availablePct }}%</b></li>
+                            <li><span class='dot' style='background:var(--warning)'></span> @lang('pharmacy.status.low_stock') <b>{{ $lowPct }}%</b></li>
+                            <li><span class='dot' style='background:var(--danger)'></span> @lang('pharmacy.status.out') <b>{{ $outPct }}%</b></li>
                         </ul>
                     </div>
                 </div>

@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             dataset.pointBackgroundColor =
                                 dark
-                                    ? '#232327'
+                                    ? '#112433'
                                     : '#ffffff';
 
                         }
@@ -532,13 +532,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     chart.options.plugins.legend.labels.color =
                         dark
-                            ? '#A1A1AA'
+                            ? '#93C5FD'
                             : '#667773';
 
 
                     chart.options.plugins.tooltip.backgroundColor =
                         dark
-                            ? '#18181B'
+                            ? '#112433'
                             : '#ffffff';
 
 
@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     chart.options.plugins.tooltip.bodyColor =
                         dark
-                            ? '#A1A1AA'
+                            ? '#93C5FD'
                             : '#536460';
 
 

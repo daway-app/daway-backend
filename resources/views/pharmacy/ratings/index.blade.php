@@ -43,8 +43,8 @@
                     @foreach($distribution as $item)
                         <div style='display:flex;align-items:center;gap:10px;margin-block-end:10px;'>
                             <span style='width:56px;font-size:.85rem;color:var(--ph-ink-soft);'>{{ $item['stars'] }} {{ $unitLabel($item['stars']) }}</span>
-                            <div style='flex:1;height:8px;background:var(--ph-canvas);border-radius:var(--ph-r-full);overflow:hidden;'>
-                                <div style='width:{{ $item['percent'] }}%;height:100%;background:#F59E0B;border-radius:var(--ph-r-full);'></div>
+                            <div style='flex:1;height:8px;background:var(--ph-line-soft);border-radius:var(--ph-r-full);overflow:hidden;'>
+                                <div style='width:{{ $item['percent'] }}%;height:100%;background:var(--warning);border-radius:var(--ph-r-full);'></div>
                             </div>
                             <span style='width:70px;text-align:end;font-size:.8rem;color:var(--ph-ink-faint);'>{{ $item['count'] }} ({{ $item['percent'] }}%)</span>
                         </div>

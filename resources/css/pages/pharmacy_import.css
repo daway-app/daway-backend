@@ -463,3 +463,74 @@
 .pi-rate-limit.is-exhausted::before { background: var(--ph-orange, #ea580c); }
 
 .pi-recent td { font-size: .84rem; }
+
+/* ==========================================================
+   الوضع الداكن — كان هذا الملف بلا أي قاعدة داكنة
+   ----------------------------------------------------------
+   القيم تأتي من --ph-* أعلاه، لكن ثلاثة أسطح تحتاج تجاوزاً:
+   • .pi-drop      كان --ph-canvas (#050C12) = ثقب أسود داخل الكرت
+   • .pi-step.is-active كان يُميَّز بحدّ + ظلّ شبه معدوم ⇒ الخطوات
+                   الأربع تبدو متطابقة
+   • input[type=file] كان يُرسم بشكل النظام (رمادي غريب عن اللوحة)
+   ========================================================== */
+body.dark-mode .pi-drop {
+    background: var(--field-bg);
+    border-color: var(--line-strong);
+}
+body.dark-mode .pi-drop:hover,
+body.dark-mode .pi-drop.is-dragging {
+    background: var(--teal-mist);
+    border-color: var(--focus-ring);
+}
+
+body.dark-mode .pi-step.is-active {
+    background: var(--teal-mist);
+    border-color: var(--focus-ring);
+    box-shadow: 0 0 0 3px rgba(56,189,248,.18);
+    color: var(--ink);
+}
+body.dark-mode .pi-step.is-active .pi-step-no {
+    background: var(--focus-ring);
+    color: #04141A;
+    border-color: transparent;
+}
+body.dark-mode .pi-step:not(.is-active) .pi-step-no {
+    background: var(--line-soft);
+    color: var(--ink-faint);
+}
+
+body.dark-mode .pi-file-input { color: var(--ink-soft); }
+body.dark-mode .pi-file-input::file-selector-button {
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--ph-r-sm);
+    padding: 7px 14px;
+    margin-inline-end: 10px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: var(--ph-tr);
+}
+body.dark-mode .pi-file-input::file-selector-button:hover {
+    background: var(--teal-mist);
+    border-color: var(--focus-ring);
+    color: var(--teal-text);
+}
+
+body.dark-mode .pi-search-box input[type="text"] {
+    background: var(--field-bg);
+    border-color: var(--line-strong);
+}
+body.dark-mode .pi-search-box input[type="text"]:focus { border-color: var(--focus-ring); }
+body.dark-mode .pi-search-results {
+    background: var(--paper);
+    border-color: var(--line-strong);
+}
+body.dark-mode .pi-chip.active {
+    background: var(--focus-ring);
+    color: #04141A;
+    border-color: transparent;
+}
+body.dark-mode .pi-column code { background: var(--line-soft); }
+body.dark-mode .pi-rate-limit { border-color: var(--line-strong); }

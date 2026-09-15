@@ -291,7 +291,7 @@ body.dark-mode .form-control[readonly] {
 
 body.dark-mode .form-control:focus {
     border-color: var(--line-strong);
-    box-shadow: 0 0 0 3px rgba(161, 161, 170, 0.15);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.28);
 }
 
 body.dark-mode .toggle-item {

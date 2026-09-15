@@ -248,7 +248,7 @@ body.dark-mode .notification-btn {
 }
 
 body.dark-mode .stat-card {
-    background: linear-gradient(145deg, rgba(35, 35, 39, 0.96), rgba(51, 51, 56, 0.88));
+    background: linear-gradient(145deg, rgba(17, 36, 51, 0.96), rgba(42, 71, 97, 0.88));
     border-color: var(--line);
 }
 
@@ -321,7 +321,7 @@ body.dark-mode .stat-card {
 }
 
 body.dark-mode .chart-card {
-    background: linear-gradient(145deg, rgba(35, 35, 39, 0.94), rgba(51, 51, 56, 0.78));
+    background: linear-gradient(145deg, rgba(17, 36, 51, 0.94), rgba(42, 71, 97, 0.78));
     border-color: var(--line);
 }
 

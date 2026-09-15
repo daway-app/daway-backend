@@ -237,7 +237,7 @@ body.dark-mode .inventory-table tbody tr:hover {
 }
 
 body.dark-mode .medicine-icon {
-    background-color: rgba(161, 161, 170, 0.1);
+    background-color: var(--line-soft);
     color: var(--ink-soft);
 }
 

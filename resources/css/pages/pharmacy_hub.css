@@ -45,10 +45,13 @@
    القيم محسوبة مقابل WCAG (نص 4.5:1 · مكوّن 3:1). */
 html.dark-mode,
 body.dark-mode{
-  --ph-green:  #4ADE80;  --ph-green-bg:  rgba(74, 222, 128, .18);
-  --ph-orange: #FBBF24;  --ph-orange-bg: rgba(251, 191, 36, .18);
-  --ph-red:    #F87171;  --ph-red-bg:    rgba(248, 113, 113, .16);  /* .16 ⇒ 4.61:1 (.25 كان 3.95 ✗) */
-  --ph-blue:   #60A5FA;  --ph-blue-bg:   rgba(96, 165, 250, .18);
+  /* تعبئات داكنة صلبة — مطابقة لقيم tokens.css. الشفافية فوق الكحلي كانت
+     تُنتج طيناً: .ph-stat .orange = rgba(251,191,36,.18) ⇒ #79683A زيتوني
+     (وهو ما اشتكى منه عبود)، و .ph-alt-notice كان 3.26:1 ✗. */
+  --ph-green:  #4ADE80;  --ph-green-bg:  #0E3226;
+  --ph-orange: #FBBF24;  --ph-orange-bg: #3A2E14;
+  --ph-red:    #F87171;  --ph-red-bg:    #3A1D1D;
+  --ph-blue:   #60A5FA;  --ph-blue-bg:   #12283C;
 }
 .ph-page{padding:24px;color:var(--ph-ink);}
 @media(max-width:768px){.ph-page{padding:16px;}}
@@ -554,3 +557,37 @@ body.dark-mode .ph-search:focus-within i { color: var(--ph-teal-text); }
 body.dark-mode .ph-badge.ok { background: var(--ph-green-bg); color: var(--ph-green-text); border-color: rgba(74,222,128,.65); }
 body.dark-mode .ph-badge.low { background: var(--ph-orange-bg); color: var(--ph-orange-text); border-color: rgba(251,191,36,.65); }
 body.dark-mode .ph-badge.out { background: var(--ph-red-bg); color: var(--ph-red-text); border-color: var(--danger-text); }
+
+/* ==========================================================
+   الوضع الداكن — حقول الإدخال
+   ----------------------------------------------------------
+   كانت `background: var(--ph-paper)` أي بنفس لون الكرت ⇒ الحقل
+   يبدو غير موجود، وحدّه `--ph-line` (#3A6383) = 2.49:1 وهو أقل من
+   الحدّ المطلوب 3:1 لحدود المكوّنات التفاعلية (WCAG 1.4.11).
+   الآن: سطح `--field-bg` (غائر) + حدّ `--line-strong` = 4.55:1.
+   ========================================================== */
+body.dark-mode .ph-control,
+body.dark-mode .ph-select,
+body.dark-mode .ph-textarea {
+    background: var(--field-bg);
+    border-color: var(--line-strong);
+}
+body.dark-mode .ph-control:hover,
+body.dark-mode .ph-select:hover,
+body.dark-mode .ph-textarea:hover { border-color: var(--focus-ring); }
+body.dark-mode .ph-control:focus,
+body.dark-mode .ph-select:focus,
+body.dark-mode .ph-textarea:focus {
+    border-color: var(--focus-ring);
+    box-shadow: 0 0 0 3px rgba(56,189,248,.28);
+}
+body.dark-mode .ph-control::placeholder,
+body.dark-mode .ph-textarea::placeholder { color: var(--ink-faint); }
+body.dark-mode .ph-select option { background: var(--paper); color: var(--ink); }
+
+/* الحقول داخل بطاقات الصفحة الشخصية (شبكة عمودين) */
+body.dark-mode .ph-hours input[type=time] { background: var(--field-bg); border-color: var(--line-strong); color: var(--ink); }
+body.dark-mode .ph-day-card { border-color: var(--line); }
+body.dark-mode .ph-switch-knob { background: var(--line); }
+body.dark-mode .ph-switch-knob::after { background: var(--ink-faint); }
+body.dark-mode .ph-modal { border: 1px solid var(--line); }

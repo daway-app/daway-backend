@@ -65,12 +65,12 @@
                                 data-ph-center-label='{{ __('pharmacy.inventory.center_total') }}'
                                 data-ph-labels='{{ $statusLabels }}'
                                 data-ph-data='[{{ $available }},{{ $low }},{{ $out }}]'
-                                data-ph-colors='["#16A34A","#CA8A04","#DC2626"]'></canvas>
+                                data-ph-colors='["--success","--warning","--danger"]'></canvas>
                         </div>
                         <ul class='ph-legend'>
-                            <li><span class='dot' style='background:#16A34A'></span> @lang('pharmacy.inventory.legend_available') <b>{{ $pct($available) }}%</b></li>
-                            <li><span class='dot' style='background:#CA8A04'></span> @lang('pharmacy.inventory.legend_low') <b>{{ $pct($low) }}%</b></li>
-                            <li><span class='dot' style='background:#DC2626'></span> @lang('pharmacy.inventory.legend_out') <b>{{ $pct($out) }}%</b></li>
+                            <li><span class='dot' style='background:var(--success)'></span> @lang('pharmacy.inventory.legend_available') <b>{{ $pct($available) }}%</b></li>
+                            <li><span class='dot' style='background:var(--warning)'></span> @lang('pharmacy.inventory.legend_low') <b>{{ $pct($low) }}%</b></li>
+                            <li><span class='dot' style='background:var(--danger)'></span> @lang('pharmacy.inventory.legend_out') <b>{{ $pct($out) }}%</b></li>
                         </ul>
                     </div>
                 </div>

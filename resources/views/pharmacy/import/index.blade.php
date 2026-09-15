@@ -46,11 +46,23 @@
             </div>
         @endif
 
+        @php
+            // الخطوتان 1 و2 تُنجَزان في هذه الصفحة (تنزيل القالب ثم الرفع)، و3 و4 في صفحة
+            // المراجعة. قبل هذا لم تكن أي خطوة تحمل is-active فبدت الخطوات الأربع متطابقة
+            // تمامًا ولا يعرف المستخدم موقعه من الساحر.
+            $steps = [
+                1 => ['key' => 'step_download', 'active' => true],
+                2 => ['key' => 'step_upload', 'active' => true],
+                3 => ['key' => 'step_review', 'active' => false],
+                4 => ['key' => 'step_confirm', 'active' => false],
+            ];
+        @endphp
         <div class='pi-steps'>
-            <div class='pi-step'><span class='pi-step-no'>1</span> @lang('pharmacy_import.step_download')</div>
-            <div class='pi-step'><span class='pi-step-no'>2</span> @lang('pharmacy_import.step_upload')</div>
-            <div class='pi-step'><span class='pi-step-no'>3</span> @lang('pharmacy_import.step_review')</div>
-            <div class='pi-step'><span class='pi-step-no'>4</span> @lang('pharmacy_import.step_confirm')</div>
+            @foreach ($steps as $no => $step)
+                <div class='pi-step {{ $step['active'] ? 'is-active' : '' }}'>
+                    <span class='pi-step-no'>{{ $no }}</span> @lang('pharmacy_import.' . $step['key'])
+                </div>
+            @endforeach
         </div>
 
         {{-- ============ 1) القالب ============ --}}

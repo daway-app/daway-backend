@@ -252,8 +252,8 @@
             const filterButtons = document.querySelectorAll('#filterPills .pill-btn');
 
             const isDarkMode = () => document.body.classList.contains('dark-mode');
-            const chartGridColor = () => isDarkMode() ? '#333338' : '#e2e8f0';
-            const chartTickColor = () => isDarkMode() ? '#A1A1AA' : '#64748b';
+            const chartGridColor = () => isDarkMode() ? '#3A6383' : '#e2e8f0';
+            const chartTickColor = () => isDarkMode() ? '#93C5FD' : '#64748b';
 
             let activityChart = null;
             let currentFilter = 'all';
@@ -296,9 +296,9 @@
                         plugins: {
                             legend: { display: false },
                             tooltip: {
-                                backgroundColor: isDarkMode() ? '#232327' : '#0f172a',
-                                titleColor: '#E4E4E7',
-                                bodyColor: '#E4E4E7',
+                                backgroundColor: isDarkMode() ? '#112433' : '#0f172a',
+                                titleColor: '#EAF4F8',
+                                bodyColor: '#EAF4F8',
                                 padding: 12,
                                 cornerRadius: 10,
                                 callbacks: {
