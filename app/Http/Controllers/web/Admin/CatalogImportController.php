@@ -97,6 +97,53 @@ class CatalogImportController extends Controller
         return view('categories.sync-progress', ['state' => $state]);
     }
 
+    /**
+     * تصنيف الأقسام الفرعية (فلاتر الموبايل) — وضع «القطع» نفسه:
+     * كل طلب يعالج شريحة (classify:moh-catalog --offset/--limit --subcategories-only)
+     * ثم تُعاد صفحة التقدم ذاتياً حتى اكتمال الكتالوج. روابط admin محفوظة.
+     */
+    public function classifySubcategories(Request $request): RedirectResponse|View
+    {
+        set_time_limit(0);
+
+        $stateKey = 'catalog-classify-state';
+        $state = Cache::get($stateKey);
+        $chunkLimit = 1500;
+
+        // جولة انتهت؟ ابدأ جولة جديدة
+        if ($state !== null && ($state['offset'] ?? 0) >= ($state['total'] ?? PHP_INT_MAX)) {
+            $state = null;
+        }
+
+        try {
+            Artisan::call('classify:moh-catalog', [
+                '--offset' => (int) ($state['offset'] ?? 0),
+                '--limit' => $chunkLimit,
+                '--subcategories-only' => true,
+                '--state' => $stateKey,
+            ]);
+        } catch (Throwable $e) {
+            Log::error('classifySubcategories: فشلت شريحة', ['e' => $e]);
+            Cache::forget($stateKey);
+
+            return redirect()->route('categories.index')
+                ->with('error', 'فشل التصنيف الفرعي — أعد المحاولة: '.$e->getMessage());
+        }
+
+        $state = Cache::get($stateKey) ?? [];
+
+        if (($state['offset'] ?? 0) >= ($state['total'] ?? 0) && (($state['total'] ?? 0) > 0)) {
+            Cache::forget($stateKey);
+
+            return redirect()->route('categories.index')->with(
+                'success',
+                'تم تصنيف الأقسام الفرعية بنجاح: '.$state['processed'].' سجلاً، '.$state['sub_linked'].' رابطاً فرعياً.'
+            );
+        }
+
+        return view('categories.classify-progress', ['state' => $state]);
+    }
+
     private function backToCategoriesTab(): RedirectResponse
     {
         return redirect()->route('categories.index');

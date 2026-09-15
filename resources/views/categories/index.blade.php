@@ -13,6 +13,16 @@
                 <p>@lang('categories.main_description')</p>
             </div>
             <div class="header-actions">
+                <form method="POST" action="{{ route('categories.classify') }}"
+                      onsubmit="return confirm('تصنيف فلاتر الأعراض/الفيتامينات على كل الكتالوج (الروابط الرئيسية لا تُلمس). يتطلب عدة دقائق — متأكد؟');">
+                    @csrf
+                    <button type="submit" class="btn-sync-catalog">
+                        <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18M3 12h18M3 18h10"></path>
+                        </svg>
+                        <span>فلاتر الأعراض</span>
+                    </button>
+                </form>
                 <form method="POST" action="{{ route('categories.sync') }}"
                       onsubmit="return confirm('ستتم مزامنة أقسام الكتالوج مع الأدوية (18,330 رابطاً). المزامنة تدوم دقائق — متأكد؟');">
                     @csrf

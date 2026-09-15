@@ -106,6 +106,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         'toggleStatus',
     ])->name('pharmacies.toggleStatus');
 
+    // استرجاع بيانات دخول صيدلية فُقدت بياناتها — كلمة مرور جديدة تُسلَّم للأدمن مرة واحدة
+    Route::patch('/pharmacies/{pharmacy}/reset-credentials', [
+        PharmacyController::class,
+        'resetCredentials',
+    ])->name('pharmacies.resetCredentials');
+
     // ==================== MEDICINES ====================
 
     Route::resource(
@@ -144,6 +150,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         CatalogImportController::class,
         'syncCategories',
     ])->name('categories.sync');
+
+    Route::post('/categories/classify', [
+        CatalogImportController::class,
+        'classifySubcategories',
+    ])->name('categories.classify');
 
     // ==================== USERS ====================
 

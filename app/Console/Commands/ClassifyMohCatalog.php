@@ -11,6 +11,7 @@ use App\Support\MedicineNameMapper;
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\SubcategorySeeder;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -68,7 +69,11 @@ class ClassifyMohCatalog extends Command
 {
     protected $signature = 'classify:moh-catalog
         {--fresh : إعادة التصنيف من الصفر (يحذف روابط المصدر التلقائي فقط، ويحافظ على روابط admin)}
-        {--chunk=500 : عدد السجلات في كل دفعة معالجة}';
+        {--chunk=500 : عدد السجلات في كل دفعة معالجة}
+        {--limit= : حد أقصى عدد سجلات لطرف واحد (وضع القطع المتصفح)}
+        {--offset=0 : بداية الشريحة (وضع القطع المتصفح)}
+        {--subcategories-only : فقط STEP C — ربط الأقسام الفرعية بلا لمس الروابط الرئيسية}
+        {--state= : مفتاح Cache لحالة التشغيل التراكمية (وضع القطع)}';
 
     protected $description = 'تصنيف كتالوج وزارة الصحة (moh_medicines) تلقائياً وربطه بالأقسام عبر product_class وقواعد الكلمات المفتاحية — قابل للتكرار، بلا تكرارات، ولا يمس روابط admin';
 
@@ -132,9 +137,15 @@ class ClassifyMohCatalog extends Command
 
         $chunkSize = max(1, (int) $this->option('chunk'));
         $fresh = (bool) $this->option('fresh');
+        $offset = max(0, (int) $this->option('offset'));
+        $limit = $this->option('limit') !== null ? max(1, (int) $this->option('limit')) : null;
+        $subOnly = (bool) $this->option('subcategories-only');
+        $stateKey = (string) $this->option('state');
 
         try {
-            return $this->classify($chunkSize, $fresh);
+            $exit = $this->classify($chunkSize, $fresh, $offset, $limit, $subOnly, $stateKey);
+
+            return $exit;
         } catch (\Throwable $e) {
             $this->error('فشل التصنيف: '.$e->getMessage());
             Log::error('classify:moh-catalog فشل: '.$e->getMessage(), [
@@ -145,7 +156,7 @@ class ClassifyMohCatalog extends Command
         }
     }
 
-    private function classify(int $chunkSize, bool $fresh): int
+    private function classify(int $chunkSize, bool $fresh, int $offset = 0, ?int $limit = null, bool $subOnly = false, string $stateKey = ''): int
     {
         // ضمان وجود الأقسام الـ 11 بنفس قائمة CategorySeeder
         $this->call(CategorySeeder::class);
@@ -169,7 +180,7 @@ class ClassifyMohCatalog extends Command
         $adminLinksPreserved = CategoryMedicineLink::query()->where('source', CategoryMedicineLink::SOURCE_ADMIN)->count();
 
         $total = MohMedicine::query()->count();
-        $this->info("جاري تصنيف {$total} دواء من كتالوج وزارة الصحة...");
+        $this->info("جاري تصنيف {$total} دواء من كتالوج وزارة الصحة...".($subOnly ? ' (STEP C فقط)' : '').($limit !== null ? " — شريحة من {$offset} ({$limit})" : ''));
 
         $counters = [
             'processed' => 0,
@@ -185,92 +196,71 @@ class ClassifyMohCatalog extends Command
         $perSubcategory = [];
         $warnedSlugs = [];
 
+        // ── وضع القطع المتصفح (Render Free: request ~100s): شريحة محدودة ──
+        if ($limit !== null || $offset > 0) {
+            $sliceCount = $limit ?? $total;
+            $bar = $this->output->createProgressBar($sliceCount);
+            $bar->start();
+
+            $medicines = MohMedicine::query()
+                ->orderBy('id')
+                ->skip($offset)
+                ->take($sliceCount)
+                ->get();
+
+            foreach ($medicines as $medicine) {
+                $this->processMedicineRow(
+                    $medicine,
+                    $counters,
+                    $perCategory,
+                    $perSubcategory,
+                    $warnedSlugs,
+                    $categoryIds,
+                    $subcategories,
+                    $subOnly,
+                    $bar
+                );
+            }
+
+            $bar->finish();
+            $this->newLine(2);
+
+            // دمج الحالة التراكمية في Cache (مصدر وثقة القطع المتسلسلة)
+            if ($stateKey !== '') {
+                $state = Cache::get($stateKey) ?? [];
+                foreach ($counters as $k => $v) {
+                    $state[$k] = ($state[$k] ?? 0) + $v;
+                }
+                $state['total'] = $total;
+                $state['offset'] = $offset + $medicines->count();
+                $state['sub_linked'] = $counters['sub_linked'];
+
+                Cache::put($stateKey, $state, now()->addHours(6));
+            }
+
+            // فضّ كاش الأقسام — الشريحة قد كتبت روابط
+            CategoryCatalogCache::bump();
+
+            return self::SUCCESS;
+        }
+
+        // ── الوضع العادي (CLI): chunkById على كل الكتالوج ──
         $bar = $this->output->createProgressBar($total);
         $bar->start();
 
-        MohMedicine::query()->chunkById($chunkSize, function ($medicines) use (&$counters, &$perCategory, &$perSubcategory, &$warnedSlugs, $categoryIds, $subcategories, $bar): void {
+        MohMedicine::query()->chunkById($chunkSize, function ($medicines) use (&$counters, &$perCategory, &$perSubcategory, &$warnedSlugs, $categoryIds, $subcategories, $subOnly, $bar): void {
             foreach ($medicines as $medicine) {
-                $counters['processed']++;
-
-                $productId = $medicine->moh_product_id !== null ? (int) $medicine->moh_product_id : null;
-                $drugId = $medicine->moh_drug_id !== null ? (int) $medicine->moh_drug_id : null;
-
-                $candidates = $this->mergeCandidates($this->classifyRow($medicine));
-
-                // بلا مفتاح مستقر لا يمكن إنشاء رابط يبقى صحيحاً بعد moh:sync — يُحسب غير مصنّف
-                if ($candidates === [] || ($productId === null && $drugId === null)) {
-                    $counters['unclassified']++;
-                    $bar->advance();
-
-                    continue;
-                }
-
-                // أعلى ثقة في تطابقات الصف تحدد needs_review لكل روابطه
-                $maxConfidence = 0;
-                foreach ($candidates as $candidate) {
-                    $maxConfidence = max($maxConfidence, $candidate['confidence']);
-                }
-                $needsReview = $maxConfidence < self::CONF_REVIEW_THRESHOLD;
-
-                $rowLinked = false;
-                $rowHasAdmin = false;
-                foreach ($candidates as $candidate) {
-                    if (! array_key_exists($candidate['slug'], $categoryIds)) {
-                        if (! in_array($candidate['slug'], $warnedSlugs, true)) {
-                            $warnedSlugs[] = $candidate['slug'];
-                            $this->warn("تحذير: القسم '{$candidate['slug']}' غير موجود في جدول categories — تم تجاهل روابطه.");
-                        }
-
-                        continue;
-                    }
-
-                    $categoryId = (int) $categoryIds[$candidate['slug']];
-
-                    $result = $this->upsertLink(
-                        $categoryId,
-                        $productId,
-                        $drugId,
-                        $candidate['source'],
-                        $candidate['confidence'],
-                        $needsReview
-                    );
-
-                    if ($result === 'admin') {
-                        $counters['skipped_admin']++;
-                        $rowHasAdmin = true;
-
-                        continue;
-                    }
-
-                    $counters[$result === 'created' ? 'created' : 'updated']++;
-                    $perCategory[$candidate['slug']] = ($perCategory[$candidate['slug']] ?? 0) + 1;
-                    $rowLinked = true;
-                }
-
-                if ($rowLinked) {
-                    $counters['linked']++;
-                    if ($needsReview) {
-                        $counters['needs_review']++;
-                    }
-                } elseif (! $rowHasAdmin) {
-                    $counters['unclassified']++;
-                }
-
-                // STEP C-ب — الأقسام الفرعية
-                $subLinkedSlugs = $this->linkSubcategories(
+                $this->processMedicineRow(
                     $medicine,
-                    $productId,
-                    $drugId,
+                    $counters,
+                    $perCategory,
+                    $perSubcategory,
+                    $warnedSlugs,
+                    $categoryIds,
                     $subcategories,
-                    $needsReview
+                    $subOnly,
+                    $bar
                 );
-
-                foreach ($subLinkedSlugs as $slug) {
-                    $counters['sub_linked']++;
-                    $perSubcategory[$slug] = ($perSubcategory[$slug] ?? 0) + 1;
-                }
-
-                $bar->advance();
             }
         });
 
@@ -321,6 +311,113 @@ class ClassifyMohCatalog extends Command
         CategoryCatalogCache::bump();
 
         return self::SUCCESS;
+    }
+
+    /**
+     * معالجة صفّ دواء واحد — منطق الحلقة المستخرج مشتركاً بين الوضعين
+     * (CLI chunkById الكامل + وضع القطع المتصفح ذي شريحة محدودة).
+     */
+    private function processMedicineRow(
+        MohMedicine $medicine,
+        array &$counters,
+        array &$perCategory,
+        array &$perSubcategory,
+        array &$warnedSlugs,
+        array $categoryIds,
+        $subcategories,
+        bool $subOnly,
+        $bar
+    ): void {
+        $counters['processed']++;
+
+        $productId = $medicine->moh_product_id !== null ? (int) $medicine->moh_product_id : null;
+        $drugId = $medicine->moh_drug_id !== null ? (int) $medicine->moh_drug_id : null;
+
+        $needsReview = false;
+
+        // الروابط الرئيسية — تُتخطى في وضع subcategories-only
+        if (! $subOnly) {
+            $candidates = $this->mergeCandidates($this->classifyRow($medicine));
+
+            // بلا مفتاح مستقر لا يمكن إنشاء رابط يبقى صحيحاً بعد moh:sync — يُحسب غير مصنّف
+            if ($candidates === [] || ($productId === null && $drugId === null)) {
+                $counters['unclassified']++;
+                $bar->advance();
+
+                return;
+            }
+
+            // أعلى ثقة في تطابقات الصف تحدد needs_review لكل روابطه
+            $maxConfidence = 0;
+            foreach ($candidates as $candidate) {
+                $maxConfidence = max($maxConfidence, $candidate['confidence']);
+            }
+            $needsReview = $maxConfidence < self::CONF_REVIEW_THRESHOLD;
+
+            $rowLinked = false;
+            $rowHasAdmin = false;
+            foreach ($candidates as $candidate) {
+                if (! array_key_exists($candidate['slug'], $categoryIds)) {
+                    if (! in_array($candidate['slug'], $warnedSlugs, true)) {
+                        $warnedSlugs[] = $candidate['slug'];
+                        $this->warn("تحذير: القسم '{$candidate['slug']}' غير موجود في جدول categories — تم تجاهل روابطه.");
+                    }
+
+                    continue;
+                }
+
+                $categoryId = (int) $categoryIds[$candidate['slug']];
+
+                $result = $this->upsertLink(
+                    $categoryId,
+                    $productId,
+                    $drugId,
+                    $candidate['source'],
+                    $candidate['confidence'],
+                    $needsReview
+                );
+
+                if ($result === 'admin') {
+                    $counters['skipped_admin']++;
+                    $rowHasAdmin = true;
+
+                    continue;
+                }
+
+                $counters[$result === 'created' ? 'created' : 'updated']++;
+                $perCategory[$candidate['slug']] = ($perCategory[$candidate['slug']] ?? 0) + 1;
+                $rowLinked = true;
+            }
+
+            if ($rowLinked) {
+                $counters['linked']++;
+                if ($needsReview) {
+                    $counters['needs_review']++;
+                }
+            } elseif (! $rowHasAdmin) {
+                $counters['unclassified']++;
+            }
+        } else {
+            // subOnly: نحتاج needs_review من نفس منطقة الثقة لروابط الفرعية
+            $productId2 = $productId ?? $drugId;
+            $needsReview = false; // القواعد الفرعية محدثة الثقة (75) — أعلى من العتبة
+        }
+
+        // STEP C-ب — الأقسام الفرعية (تشتغل في الوضعين)
+        $subLinkedSlugs = $this->linkSubcategories(
+            $medicine,
+            $productId,
+            $drugId,
+            $subcategories,
+            $needsReview
+        );
+
+        foreach ($subLinkedSlugs as $slug) {
+            $counters['sub_linked']++;
+            $perSubcategory[$slug] = ($perSubcategory[$slug] ?? 0) + 1;
+        }
+
+        $bar->advance();
     }
 
     /**
