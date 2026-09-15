@@ -3,7 +3,6 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvailabilityAlertController;
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\ChatAssistantController;
 use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\MedicalProfileController;
@@ -26,13 +25,13 @@ use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Route;
 
-// ✅ Routes Public
+// âœ… Routes Public
 Route::post('/otp/send', [AuthController::class, 'sendOtp'])->middleware('throttle:otp');
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:otp-verify');
 Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middleware(['throttle:login', 'throttle:login-account']);
 
-// التسجيل الذاتي للصيدليات (تطبيق الموبايل) — ينشئ حساباً غير مفعّل بانتظار موافقة الإدارة،
-// ويُعيد Pharmacy ID (PH-XXXX) الذي تدخل به الصيدلية بعد الموافقة.
+// ط§ظ„طھط³ط¬ظٹظ„ ط§ظ„ط°ط§طھظٹ ظ„ظ„طµظٹط¯ظ„ظٹط§طھ (طھط·ط¨ظٹظ‚ ط§ظ„ظ…ظˆط¨ط§ظٹظ„) â€” ظٹظ†ط´ط¦ ط­ط³ط§ط¨ط§ظ‹ ط؛ظٹط± ظ…ظپط¹ظ‘ظ„ ط¨ط§ظ†طھط¸ط§ط± ظ…ظˆط§ظپظ‚ط© ط§ظ„ط¥ط¯ط§ط±ط©طŒ
+// ظˆظٹظڈط¹ظٹط¯ Pharmacy ID (PH-XXXX) ط§ظ„ط°ظٹ طھط¯ط®ظ„ ط¨ظ‡ ط§ظ„طµظٹط¯ظ„ظٹط© ط¨ط¹ط¯ ط§ظ„ظ…ظˆط§ظپظ‚ط©.
 Route::post('/register/pharmacy', [AuthController::class, 'pharmacyRegister'])->middleware('throttle:register');
 
 // Medicines Routes Public
@@ -42,24 +41,23 @@ Route::get('/medicines/active-ingredient/{ingredient}', [MedicineController::cla
 Route::get('/medicines/{id}', [MedicineController::class, 'show']);
 Route::get('/medicines/{id}/pharmacies', [MedicineController::class, 'pharmacies']);
 
-// حلّ اسم الدواء مباشرة عبر MedicineResolver (بدون انتظار خدمة AI)
-// مفيد للبحث الفوري والتطبيقات التي تريد نتائج فورية بالعربية/الإنجليزية
+// ط­ظ„ظ‘ ط§ط³ظ… ط§ظ„ط¯ظˆط§ط، ظ…ط¨ط§ط´ط±ط© ط¹ط¨ط± MedicineResolver (ط¨ط¯ظˆظ† ط§ظ†طھط¸ط§ط± ط®ط¯ظ…ط© AI)
+// ظ…ظپظٹط¯ ظ„ظ„ط¨ط­ط« ط§ظ„ظپظˆط±ظٹ ظˆط§ظ„طھط·ط¨ظٹظ‚ط§طھ ط§ظ„طھظٹ طھط±ظٹط¯ ظ†طھط§ط¦ط¬ ظپظˆط±ظٹط© ط¨ط§ظ„ط¹ط±ط¨ظٹط©/ط§ظ„ط¥ظ†ط¬ظ„ظٹط²ظٹط©
 Route::post('/medicines/resolve', [MedicineController::class, 'resolve'])->middleware('auth:sanctum')->middleware('throttle:30,1');
 
 // Pharmacies Routes Public
 Route::get('/pharmacies', [PharmacyController::class, 'index']);
 Route::get('/pharmacies/{id}', [PharmacyController::class, 'show']);
 
-// AI Assistant + OCR (محمية — للمستخدمين المسجلين)
+// OCR (ظ…ط­ظ…ظٹط© â€” ظ„ظ„ظ…ط³طھط®ط¯ظ…ظٹظ† ط§ظ„ظ…ط³ط¬ظ„ظٹظ†)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/chat', [ChatAssistantController::class, 'chat'])->middleware('throttle:30,1');
     Route::post('/ocr/medicine', [OcrController::class, 'identify'])->middleware('throttle:30,1');
 });
 
-// ✅ Routes Protected
+// âœ… Routes Protected
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    // H4: rate-limit على تجديد الـ token (30 طلب/دقيقة) لمنع إطالة عمر token مسروق.
+    // H4: rate-limit ط¹ظ„ظ‰ طھط¬ط¯ظٹط¯ ط§ظ„ظ€ token (30 ط·ظ„ط¨/ط¯ظ‚ظٹظ‚ط©) ظ„ظ…ظ†ط¹ ط¥ط·ط§ظ„ط© ط¹ظ…ط± token ظ…ط³ط±ظˆظ‚.
     Route::post('/refresh-token', [AuthController::class, 'refreshToken'])->middleware('throttle:30,1');
 
     Route::get('/profile/patient', [PatientProfileController::class, 'show']);
@@ -76,19 +74,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
-    // Patient inquiries — M-9: throttle مخصص للكتابة على store (يولّد إشعاراً + FCM)
-    // بدون أسماء صريحة — المسار الويب يحمل الاسم نفسه (route('patient.inquiries.store'))
+    // Patient inquiries â€” M-9: throttle ظ…ط®طµطµ ظ„ظ„ظƒطھط§ط¨ط© ط¹ظ„ظ‰ store (ظٹظˆظ„ظ‘ط¯ ط¥ط´ط¹ط§ط±ط§ظ‹ + FCM)
+    // ط¨ط¯ظˆظ† ط£ط³ظ…ط§ط، طµط±ظٹط­ط© â€” ط§ظ„ظ…ط³ط§ط± ط§ظ„ظˆظٹط¨ ظٹط­ظ…ظ„ ط§ظ„ط§ط³ظ… ظ†ظپط³ظ‡ (route('patient.inquiries.store'))
     Route::get('patient/inquiries', [PatientInquiryController::class, 'index']);
     Route::post('patient/inquiries', [PatientInquiryController::class, 'store'])->middleware('throttle:writes');
 
-    // Patient-scoped routes (Phase 9 — SRS endpoints).
-    // ملاحظة على ترتيب المسارات: `medicines/search` يجب أن يسبق `medicines/{medicine}`
-    // وإلا فسيلتقط Laravel الـ wildcard أولاً ويفشل في مطابقة "search" كقيمة.
+    // Patient-scoped routes (Phase 9 â€” SRS endpoints).
+    // ظ…ظ„ط§ط­ط¸ط© ط¹ظ„ظ‰ طھط±طھظٹط¨ ط§ظ„ظ…ط³ط§ط±ط§طھ: `medicines/search` ظٹط¬ط¨ ط£ظ† ظٹط³ط¨ظ‚ `medicines/{medicine}`
+    // ظˆط¥ظ„ط§ ظپط³ظٹظ„طھظ‚ط· Laravel ط§ظ„ظ€ wildcard ط£ظˆظ„ط§ظ‹ ظˆظٹظپط´ظ„ ظپظٹ ظ…ط·ط§ط¨ظ‚ط© "search" ظƒظ‚ظٹظ…ط©.
     Route::prefix('patient')->group(function () {
         Route::get('medicines/search', [MedicineController::class, 'search']);
         Route::get('medicines/{medicine}', [MedicineController::class, 'show']);
-        // ملاحظة: `pharmacies` على MedicineController يعيد قائمة الصيدليات التي يتوفر بها الدواء —
-        // وهذا نفس دلالياً معنى "availability" في SRS للمريض.
+        // ظ…ظ„ط§ط­ط¸ط©: `pharmacies` ط¹ظ„ظ‰ MedicineController ظٹط¹ظٹط¯ ظ‚ط§ط¦ظ…ط© ط§ظ„طµظٹط¯ظ„ظٹط§طھ ط§ظ„طھظٹ ظٹطھظˆظپط± ط¨ظ‡ط§ ط§ظ„ط¯ظˆط§ط، â€”
+        // ظˆظ‡ط°ط§ ظ†ظپط³ ط¯ظ„ط§ظ„ظٹط§ظ‹ ظ…ط¹ظ†ظ‰ "availability" ظپظٹ SRS ظ„ظ„ظ…ط±ظٹط¶.
         Route::get('medicines/{medicine}/availability', [MedicineController::class, 'pharmacies']);
         Route::get('medicines/{medicine}/alternatives', [MedicineController::class, 'alternatives']);
 
@@ -105,11 +103,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('health-profile', [MedicalProfileController::class, 'show']);
         Route::put('health-profile', [MedicalProfileController::class, 'update']);
-
-        Route::post('assistant/analyze', [ChatAssistantController::class, 'analyze']);
     });
 
-    // Device tokens (FCM) — خارج prefix('patient') لأن كلا الـ roles (patient/pharmacy) قد يسجّلان جهازاً.
+    // Device tokens (FCM) â€” ط®ط§ط±ط¬ prefix('patient') ظ„ط£ظ† ظƒظ„ط§ ط§ظ„ظ€ roles (patient/pharmacy) ظ‚ط¯ ظٹط³ط¬ظ‘ظ„ط§ظ† ط¬ظ‡ط§ط²ط§ظ‹.
     Route::post('device-tokens', [DeviceTokenController::class, 'store'])->middleware('throttle:writes');
     Route::delete('device-tokens/current', [DeviceTokenController::class, 'destroy']);
 
@@ -121,7 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('ratings', [PharmacyRatingController::class, 'index']);
 
         Route::get('medicines/search', [PharmacyMedicineController::class, 'search']);
-        // إضافة دواء بالاسم مباشرة (للموبايل) — بدون medicine_id أو moh_medicine_id
+        // ط¥ط¶ط§ظپط© ط¯ظˆط§ط، ط¨ط§ظ„ط§ط³ظ… ظ…ط¨ط§ط´ط±ط© (ظ„ظ„ظ…ظˆط¨ط§ظٹظ„) â€” ط¨ط¯ظˆظ† medicine_id ط£ظˆ moh_medicine_id
         Route::post('medicines/by-name', [PharmacyMedicineController::class, 'storeByName'])->middleware('throttle:writes');
         Route::apiResource('medicines', PharmacyMedicineController::class)
             ->names('api.pharmacy.medicines');
@@ -132,11 +128,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('inventory/bulk', [PharmacyInventoryController::class, 'bulkUpdate'])->middleware('throttle:writes');
 
         // ==================== BULK INVENTORY IMPORT ====================
-        // مسار منفصل بحد معدل مخصّص (user_id + pharmacy_id) — لا يمسّ 'writes'.
-        // مُسجَّل قبل inventory/{medicine} الضمني حتى لا يُلتقط 'import' كمعرّف.
+        // ظ…ط³ط§ط± ظ…ظ†ظپطµظ„ ط¨ط­ط¯ ظ…ط¹ط¯ظ„ ظ…ط®طµظ‘طµ (user_id + pharmacy_id) â€” ظ„ط§ ظٹظ…ط³ظ‘ 'writes'.
+        // ظ…ظڈط³ط¬ظژظ‘ظ„ ظ‚ط¨ظ„ inventory/{medicine} ط§ظ„ط¶ظ…ظ†ظٹ ط­طھظ‰ ظ„ط§ ظٹظڈظ„طھظ‚ط· 'import' ظƒظ…ط¹ط±ظ‘ظپ.
         //
-        // ⚠️ الحدّ على **الأفعال** فقط (preview/decide/commit/cancel) — القراءة
-        // (template/show/errors) لا تستهلك حصة الاستيراد. راجع routes/web.php.
+        // âڑ ï¸ڈ ط§ظ„ط­ط¯ظ‘ ط¹ظ„ظ‰ **ط§ظ„ط£ظپط¹ط§ظ„** ظپظ‚ط· (preview/decide/commit/cancel) â€” ط§ظ„ظ‚ط±ط§ط،ط©
+        // (template/show/errors) ظ„ط§ طھط³طھظ‡ظ„ظƒ ط­طµط© ط§ظ„ط§ط³طھظٹط±ط§ط¯. ط±ط§ط¬ط¹ routes/web.php.
 
         Route::get('inventory/import/template', [PharmacyInventoryImportController::class, 'template']);
         Route::get('inventory/import/{import}', [PharmacyInventoryImportController::class, 'show']);
@@ -170,10 +166,10 @@ Route::middleware(['auth:sanctum', 'role:pharmacy'])->prefix('sync')->group(func
     Route::get('pull', [SyncController::class, 'pull']);
 });
 
-// Categories (public catalog metadata) — {category} يقبل id أو slug
+// Categories (public catalog metadata) â€” {category} ظٹظ‚ط¨ظ„ id ط£ظˆ slug
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::get('/categories/{category}/medicines', [CategoryController::class, 'medicines']);
 
-// أشكال الجرعات (قائمة أعراف canonical لاستخدامها مع فلتر dosage_form)
+// ط£ط´ظƒط§ظ„ ط§ظ„ط¬ط±ط¹ط§طھ (ظ‚ط§ط¦ظ…ط© ط£ط¹ط±ط§ظپ canonical ظ„ط§ط³طھط®ط¯ط§ظ…ظ‡ط§ ظ…ط¹ ظپظ„طھط± dosage_form)
 Route::get('/dosage-forms', [CategoryController::class, 'dosageForms']);

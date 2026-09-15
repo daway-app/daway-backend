@@ -47,14 +47,6 @@ return [
         'folder' => env('CLOUDINARY_FOLDER', 'daway'),
     ],
 
-    // مساعد الذكاء الاصطناعي (تحليل رسائل المستخدم: نية البحث + اسم الدواء)
-    // المهلة الافتراضية 8 ثوانٍ (كانت 15) — C-1: لا نحتجز عاملي PHP CLI server على اتصال خارجي بطيء
-    'daway_ai' => [
-        'base_url' => env('DAWAY_AI_BASE_URL'),
-        'timeout'  => (int) env('DAWAY_AI_TIMEOUT', 8),
-        'key'      => env('DAWAY_AI_KEY'),
-    ],
-
     // خدمة OCR (قراءة اسم الدواء من صورة العلبة)
     // المهلة الافتراضية 8 ثوانٍ (كانت 20) — C-1
     'daway_ocr' => [
