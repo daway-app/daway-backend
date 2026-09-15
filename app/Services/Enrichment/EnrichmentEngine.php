@@ -7,13 +7,17 @@ use App\Models\MedicineImage;
 use App\Models\MedicineEnrichmentReview;
 use App\Models\MedicineEnrichmentRun;
 use App\Models\MohMedicine;
+use App\Services\Enrichment\Providers\DailyMedProvider;
 use App\Services\Enrichment\Providers\DrugsApiProvider;
-use App\Services\Enrichment\Providers\ManualProvider;
+use App\Services\Enrichment\Providers\LocalProvider;
 use App\Services\Enrichment\Providers\MedicineDataProvider;
 use App\Services\Enrichment\Providers\MedicineQuery;
+use App\Services\Enrichment\Providers\OpenFdaProvider;
+use App\Services\Enrichment\Providers\PalestinianProvider;
 use App\Services\Enrichment\Providers\ProviderResult;
+use App\Services\Enrichment\Providers\RxNormProvider;
+use App\Services\Enrichment\Providers\WikidataProvider;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 
 /**
  * محرك الإثراء — يقرأ من moh_medicines ويغذّي نصّ الصفحة
@@ -51,7 +55,7 @@ final class EnrichmentEngine
         }
 
         $run = $previousRun ?? MedicineEnrichmentRun::create([
-            'provider' => $providers !== [] ? $providers[0]->name() : 'none',
+            'provider' => $providers !== [] ? $providers[0]->getName() : 'none',
             'status' => MedicineEnrichmentRun::STATUS_RUNNING,
             'batch_size' => $batchSize ?? 100,
             'started_at' => now(),
@@ -66,6 +70,8 @@ final class EnrichmentEngine
 
         $run->update(['total_records' => MohMedicine::count()]);
 
+        $contributions = $run->metadata['provider_contributions'] ?? [];
+
         // دقيق size = batch-size unmatched (نُصل نقاط bounded)
         $medicines = MohMedicine::query()
             ->orderBy('id')
@@ -74,7 +80,7 @@ final class EnrichmentEngine
             ->get();
 
         foreach ($medicines as $moh) {
-            $decision = $this->processOne($moh, $providers, $dryRun);
+            [$decision, $winner] = $this->processOne($moh, $providers, $dryRun);
 
             $run->processed_records += 1;
             $run->last_offset += 1;
@@ -85,6 +91,17 @@ final class EnrichmentEngine
                 'rejected' => $run->failed_records += 1,
                 default => $run->failed_records += 1,
             };
+
+            //وثمة الحبل: $winner + الdecision أيضاً
+            $metadata = $run->metadata ?? [];
+            $contributions = $metadata['provider_contributions'] ?? [];
+
+            if ($winner !== null && $decision !== 'rejected') {
+                $contributions[$winner] = ($contributions[$winner] ?? 0) + 1;
+            }
+            $metadata['provider_contributions'] = $contributions;
+            $metadata['decisions'][$decision] = ($metadata['decisions'][$decision] ?? 0) + 1;
+            $run->metadata = $metadata;
         }
 
         // نهاية الدفعة؛ offset؛ N testify run كcomplete (لا slotted restart)ل Microsoft.
@@ -128,32 +145,45 @@ final class EnrichmentEngine
      *  - review (0.70–0.79) → مراجعة
      *  - rejected (< 0.70) → لا شيء.
      *
-     * @return 'auto_accept'|'review'|'rejected'
+     * @return array{0:'auto_accept'|'review'|'rejected',1: ?string}
      */
-    private function processOne(MohMedicine $moh, array $providers, bool $dryRun): string
+    private function processOne(MohMedicine $moh, array $providers, bool $dryRun): array
     {
         $query = new MedicineQuery($moh, (string) $moh->trade_name, '', $moh->manufacturer ?: $moh->company, $moh->dosage_form, $moh->packaging);
 
         /** @var MedicineDataProvider $provider */
-        $result = null;
+        $bestResult = null;
+        $bestScore = null;
+        $winner = null;
         foreach ($providers as $provider) {
             $result = $provider->searchByMedicine($query);
-            if ($result !== null) {
-                break;
+            if ($result === null) {
+                continue;
+            }
+
+            $score = MatchingEngine::score($moh, $result);
+            if ($bestScore === null || $score['score'] > $bestScore['score']) {
+                $bestResult = $result;
+                $bestScore = $score;
+                $winner = $provider->getName();
             }
         }
-        if ($result === null) {
-            return 'rejected';
+
+        if ($bestResult === null) {
+            return ['rejected', null];
         }
 
-        $score = MatchingEngine::score($moh, $result);
+        $score = $bestScore;
+        $result = $bestResult;
 
         if ($dryRun) {
-            return match ($score['decision']) {
+            $decision = match ($score['decision']) {
                 'auto_accept' => 'auto_accept',
                 'apply_with_review', 'review' => 'review',
                 default => 'rejected',
             };
+
+            return [$decision, $decision === 'rejected' ? null : $winner];
         }
 
         if ($score['decision'] === 'auto_accept') {
@@ -181,13 +211,13 @@ final class EnrichmentEngine
                         'status' => MedicineEnrichmentReview::STATUS_PENDING,
                     ]);
 
-                    return 'review';
+                    return ['review', $winner];
                 }
             }
 
             $this->safeApply($moh, $result, $score);
 
-            return 'auto_accept';
+            return ['auto_accept', $winner];
         }
 
         if (in_array($score['decision'], ['apply_with_review', 'review'], true)) {
@@ -209,10 +239,10 @@ final class EnrichmentEngine
                 'status' => MedicineEnrichmentReview::STATUS_PENDING,
             ]);
 
-            return 'review';
+            return ['review', $winner];
         }
 
-        return 'rejected';
+        return ['rejected', null];
     }
 
     /**
@@ -277,23 +307,31 @@ final class EnrichmentEngine
     }
 
     /**
-     * الprovider المفعّلة من config — drugs_api أولاً إن كان مفعّلاً؛ manual كامشكّ')):
-     * هو داعم LOCAL only ولا يعوض المزود الخارجي.
+     * الprovider المفعّلة من config — بالأولوية المحددة من المطابقة،
+     * بلا paid providers (Cost Guard: ENRICHMENT_PAID_PROVIDERS=false). 
+     * A paid provider لا يُقبل إلا بتفعيل صريح ولأن أعلى gates مفعّلة.
      *
      * @return MedicineDataProvider[]
      */
     private function enabledProviders(): array
     {
-        $providers = [];
+        $candidates = [
+            new LocalProvider($this->resolver),        // (1) بيانات Daway الموجودة
+            new PalestinianProvider(),                 // (2) فلسطين — معطّل (غير مثبت)
+            new RxNormProvider(),                      // (3) NLM — المجاني
+            new OpenFdaProvider(),                     // (4) FDA — المجاني
+            new DailyMedProvider(),                    // (5) NLM — المجاني
+            new WikidataProvider(),                    // (6) مجاني
+        ];
 
-        $drugsApi = new DrugsApiProvider();
-        if ($drugsApi->isEnabled()) {
-            $providers[] = $drugsApi;
-        }
+        $providers = array_filter($candidates, fn ($p) => $p->isEnabled());
 
-        $manual = new ManualProvider($this->resolver);
-        if ($manual->isEnabled()) {
-            $providers[] = $manual;
+        // Paid drug_api: يعمل فقط بتفعيل مزدوج (paid_providers=true و DRUGS_API_ENABLED=true)
+        if ((bool) config('enrichment.paid_providers', false) === true) {
+            $drugsApi = new DrugsApiProvider();
+            if ($drugsApi->isEnabled()) {
+                $providers[] = $drugsApi;
+            }
         }
 
         return $providers;

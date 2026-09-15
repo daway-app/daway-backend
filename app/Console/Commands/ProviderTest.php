@@ -6,8 +6,13 @@ use App\Models\MohMedicine;
 use App\Services\Enrichment\BarcodeNormalizer;
 use App\Services\Enrichment\MatchingEngine;
 use App\Services\Enrichment\Providers\DrugsApiProvider;
-use App\Services\Enrichment\Providers\ManualProvider;
+use App\Services\Enrichment\Providers\DailyMedProvider;
+use App\Services\Enrichment\Providers\LocalProvider;
 use App\Services\Enrichment\Providers\MedicineDataProvider;
+use App\Services\Enrichment\Providers\OpenFdaProvider;
+use App\Services\Enrichment\Providers\PalestinianProvider;
+use App\Services\Enrichment\Providers\RxNormProvider;
+use App\Services\Enrichment\Providers\WikidataProvider;
 use App\Services\Enrichment\Providers\MedicineQuery;
 use Illuminate\Console\Command;
 use Throwable;
@@ -36,7 +41,12 @@ final class ProviderTest extends Command
 
         $provider = $this->resolve($providerName);
         if ($provider === null) {
-            $this->error("مزوّد مجهول: {$providerName}");
+            if ($providerName === 'drugs_api') {
+                // Cost Guard: مزوّد مدفوع — معطّل ولا يُشغّل إلا بتفعيل صريح
+                $this->error('Provider disabled / credentials missing — drugs_api مقفول بواسطة ENRICHMENT_PAID_PROVIDERS=false');
+            } else {
+                $this->error("مزوّد مجهول: {$providerName}");
+            }
 
             return self::FAILURE;
         }
@@ -67,8 +77,14 @@ final class ProviderTest extends Command
     private function resolve(string $name): ?MedicineDataProvider
     {
         return match ($name) {
-            'drugs_api' => new DrugsApiProvider(),
-            'manual' => new ManualProvider(app(\App\Services\Ai\MedicineResolver::class)),
+            'local' => new LocalProvider(app(\App\Services\Ai\MedicineResolver::class)),
+            'palestinian' => new PalestinianProvider(),
+            'rxnorm' => new RxNormProvider(),
+            'openfda' => new OpenFdaProvider(),
+            'dailymed' => new DailyMedProvider(),
+            'wikidata' => new WikidataProvider(),
+            // paid drugs_api شُغّل فقط بتفعيل مزدوج (cost guard)
+            'drugs_api' => ((bool) config('enrichment.paid_providers', false)) === true ? new DrugsApiProvider() : null,
             default => null,
         };
     }

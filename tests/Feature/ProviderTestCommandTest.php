@@ -26,6 +26,7 @@ final class ProviderTestCommandTest extends TestCase
     public function test_missing_credentials_reports_clearly(): void
     {
         config([
+            'enrichment.paid_providers' => true,
             'enrichment.drugs_api.enabled' => true,
             'enrichment.drugs_api.base_url' => null,
             'enrichment.drugs_api.search_path' => null,
@@ -48,6 +49,7 @@ final class ProviderTestCommandTest extends TestCase
         ]);
 
         config([
+            'enrichment.paid_providers' => true,
             'enrichment.drugs_api.enabled' => true,
             'enrichment.drugs_api.base_url' => 'https://api.example.com',
             'enrichment.drugs_api.search_path' => '/search',
@@ -80,6 +82,7 @@ final class ProviderTestCommandTest extends TestCase
     public function test_provider_timeout_is_caught_and_counted(): void
     {
         config([
+            'enrichment.paid_providers' => true,
             'enrichment.drugs_api.enabled' => true,
             'enrichment.drugs_api.base_url' => 'https://api.example.com',
             'enrichment.drugs_api.search_path' => '/search',
@@ -102,6 +105,7 @@ final class ProviderTestCommandTest extends TestCase
     public function test_malformed_provider_response_is_counted_as_not_found(): void
     {
         config([
+            'enrichment.paid_providers' => true,
             'enrichment.drugs_api.enabled' => true,
             'enrichment.drugs_api.base_url' => 'https://api.example.com',
             'enrichment.drugs_api.search_path' => '/search',
@@ -121,6 +125,7 @@ final class ProviderTestCommandTest extends TestCase
     public function test_coverage_report_can_be_generated(): void
     {
         config([
+            'enrichment.paid_providers' => true,
             'enrichment.drugs_api.enabled' => true,
             'enrichment.drugs_api.base_url' => 'https://api.example.com',
             'enrichment.drugs_api.search_path' => '/search',

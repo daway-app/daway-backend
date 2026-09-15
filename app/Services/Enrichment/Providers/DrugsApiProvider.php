@@ -16,9 +16,14 @@ use Illuminate\Support\Facades\Log;
  */
 final class DrugsApiProvider implements MedicineDataProvider
 {
-    public function name(): string
+    public function getName(): string
     {
         return 'drugs_api';
+    }
+
+    public function isFree(): bool
+    {
+        return false; // paid provider — مقفول بـ cost guard (ENRICHMENT_PAID_PROVIDERS=false)
     }
 
     public function isEnabled(): bool

@@ -1,5 +1,5 @@
 <?php
-// إعادة بذر بيانات العينة (النماذج الرهينية المسحوبة من database/daway_local.sqlite بسبب tests migrations)
+// إعادة بذر بيانات العينة — boot framework ثم seed عبر artisan tinker
 use App\Models\Medicine;
 use App\Models\MohMedicine;
 

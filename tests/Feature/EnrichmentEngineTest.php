@@ -49,7 +49,7 @@ final class EnrichmentEngineTest extends TestCase
     public function test_dry_run_writes_nothing(): void
     {
         // منع أي read من providers محلي (mapping)
-        config(['enrichment.manual_provider.enabled' => false]);
+        config(['enrichment.local.enabled' => false, 'enrichment.rxnorm.enabled' => false, 'enrichment.openfda.enabled' => false, 'enrichment.dailymed.enabled' => false, 'enrichment.wikidata.enabled' => false]);
         config(['enrichment.drugs_api.enabled' => false]);
 
         $this->seedCatalog(3);
@@ -66,7 +66,7 @@ final class EnrichmentEngineTest extends TestCase
     public function test_manual_provider_high_confidence_applies_field_then_unmatched_low_confidence_writes_review(): void
     {
         // 위 Config: ManualProvider disabled by default
-        config(['enrichment.manual_provider.enabled' => true]);
+        config(['enrichment.local.enabled' => true, 'enrichment.rxnorm.enabled' => false, 'enrichment.openfda.enabled' => false, 'enrichment.dailymed.enabled' => false, 'enrichment.wikidata.enabled' => false]);
         // نظام اعتمد مرتّب بالconfig مع threshold (score) من الإعدادات
         config(['enrichment.thresholds.auto_accept' => 0.90]);
         config(['enrichment.thresholds.review' => 0.70]);
@@ -92,7 +92,7 @@ final class EnrichmentEngineTest extends TestCase
             'stock' => 0,
         ]);
 
-        config(['enrichment.manual_provider.enabled' => true]);
+        config(['enrichment.local.enabled' => true, 'enrichment.rxnorm.enabled' => false, 'enrichment.openfda.enabled' => false, 'enrichment.dailymed.enabled' => false, 'enrichment.wikidata.enabled' => false]);
         config(['enrichment.thresholds.auto_accept' => 0.60]);
         config(['enrichment.thresholds.review' => 0.30]);
 
@@ -123,7 +123,7 @@ final class EnrichmentEngineTest extends TestCase
 
         $this->seedCatalog(5);
 
-        config(['enrichment.manual_provider.enabled' => true]);
+        config(['enrichment.local.enabled' => true, 'enrichment.rxnorm.enabled' => false, 'enrichment.openfda.enabled' => false, 'enrichment.dailymed.enabled' => false, 'enrichment.wikidata.enabled' => false]);
         config(['enrichment.drugs_api.enabled' => false]);
         config(['enrichment.thresholds.auto_accept' => 0.90]);
         config(['enrichment.thresholds.review' => 0.70]);

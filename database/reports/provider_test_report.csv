@@ -1,9 +1,9 @@
 metric,value
-total,5
-found,5
-not_found,0
-english_name,5
-arabic_name,5
+total,1
+found,0
+not_found,1
+english_name,0
+arabic_name,0
 barcode,0
 image,0
 manufacturer,0

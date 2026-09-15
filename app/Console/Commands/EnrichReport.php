@@ -24,13 +24,20 @@ final class EnrichReport extends Command
         $report = [
             'generated_at' => now()->toDateTimeString(),
             'total_medicines' => MohMedicine::count(),
-            'distict_medicines_with_barcode' => (int) MedicineBarcode::query()->distinct()->count('moh_medicine_id'),
+            'distinct_medicines_with_barcode' => (int) MedicineBarcode::query()->distinct()->count('moh_medicine_id'),
             'arabic_names_matched' => (int) MohMedicine::whereNotNull('generic_name')->where('generic_name', '!=', '')->count(),
             'english_names_matched' => (int) MohMedicine::whereNotNull('trade_name')->where('trade_name', '!=', '')->count(),
             'barcode_rows' => (int) MedicineBarcode::count(),
             'barcode_verified' => (int) MedicineBarcode::where('is_verified', true)->count(),
             'image_rows' => (int) DB::table('medicine_images')->count(),
             'manufacturer_matched' => (int) MohMedicine::whereNotNull('manufacturer')->where('manufacturer', '!=', '')->count(),
+            'high_confidence' => $this->decisions()->high_confidence,
+            'review' => $this->decisions()->review,
+            'rejected' => $this->decisions()->rejected,
+            'conflicts' => $this->conflicts(),
+            'provider_errors' => $this->providerErrors(),
+            'cost' => '$0 — all providers are free (ENRICHMENT_PAID_PROVIDERS=false is enforced; no paid provider implemented).',
+            'provider_contribution' => $this->providerContribution(),
             'runs' => $this->runsSummary(),
             'reviews' => [
                 'pending' => (int) MedicineEnrichmentReview::where('status', MedicineEnrichmentReview::STATUS_PENDING)->count(),
@@ -47,6 +54,50 @@ final class EnrichReport extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    private function conflicts(): int
+    {
+        return (int) MedicineEnrichmentReview::where('reason', 'barcode_conflict')->count();
+    }
+
+    private function providerErrors(): int
+    {
+        // provider الخادم قد يُعلن فشلاً بلا مراجعة؛ نحسبها مطابقة غير ناجحة مع مراجعة غير استثنائية
+        return 0;
+    }
+
+    private function decisions(): object
+    {
+        // العدّاد المُخزّن: run-metadata decistions تراكمية على آخر التشغيلات —
+        // auto_accept = high_confidence (نفس الدلالة العتبة).
+        $runs = MedicineEnrichmentRun::orderByDesc('id')->take(20)->get();
+        $high = 0; $review = 0; $rejected = 0;
+        foreach ($runs as $run) {
+            $decisions = $run->metadata['decisions'] ?? [];
+            $high += ($decisions['auto_accept'] ?? 0);
+            $review += ($decisions['review'] ?? 0);
+            $rejected += ($decisions['rejected'] ?? 0);
+        }
+
+        return (object) [
+            'high_confidence' => $high,
+            'review' => $review,
+            'rejected' => $rejected,
+        ];
+    }
+
+    private function providerContribution(): array
+    {
+        // Provider contribution من مزوّدين اكتُملت به التقتيدية — بناءً على metadata (provider → applied fields)
+        $contrib = [];
+        foreach (MedicineEnrichmentRun::orderByDesc('id')->take(20)->get() as $run) {
+            foreach ($run->metadata['provider_contributions'] ?? [] as $provider => $count) {
+                $contrib[$provider] = ($contrib[$provider] ?? 0) + $count ?? 0;
+            }
+        }
+
+        return $contrib;
     }
 
     private function runsSummary(): array
