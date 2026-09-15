@@ -1,0 +1,109 @@
+/* categories.css — أنماط مخصصة لصفحات إدارة الأقسام */
+
+/* ===== Stat Cards ===== */
+
+/* بطاقة needs_review قابلة للنقر */
+.stat-card-link {
+    text-decoration: none;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+.stat-card-link:hover {
+    box-shadow: var(--sh-md);
+    transform: translateY(-2px);
+}
+
+/* بطاقة needs_review > 0 — لون تحذيري */
+.stat-card-danger {
+    background: var(--danger-bg) !important;
+    border-color: rgba(220, 38, 38, .30) !important;
+}
+.stat-card-danger .stat-title {
+    color: var(--danger-text);
+}
+.stat-value.danger {
+    color: var(--danger-text);   /* كان #e11d48 = 4.28 ✗ */
+}
+
+/* ===== Accordion (Create/Edit) ===== */
+
+.cat-accordion {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+.cat-accordion[open] {
+    box-shadow: var(--sh-sm);
+}
+
+.cat-accordion-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+    list-style: none;
+    user-select: none;
+    transition: background 0.15s;
+}
+.cat-accordion-summary::-webkit-details-marker {
+    display: none;
+}
+.cat-accordion-summary:hover {
+    background: var(--canvas);
+}
+.cat-accordion-summary::after {
+    content: '';
+    margin-left: auto;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--ink-faint);
+    transition: transform 0.2s;
+}
+.cat-accordion[open] .cat-accordion-summary::after {
+    transform: rotate(180deg);
+}
+
+.cat-accordion-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--teal-mist);
+    color: var(--teal-text);   /* كان #0891b2 على #ecfeff = 3.54 ✗ */
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.cat-accordion-body {
+    padding: 20px;
+    border-top: 1px solid var(--line-soft);
+}
+
+/* ===== Search Indicator ===== */
+
+#search-indicator {
+    display: none;
+    align-items: center;
+    gap: 6px;
+}
+#search-indicator::before {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--focus-ring);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: cat-spin 0.6s linear infinite;
+}
+@keyframes cat-spin {
+    to { transform: rotate(360deg); }
+}

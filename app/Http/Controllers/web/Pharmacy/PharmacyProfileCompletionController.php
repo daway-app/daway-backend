@@ -62,8 +62,9 @@ class PharmacyProfileCompletionController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'password' => ['required', 'string', 'min:8', 'confirmed', Password::min(8)],
-            'password_confirmation' => ['required', 'string'],
+            // كلمة المرور اختيارية — الصيدلية اختارت كلمة مرورها عند التسجيل
+            'password' => ['nullable', 'string', 'min:8', 'confirmed', Password::min(8)],
+            'password_confirmation' => ['nullable', 'string'],
             'hours' => ['required', 'array'],
         ]);
 
@@ -87,14 +88,20 @@ class PharmacyProfileCompletionController extends Controller
                 ->withInput();
         }
 
-        // تحديث كلمة المرور
-        $user->update([
-            'password' => Hash::make($validated['password']),
-            'email' => ! empty($validated['email']) ? $validated['email'] : $user->email,
-        ]);
+        // تحديث كلمة المرور فقط إذا أرسلت (اختيارية)
+        if (! empty($validated['password'])) {
+            $user->update([
+                'password' => Hash::make($validated['password']),
+                'email' => ! empty($validated['email']) ? $validated['email'] : $user->email,
+            ]);
 
-        // H-13: إبطال توكنات API الصادرة للحساب بعد تعيين كلمة المرور
-        $user->tokens()->delete();
+            // H-13: إبطال توكنات API الصادرة للحساب بعد تعيين كلمة المرور
+            $user->tokens()->delete();
+        } else {
+            $user->update([
+                'email' => ! empty($validated['email']) ? $validated['email'] : $user->email,
+            ]);
+        }
 
         // تحديث بيانات الصيدلية
         $pharmacy->update([

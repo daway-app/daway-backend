@@ -1,0 +1,606 @@
+/* ==========================================================
+   tokens التصميم
+   ----------------------------------------------------------
+   ⚠️ المصدر الوحيد هو resources/css/tokens.css.
+   كانت هنا تعريفات مكرّرة (--teal-9xx / --gray-* / --white /
+   --accent-teal / --sidebar-width) بنفس الأسماء لكن بقيم
+   مستقلة — وهي سبب تفرّق اللوحة بين الصفحات. أُزيلت.
+   الأسماء القديمة صارت aliases في tokens.css.
+   ========================================================== */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+html.dark-mode {
+    background-color: var(--canvas);
+}
+
+/* ==========================================================
+   خلفية ثابتة هادئة واحترافية — تدرجات شعاعية ناعمة جداً
+   بدون أي عناصر متحركة (الطبقة فارغة في الـ layout)
+   ========================================================== */
+.bg-anim-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(900px 520px at 88% -8%, rgba(28, 114, 166, .06), transparent 60%),
+        radial-gradient(760px 460px at 0% 104%, rgba(123, 193, 183, .07), transparent 55%);
+}
+
+body.dark-mode .bg-anim-layer {
+    background:
+        radial-gradient(1200px 700px at 12% -10%, #123244 0%, transparent 55%),
+        linear-gradient(165deg, #050C12 0%, #071722 45%, #0B2333 100%);
+}
+
+body.dark-mode {
+    background:
+        radial-gradient(1200px 700px at 12% -10%, #123244 0%, transparent 55%),
+        linear-gradient(165deg, #050C12 0%, #071722 45%, #0B2333 100%);
+    background-attachment: fixed;
+}
+
+/* انتقال دخول خفيف لمحتوى الصفحة عند التنقل بين الصفحات */
+@keyframes pageFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.main-content {
+    animation: pageFadeIn .35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .main-content { animation: none; }
+}
+
+body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* الوضع الداكن: كل القيم في tokens.css — هنا الخلفية واللون فقط. */
+body.dark-mode {
+    background-color: var(--canvas);
+    color: var(--ink);
+}
+
+/* Main layout container */
+.app-layout {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Breadcrumb (rendered by layouts/app.blade.php @yield('breadcrumb')) */
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--gray-600);
+    margin-bottom: 18px;
+}
+.breadcrumb-nav a {
+    color: var(--gray-600);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.breadcrumb-nav a:hover {
+    color: var(--accent-teal-dark);
+}
+.breadcrumb-nav .sep {
+    color: var(--gray-400);
+}
+.breadcrumb-nav .cur {
+    color: var(--gray-800);
+    font-weight: 700;
+}
+body.dark-mode .breadcrumb-nav,
+body.dark-mode .breadcrumb-nav a {
+    color: var(--ink-soft);
+}
+body.dark-mode .breadcrumb-nav .cur {
+    color: var(--ink);
+}
+body.dark-mode .breadcrumb-nav .sep {
+    color: var(--ink-faint);
+}
+
+/* Main content wrapper adjustments */
+.main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: calc(100% - var(--sidebar-width));
+    transition: background-color 0.3s;
+    /* يلغي الفراغ الذي تتركه عُقد النصوص البيضاء (أسطر فارغة) أعلى الشريط العلوي */
+    font-size: 0;
+}
+
+.main-wrapper > * {
+    font-size: 16px;
+}
+
+/* Apply margin based on page direction */
+html[dir="rtl"] .main-wrapper {
+    margin-right: var(--sidebar-width);
+}
+
+html[dir="ltr"] .main-wrapper {
+    margin-left: var(--sidebar-width);
+}
+
+.main-content {
+    padding: 28px;
+    flex: 1;
+}
+
+/* Table styles */
+.table-container {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--r-md);
+    overflow-x: auto;
+    margin-top: 20px;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
+}
+
+th, td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 14px;
+    white-space: nowrap;
+    transition: border-color 0.3s;
+}
+
+th {
+    background-color: var(--gray-50);
+    color: var(--gray-600);
+    font-weight: 600;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--r-md);
+    padding: 20px;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Styles for the full notifications page */
+.notifications-page-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: var(--white); /* Using --white for consistency */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--gray-200); /* Using --gray-200 for consistency */
+}
+.notifications-page-container h1 {
+    color: var(--gray-800); /* Using --gray-800 for consistency */
+    font-size: 24px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.notifications-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+.notifications-actions .btn {
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: var(--accent-teal);
+    color: white;
+    border: none;
+    transition: background-color 0.2s ease;
+}
+.notifications-actions .btn:hover {
+    background-color: var(--accent-teal-dark);
+}
+.notifications-list-full {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.notification-item-full {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: var(--gray-50); /* Using --gray-50 for consistency */
+    border: 1px solid var(--gray-200); /* Using --gray-200 for consistency */
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    position: relative;
+    opacity: 0.75; /* مظلل للمقروء */
+}
+.notification-item-full:hover {
+    background-color: var(--gray-100); /* Using --gray-100 for consistency */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    opacity: 1;
+}
+.notification-item-full.unread {
+    background-color: var(--unread-notification-bg);
+    border-color: var(--accent-teal);
+    opacity: 1;
+}
+.notification-item-full.unread:hover {
+    background-color: var(--unread-notification-bg);
+}
+.notification-icon-full {
+    flex-shrink: 0;
+    margin-inline-end: 15px;
+}
+.notification-icon-full .icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+.notification-icon-full .icon-wrapper.bg-red { background-color: var(--danger-fill); }
+.notification-icon-full .icon-wrapper.bg-blue { background-color: var(--info-fill); }
+.notification-icon-full .icon-wrapper.bg-gray { background-color: #64748b; }
+
+.notification-content-full {
+    flex-grow: 1;
+}
+.notification-message-full {
+    margin: 0;
+    font-size: 16px;
+    color: var(--gray-800); /* Using --gray-800 for consistency */
+    line-height: 1.4;
+}
+.notification-item-full.unread .notification-message-full {
+    font-weight: 600;
+}
+.notification-time-full {
+    font-size: 12px;
+    color: var(--gray-600); /* Using --gray-600 for consistency */
+    margin-top: 5px;
+    display: block;
+}
+.notification-status-full {
+    position: absolute;
+    top: 10px;
+    background-color: var(--accent-teal);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+html[dir="rtl"] .notification-status-full {
+    left: 10px;
+    right: auto;
+}
+html[dir="ltr"] .notification-status-full {
+    right: 10px;
+    left: auto;
+}
+.no-notifications-full {
+    text-align: center;
+    padding: 30px;
+    color: var(--gray-600); /* Using --gray-600 for consistency */
+    font-size: 16px;
+}
+
+/* Dark mode adjustments for the full notifications page */
+body.dark-mode .notifications-page-container {
+    background-color: var(--white);
+    border-color: var(--gray-200);
+}
+body.dark-mode .notifications-actions .btn {
+    background-color: var(--accent-teal);
+}
+body.dark-mode .notifications-actions .btn:hover {
+    background-color: var(--accent-teal-dark);
+}
+body.dark-mode .notification-item-full {
+    background-color: var(--gray-50);
+    border-color: var(--gray-200);
+}
+body.dark-mode .notification-item-full:hover {
+    background-color: var(--gray-100);
+}
+body.dark-mode .notification-item-full.unread {
+    background-color: var(--unread-notification-bg);
+    border-color: var(--accent-teal);
+}
+body.dark-mode .notification-icon-full .icon-wrapper.bg-red { background-color: #dc2626; }
+body.dark-mode .notification-icon-full .icon-wrapper.bg-blue { background-color: #2563eb; }
+body.dark-mode .notification-icon-full .icon-wrapper.bg-gray { background-color: #4b5563; }
+
+/* ==========================================
+   Site Toast Notifications (بديل alert المتصفح)
+   ========================================== */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    inset-inline-start: 50%;
+    transform: translateX(50%);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: min(420px, calc(100vw - 32px));
+}
+[dir="ltr"] .toast-container { transform: translateX(-50%); }
+.site-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 18px;
+    border-radius: 14px;
+    background: #0f172a;
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 600;
+    box-shadow: 0 12px 32px rgba(0,0,0,.25);
+    pointer-events: auto;
+    animation: toastIn .3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    border-inline-start: 4px solid var(--accent-teal, #1C72A6);
+}
+.site-toast.out { animation: toastOut .25s ease forwards; }
+.site-toast .toast-icon {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 800;
+    flex-shrink: 0;
+}
+.site-toast.success { border-inline-start-color: #16A34A; }
+.site-toast.success .toast-icon { background: var(--success-fill); }
+.site-toast.error { border-inline-start-color: #DC2626; }
+.site-toast.error .toast-icon { background: var(--danger-fill); }
+.site-toast.warning { border-inline-start-color: #CA8A04; }
+.site-toast.warning .toast-icon { background: var(--warning-fill); }
+.site-toast.info { border-inline-start-color: #1C72A6; }
+.site-toast.info .toast-icon { background: #1C72A6; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-14px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-10px) scale(.96); } }
+body.dark-mode .site-toast { background: #1a1a1e; border: 1px solid rgba(255,255,255,.08); border-inline-start-width: 4px; }
+
+/* ==========================================================
+   ترقيم Laravel (view الافتراضي) — تنسيق عالمي
+   ==========================================================
+   view الترقيم الافتراضي يعتمد كليًا على أصناف Tailwind:
+     sm:hidden · hidden sm:flex · w-5 h-5 · border · rounded-md
+   وهذا المشروع لا يحمّل Tailwind إطلاقًا (لا @import "tailwindcss").
+   النتيجة قبل هذه القواعد:
+     • بلوكا الترقيم (موبايل + ديسكتوب) يظهران معًا
+     • أسهم SVG بحجمها الافتراضي الضخم
+     • روابط بلا أي تنسيق (أزرق مُسطَّر)
+   القواعد هنا عالمية لأن بعض الصفحات لا تحمّل أي ملف CSS خاص
+   (مثال: medicines/show بلا @vite)، فتنسيقها يجب أن يأتي من الـlayout.
+   ملاحظة أمان: role="navigation" لا يُستخدم في المشروع إلا في الترقيم.
+   ========================================================== */
+
+nav[role="navigation"] {
+    display: block;
+    width: 100%;
+}
+
+/* بلوك الموبايل (sm:hidden) — يُخفى، ونعرض بلوك الديسكتوب فقط */
+nav[role="navigation"] > div:first-child {
+    display: none !important;
+}
+
+/* بلوك الديسكتوب: عمود — نص "عرض X إلى Y" في سطر، والأزرار في سطر تحته.
+   (كان صفًّا واحدًا فيلتفّ النص فوق الأزرار بشكل غير متوازن) */
+nav[role="navigation"] > div:last-child {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* نص "عرض X إلى Y من Z" */
+nav[role="navigation"] > div:last-child > div:first-child p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+/* حاوية أزرار الصفحات */
+nav[role="navigation"] > div:last-child > div:last-child {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+nav[role="navigation"] > div:last-child > div:last-child > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* الأزرار: أرقام الصفحات + أسهم السابق/التالي */
+nav[role="navigation"] a,
+nav[role="navigation"] span[aria-current="page"] > span,
+nav[role="navigation"] span[aria-disabled="true"] > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+}
+
+nav[role="navigation"] a:hover {
+    background: #f1f5f9;
+    border-color: var(--line-strong);
+    color: #0f172a;
+}
+
+/* الصفحة الحالية */
+nav[role="navigation"] span[aria-current="page"] > span {
+    background: #1C72A6;
+    border-color: #1C72A6;
+    color: #ffffff;
+}
+
+/* المعطّل (سهم ممنوع / فاصل النقاط) */
+nav[role="navigation"] span[aria-disabled="true"] > span {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+/* ⚠️ الأسهم — جوهر العطل: بلا هذا تظهر بحجمها الافتراضي الضخم
+   لأن w-5 h-5 صنف Tailwind غير محمَّل في المشروع. */
+nav[role="navigation"] svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* الوضع الليلي */
+body.dark-mode nav[role="navigation"] > div:last-child > div:first-child p { color: var(--ink-faint); }
+
+body.dark-mode nav[role="navigation"] a,
+body.dark-mode nav[role="navigation"] span[aria-disabled="true"] > span {
+    background: var(--paper);
+    border-color: var(--line-strong);
+    color: var(--ink);
+}
+
+body.dark-mode nav[role="navigation"] a:hover {
+    background: var(--teal-mist);
+    border-color: var(--teal-text);
+    color: var(--teal-text);
+}
+
+body.dark-mode nav[role="navigation"] span[aria-current="page"] > span {
+    background: var(--teal-primary);
+    border-color: var(--teal-primary);
+    color: #ffffff;
+}
+
+/* شاشات صغيرة: أزرار أصغر ومسافات أضيق حتى لا يلتفّ الصف بشكل سيئ */
+@media (max-width: 640px) {
+    nav[role="navigation"] > div:last-child { gap: 8px; }
+    nav[role="navigation"] > div:last-child > div:first-child p { font-size: 11.5px; }
+    nav[role="navigation"] > div:last-child > div:last-child { gap: 4px; }
+
+    nav[role="navigation"] a,
+    nav[role="navigation"] span[aria-current="page"] > span,
+    nav[role="navigation"] span[aria-disabled="true"] > span {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 9px;
+        font-size: 12px;
+    }
+
+    nav[role="navigation"] svg { width: 16px; height: 16px; }
+}
+
+/* ==========================================================
+   خلية نص مقتطعة — أسماء الأدوية الطويلة
+   ==========================================================
+   الاسم التجاري/المادة الفعالة الطويلة كانت تمدّ عمود الجدول
+   وتكسر التخطيط. هنا حدّ أقصى افتراضي، وما بعده يُقتطع النص
+   بثلاث نقاط (…) بدل كسر العرض.
+   تُستخدم في قائمتي الأدوية: admin (medicines/index) والصيدلية
+   (pharmacy/medicines/index).
+   ========================================================== */
+
+.med-cell-text {
+    /* ضروري داخل flex: بدونه لا يقبل العنصر الانكماش دون حدّ المحتوى */
+    min-width: 0;
+    max-width: 240px;
+}
+
+.med-cell-text > strong,
+.med-cell-text > small,
+.med-ingredient-text {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* المادة الفعالة لها عمود مستقل أيضًا — حدّها حتى لا تمدّ الجدول */
+.med-ingredient-text {
+    max-width: 240px;
+}
+
+@media (max-width: 1100px) {
+    .med-cell-text { max-width: 180px; }
+    .med-ingredient-text { max-width: 180px; }
+}
+
+@media (max-width: 768px) {
+    .med-cell-text { max-width: 140px; }
+    .med-ingredient-text { max-width: 140px; }
+}
+
+/* نفس المعالجة لاسم الدواء في جدول مخزون الصيدلية (pharmacies/show).
+   statistics.css يجعله display:block بلا حدّ عرض — فالاسم الطويل يمدّ العمود. */
+.med-name {
+    display: block;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+    .med-name { max-width: 180px; }
+}
+
+@media (max-width: 768px) {
+    .med-name { max-width: 140px; }
+}
+
+/* ==========================================================
+   غلاف جدول قابل للتمرير أفقيًا
+   ==========================================================
+   الجداول العريضة على الشاشات الضيقة كانت تمدّ عرض الصفحة.
+   .tbl-wrap موجود في القوالب (medicines/show · pharmacies/show)
+   لكنه لم يكن معرَّفًا في أي ملف CSS — نعرّفه هنا.
+   ========================================================== */
+.tbl-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}

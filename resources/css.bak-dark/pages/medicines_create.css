@@ -1,0 +1,87 @@
+/* تنسيقات النموذج لتجنب التداخل وضمان ظهورها بشكل مثالي */
+.card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-sm);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.card-head {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--line-soft);
+}
+.card-head h2 {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0;
+}
+.card-body {
+    padding: 24px;
+}
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.fg {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+}
+.fl {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+}
+.fc {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--field-bg);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+.fc:focus {
+    border-color: var(--focus-ring);
+    background: var(--field-bg);
+}
+.req {
+    color: var(--danger-text);
+}
+.btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-p {
+    background-color: var(--teal-primary);
+    color: #ffffff;
+    box-shadow: var(--sh-sm);
+}
+.btn-p:hover {
+    background-color: var(--teal-deep);
+}
+.btn-s {
+    background-color: var(--paper);
+    color: var(--ink-soft);
+    border: 1px solid var(--line-strong);
+}
+.btn-s:hover {
+    background-color: var(--canvas);
+}

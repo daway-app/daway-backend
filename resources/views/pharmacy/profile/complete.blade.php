@@ -3,7 +3,9 @@
 @section('title', __('pharmacy.profile.complete.title'))
 
 @section('content')
-    @vite(['resources/css/pages/users_create.css'])
+    {{-- pharmacy_hub.js يهيّئ الخريطة (initMap) ويدير النوافذ — نفس آلية صفحة تعديل البروفايل --}}
+    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js', 'resources/css/pages/users_create.css'])
+    @include('partials.pharmacy-hub-i18n')
 
     <div class="page-wrapper" style="max-width: 1100px;">
         <div class="main-card">
@@ -97,20 +99,20 @@
                             @enderror
                         </div>
 
-                        <!-- قسم كلمة المرور -->
+                        <!-- قسم كلمة المرور (اختياري — الصيدلية اختارت كلمة مرورها عند التسجيل) -->
                         <div class="complete-security-head">
                             <div class="lock-ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
                             <div>
                                 <h3>@lang('pharmacy.profile.complete.password_section')</h3>
-                                <p>@lang('pharmacy.profile.complete.password_hint')</p>
+                                <p>@lang('pharmacy.profile.complete.password_optional_hint')</p>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('pharmacy.profile.complete.new_password') <span>*</span></label>
+                            <label>@lang('pharmacy.profile.complete.new_password')</label>
                             <div class="input-with-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                <input type="password" name="password" id="newPass" class="form-control" required minlength="8" autocomplete="new-password">
+                                <input type="password" name="password" id="newPass" class="form-control" minlength="8" autocomplete="new-password" placeholder="@lang('pharmacy.profile.complete.password_optional_placeholder')">
                                 <button type="button" class="eye-toggle" onclick="togglePass('newPass', this)" tabindex="-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 </button>
@@ -121,10 +123,10 @@
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('pharmacy.profile.complete.confirm_password') <span>*</span></label>
+                            <label>@lang('pharmacy.profile.complete.confirm_password')</label>
                             <div class="input-with-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                <input type="password" name="password_confirmation" id="confPass" class="form-control" required autocomplete="new-password">
+                                <input type="password" name="password_confirmation" id="confPass" class="form-control" autocomplete="new-password" placeholder="@lang('pharmacy.profile.complete.password_optional_placeholder')">
                                 <button type="button" class="eye-toggle" onclick="togglePass('confPass', this)" tabindex="-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 </button>
@@ -147,18 +149,17 @@
                             <h3>@lang('pharmacy.profile.location_title')</h3>
                         </div>
                         <div class="complete-card-body">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label>@lang('pharmacy.profile.latitude_label') <span>*</span></label>
-                                    <input type="text" name="latitude" id="latitude" class="form-control" value="{{ old('latitude') }}" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>@lang('pharmacy.profile.longitude_label') <span>*</span></label>
-                                    <input type="text" name="longitude" id="longitude" class="form-control" value="{{ old('longitude') }}" required>
-                                </div>
-                            </div>
-                            <div id="pharmacyMap" class="complete-map" data-lat="{{ old('latitude', 31.5016) }}" data-lng="{{ old('longitude', 34.4668) }}"></div>
+                            {{-- الخريطة التفاعلية تُدار من pharmacy_hub.js (نفس حوار تعديل الموقع في البروفايل) --}}
+                            <div id='pharmacyMapEdit' class='complete-map' data-lat='{{ old('latitude', 31.5016) }}' data-lng='{{ old('longitude', 34.4668) }}'></div>
+                            <input type='hidden' name='latitude' id='latitude' value='{{ old('latitude') }}'>
+                            <input type='hidden' name='longitude' id='longitude' value='{{ old('longitude') }}'>
                             <p class="hint-under">@lang('pharmacy.profile.map_hint')</p>
+                            @error('latitude')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                            @error('longitude')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
 

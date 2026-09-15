@@ -1,0 +1,360 @@
+/* ==========================================
+   8. تنسيقات نماذج التعديل والإدخال (Forms)
+   ========================================== */
+.form-card {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    overflow: hidden;
+    margin-bottom: 24px;
+    animation: fadeInUp 0.6s var(--ease-out-expo) both;
+}
+
+.form-card-header {
+    padding: 22px 28px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.form-card-header h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+.form-card-body {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--line-strong);
+    font-size: 14px;
+    color: #0f172a;
+    background: #ffffff;
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    border-color: #1C72A6;
+    box-shadow: 0 0 0 3px rgba(28, 114, 166, 0.15);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-pro-primary {
+    background: #1C72A6;
+    color: #ffffff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(28, 114, 166, 0.2);
+}
+
+.btn-pro-primary:hover {
+    background: #155E85;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(28, 114, 166, 0.3);
+}
+
+.btn-pro-secondary {
+    background: #ffffff;
+    color: var(--ink-soft);
+    border: 1px solid var(--line-strong);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-pro-secondary:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+/* ==========================================
+   9. تنسيقات صفحة تفاصيل الصيدلية (Pharmacy Details)
+   ========================================== */
+.col-7-5 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 1024px) {
+    .col-7-5 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.t-av {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    font-weight: 800;
+}
+
+.t-av.ph {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.pid {
+    background: #f1f5f9;
+    color: #334155;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: monospace;
+    border: 1px solid #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pid button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-size: 13px;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.pid button:hover {
+    color: #1C72A6;
+}
+
+.bdg {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bdg-ok { background: var(--success-bg); color: #065f46; }
+.bdg-warn { background: #fef3c7; color: #92400e; }
+
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 20px;
+}
+
+.breadcrumb-nav a {
+    color: #1C72A6;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.breadcrumb-nav a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-nav .cur {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.breadcrumb-nav .sep {
+    color: var(--ink-faint);
+}
+
+/* تنسيق أزرار الإجراءات العلوية */
+.action-btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-secondary-pro {
+    background: #ffffff;
+    color: #334155;
+    border: 1px solid var(--line-strong);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary-pro:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.btn-danger-pro {
+    background: #ffffff;
+    color: var(--danger-text);
+    border: 1px solid var(--danger-text);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-danger-pro:hover {
+    background: var(--danger-fill);
+    color: #ffffff;
+    border-color: #ef4444;
+}
+
+/* ==========================================
+   10. تنسيقات صفحة تفاصيل الصيدلية (العناصر الملوّنة)
+   ========================================== */
+.pharmacy-page-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+}
+
+.info-label {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+}
+
+.info-value {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.table-card-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+.med-name {
+    color: #0f172a;
+    font-size: 14px;
+    display: block;
+}
+
+.med-ing {
+    font-size: 12px;
+    color: var(--ink-soft);
+}
+
+.qty-text {
+    font-weight: 600;
+    color: #334155;
+}
+
+.bdg-err { background: #fee2e2; color: #991b1b; }
+
+/* ==========================================
+   11. Dark Mode Styles — صفحة تفاصيل الصيدلية
+   ========================================== */
+body.dark-mode .form-card,
+body.dark-mode .table-card {
+    background-color: var(--paper);
+    border-color: var(--line);
+}
+
+body.dark-mode .form-card-header {
+    background-color: var(--canvas);
+    border-color: var(--line);
+}
+
+body.dark-mode .form-card-header h2,
+body.dark-mode .pharmacy-page-title,
+body.dark-mode .table-card-title,
+body.dark-mode .info-value,
+body.dark-mode .med-name,
+body.dark-mode .qty-text,
+body.dark-mode .breadcrumb-nav .cur {
+    color: var(--ink);
+}
+
+body.dark-mode .info-label,
+body.dark-mode .med-ing {
+    color: var(--ink-soft);
+}
+
+body.dark-mode .table-card-header {
+    border-bottom-color: var(--line);
+}
+
+body.dark-mode .table-card table th {
+    background-color: var(--canvas);
+    color: var(--ink-soft);
+    border-color: var(--line);
+}
+
+body.dark-mode .table-card table td {
+    border-color: var(--line);
+}
+
+body.dark-mode .table-card table tbody tr:hover {
+    background-color: var(--canvas);
+}
+
+body.dark-mode .form-card hr {
+    border-top-color: var(--line);
+}
+
+body.dark-mode .pid {
+    background-color: var(--line-soft);
+    color: var(--ink);
+    border-color: var(--line-strong);
+}
+
+body.dark-mode .t-av.ph {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+body.dark-mode .bdg-ok { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+body.dark-mode .bdg-warn { background: rgba(250, 204, 21, 0.12); color: #facc15; }
+body.dark-mode .bdg-err { background: rgba(239, 68, 68, 0.12); color: #f87171; }

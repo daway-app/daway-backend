@@ -15,8 +15,8 @@ class PharmacyChangePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_password' => ['required', 'string', 'current_password'],
-            'password' => ['required', 'string', 'confirmed', Password::min(8)],
+            'current_password' => ['nullable', 'string', 'required_with:password', 'current_password'],
+            'password' => ['nullable', 'string', 'confirmed', Password::min(8)],
         ];
     }
 

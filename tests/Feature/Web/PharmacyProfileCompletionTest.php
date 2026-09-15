@@ -195,6 +195,62 @@ class PharmacyProfileCompletionTest extends TestCase
         $this->assertNotNull($pharmacy->fresh()->profile_completed_at);
     }
 
+    public function test_profile_completion_password_is_optional(): void
+    {
+        $user = User::factory()->pharmacy()->create([
+            'password' => Hash::make('PH-COMPL5'),
+        ]);
+        $pharmacy = Pharmacy::factory()->create([
+            'user_id' => $user->id,
+            'profile_completed_at' => null,
+        ]);
+
+        // بدون حقول كلمة المرور إطلاقاً — كلمة المرور التي اختارتها الصيدلية عند
+        // التسجيل تبقى كما هي، والإكمال ينجح
+        $response = $this->actingAs($user)->post(route('pharmacy.profile.complete'), [
+            'phone_number' => '0599123456',
+            'address' => 'Main St, Gaza',
+            'region' => 'Rimal',
+            'latitude' => 31.5,
+            'longitude' => 34.4,
+            'hours' => [
+                'Saturday' => ['open_time' => '09:00', 'close_time' => '17:00'],
+            ],
+        ]);
+
+        $response->assertRedirect(route('pharmacy.dashboard.index'));
+
+        $pharmacy->refresh();
+        $this->assertNotNull($pharmacy->profile_completed_at);
+        $this->assertTrue(Hash::check('PH-COMPL5', $user->fresh()->password), 'كلمة المرور الأصلية يجب أن تبقى دون تغيير');
+    }
+
+    public function test_profile_completion_password_change_still_works_when_provided(): void
+    {
+        $user = User::factory()->pharmacy()->create([
+            'password' => Hash::make('PH-COMPL6'),
+        ]);
+        $pharmacy = Pharmacy::factory()->create([
+            'user_id' => $user->id,
+            'profile_completed_at' => null,
+        ]);
+
+        $this->actingAs($user)->post(route('pharmacy.profile.complete'), [
+            'phone_number' => '0599123456',
+            'address' => 'Main St, Gaza',
+            'region' => 'Rimal',
+            'latitude' => 31.5,
+            'longitude' => 34.4,
+            'password' => 'changed-in-completion',
+            'password_confirmation' => 'changed-in-completion',
+            'hours' => [
+                'Saturday' => ['open_time' => '09:00', 'close_time' => '17:00'],
+            ],
+        ])->assertRedirect(route('pharmacy.dashboard.index'));
+
+        $this->assertTrue(Hash::check('changed-in-completion', $user->fresh()->password));
+    }
+
     public function test_profile_edit_all_fields_optional_and_empty_does_not_wipe_data(): void
     {
         $user = User::factory()->pharmacy()->create();

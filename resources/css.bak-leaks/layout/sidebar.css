@@ -1,0 +1,458 @@
+/* ==========================================
+   1. ط·آ§ط¸â€‍ط¸â€¦ط·ع¾ط·ط›ط¸ظ¹ط·آ±ط·آ§ط·ع¾ ط¸ث†ط·آ§ط¸â€‍ط·ع¾ط¸â€ ط·آ³ط¸ظ¹ط¸â€ڑ ط·آ§ط¸â€‍ط·آ£ط·آ³ط·آ§ط·آ³ط¸ظ¹
+   ========================================== */
+:root {
+    /* --sidebar-width تُعرَّف في tokens.css */
+    /* --sidebar-bg هنا #155E85 مقصود: الشريط الجانبي تيل غامق حتى في الوضع
+       الفاتح (اختيار تصميمي) — لا يُستبدل بـ--paper. */
+    --sidebar-bg: #155E85;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --active-bg: rgba(255, 255, 255, 0.12);
+    --active-glow: #7BC1B7;
+    /* #7BC1B7 على #155E85 = 3.42:1 ✗ — رُفع إلى درجة تمرّ 4.55:1 */
+    --text-muted: #A5D9D9;
+    --badge-bg: #1C72A6;
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.dark-mode {
+    --sidebar-bg: #061019;
+    --sidebar-bg-2: #0A1E2B;
+    /* كانت rgba(56,189,248,.35) = 2.10:1 على #061019 — الحدّ كان غير مرئي */
+    --sidebar-border: var(--line-strong);
+    --active-bg: rgba(28, 114, 166, 0.22);
+    --active-glow: #4A9BD4;
+    /* كانت #82A2B4 — وُحّدت على token الأساس */
+    --text-muted: var(--ink-faint);
+    --badge-bg: #1C72A6;
+}
+
+@keyframes sidebarSlideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* في RTL السايدبار ملاصق للحافة اليمنى؛ الانزلاق نحو الحافة كان يقطع النصوص أثناء الدخول — عكس الاتجاه */
+@keyframes sidebarSlideInRtl {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+html[dir="rtl"] .sidebar-logo-header,
+html[dir="rtl"] .nav-section {
+    animation-name: sidebarSlideInRtl;
+}
+
+@keyframes logoPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.sidebar-pro {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--sidebar-bg);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    user-select: none;
+    position: fixed;
+    top: 0;
+    z-index: 1000;
+    overflow: hidden;
+    transition: background-color 0.3s;
+}
+
+html[dir="rtl"] .sidebar-pro {
+    right: 0;
+    border-left: 1px solid var(--sidebar-border);
+}
+
+html[dir="ltr"] .sidebar-pro {
+    left: 0;
+    border-right: 1px solid var(--sidebar-border);
+}
+
+body.dark-mode .sidebar-pro {
+    background: linear-gradient(190deg, #061019 0%, #0A1E2B 55%, #0D2635 100%);
+}
+
+.sidebar-content-wrapper::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar-content-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+.sidebar-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+/* ==========================================
+   2. ط·آ±ط·آ£ط·آ³ ط·آ§ط¸â€‍ط¸â€ڑط·آ§ط·آ¦ط¸â€¦ط·آ© - Logo Section (ط¸â€¦ط·آ­ط·آ¯ط·آ« ط¸ث†ط¸â€¦ط¸ئ’ط·آ¨ط·آ±)
+   ========================================== */
+.sidebar-logo-header {
+    display: flex;
+    align-items: center;
+    gap: 18px; /* ط¸â€¦ط·آ³ط·آ§ط¸ظ¾ط·آ© ط¸â€¦ط·ع¾ط¸â€ ط·آ§ط·آ³ط¸â€ڑط·آ© ط¸â€¦ط·آ¹ ط·آ§ط¸â€‍ط·آ­ط·آ¬ط¸â€¦ ط·آ§ط¸â€‍ط·آ¬ط·آ¯ط¸ظ¹ط·آ¯ */
+    margin-bottom: 32px;
+    padding: 0 4px;
+    animation: sidebarSlideIn 0.5s var(--ease-smooth) both;
+}
+
+.logo-icon-box {
+    width: 64px;
+    height: 64px;
+    background: #ffffff;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 16px rgba(28, 114, 166, 0.35);
+    transition: transform 0.3s var(--ease-spring);
+    cursor: pointer;
+    overflow: hidden;
+    padding: 4px;
+}
+
+.sidebar-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 16px;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-logo-header:hover .logo-icon-box {
+    animation: logoPulse 1.2s infinite ease-in-out;
+}
+
+.logo-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.1;
+}
+
+.logo-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    display: block;
+}
+
+/* ==========================================
+   3. ط¸â€¦ط·آ¬ط¸â€¦ط¸ث†ط·آ¹ط·آ§ط·ع¾ ط·آ§ط¸â€‍ط·ع¾ط·آ¨ط¸ث†ط¸ظ¹ط·آ¨ ط¸ث†ط·آ§ط¸â€‍ط·آ±ط¸ث†ط·آ§ط·آ¨ط·آ·
+   ========================================== */
+.nav-section {
+    margin-bottom: 22px;
+    animation: sidebarSlideIn 0.6s var(--ease-smooth) both;
+}
+
+.section-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    padding: 0 8px;
+}
+
+body.dark-mode .section-label {
+    /* كانت #71717A = 3.96:1 على #061019 */
+    color: var(--ink-faint);
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 6px;
+    position: relative;
+    transition: all 0.25s var(--ease-smooth);
+}
+
+.nav-item .nav-text {
+    flex: 1;
+}
+
+.nav-item .nav-icon {
+    font-size: 18px;
+    opacity: 0.9;
+    transition: transform 0.3s var(--ease-spring);
+}
+
+.nav-badge {
+    background: var(--badge-bg);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.nav-item::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) scaleY(0);
+    width: 4px;
+    height: 60%;
+    background: var(--active-glow);
+    transition: transform 0.3s var(--ease-spring);
+}
+
+html[dir="rtl"] .nav-item::before {
+    right: 0;
+    border-radius: 4px 0 0 4px;
+}
+
+html[dir="ltr"] .nav-item::before {
+    left: 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.nav-item:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-item:hover .nav-icon {
+    transform: scale(1.15);
+}
+
+.nav-item.active {
+    color: #ffffff;
+    background: linear-gradient(90deg, rgba(28,114,166,.22), rgba(28,114,166,0));
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-inline-start: 3px solid #4A9BD4;
+}
+
+.nav-item.active::before {
+    transform: translateY(-50%) scaleY(1);
+}
+
+/* ==========================================
+   4. ط¸â€¦ط¸â€‍ط¸ظ¾ ط·آ§ط¸â€‍ط¸â€¦ط·آ³ط·ع¾ط·آ®ط·آ¯ط¸â€¦ ط·آ§ط¸â€‍ط·آ³ط¸ظ¾ط¸â€‍ط¸ظ¹ (Footer Profile)
+   ========================================== */
+.user-profile-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 8px;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 16px;
+    flex-shrink: 0;
+    animation: sidebarSlideIn 0.7s var(--ease-smooth) both;
+    cursor: pointer;
+}
+
+/* ترتيب ثابت: الصورة والاسم عند الحافة الخارجية دائماً، وأيقونة الخروج عند الحافة الداخلية */
+.user-profile-footer .more-options-btn {
+    order: 2;
+}
+
+.user-profile-footer .user-info-group {
+    order: 1;
+}
+
+/* بالإنجليزي (LTR): الصورة/الاسم عند الحافة الخارجية وزر الخروج نحو الداخل */
+html[dir="ltr"] .user-profile-footer .more-options-btn {
+    order: 2;
+}
+
+html[dir="ltr"] .user-profile-footer .user-info-group {
+    order: 1;
+}
+
+.user-info-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* داخل مجموعة الملف: الاسم خارجاً والصورة بجانبه نحو الداخل */
+.user-info-group > div:first-child {
+    order: 1;
+}
+
+.user-info-group > div:last-child {
+    order: 2;
+}
+
+.avatar-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(155deg, #4A9BD4, #1C72A6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(28, 114, 166, 0.3);
+    transition: transform 0.3s var(--ease-spring);
+    background-size: cover;
+    background-position: center;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff !important;
+    line-height: 1.2;
+}
+
+.user-role {
+    font-size: 11.5px;
+    color: var(--text-muted) !important;
+    margin-top: 2px;
+}
+
+.more-options-btn {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 6px;
+    line-height: 1;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-profile-footer:hover .more-options-btn {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.user-profile-footer:hover .avatar-box {
+    transform: scale(1.06);
+}
+
+/* نافذة تأكيد مشتركة (خروج / تبديل حالة) */
+.confirm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.confirm-modal-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 30px;
+    width: 380px;
+    max-width: 92vw;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    animation: fadeInUp 0.25s ease forwards;
+}
+
+.confirm-modal-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: var(--warning-bg);
+    color: var(--warning-text);
+    font-size: 26px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-modal-card h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.confirm-modal-card p {
+    margin: 0 0 22px;
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.confirm-modal-actions .modal-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    background: #f8fafc;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.confirm-modal-actions .modal-btn:hover {
+    background: #eef2f7;
+}
+
+.confirm-modal-actions .modal-btn.primary {
+    background: var(--accent-teal, #1C72A6);
+    border-color: transparent;
+    color: #fff;
+}
+
+.confirm-modal-actions .modal-btn.primary:hover {
+    background: var(--accent-teal-dark, #086f87);
+}
+
+body.dark-mode .confirm-modal-card {
+    /* كانت لوحة zinc (#27272a/#3f3f46) منفصلة عن الكحلي — وُحّدت على tokens */
+    background: var(--paper);
+    border: 1px solid var(--line);
+}
+
+body.dark-mode .confirm-modal-card h3 {
+    color: var(--ink);
+}
+
+body.dark-mode .confirm-modal-card p {
+    color: var(--ink-soft);
+}
+
+body.dark-mode .confirm-modal-actions .modal-btn {
+    background: var(--canvas);
+    border-color: var(--line-strong);
+    color: var(--ink);
+}
+
+body.dark-mode .confirm-modal-actions .modal-btn:hover {
+    background: var(--teal-mist);
+}

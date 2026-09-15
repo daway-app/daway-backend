@@ -144,6 +144,9 @@ class PharmacyProfileController extends Controller
 
     /**
      * تغيير كلمة المرور للصيدلية وإلغاء إجبارية التغيير.
+     *
+     * تغيير كلمة المرور اختياري: الصيدلية اختارت كلمة مرورها عند التسجيل —
+     * الطلب بلا حقول يُلغي فقط إلزامية التغيير (must_change_password).
      */
     public function changePassword(PharmacyChangePasswordRequest $request): JsonResponse
     {
@@ -151,16 +154,25 @@ class PharmacyProfileController extends Controller
 
         abort_unless($user->role === 'pharmacy', 403, 'غير مصرح');
 
-        $user->password = Hash::make($request->input('password'));
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->input('password'));
+        }
         $user->must_change_password = false;
         $user->save();
 
-        // H-13: إبطال كل التوكنات القديمة (بما فيها الحالي) — يتوقع التطبيق إعادة تسجيل دخول
-        $user->tokens()->delete();
+        if ($request->filled('password')) {
+            // H-13: إبطال كل التوكنات القديمة (بما فيها الحالي) — يتوقع التطبيق إعادة تسجيل دخول
+            $user->tokens()->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى',
+            ]);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى',
+            'message' => 'تم بنجاح',
         ]);
     }
 
