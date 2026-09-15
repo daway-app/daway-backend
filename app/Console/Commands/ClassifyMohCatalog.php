@@ -348,10 +348,10 @@ class ClassifyMohCatalog extends Command
             return [];
         }
 
-        // بوابة product_class — قبل أي مطابقة نصية
-        if (! $this->isFoodSupplement($medicine)) {
-            return [];
-        }
+        // بوابة نوع الصف: مكمّلات غذائية منفذة لكل القواعد — أما فلاتر الأعراض
+        // (group_key = symptoms على قسم الأدوية) فتُطبَّق على كل الأدوية البشرية
+        // على اختلاف product_class، لأن تصنيفها حسب العرض في الـtrade_name/الوصف.
+        $isFoodSupplement = $this->isFoodSupplement($medicine);
 
         $haystack = $this->buildHaystack($medicine);
         $linked = [];
@@ -361,6 +361,10 @@ class ClassifyMohCatalog extends Command
 
             // قسم فرعي غير مُبذَر/غير نشط ⇒ لا رابط
             if ($subcategory === null) {
+                continue;
+            }
+
+            if (! $isFoodSupplement && ($subcategory->group_key ?? '') !== 'symptoms') {
                 continue;
             }
 

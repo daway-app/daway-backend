@@ -39,6 +39,14 @@ class SubcategorySeeder extends Seeder
         ['category' => 'vitamins-supplements', 'name_ar' => 'مكملات الأوميغا', 'name_en' => 'Omega Supplements', 'slug' => 'omega-supplements', 'group_key' => 'supplements', 'sort_order' => 2],
         ['category' => 'vitamins-supplements', 'name_ar' => 'مكملات الحديد', 'name_en' => 'Iron Supplements', 'slug' => 'iron-supplements', 'group_key' => 'supplements', 'sort_order' => 3],
         ['category' => 'vitamins-supplements', 'name_ar' => 'مكملات الكالسيوم والمغنيسيوم', 'name_en' => 'Calcium & Magnesium Supplements', 'slug' => 'calcium-magnesium-supplements', 'group_key' => 'supplements', 'sort_order' => 4],
+
+        // قسم الأدوية — فلاتر "بما تشعر؟" (أعراض) — القسم الرئيسي: medicines
+        ['category' => 'medicines', 'name_ar' => 'السعال والتهاب الحلق', 'name_en' => 'Cough & Sore Throat', 'slug' => 'cough-sore-throat', 'group_key' => 'symptoms', 'sort_order' => 1],
+        ['category' => 'medicines', 'name_ar' => 'الزكام والانفلونزا', 'name_en' => 'Cold & Flu', 'slug' => 'cold-flu', 'group_key' => 'symptoms', 'sort_order' => 2],
+        ['category' => 'medicines', 'name_ar' => 'الآلام والصداع', 'name_en' => 'Pain & Headache', 'slug' => 'pain-headache', 'group_key' => 'symptoms', 'sort_order' => 3],
+        ['category' => 'medicines', 'name_ar' => 'مشاكل المعدة', 'name_en' => 'Stomach Care', 'slug' => 'stomach-care', 'group_key' => 'symptoms', 'sort_order' => 4],
+        ['category' => 'medicines', 'name_ar' => 'الحساسية', 'name_en' => 'Allergy', 'slug' => 'allergy', 'group_key' => 'symptoms', 'sort_order' => 5],
+        ['category' => 'medicines', 'name_ar' => 'الحمى والحرارة', 'name_en' => 'Fever & Temperature', 'slug' => 'fever-temperature', 'group_key' => 'symptoms', 'sort_order' => 6],
     ];
 
     public function run(): void
@@ -128,6 +136,32 @@ class SubcategorySeeder extends Seeder
             'calcium-magnesium-supplements' => [
                 'latin' => '/\b(?:calcium|magnesium|\bmag\b)\b/iu',
                 'arabic' => ['الكالسيوم', 'كالسيوم', 'المغنيسيوم', 'مغنيسيوم'],
+            ],
+
+            // ───── فلاتر "بما تشعر؟" — قسم الأدواوية (الربط بالنص على الأعراض) ─────
+            'cough-sore-throat' => [
+                'latin' => '/\b(?:cough|throat|lozenge|pectus|dextromethorphan|guaifenesin)\b/iu',
+                'arabic' => ['سعال', 'الكحة', 'التهاب الحلق', 'الحلق', 'مضمضة', 'بلعوم'],
+            ],
+            'cold-flu' => [
+                'latin' => '/\b(?:cold|flu|influenza|congestion|rhinitis|decongestant|antihistamine)\b/iu',
+                'arabic' => ['زكام', 'الزكام', 'انفلونزا', 'إنفلونزا', 'الانفلونزا', 'احتقان'],
+            ],
+            'pain-headache' => [
+                'latin' => '/\b(?:pain|analges|headache|ibuprofen|paracetamol|aspirin|diclofenac|naproxen|antispasmodic)\b/iu',
+                'arabic' => ['ألم', 'الم', 'الآلام', 'صداع', 'مسكن', 'المسكنات', 'مضاد التشنج'],
+            ],
+            'stomach-care' => [
+                'latin' => '/\b(?:stomach|gastric|gastro|acidity|antacid|reflux|laxative|diarrhea|diarrhoea|indigestion)\b/iu',
+                'arabic' => ['المعدة', 'معدة', 'حموضة', 'مضاد حموضة', 'إمساك', 'اسهال', 'إسهال', 'هضم'],
+            ],
+            'allergy' => [
+                'latin' => '/\b(?:allerg|antihistamine|loratadine|cetirizine|levocetirizine|desloratadine|montelukast)\b/iu',
+                'arabic' => ['حساسية', 'الحساسية', 'مضاد الهيستامين'],
+            ],
+            'fever-temperature' => [
+                'latin' => '/\b(?:fever|antipyretic|paracetamol)\b/iu',
+                'arabic' => ['حمى', 'الحمى', 'حرارة', 'خافض حرارة'],
             ],
         ];
     }
