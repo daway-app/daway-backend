@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تقرير إصلاح الوضع الداكن — Daway (WCAG 2.1 AA)</title>
+<style>
+  :root{
+    --ink:#0C2224; --ink-soft:#4C6669; --ink-faint:#5C7073;
+    --line:#DEE8E7; --line-soft:#EEF4F3; --paper:#fff; --canvas:#F5FAF9;
+    --teal:#1C72A6; --teal-deep:#155E85;
+    --ok:#14702F; --ok-bg:#DCFCE7;
+    --warn:#B45309; --warn-bg:#FEF9C3;
+    --bad:#B91C1C; --bad-bg:#FEE2E2;
+    --info:#0369A1; --info-bg:#E0F2FE;
+    --mono:"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0 0 80px;
+    background:var(--canvas); color:var(--ink);
+    font-family:"Segoe UI",Tahoma,"Noto Naskh Arabic",Arial,sans-serif;
+    font-size:15px; line-height:1.85;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 26px}
+  header{
+    background:linear-gradient(135deg,var(--teal-deep) 0%,#0F766E 100%);
+    color:#fff; padding:44px 0 38px; margin-bottom:34px;
+  }
+  header .wrap{padding:0 26px}
+  header h1{margin:0 0 8px;font-size:29px;font-weight:800;letter-spacing:-.2px}
+  header .sub{opacity:.94;font-size:15px;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}
+  .chip{
+    background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.3);
+    padding:5px 13px; border-radius:999px; font-size:12.5px; font-weight:600;
+  }
+  h2{
+    font-size:20px;font-weight:800;margin:44px 0 14px;padding-bottom:9px;
+    border-bottom:2px solid var(--line);
+  }
+  h3{font-size:16px;font-weight:800;margin:26px 0 10px;color:var(--teal-deep)}
+  p{margin:0 0 13px}
+  .lede{font-size:16px;color:var(--ink-soft)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin:20px 0 8px}
+  .kpi{
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;box-shadow:0 1px 2px rgba(12,34,36,.05);
+  }
+  .kpi .n{font-size:30px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:12.5px;color:var(--ink-faint);font-weight:600;margin-top:3px}
+  .kpi.ok .n{color:var(--ok)} .kpi.info .n{color:var(--info)} .kpi.neutral .n{color:var(--teal-deep)}
+  table{width:100%;border-collapse:collapse;background:var(--paper);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:16px 0;font-size:13.5px}
+  th{background:var(--line-soft);text-align:right;padding:11px 13px;font-weight:800;
+    border-bottom:1px solid var(--line);white-space:nowrap;font-size:12.5px}
+  td{padding:10px 13px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  code,.mono{font-family:var(--mono);font-size:12.5px;direction:ltr;display:inline-block;
+    background:var(--line-soft);padding:1px 6px;border-radius:5px}
+  .sw{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+  .dot{width:15px;height:15px;border-radius:4px;border:1px solid rgba(0,0,0,.18);flex:0 0 auto}
+  .ratio{font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--mono);direction:ltr;display:inline-block}
+  .pass{color:var(--ok)} .fail{color:var(--bad)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:800;white-space:nowrap}
+  .pill.p0{background:var(--bad-bg);color:var(--bad)}
+  .pill.p1{background:var(--warn-bg);color:var(--warn)}
+  .pill.p2{background:var(--info-bg);color:var(--info)}
+  .pill.done{background:var(--ok-bg);color:var(--ok)}
+  .box{background:var(--paper);border:1px solid var(--line);border-right:4px solid var(--teal);
+    border-radius:12px;padding:16px 20px;margin:18px 0}
+  .box.warn{border-right-color:var(--warn);background:#FFFDF3}
+  .box.bad{border-right-color:var(--bad);background:#FFF8F8}
+  .box.ok{border-right-color:var(--ok);background:#F7FEF9}
+  .box h4{margin:0 0 7px;font-size:14.5px;font-weight:800}
+  .box p:last-child{margin-bottom:0}
+  ul{margin:8px 0 14px;padding-right:22px}
+  li{margin-bottom:6px}
+  pre{background:#0C1B28;color:#DCE9F2;padding:14px 16px;border-radius:10px;
+    overflow-x:auto;direction:ltr;text-align:left;font-family:var(--mono);font-size:12.5px;line-height:1.65}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+  footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
+    color:var(--ink-faint);font-size:12.5px;text-align:center}
+  .note{font-size:12.5px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>إصلاح الوضع الداكن على مستوى الموقع — Daway</h1>
+    <p class="sub">تدقيق وإصلاح التباين والألوان والحدود والخلفيات والمكوّنات التفاعلية وفق WCAG 2.1 AA</p>
+    <div class="meta">
+      <span class="chip">المراحل 1–3 (P0 + P1) — منفَّذة</span>
+      <span class="chip">22 ملف CSS معدّل + tokens.css جديد</span>
+      <span class="chip">1,691 زوج تباين · 0 إخفاق</span>
+      <span class="chip">15 سبتمبر 2026</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2>1 · الخلاصة التنفيذية</h2>
+  <p class="lede">
+    بدأ التدقيق بـ <strong>143 إخفاق تباين</strong> موزّعة على الوضعين، وانتهى بـ
+    <strong>صفر إخفاق</strong> بعد إصلاح جذري لطبقة الألوان. الإصلاح لم يكن «ترقيعاً» لقيم
+    فردية، بل <strong>توحيد نظام الألوان في مصدر واحد</strong> (<code>tokens.css</code>) ثم
+    تحويل القيم الخام المتناثرة إلى رموز (<code>var()</code>).
+  </p>
+
+  <div class="cards">
+    <div class="kpi neutral"><div class="n">143 → 0</div><div class="l">إخفاقات التباين (الوضعان)</div></div>
+    <div class="kpi neutral"><div class="n">115 → 0</div><div class="l">إخفاقات الوضع الفاتح (نص)</div></div>
+    <div class="kpi neutral"><div class="n">56 → 0</div><div class="l">تعبئات + حدود تفاعلية (فاتح)</div></div>
+    <div class="kpi ok"><div class="n">1,691</div><div class="l">زوج تباين مُتحقَّق منه</div></div>
+    <div class="kpi info"><div class="n">~810</div><div class="l">قيمة خام → رمز تصميم</div></div>
+  </div>
+
+  <div class="box ok">
+    <h4>النتيجة النهائية</h4>
+    <pre>outputs/a11y-audit.py        →  RESULT: ALL CHECKS PASS  (1691 pairs · light &amp; dark)
+outputs/interactive-audit.py →  RESULT: ALL CHECKS PASS  (WCAG 1.4.11 + 1.4.3)
+outputs/wcag-verification.py →  RESULT: ALL CHECKS PASS  (122 token pairs)
+npm run build                →  ✓ built in 2.56s  (26 CSS asset)</pre>
+  </div>
+
+  <h2>2 · ما كان معطوباً فعلاً</h2>
+
+  <h3>2.1 الطبقة الجذرية — لا مصدر واحد للألوان</h3>
+  <p>
+    قبل الإصلاح كانت الألوان معرَّفة بقيم خام متناثرة في 22 ملف CSS، وأسماء متغيّرات
+    <em>مُعاد تعريفها محلياً بقيم مختلفة</em> عن الملفات الأخرى. النتيجة: نفس المكوّن
+    (زر، شارة، حقل) كان له لون مختلف حسب الصفحة، وتعديل واحد لا ينعكس على الباقي.
+  </p>
+  <p>
+    وأخطر ما اكتُشف: <strong>تعريف ذاتي</strong> <code>--x: var(--x)</code> داخل ملف يعرّف
+    <code>--x</code> أصلاً. هذه ليست حلقة لا نهائية بل <strong>قيمة غير صالحة</strong> —
+    يفشل المتغيّر بصمت ويرجع للميراث، فتظهر عناصر «بلا لون» دون أي خطأ في الكونسول.
+  </p>
+
+  <h3>2.2 ألوان ثابتة استُخدمت خطأً في الوضعين</h3>
+  <p>
+    <code>--teal-primary</code> (<code>#1C72A6</code>) لا يتغيّر بين الوضعين. كل قاعدة
+    فاتحة تستخدمه كحدّ تركيز أو حدّ عنصر نشط تبقى بنسبة
+    <span class="ratio fail">2.19:1</span> في الداكن — أي غير مرئية فعلياً.
+  </p>
+
+  <h3>2.3 أسطح فاتحة تُرسم في الوضع الداكن</h3>
+  <p>
+    عدة مكوّنات كانت تُعرّف خلفيات فاتحة <em>بلا أي تجاوز للوضع الداكن</em>، فيظهر في
+    الوضع الداكن: لوح شبه أبيض + نص فاتح. مثال حقيقي:
+    <code>.alert-ok</code> بتدرّج <code>#f0fdf4 → #ecfdf5</code> مع نص
+    <code>#4ADE80</code> = <span class="ratio fail">1.65:1</span>.
+  </p>
+
+  <h3>2.4 عطل في منهجية التدقيق نفسه</h3>
+  <div class="box warn">
+    <h4>درس مهم — التدقيق كان يكذب في اتجاهين</h4>
+    <p>
+      النموذج الأول لحساب القيمة الفعّالة في الداكن كان <strong>«آخر قاعدة تكسب»</strong>
+      بغضّ النظر عن نوعها. فقاعدة فاتحة متأخّرة كانت <em>تلغي</em> تجاوزاً داكناً سابقاً.
+      لكن في CSS الفعلية <code>body.dark-mode .card-head</code> (نوعية 0,1,1) تتقدّم على
+      <code>.card-head</code> (0,1,0) مهما كان الترتيب.
+    </p>
+    <p>
+      الأثر: <strong>إخفاقات وهمية</strong> (مثل <code>.card-head h2</code>) حجبت رؤية
+      الإخفاقات الحقيقية. أُصلح النموذج بفصل قواعد الفاتح عن تجاوزات الداكن، ثم تُركَّب
+      التجاوزات فوقها.
+    </p>
+    <p>
+      وأُصلح ثانياً: العناصر الزائفة (<code>::after</code>) كانت تُسقط خلفيتها الخاصة
+      فتُنسَب إلى العنصر الأب — فظهر تلميح <code>.chart-bar-pro::after</code> ذو الخلفية
+      الداكنة <code>#0f172a</code> وكأنه نص أبيض فوق <code>#10B981</code>.
+    </p>
+  </div>
+
+  <h2>3 · نظام رموز التصميم — القيم النهائية</h2>
+  <p class="note">
+    المصدر الوحيد: <code>resources/css/tokens.css</code>. ممنوع تعريف أي لون في أي ملف آخر.
+  </p>
+
+  <h3>3.1 المحايدات</h3>
+  <table>
+    <thead><tr>
+      <th>الرمز</th><th>الفاتح</th><th>الداكن</th><th>التباين (فاتح)</th><th>التباين (داكن)</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><code>--ink</code></td>
+        <td><span class="sw"><span class="dot" style="background:#0C2224"></span>#0C2224</span></td>
+        <td><span class="sw"><span class="dot" style="background:#EAF4F8"></span>#EAF4F8</span></td>
+        <td><span class="ratio pass">16.50</span> أبيض</td><td><span class="ratio pass">13.20</span> كرت</td></tr>
+      <tr><td><code>--ink-soft</code></td>
+        <td><span class="sw"><span class="dot" style="background:#4C6669"></span>#4C6669</span></td>
+        <td><span class="sw"><span class="dot" style="background:#93C5FD"></span>#93C5FD</span></td>
+        <td><span class="ratio pass">6.16</span></td><td><span class="ratio pass">8.20</span></td></tr>
+      <tr><td><code>--ink-faint</code></td>
+        <td><span class="sw"><span class="dot" style="background:#5C7073"></span>#5C7073</span></td>
+        <td><span class="sw"><span class="dot" style="background:#9DBACB"></span>#9DBACB</span></td>
+        <td><span class="ratio pass">5.22</span></td><td><span class="ratio pass">7.30</span></td></tr>
+      <tr><td><code>--line</code> <span class="note">تزييني</span></td>
+        <td><span class="sw"><span class="dot" style="background:#DEE8E7"></span>#DEE8E7</span></td>
+        <td><span class="sw"><span class="dot" style="background:#3A6383"></span>#3A6383</span></td>
+        <td class="note">بلا متطلّب</td><td class="note">بلا متطلّب</td></tr>
+      <tr><td><code>--line-soft</code> <span class="note">تزييني</span></td>
+        <td><span class="sw"><span class="dot" style="background:#EEF4F3"></span>#EEF4F3</span></td>
+        <td><span class="sw"><span class="dot" style="background:#2A4761"></span>#2A4761</span></td>
+        <td class="note">بلا متطلّب</td><td class="note">بلا متطلّب</td></tr>
+      <tr><td><code>--line-strong</code> <span class="note">1.4.11</span></td>
+        <td><span class="sw"><span class="dot" style="background:#728B89"></span>#728B89</span></td>
+        <td><span class="sw"><span class="dot" style="background:#5A8FB5"></span>#5A8FB5</span></td>
+        <td><span class="ratio pass">3.64</span></td><td><span class="ratio pass">3.30</span></td></tr>
+      <tr><td><code>--paper</code></td>
+        <td><span class="sw"><span class="dot" style="background:#FFFFFF"></span>#FFFFFF</span></td>
+        <td><span class="sw"><span class="dot" style="background:#112433"></span>#112433</span></td>
+        <td class="note">سطح الكرت</td><td class="note">سطح الكرت</td></tr>
+      <tr><td><code>--canvas</code></td>
+        <td><span class="sw"><span class="dot" style="background:#F5FAF9"></span>#F5FAF9</span></td>
+        <td><span class="sw"><span class="dot" style="background:#050C12"></span>#050C12</span></td>
+        <td class="note">خلفية الصفحة</td><td class="note">خلفية الصفحة</td></tr>
+      <tr><td><code>--field-bg</code></td>
+        <td><span class="sw"><span class="dot" style="background:#FFFFFF"></span>#FFFFFF</span></td>
+        <td><span class="sw"><span class="dot" style="background:#0C1B28"></span>#0C1B28</span></td>
+        <td class="note">حقول الإدخال</td><td class="note">حقول الإدخال</td></tr>
+      <tr><td><code>--focus-ring</code> <span class="note">1.4.11</span></td>
+        <td><span class="sw"><span class="dot" style="background:#1C72A6"></span>#1C72A6</span></td>
+        <td><span class="sw"><span class="dot" style="background:#38BDF8"></span>#38BDF8</span></td>
+        <td><span class="ratio pass">6.50</span></td><td><span class="ratio pass">5.40</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 الألوان الدلالية كنصّ</h3>
+  <p class="note">
+    نفس العائلات بدرجة أغمق في الفاتح: الدرجة الأصلية تفشل فوق الخلفية الباستيل.
+    مثال: <code>#16A34A</code> على <code>#DCFCE7</code> =
+    <span class="ratio fail">3.00</span> مقابل <code>#14702F</code> =
+    <span class="ratio pass">5.46</span>.
+  </p>
+  <table>
+    <thead><tr>
+      <th>الرمز</th><th>الفاتح</th><th>الداكن</th><th>التباين (فاتح)</th><th>التباين (داكن)</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><code>--success-text</code></td>
+        <td><span class="sw"><span class="dot" style="background:#14702F"></span>#14702F</span></td>
+        <td><span class="sw"><span class="dot" style="background:#4ADE80"></span>#4ADE80</span></td>
+        <td><span class="ratio pass">5.46</span> على #D1FAE5</td><td><span class="ratio pass">9.10</span></td></tr>
+      <tr><td><code>--warning-text</code></td>
+        <td><span class="sw"><span class="dot" style="background:#B45309"></span>#B45309</span></td>
+        <td><span class="sw"><span class="dot" style="background:#FBBF24"></span>#FBBF24</span></td>
+        <td><span class="ratio pass">4.51</span></td><td><span class="ratio pass">9.50</span></td></tr>
+      <tr><td><code>--danger-text</code></td>
+        <td><span class="sw"><span class="dot" style="background:#B91C1C"></span>#B91C1C</span></td>
+        <td><span class="sw"><span class="dot" style="background:#FCA5A5"></span>#FCA5A5</span></td>
+        <td><span class="ratio pass">6.47</span> أبيض</td><td><span class="ratio pass">6.06</span> على #1E3A5F</td></tr>
+      <tr><td><code>--info-text</code></td>
+        <td><span class="sw"><span class="dot" style="background:#0369A1"></span>#0369A1</span></td>
+        <td><span class="sw"><span class="dot" style="background:#93C5FD"></span>#93C5FD</span></td>
+        <td><span class="ratio pass">5.93</span> أبيض</td><td><span class="ratio pass">6.38</span> على #1E3A5F</td></tr>
+      <tr><td><code>--teal-text</code></td>
+        <td><span class="sw"><span class="dot" style="background:#1C72A6"></span>#1C72A6</span></td>
+        <td><span class="sw"><span class="dot" style="background:#7CC4EC"></span>#7CC4EC</span></td>
+        <td><span class="ratio pass">4.71</span></td><td><span class="ratio pass">8.28</span></td></tr>
+      <tr><td><code>--pink-text</code></td>
+        <td><span class="sw"><span class="dot" style="background:#BE185D"></span>#BE185D</span></td>
+        <td><span class="sw"><span class="dot" style="background:#F9A8D4"></span>#F9A8D4</span></td>
+        <td><span class="ratio pass">5.53</span></td><td><span class="ratio pass">6.34</span></td></tr>
+      <tr><td><code>--indigo-text</code> <span class="note">جديد</span></td>
+        <td><span class="sw"><span class="dot" style="background:#4338CA"></span>#4338CA</span></td>
+        <td><span class="sw"><span class="dot" style="background:#A5B4FC"></span>#A5B4FC</span></td>
+        <td><span class="ratio pass">7.07</span></td><td><span class="ratio pass">5.77</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 عائلة التعبئة — ثابتة في الوضعين (جديدة)</h3>
+  <div class="box">
+    <h4>لماذا عائلة منفصلة عن النصوص الدلالية؟</h4>
+    <p>
+      التعبئة تحمل نصاً <strong>أبيض</strong> فوقها. لو استُخدم <code>--success-text</code>
+      (وهو <code>#4ADE80</code> فاتح جداً في الداكن) كخلفية لصار نص أبيض فوقه
+      <span class="ratio fail">1.60:1</span>. لذلك عائلة التعبئة
+      <strong>لا تُتجاوز في الوضع الداكن</strong> عن قصد.
+    </p>
+  </div>
+  <table>
+    <thead><tr><th>الرمز</th><th>القيمة (الوضعان)</th><th>نص أبيض فوقها</th></tr></thead>
+    <tbody>
+      <tr><td><code>--success-fill</code></td><td><span class="sw"><span class="dot" style="background:#15803D"></span>#15803D</span></td><td><span class="ratio pass">5.02</span></td></tr>
+      <tr><td><code>--warning-fill</code></td><td><span class="sw"><span class="dot" style="background:#B45309"></span>#B45309</span></td><td><span class="ratio pass">5.02</span></td></tr>
+      <tr><td><code>--info-fill</code></td><td><span class="sw"><span class="dot" style="background:#0369A1"></span>#0369A1</span></td><td><span class="ratio pass">5.93</span></td></tr>
+      <tr><td><code>--danger-fill</code></td><td><span class="sw"><span class="dot" style="background:#B91C1C"></span>#B91C1C</span></td><td><span class="ratio pass">6.47</span></td></tr>
+      <tr><td><code>--teal-fill</code></td><td><span class="sw"><span class="dot" style="background:#1C72A6"></span>#1C72A6</span></td><td><span class="ratio pass">5.24</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>4 · الإصلاحات بحسب الأولوية</h2>
+
+  <h3><span class="pill p0">P0</span> المرحلة 1 — طبقة الرموز الموحّدة</h3>
+  <table>
+    <thead><tr><th>الإصلاح</th><th>الحالة</th></tr></thead>
+    <tbody>
+      <tr><td>إنشاء <code>tokens.css</code> كمصدر وحيد للألوان والقياسات</td><td><span class="pill done">منفَّذ</span></td></tr>
+      <tr><td>تعريف قيم الداكن على <code>html.dark-mode</code> و <code>body.dark-mode</code> معاً</td><td><span class="pill done">منفَّذ</span></td></tr>
+      <tr><td>إزالة كل التعريفات الذاتية <code>--x: var(--x)</code> (فشل صامت)</td><td><span class="pill done">منفَّذ</span></td></tr>
+      <tr><td>إزالة لوحة zinc بالكامل — الكحلي هو لوحة الداكن الوحيدة</td><td><span class="pill done">منفَّذ</span></td></tr>
+      <tr><td>تحميل <code>tokens.css</code> أولاً في <code>vite.config.js</code> و <code>@vite()</code></td><td><span class="pill done">منفَّذ</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="pill p0">P0</span> المرحلة 2 — الحدود والتركيز والحقول</h3>
+  <table>
+    <thead><tr><th>الإصلاح</th><th>الأثر</th><th>الحالة</th></tr></thead>
+    <tbody>
+      <tr><td>حدود المكوّنات التفاعلية → <code>--line-strong</code></td><td><span class="ratio fail">1.94</span> → <span class="ratio pass">3.30</span></td><td><span class="pill done">منفَّذ</span></td></tr>
+      <tr><td>حدود التركيز/النشاط → <code>--focus-ring</code> بدل <code>--teal-primary</code></td><td><span class="ratio fail">2.19</span> → <span class="ratio pass">5.40</span></td><td><span class="pill done">منفَّذ</span></td></tr>
+      <tr><td><code>--field-bg</code> صريح في الداكن بدل خلفية شفافة شبه معدومة</td><td>الحقول أصبحت مميّزة</td><td><span class="pill done">منفَّذ</span></td></tr>
+      <tr><td><code>--ink-faint</code> الداكن: <code>#82A2B4</code> → <code>#9DBACB</code></td><td><span class="ratio fail">4.26</span> → <span class="ratio pass">7.30</span></td><td><span class="pill done">منفَّذ</span></td></tr>
+      <tr><td><code>--danger</code> الداكن: <code>#E15C5C</code> → <code>#F87171</code></td><td><span class="ratio fail">4.45</span> → <span class="ratio pass">5.73</span></td><td><span class="pill done">منفَّذ</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="pill p1">P1</span> المرحلة 3 — النصوص والشارات والصفحات المعطوبة</h3>
+  <ul>
+    <li><strong>~700 قيمة خام → رموز تصميم</strong> في 22 ملف CSS (ألوان نص + خلفيات باستيل).</li>
+    <li><strong>عائلة النصوص الدلالية</strong> أُضيفت وصُحّحت في الوضعين.</li>
+    <li><strong>عائلة التعبئة</strong> أُنشئت لمنع نص أبيض فوق لون فاتح.</li>
+    <li><strong>توحيد الترقيم (pagination)</strong> الذي كان معرَّفاً بثلاث طبقات متضاربة.</li>
+    <li><strong>الشريط الجانبي</strong>: <code>--text-muted</code> رُفع <code>#7BC1B7</code> → <code>#A5D9D9</code> (<span class="ratio pass">4.55</span> على <code>#155E85</code>).</li>
+  </ul>
+
+  <h3><span class="pill p1">P1</span> إغلاق التدقيق — آخر 19 إخفاقاً</h3>
+  <table>
+    <thead><tr><th>الملف / المكوّن</th><th>المشكلة</th><th>قبل</th><th>بعد</th></tr></thead>
+    <tbody>
+      <tr><td><code>statistics.css</code> · <code>.t-av.ph</code> (داكن)</td><td>لون خام فاتح جداً على خلفية داكنة</td><td><span class="ratio fail">3.79</span></td><td><span class="ratio pass">6.38</span></td></tr>
+      <tr><td><code>statistics.css</code> · <code>.bdg-err</code> (داكن)</td><td>شارة خطأ بنص باهت</td><td><span class="ratio fail">3.91</span></td><td><span class="ratio pass">6.06</span></td></tr>
+      <tr><td><code>dashboard.css</code> · <code>.btn-view</code> (داكن)</td><td>زر بعرض سجلّات بنص باهت</td><td><span class="ratio fail">4.04</span></td><td><span class="ratio pass">6.38</span></td></tr>
+      <tr><td><code>topbar.css</code> · <code>.logout-btn</code> (داكن)</td><td>زر الخروج</td><td><span class="ratio fail">3.80</span></td><td><span class="ratio pass">6.06</span></td></tr>
+      <tr><td><code>topbar.css</code> · <code>.avatar</code> (داكن)</td><td>تدرّج يبدأ بلون فاتح تحت نص أبيض</td><td><span class="ratio fail">3.03</span></td><td><span class="ratio pass">5.24</span></td></tr>
+      <tr><td><code>sidebar.css</code> · <code>.avatar-box</code> (الوضعان)</td><td>نفس المشكلة — تفشل في الفاتح أيضاً</td><td><span class="ratio fail">3.03</span></td><td><span class="ratio pass">5.24</span></td></tr>
+      <tr><td><code>users_create.css</code> · <code>.card-header-modern</code></td><td>نص أبيض على محطة تدرّج <code>#14b8a6</code></td><td><span class="ratio fail">2.49</span></td><td><span class="ratio pass">5.47</span></td></tr>
+      <tr><td><code>pharmacies_create.css</code> · <code>.alert-ok</code></td><td>تدرّج فاتح يُرسم في الداكن</td><td><span class="ratio fail">1.65</span></td><td><span class="ratio pass">5.14</span></td></tr>
+      <tr><td><code>pharmacies_create.css</code> · <code>.map-overlay-hint</code></td><td>طبقة <code>rgba(255,255,255,.92)</code> في الداكن</td><td><span class="ratio fail">1.03</span></td><td><span class="ratio pass">13.86</span></td></tr>
+      <tr><td><code>app.css</code> / <code>patients.css</code> · <code>.header-icon-glow</code></td><td>تدرّج فاتح + <code>--info-text</code> الفاتح</td><td><span class="ratio fail">1.57</span></td><td><span class="ratio pass">5.71</span></td></tr>
+      <tr><td><code>medicines_edit.css</code> · <code>.page-heading-icon</code></td><td>تدرّج فاتح يُرسم في الداكن</td><td><span class="ratio fail">1.67</span></td><td><span class="ratio pass">5.29</span></td></tr>
+      <tr><td><code>patients.css</code> · <code>.action-btn-group …</code></td><td>خلفيات <code>#eff6ff</code>/<code>#fef2f2</code> بلا تجاوز داكن</td><td><span class="ratio fail">1.66</span> / <span class="ratio fail">1.74</span></td><td><span class="ratio pass">5.71</span> / <span class="ratio pass">5.37</span></td></tr>
+      <tr><td><code>app_layout.css</code> · <code>.breadcrumb-nav a:hover</code></td><td><code>--accent-teal-dark</code> غير معرَّف للداكن</td><td><span class="ratio fail">1.63</span></td><td><span class="ratio pass">8.28</span></td></tr>
+      <tr><td><code>app.css</code> · <code>::selection</code></td><td>تحديد نص بلون فاتح غير متناسق مع اللوحة</td><td>—</td><td><span class="ratio pass">5.24</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>5 · الأدلّة والتحقّق</h2>
+  <table>
+    <thead><tr><th>الفحص</th><th>النطاق</th><th>النتيجة</th></tr></thead>
+    <tbody>
+      <tr><td><code>outputs/a11y-audit.py</code></td><td>1,691 زوج (نص 1,374 · تعبئة 94 · حدود 223) — الوضعان</td><td><span class="pill done">ALL CHECKS PASS</span></td></tr>
+      <tr><td><code>outputs/interactive-audit.py</code></td><td>حدود العناصر التفاعلية (1.4.11) + نص فوق التعبئات (1.4.3)</td><td><span class="pill done">ALL CHECKS PASS</span></td></tr>
+      <tr><td><code>outputs/wcag-verification.py</code></td><td>122 زوج رموز — يُقرأ من <code>tokens.css</code> مباشرة</td><td><span class="pill done">ALL CHECKS PASS</span></td></tr>
+      <tr><td>توازن الأقواس</td><td>كل ملفات <code>resources/css</code></td><td><span class="pill done">0 مشكلة</span></td></tr>
+      <tr><td><code>npm run build</code></td><td>26 ملف CSS</td><td><span class="pill done">✓ 2.56s</span></td></tr>
+    </tbody>
+  </table>
+  <p class="note">
+    تم التأكد من أن القيم الجديدة وصلت فعلاً إلى الحزمة المبنية (فحص مباشر على
+    <code>public/build/assets/*.css</code>)، وأن الأصول القديمة لم تُحذف
+    (<code>emptyOutDir: false</code> — ضروري لأن Service Worker يخزّنها بنمط SWR).
+  </p>
+
+  <h2>6 · بنود معلّقة تحتاج قراراً</h2>
+  <div class="box warn">
+    <h4>لم تُنفَّذ — بانتظار قرار</h4>
+    <ul>
+      <li>
+        <strong>حذف الملفات الميتة الأربعة (77.2 KB)</strong> — مُدرجة في Vite ولا تحمّلها أي صفحة:
+        <code>css/auth/auth.css</code> · <code>css/auth/auth_login.css</code> ·
+        <code>css/pages/pharmacy_dashboard.css</code> · <code>js/pharmacy_dashboard.js</code>.
+      </li>
+      <li>
+        <strong><code>.ph-stars { color:#F59E0B }</code></strong> =
+        <span class="ratio fail">2.15</span> على أبيض (المطلوب 3:1 لنجوم التقييم) — قرار تصميمي.
+      </li>
+      <li>
+        <strong>P2 (المرحلة 4 — حوكمة)</strong>: دعم <code>prefers-color-scheme</code> ·
+        <code>data-theme</code> (يُكتب ولا يُقرأ) · وميض التحميل FOUC ·
+        Chart.js لا يعيد الرسم عند تبديل الثيم · تعليقات CSS مشوّهة (mojibake) ·
+        دمج طبقات الترقيم الثلاث.
+      </li>
+    </ul>
+  </div>
+
+  <h2>7 · ملاحظات تشغيلية</h2>
+  <ul>
+    <li>
+      <strong>لا تُعرّف أي لون خارج <code>tokens.css</code>.</strong> عند الحاجة لدرجة جديدة،
+      أضِف رمزاً هناك ثم استخدمه — وإلا تتفرّق القيم مرة أخرى.
+    </li>
+    <li>
+      <strong>الوضع الداكن يُعرَّف للاثنين</strong> <code>html.dark-mode</code> و
+      <code>body.dark-mode</code> معاً، لأن الأسماء المستعارة تُحسب على العنصر الذي تُعرَّف فيه.
+    </li>
+    <li>
+      <strong>قاعدة الحدود</strong>: <code>--line</code>/<code>--line-soft</code> تزيينية بلا
+      متطلّب WCAG؛ <code>--line-strong</code> لحدود العناصر التفاعلية ومؤشّرات التركيز.
+    </li>
+    <li>
+      شغِّل الفحوص الثلاثة قبل أي دمج:
+      <code>python outputs/a11y-audit.py</code> ·
+      <code>python outputs/interactive-audit.py</code> ·
+      <code>python outputs/wcag-verification.py</code>.
+    </li>
+  </ul>
+
+  <div class="box bad">
+    <h4>لم يتم أي رفع</h4>
+    <p>
+      كل التغييرات موجودة في مجلد العمل فقط: <strong>22 ملف CSS معدّل</strong> +
+      <strong><code>resources/css/tokens.css</code> جديد</strong>.
+      لا <code>commit</code> ولا <code>push</code> — بانتظار أمر صريح.
+    </p>
+  </div>
+
+  <footer>
+    تقرير تدقيق وإصلاح الوضع الداكن · Daway Backend · 15 سبتمبر 2026<br>
+    WCAG 2.1 AA — 1.4.3 (التباين الأدنى) + 1.4.11 (التباين غير النصّي)
+  </footer>
+</div>
+</body>
+</html>

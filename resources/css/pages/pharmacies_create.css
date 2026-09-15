@@ -4,7 +4,7 @@
 }
 
 body.dark-mode .pharmacy-create-container {
-    color: #E4E4E7;
+    color: var(--ink);
 }
 
 .form-row {
@@ -28,48 +28,48 @@ body.dark-mode .pharmacy-create-container {
     display: block;
     font-size: 13px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--ink);
     margin-bottom: 6px;
 }
 
 body.dark-mode .fl {
-    color: #cbd5e1;
+    color: var(--ink);
 }
 
 .req {
-    color: #ef4444;
+    color: var(--danger-text);
 }
 
 .fc {
     width: 100%;
     padding: 10px 14px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
     font-size: 14px;
-    background-color: #fff;
-    color: #0f172a;
+    background-color: var(--paper);
+    color: var(--ink);
     outline: none;
     box-sizing: border-box;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 body.dark-mode .fc {
-    background-color: #232327;
-    border-color: #333338;
-    color: #E4E4E7;
+    background-color: var(--paper);
+    border-color: var(--line-strong);
+    color: var(--ink);
 }
 
 body.dark-mode .fc[readonly],
 body.dark-mode .fc:disabled {
-    background-color: #18181B !important;
-    color: #71717A !important;
-    border-color: #333338 !important;
+    background-color: var(--canvas) !important;
+    color: var(--ink-faint) !important;
+    border-color: var(--line-strong) !important;
     opacity: 1;
     cursor: not-allowed;
 }
 
 .fc:focus {
-    border-color: #1C72A6;
+    border-color: var(--focus-ring);
     box-shadow: 0 0 0 3px rgba(28, 114, 166, 0.12);
 }
 
@@ -98,12 +98,12 @@ html[dir="ltr"] .fc-icon .ico {
 
 .form-hint {
     font-size: 11.5px;
-    color: #64748b;
+    color: var(--ink-soft);
     margin-top: 4px;
 }
 
 .card {
-    background: #ffffff;
+    background: var(--paper);
     border-radius: 12px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -112,30 +112,30 @@ html[dir="ltr"] .fc-icon .ico {
 }
 
 body.dark-mode .card {
-    background: #232327;
-    border-color: #333338;
+    background: var(--paper);
+    border-color: var(--line);
 }
 
 .card-head {
     padding: 14px 20px;
     border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    background: var(--canvas);
 }
 
 body.dark-mode .card-head {
-    background: #333338;
-    border-bottom-color: #3F3F46;
+    background: var(--line-soft);
+    border-bottom-color: var(--line-strong);
 }
 
 .card-head h2 {
     font-size: 15px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--ink);
     margin: 0;
 }
 
 body.dark-mode .card-head h2 {
-    color: #E4E4E7;
+    color: var(--ink);
 }
 
 .card-body {
@@ -143,9 +143,9 @@ body.dark-mode .card-head h2 {
 }
 
 .alert-ok {
-    background: #f0fdf4;
+    background: var(--success-bg);
     border: 1px solid #bbf7d0;
-    color: #166534;
+    color: var(--success-text);
     padding: 14px 18px;
     border-radius: 10px;
     display: flex;
@@ -173,15 +173,15 @@ body.dark-mode .card-head h2 {
     padding: 10px 20px;
     text-decoration: none;
     border-radius: 8px;
-    background: #e2e8f0;
-    color: #334155;
+    background: var(--line);
+    color: var(--ink);
     font-weight: 600;
     display: inline-block;
 }
 
 body.dark-mode .btn-cancel {
-    background: #333338;
-    color: #cbd5e1;
+    background: var(--line-soft);
+    color: var(--ink);
 }
 
 /* =========================================================
@@ -200,9 +200,9 @@ body.dark-mode .btn-cancel {
     align-items: center;
     gap: 8px;
     padding: 7px 13px;
-    background-color: #f0fdfa;
-    border: 1px solid #99f6e4;
-    color: #1C72A6;
+    background-color: var(--teal-mist);
+    border: 1px solid var(--focus-ring);
+    color: var(--teal-text);
     font-size: 12px;
     font-weight: 700;
     border-radius: 8px;
@@ -211,9 +211,9 @@ body.dark-mode .btn-cancel {
 }
 
 .btn-get-location:hover {
-    background-color: #ccfbf1;
-    border-color: #5eead4;
-    color: #155E85;
+    background-color: var(--teal-mist);
+    border-color: var(--focus-ring);
+    color: var(--teal-text);
     transform: translateY(-1px);
 }
 
@@ -318,12 +318,12 @@ body.dark-mode .btn-cancel {
     margin: 0 0 4px;
     font-size: 22px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
 }
 
 .page-heading p {
     margin: 0;
-    color: #64748b;
+    color: var(--ink-soft);
     font-size: 13px;
 }
 
@@ -349,13 +349,13 @@ body.dark-mode .btn-cancel {
         #ecfdf5
     );
     border: 1px solid #bbf7d0;
-    color: #166534;
+    color: var(--success-text);
 }
 
 .alert-error {
-    background: #fff7f7;
+    background: var(--danger-bg);
     border: 1px solid #fecaca;
-    color: #991b1b;
+    color: var(--danger-text);
 }
 
 .alert-icon {
@@ -377,7 +377,7 @@ body.dark-mode .btn-cancel {
 
 .alert-text {
     font-size: 12px;
-    color: #475569;
+    color: var(--ink-soft);
 }
 
 .error-list {
@@ -471,12 +471,12 @@ body.dark-mode .btn-cancel {
 }
 
 .card-icon.teal {
-    background: #ccfbf1;
+    background: var(--teal-mist);
     box-shadow: 0 7px 18px rgba(13,148,136,.12);
 }
 
 .card-icon.blue {
-    background: #e0f2fe;
+    background: var(--info-bg);
     box-shadow: 0 7px 18px rgba(2,132,199,.12);
 }
 
@@ -488,21 +488,21 @@ body.dark-mode .btn-cancel {
     margin: 0 0 3px;
     font-size: 15px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
 }
 
 .card-head p {
     margin: 0;
     font-size: 11px;
-    color: #64748b;
+    color: var(--ink-soft);
 }
 
 .section-number {
     font-family: Inter, sans-serif;
     font-size: 11px;
     font-weight: 800;
-    color: #94a3b8;
-    background: #f1f5f9;
+    color: var(--ink-faint);
+    background: var(--line-soft);
     padding: 5px 9px;
     border-radius: 8px;
 }
@@ -542,17 +542,17 @@ body.dark-mode .btn-cancel {
     display: block;
     font-size: 12.5px;
     font-weight: 800;
-    color: #1e293b;
+    color: var(--ink);
     margin-bottom: 7px;
 }
 
 .req {
-    color: #ef4444;
+    color: var(--danger-text);
     margin-right: 2px;
 }
 
 .optional {
-    color: #94a3b8;
+    color: var(--ink-faint);
     font-size: 10px;
     font-weight: 500;
     margin-right: 5px;
@@ -567,11 +567,11 @@ body.dark-mode .btn-cancel {
     width: 100%;
     height: 44px;
     padding: 10px 14px;
-    border: 1px solid #d8e0e8;
+    border: 1px solid var(--line-strong);
     border-radius: 11px;
     font-size: 13px;
-    background: #fff;
-    color: #0f172a;
+    background: var(--paper);
+    color: var(--ink);
     outline: none;
     box-sizing: border-box;
 
@@ -583,12 +583,12 @@ body.dark-mode .btn-cancel {
 }
 
 .fc:hover {
-    border-color: #b8c5d2;
+    border-color: var(--line-strong);
 }
 
 .fc:focus {
-    border-color: #1C72A6;
-    background: #fff;
+    border-color: var(--focus-ring);
+    background: var(--paper);
     box-shadow:
         0 0 0 4px rgba(13,148,136,.09),
         0 5px 15px rgba(15,23,42,.04);
@@ -600,7 +600,7 @@ select.fc {
 }
 
 .fc::placeholder {
-    color: #a1adba;
+    color: var(--ink-faint);
 }
 
 
@@ -648,7 +648,7 @@ html[dir="ltr"] .password-toggle {
 
 .form-hint {
     font-size: 11px;
-    color: #64748b;
+    color: var(--ink-soft);
     margin-top: 6px;
     line-height: 1.7;
 }
@@ -680,7 +680,7 @@ html[dir="ltr"] .password-toggle {
     align-items: center;
     justify-content: center;
     border-radius: 11px;
-    background: #e0f2fe;
+    background: var(--info-bg);
 }
 
 .pharmacy-id-content {
@@ -691,18 +691,18 @@ html[dir="ltr"] .password-toggle {
 
 .pharmacy-id-content span {
     font-size: 10px;
-    color: #64748b;
+    color: var(--ink-soft);
     font-weight: 700;
 }
 
 .pharmacy-id-content strong {
     font-family: Inter, monospace;
-    color: #0369a1;
+    color: var(--info-text);
     font-size: 14px;
 }
 
 .pharmacy-id-content small {
-    color: #64748b;
+    color: var(--ink-soft);
     font-size: 10px;
 }
 
@@ -719,8 +719,8 @@ html[dir="ltr"] .password-toggle {
 }
 
 .map-tip {
-    color: #1C72A6;
-    background: #f0fdfa;
+    color: var(--teal-text);
+    background: var(--teal-mist);
     border: 1px solid #ccfbf1;
     padding: 4px 8px;
     border-radius: 7px;
@@ -736,7 +736,7 @@ html[dir="ltr"] .password-toggle {
 }
 
 .coordinate-box {
-    background: #f8fafc;
+    background: var(--canvas);
     border: 1px solid #e2e8f0;
     border-radius: 11px;
     padding: 8px 10px;
@@ -744,7 +744,7 @@ html[dir="ltr"] .password-toggle {
 }
 
 .coordinate-box:focus-within {
-    border-color: #99f6e4;
+    border-color: var(--focus-ring);
 }
 
 .coordinate-box span {
@@ -752,7 +752,7 @@ html[dir="ltr"] .password-toggle {
     font-family: Inter, sans-serif;
     font-size: 9px;
     font-weight: 800;
-    color: #64748b;
+    color: var(--ink-soft);
     margin-bottom: 3px;
     direction: ltr;
     text-align: left;
@@ -765,7 +765,7 @@ html[dir="ltr"] .password-toggle {
     background: transparent;
     font-family: Inter, monospace;
     font-size: 12px;
-    color: #0f172a;
+    color: var(--ink);
     direction: ltr;
     text-align: left;
 }
@@ -803,7 +803,7 @@ html[dir="ltr"] .password-toggle {
     background: rgba(255,255,255,.92);
     backdrop-filter: blur(8px);
 
-    color: #334155;
+    color: var(--ink);
     font-size: 10px;
     font-weight: 700;
 
@@ -848,14 +848,14 @@ html[dir="ltr"] .password-toggle {
 }
 
 .btn-cancel {
-    color: #475569;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    color: var(--ink-soft);
+    background: var(--line-soft);
+    border: 1px solid var(--line-strong);
 }
 
 .btn-cancel:hover {
     transform: translateY(-3px);
-    background: #e2e8f0;
+    background: var(--line);
     box-shadow: 0 8px 18px rgba(15,23,42,.08);
 }
 
@@ -1041,4 +1041,14 @@ html[dir="ltr"] .password-toggle {
         transition-duration: .01ms !important;
     }
 
+}
+
+/* الوضع الداكن — تدرّج/طبقة بيضاء لم يكونا معرَّفين للداكن */
+body.dark-mode .alert-ok {
+    background: var(--success-bg);
+    border-color: rgba(74, 222, 128, 0.35);
+}
+body.dark-mode .map-overlay-hint {
+    background: rgba(17, 36, 51, 0.92);
+    border: 1px solid var(--line-strong);
 }

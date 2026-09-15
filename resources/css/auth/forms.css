@@ -4,37 +4,13 @@
    #155E85 (Deep) · #1C72A6 (Primary) · #7BC1B7 (Light)
    ========================================================== */
 
-:root {
-    /* -- العلامة التجارية -- */
-    --teal-deep:    #155E85;
-    --teal-primary: #1C72A6;
-    --teal-light:   #7BC1B7;
-
-    /* درجات مشتقة من نفس العائلة لضمان الاتساق */
-    --teal-deeper:  #004452;
-    --teal-mist:    #EAF5F4;   /* خلفية فاتحة جداً بلمسة تيل */
-    --teal-mist-2:  #F5FAF9;
-
-    /* -- محايدات مصمَّمة لتنسجم مع التيل (بارِدة قليلاً) -- */
-    --ink:          #0C2224;
-    --ink-soft:     #4C6669;
-    --ink-faint:    #86999B;
-    --line:         #DEE8E7;
-    --line-soft:    #EEF4F3;
-    --paper:        #FFFFFF;
-
-    /* -- حالات -- */
-    --danger:       #D64545;
-    --danger-bg:    #FCEDED;
-
-    /* -- قياسات -- */
-    --r-sm: 8px;  --r-md: 12px; --r-lg: 20px; --r-xl: 28px;
-    --sh-sm: 0 1px 2px rgba(12,34,36,.06);
-    --sh-md: 0 8px 24px rgba(21,94,133,.10);
-    --sh-lg: 0 30px 60px -20px rgba(0,68,82,.35);
-
-    --ease: cubic-bezier(0.16, 1, 0.3, 1);
-}
+/* ----------------------------------------------------------
+   tokens: كل الألوان والقياسات تأتي من resources/css/tokens.css
+   (المصدر الوحيد) — لا نُعرّف أي token هنا.
+   هذا الملف كان يحمل نسخة مكرّرة كاملة من التوكنات، وفيها
+   --ink-faint: #86999B (2.98:1 ✗) وقياسات نصف قطر مختلفة
+   عن بقية التطبيق. حذفها يوحّد المقياس ويصلح التباين تلقائياً.
+   ---------------------------------------------------------- */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -123,7 +99,7 @@ body {
 .logo-wrapper {
     width: 92px;
     height: 92px;
-    background: #fff;
+    background: var(--paper);
     border-radius: 22px;
     display: flex;
     align-items: center;
@@ -243,7 +219,7 @@ body {
 .map-pin {
     position: relative;
     width: 44px; height: 44px;
-    background: #fff;
+    background: var(--paper);
     border-radius: 50% 50% 50% 0;
     transform: rotate(-45deg);
     display: flex;
@@ -318,7 +294,7 @@ body {
     width: 100%;
     padding: 12.5px 15px;
     border-radius: var(--r-sm);
-    border: 1.5px solid var(--line);
+    border: 1.5px solid var(--line-strong);
     background: var(--teal-mist-2);
     font-size: 14px;
     font-weight: 500;
@@ -331,7 +307,7 @@ body {
 .fc::placeholder { color: var(--ink-faint); font-weight: 400; }
 
 .fc:focus, .select-fc:focus {
-    border-color: var(--teal-primary);
+    border-color: var(--focus-ring);
     background: var(--paper);
     box-shadow: 0 0 0 4px rgba(28,114,166,.13);
 }
@@ -345,7 +321,7 @@ body {
     transform: translateY(-50%);
     background: transparent;
     border: none;
-    color: var(--teal-deep);
+    color: var(--teal-text);
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
@@ -361,7 +337,7 @@ body {
     gap: 6px;
     font-size: 12px;
     line-height: 1.6;
-    color: var(--teal-deep);
+    color: var(--teal-text);
     background: var(--teal-mist);
     padding: 9px 12px;
     border-radius: var(--r-sm);
@@ -372,7 +348,7 @@ body {
 .error-message {
     font-size: 12px;
     font-weight: 600;
-    color: var(--danger);
+    color: var(--danger-text);
     margin-top: 6px;
 }
 
@@ -431,7 +407,7 @@ body {
     color: var(--ink-soft);
 }
 .auth-footer a {
-    color: var(--teal-deep);
+    color: var(--teal-text);
     font-weight: 700;
     text-decoration: none;
 }
@@ -470,7 +446,7 @@ body {
     animation: spin .8s linear infinite;
 }
 .loader-icon { font-size: 18px; }
-.loader-text { font-size: 13.5px; font-weight: 700; color: var(--teal-deep); }
+.loader-text { font-size: 13.5px; font-weight: 700; color: var(--teal-text); }
 
 /* -- حالة انتهاء المهلة -- */
 .loader-timeout {

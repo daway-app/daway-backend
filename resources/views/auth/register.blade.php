@@ -9,7 +9,7 @@
     {{-- الخطوط (Cairo + Tajawal) تُستضاف ذاتياً عبر Vite/bunny — لا طلب خارجي حاجب للعرض --}}
 
     <!-- نفس نظام تصميم صفحات المصادقة (بلا ملف CSS جديد) -->
-    @vite(['resources/css/app.css', 'resources/css/auth/forms.css'])
+    @vite(['resources/css/tokens.css', 'resources/css/app.css', 'resources/css/auth/forms.css'])
 </head>
 
 <body>

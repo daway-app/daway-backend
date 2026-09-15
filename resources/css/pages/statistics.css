@@ -2,7 +2,7 @@
    8. تنسيقات نماذج التعديل والإدخال (Forms)
    ========================================== */
 .form-card {
-    background: #ffffff;
+    background: var(--paper);
     border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -14,13 +14,13 @@
 .form-card-header {
     padding: 22px 28px;
     border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    background: var(--canvas);
 }
 
 .form-card-header h2 {
     font-size: 18px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     margin: 0;
 }
 
@@ -40,24 +40,24 @@
 .form-label {
     font-size: 13px;
     font-weight: 700;
-    color: #334155;
+    color: var(--ink);
 }
 
 .form-control {
     width: 100%;
     padding: 12px 16px;
     border-radius: 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--line-strong);
     font-size: 14px;
-    color: #0f172a;
-    background: #ffffff;
+    color: var(--ink);
+    background: var(--paper);
     outline: none;
     transition: all 0.2s ease;
     font-family: inherit;
 }
 
 .form-control:focus {
-    border-color: #1C72A6;
+    border-color: var(--focus-ring);
     box-shadow: 0 0 0 3px rgba(28, 114, 166, 0.15);
 }
 
@@ -87,9 +87,9 @@
 }
 
 .btn-pro-secondary {
-    background: #ffffff;
-    color: #64748b;
-    border: 1px solid #cbd5e1;
+    background: var(--paper);
+    color: var(--ink-soft);
+    border: 1px solid var(--line-strong);
     padding: 12px 20px;
     border-radius: 12px;
     font-size: 14px;
@@ -100,8 +100,8 @@
 }
 
 .btn-pro-secondary:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+    background: var(--line-soft);
+    color: var(--ink);
 }
 /* ==========================================
    9. تنسيقات صفحة تفاصيل الصيدلية (Pharmacy Details)
@@ -127,13 +127,13 @@
 }
 
 .t-av.ph {
-    background: #e0f2fe;
-    color: #0369a1;
+    background: var(--info-bg);
+    color: var(--info-text);
 }
 
 .pid {
-    background: #f1f5f9;
-    color: #334155;
+    background: var(--line-soft);
+    color: var(--ink);
     padding: 4px 10px;
     border-radius: 8px;
     font-size: 12px;
@@ -148,14 +148,14 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    color: #64748b;
+    color: var(--ink-soft);
     font-size: 13px;
     padding: 0;
     transition: color 0.2s ease;
 }
 
 .pid button:hover {
-    color: #1C72A6;
+    color: var(--teal-text);
 }
 
 .bdg {
@@ -168,20 +168,20 @@
     gap: 6px;
 }
 
-.bdg-ok { background: #d1fae5; color: #065f46; }
-.bdg-warn { background: #fef3c7; color: #92400e; }
+.bdg-ok { background: var(--success-bg); color: var(--success-text); }
+.bdg-warn { background: var(--warning-bg); color: var(--warning-text); }
 
 .breadcrumb-nav {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: #64748b;
+    color: var(--ink-soft);
     margin-bottom: 20px;
 }
 
 .breadcrumb-nav a {
-    color: #1C72A6;
+    color: var(--teal-text);
     text-decoration: none;
     font-weight: 600;
 }
@@ -191,12 +191,12 @@
 }
 
 .breadcrumb-nav .cur {
-    color: #0f172a;
+    color: var(--ink);
     font-weight: 700;
 }
 
 .breadcrumb-nav .sep {
-    color: #cbd5e1;
+    color: var(--ink-faint);
 }
 
 /* تنسيق أزرار الإجراءات العلوية */
@@ -206,9 +206,9 @@
 }
 
 .btn-secondary-pro {
-    background: #ffffff;
-    color: #334155;
-    border: 1px solid #cbd5e1;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
     padding: 10px 16px;
     border-radius: 12px;
     font-size: 13px;
@@ -222,14 +222,14 @@
 }
 
 .btn-secondary-pro:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+    background: var(--line-soft);
+    color: var(--ink);
 }
 
 .btn-danger-pro {
-    background: #ffffff;
-    color: #ef4444;
-    border: 1px solid #fecaca;
+    background: var(--paper);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-text);
     padding: 10px 16px;
     border-radius: 12px;
     font-size: 13px;
@@ -242,7 +242,7 @@
 }
 
 .btn-danger-pro:hover {
-    background: #ef4444;
+    background: var(--danger-fill);
     color: #ffffff;
     border-color: #ef4444;
 }
@@ -253,58 +253,58 @@
 .pharmacy-page-title {
     font-size: 1.25rem;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     margin: 0 0 6px 0;
 }
 
 .info-label {
     font-size: 12px;
-    color: #64748b;
+    color: var(--ink-soft);
     margin-bottom: 4px;
 }
 
 .info-value {
     font-weight: 700;
-    color: #0f172a;
+    color: var(--ink);
 }
 
 .table-card-title {
     font-size: 16px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--ink);
     margin: 0;
 }
 
 .med-name {
-    color: #0f172a;
+    color: var(--ink);
     font-size: 14px;
     display: block;
 }
 
 .med-ing {
     font-size: 12px;
-    color: #64748b;
+    color: var(--ink-soft);
 }
 
 .qty-text {
     font-weight: 600;
-    color: #334155;
+    color: var(--ink);
 }
 
-.bdg-err { background: #fee2e2; color: #991b1b; }
+.bdg-err { background: var(--danger-bg); color: var(--danger-text); }
 
 /* ==========================================
    11. Dark Mode Styles — صفحة تفاصيل الصيدلية
    ========================================== */
 body.dark-mode .form-card,
 body.dark-mode .table-card {
-    background-color: #232327;
-    border-color: #333338;
+    background-color: var(--paper);
+    border-color: var(--line);
 }
 
 body.dark-mode .form-card-header {
-    background-color: #18181B;
-    border-color: #333338;
+    background-color: var(--canvas);
+    border-color: var(--line);
 }
 
 body.dark-mode .form-card-header h2,
@@ -314,47 +314,47 @@ body.dark-mode .info-value,
 body.dark-mode .med-name,
 body.dark-mode .qty-text,
 body.dark-mode .breadcrumb-nav .cur {
-    color: #E4E4E7;
+    color: var(--ink);
 }
 
 body.dark-mode .info-label,
 body.dark-mode .med-ing {
-    color: #A1A1AA;
+    color: var(--ink-soft);
 }
 
 body.dark-mode .table-card-header {
-    border-bottom-color: #333338;
+    border-bottom-color: var(--line);
 }
 
 body.dark-mode .table-card table th {
-    background-color: #18181B;
-    color: #A1A1AA;
-    border-color: #333338;
+    background-color: var(--canvas);
+    color: var(--ink-soft);
+    border-color: var(--line);
 }
 
 body.dark-mode .table-card table td {
-    border-color: #333338;
+    border-color: var(--line);
 }
 
 body.dark-mode .table-card table tbody tr:hover {
-    background-color: #18181B;
+    background-color: var(--canvas);
 }
 
 body.dark-mode .form-card hr {
-    border-top-color: #333338;
+    border-top-color: var(--line);
 }
 
 body.dark-mode .pid {
-    background-color: #333338;
-    color: #E4E4E7;
-    border-color: #3F3F46;
+    background-color: var(--line-soft);
+    color: var(--ink);
+    border-color: var(--line-strong);
 }
 
 body.dark-mode .t-av.ph {
     background-color: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    color: var(--info-text);
 }
 
 body.dark-mode .bdg-ok { background: rgba(16, 185, 129, 0.12); color: #34d399; }
 body.dark-mode .bdg-warn { background: rgba(250, 204, 21, 0.12); color: #facc15; }
-body.dark-mode .bdg-err { background: rgba(239, 68, 68, 0.12); color: #f87171; }
+body.dark-mode .bdg-err { background: rgba(239, 68, 68, 0.12); color: var(--danger-text); }

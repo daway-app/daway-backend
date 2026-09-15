@@ -30,7 +30,7 @@
 
 /* الخطوة الحالية في الساحر — إبراز واضح */
 .pi-step.is-active {
-    border-color: var(--ph-teal);
+    border-color: var(--ph-teal-text);
     box-shadow: 0 0 0 3px var(--ph-teal-mist);
     color: var(--ph-ink);
 }
@@ -40,7 +40,7 @@
     height: 30px;
     border-radius: var(--ph-r-full);
     background: var(--ph-teal-mist);
-    color: var(--ph-teal);
+    color: var(--ph-teal-text);
     border: 1.5px solid transparent;
     display: grid;
     place-items: center;
@@ -52,7 +52,7 @@
 .pi-step.is-active .pi-step-no {
     background: var(--ph-teal);
     color: #fff;
-    border-color: var(--ph-teal-deep);
+    border-color: var(--ph-teal-text);
 }
 
 /* --- بطاقة الرفع --- */
@@ -69,13 +69,13 @@
 
 .pi-drop:hover,
 .pi-drop.is-dragging {
-    border-color: var(--ph-teal);
+    border-color: var(--ph-teal-text);
     background: var(--ph-teal-mist);
 }
 
 .pi-drop i.pi-drop-icon {
     font-size: 2rem;
-    color: var(--ph-teal);
+    color: var(--ph-teal-text);
     display: block;
     margin-block-end: 10px;
 }
@@ -94,7 +94,7 @@
 
 .pi-file-name {
     font-size: .85rem;
-    color: var(--ph-teal);
+    color: var(--ph-teal-text);
     font-weight: 600;
     min-height: 1.2em;
 }
@@ -122,12 +122,12 @@
     padding: 2px 7px;
     border-radius: 6px;
     font-size: .78rem;
-    color: var(--ph-teal-deep);
+    color: var(--ph-teal-text);
     direction: ltr;
 }
 
 .pi-column .pi-req {
-    color: var(--ph-red);
+    color: var(--ph-red-text);
     font-weight: 700;
 }
 
@@ -174,11 +174,11 @@
     line-height: 1.5;
 }
 
-.pi-summary-card.is-matched strong { color: var(--ph-green); }
-.pi-summary-card.is-review strong { color: var(--ph-orange); }
-.pi-summary-card.is-unmatched strong { color: var(--ph-blue); }
-.pi-summary-card.is-duplicate strong { color: var(--ph-teal); }
-.pi-summary-card.is-error strong { color: var(--ph-red); }
+.pi-summary-card.is-matched strong { color: var(--ph-green-text); }
+.pi-summary-card.is-review strong { color: var(--ph-orange-text); }
+.pi-summary-card.is-unmatched strong { color: var(--ph-blue-text); }
+.pi-summary-card.is-duplicate strong { color: var(--ph-teal-text); }
+.pi-summary-card.is-error strong { color: var(--ph-red-text); }
 
 /* --- شرائح الفلترة --- */
 .pi-filters {
@@ -192,7 +192,7 @@
 .pi-chip {
     padding: 7px 15px;
     border-radius: var(--ph-r-full);
-    border: 1px solid var(--ph-line);
+    border: 1px solid var(--line-strong);
     background: var(--ph-paper);
     color: var(--ph-ink-soft);
     font-weight: 600;
@@ -201,8 +201,8 @@
     transition: var(--ph-tr);
 }
 
-.pi-chip:hover { border-color: var(--ph-teal); color: var(--ph-teal); }
-.pi-chip.active { background: var(--ph-teal); color: #fff; border-color: var(--ph-teal); }
+.pi-chip:hover { border-color: var(--ph-teal-text); color: var(--ph-teal-text); }
+.pi-chip.active { background: var(--ph-teal); color: #fff; border-color: var(--ph-teal-text); }
 
 /* --- جدول الصفوف --- */
 .pi-row-input {
@@ -254,11 +254,11 @@
     color: var(--ph-ink-soft);
 }
 
-.pi-status.is-ok { background: var(--ph-green-bg); color: var(--ph-green); }
-.pi-status.is-warn { background: var(--ph-orange-bg); color: var(--ph-orange); }
-.pi-status.is-info { background: var(--ph-blue-bg); color: var(--ph-blue); }
-.pi-status.is-teal { background: var(--ph-teal-mist); color: var(--ph-teal); }
-.pi-status.is-error { background: var(--ph-red-bg); color: var(--ph-red); }
+.pi-status.is-ok { background: var(--ph-green-bg); color: var(--ph-green-text); }
+.pi-status.is-warn { background: var(--ph-orange-bg); color: var(--ph-orange-text); }
+.pi-status.is-info { background: var(--ph-blue-bg); color: var(--ph-blue-text); }
+.pi-status.is-teal { background: var(--ph-teal-mist); color: var(--ph-teal-text); }
+.pi-status.is-error { background: var(--ph-red-bg); color: var(--ph-red-text); }
 
 /* --- محرّر القرار --- */
 .pi-decide {
@@ -277,7 +277,7 @@
     cursor: pointer;
 }
 
-.pi-decide input[type="radio"] { accent-color: var(--ph-teal); }
+.pi-decide input[type="radio"] { accent-color: var(--ph-teal-text); }
 
 .pi-search-box {
     position: relative;
@@ -289,7 +289,7 @@
 .pi-search-box input[type="text"] {
     width: 100%;
     padding: 7px 11px;
-    border: 1px solid var(--ph-line);
+    border: 1px solid var(--line-strong);
     border-radius: var(--ph-r-sm);
     font-size: .83rem;
     background: var(--ph-paper);
@@ -298,7 +298,7 @@
 
 .pi-search-box input[type="text"]:focus {
     outline: none;
-    border-color: var(--ph-teal);
+    border-color: var(--ph-teal-text);
 }
 
 .pi-search-results {
@@ -369,7 +369,7 @@
     cursor: pointer;
 }
 
-.pi-merge-options input[type="radio"] { accent-color: var(--ph-teal); }
+.pi-merge-options input[type="radio"] { accent-color: var(--ph-teal-text); }
 
 /* --- شريط التأكيد --- */
 .pi-confirm-bar {
@@ -391,13 +391,13 @@
 
 .pi-pending-note {
     font-size: .85rem;
-    color: var(--ph-orange);
+    color: var(--ph-orange-text);
     font-weight: 600;
 }
 
 .pi-ready-note {
     font-size: .85rem;
-    color: var(--ph-green);
+    color: var(--ph-green-text);
     font-weight: 600;
 }
 
@@ -410,10 +410,10 @@
     border: 1px solid transparent;
 }
 
-.pi-alert.is-warn { background: var(--ph-orange-bg); color: var(--ph-orange); }
-.pi-alert.is-error { background: var(--ph-red-bg); color: var(--ph-red); }
-.pi-alert.is-info { background: var(--ph-blue-bg); color: var(--ph-blue); }
-.pi-alert.is-ok { background: var(--ph-green-bg); color: var(--ph-green); }
+.pi-alert.is-warn { background: var(--ph-orange-bg); color: var(--ph-orange-text); }
+.pi-alert.is-error { background: var(--ph-red-bg); color: var(--ph-red-text); }
+.pi-alert.is-info { background: var(--ph-blue-bg); color: var(--ph-blue-text); }
+.pi-alert.is-ok { background: var(--ph-green-bg); color: var(--ph-green-text); }
 
 /* --- نتيجة التنفيذ --- */
 .pi-done-grid {
@@ -438,11 +438,11 @@
     gap: 10px;
     margin-block-start: 12px;
     padding: 10px 14px;
-    background: var(--ph-teal-mist, #e6f4f1);
+    background: var(--ph-teal-mist, var(--line-soft));
     border: 1px solid rgba(13, 148, 136, .25);
     border-inline-start: 3px solid var(--ph-teal, #0d9488);
     border-radius: 10px;
-    color: var(--ph-ink-soft, #334155);
+    color: var(--ph-ink-soft, var(--ink));
     font-size: .84rem;
 }
 .pi-rate-limit::before {
@@ -454,10 +454,10 @@
     flex-shrink: 0;
 }
 .pi-rate-limit.is-exhausted {
-    background: #fff7ed;
+    background: var(--ph-orange-bg);
     border-color: rgba(234, 88, 12, .35);
-    border-inline-start-color: var(--ph-orange, #ea580c);
-    color: var(--ph-orange, #ea580c);
+    border-inline-start-color: var(--ph-orange-text);
+    color: var(--ph-orange-text);
     font-weight: 600;
 }
 .pi-rate-limit.is-exhausted::before { background: var(--ph-orange, #ea580c); }

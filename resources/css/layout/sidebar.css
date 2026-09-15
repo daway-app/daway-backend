@@ -2,12 +2,15 @@
    1. ط·آ§ط¸â€‍ط¸â€¦ط·ع¾ط·ط›ط¸ظ¹ط·آ±ط·آ§ط·ع¾ ط¸ث†ط·آ§ط¸â€‍ط·ع¾ط¸â€ ط·آ³ط¸ظ¹ط¸â€ڑ ط·آ§ط¸â€‍ط·آ£ط·آ³ط·آ§ط·آ³ط¸ظ¹
    ========================================== */
 :root {
-    --sidebar-width: 260px;
+    /* --sidebar-width تُعرَّف في tokens.css */
+    /* --sidebar-bg هنا #155E85 مقصود: الشريط الجانبي تيل غامق حتى في الوضع
+       الفاتح (اختيار تصميمي) — لا يُستبدل بـ--paper. */
     --sidebar-bg: #155E85;
     --sidebar-border: rgba(255, 255, 255, 0.08);
     --active-bg: rgba(255, 255, 255, 0.12);
     --active-glow: #7BC1B7;
-    --text-muted: #7BC1B7;
+    /* #7BC1B7 على #155E85 = 3.42:1 ✗ — رُفع إلى درجة تمرّ 4.55:1 */
+    --text-muted: #A5D9D9;
     --badge-bg: #1C72A6;
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
@@ -16,10 +19,12 @@
 body.dark-mode {
     --sidebar-bg: #061019;
     --sidebar-bg-2: #0A1E2B;
-    --sidebar-border: rgba(56, 189, 248, 0.35);
+    /* كانت rgba(56,189,248,.35) = 2.10:1 على #061019 — الحدّ كان غير مرئي */
+    --sidebar-border: var(--line-strong);
     --active-bg: rgba(28, 114, 166, 0.22);
     --active-glow: #4A9BD4;
-    --text-muted: #82A2B4;
+    /* كانت #82A2B4 — وُحّدت على token الأساس */
+    --text-muted: var(--ink-faint);
     --badge-bg: #1C72A6;
 }
 
@@ -106,7 +111,7 @@ body.dark-mode .sidebar-pro {
 .logo-icon-box {
     width: 64px;
     height: 64px;
-    background: #ffffff;
+    background: var(--paper);
     border-radius: 20px;
     display: flex;
     align-items: center;
@@ -140,7 +145,7 @@ body.dark-mode .sidebar-pro {
 
 .logo-subtitle {
     font-size: 11px;
-    color: #5bb3b3;
+    color: var(--text-muted);
     margin-top: 3px;
     display: block;
 }
@@ -156,13 +161,14 @@ body.dark-mode .sidebar-pro {
 .section-label {
     font-size: 12px;
     font-weight: 700;
-    color: #7BC1B7;
+    color: var(--text-muted);
     margin-bottom: 10px;
     padding: 0 8px;
 }
 
 body.dark-mode .section-label {
-    color: #71717A;
+    /* كانت #71717A = 3.96:1 على #061019 */
+    color: var(--ink-faint);
 }
 
 .nav-item {
@@ -293,7 +299,7 @@ html[dir="ltr"] .user-profile-footer .user-info-group {
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: linear-gradient(155deg, #4A9BD4, #1C72A6);
+    background: linear-gradient(155deg, #1C72A6, #155E85);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -315,7 +321,7 @@ html[dir="ltr"] .user-profile-footer .user-info-group {
 
 .user-role {
     font-size: 11.5px;
-    color: #c5c3c3 !important;
+    color: var(--text-muted) !important;
     margin-top: 2px;
 }
 
@@ -356,7 +362,7 @@ html[dir="ltr"] .user-profile-footer .user-info-group {
 }
 
 .confirm-modal-card {
-    background: #fff;
+    background: var(--paper);
     border-radius: 16px;
     padding: 30px;
     width: 380px;
@@ -371,8 +377,8 @@ html[dir="ltr"] .user-profile-footer .user-info-group {
     height: 56px;
     margin: 0 auto 14px;
     border-radius: 50%;
-    background: #fef3c7;
-    color: #d97706;
+    background: var(--warning-bg);
+    color: var(--warning-text);
     font-size: 26px;
     font-weight: 800;
     display: flex;
@@ -384,13 +390,13 @@ html[dir="ltr"] .user-profile-footer .user-info-group {
     margin: 0 0 8px;
     font-size: 17px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--ink);
 }
 
 .confirm-modal-card p {
     margin: 0 0 22px;
     font-size: 14px;
-    color: #64748b;
+    color: var(--ink-soft);
     line-height: 1.6;
 }
 
@@ -404,9 +410,9 @@ html[dir="ltr"] .user-profile-footer .user-info-group {
     flex: 1;
     padding: 10px 16px;
     border-radius: 10px;
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
-    color: #334155;
+    border: 1px solid var(--line-strong);
+    background: var(--canvas);
+    color: var(--ink);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -419,7 +425,7 @@ html[dir="ltr"] .user-profile-footer .user-info-group {
 
 .confirm-modal-actions .modal-btn.primary {
     background: var(--accent-teal, #1C72A6);
-    border-color: var(--accent-teal, #1C72A6);
+    border-color: transparent;
     color: #fff;
 }
 
@@ -428,24 +434,25 @@ html[dir="ltr"] .user-profile-footer .user-info-group {
 }
 
 body.dark-mode .confirm-modal-card {
-    background: #27272a;
-    border: 1px solid #3f3f46;
+    /* كانت لوحة zinc (#27272a/#3f3f46) منفصلة عن الكحلي — وُحّدت على tokens */
+    background: var(--paper);
+    border: 1px solid var(--line);
 }
 
 body.dark-mode .confirm-modal-card h3 {
-    color: #f4f4f5;
+    color: var(--ink);
 }
 
 body.dark-mode .confirm-modal-card p {
-    color: #a1a1aa;
+    color: var(--ink-soft);
 }
 
 body.dark-mode .confirm-modal-actions .modal-btn {
-    background: #3f3f46;
-    border-color: #52525b;
-    color: #e4e4e7;
+    background: var(--canvas);
+    border-color: var(--line-strong);
+    color: var(--ink);
 }
 
 body.dark-mode .confirm-modal-actions .modal-btn:hover {
-    background: #52525b;
+    background: var(--teal-mist);
 }

@@ -300,9 +300,9 @@
     height: 38px;
     padding: 0 10px;
     border-radius: 10px;
-    border: 1.5px solid #D7E5EE;
-    background: #ffffff;
-    color: #1C72A6;
+    border: 1.5px solid var(--line-strong);
+    background: var(--paper);
+    color: var(--teal-text);
     font-family: 'Tajawal', system-ui, sans-serif;
     font-size: 14px;
     font-weight: 700;
@@ -317,9 +317,9 @@
 .pagination-container nav a:hover:not(.active):not([aria-current]),
 .pagination-wrapper nav ul li a:hover:not(.active):not([aria-current]),
 .pagination-container nav ul li a:hover:not(.active):not([aria-current]) {
-    background: #E3F0F8;
-    border-color: #1C72A6;
-    color: #155E85;
+    background: var(--teal-mist);
+    border-color: var(--teal-text);
+    color: var(--teal-text);
     transform: translateY(-1px);
 }
 
@@ -335,10 +335,10 @@
 .pagination-container .page-item.active a,
 .pagination-wrapper .active span,
 .pagination-container .active span {
-    background: linear-gradient(135deg, #1C72A6, #155E85);
-    border-color: #155E85;
+    background: linear-gradient(135deg, var(--teal-primary), var(--teal-deep));
+    border-color: transparent;
     color: #ffffff !important;
-    box-shadow: 0 4px 12px rgba(28, 114, 166, 0.35);
+    box-shadow: var(--sh-sm);
 }
 
 .pagination-wrapper nav .disabled span,
@@ -351,46 +351,14 @@
 .pagination-container .page-item.disabled a,
 .pagination-wrapper .disabled span,
 .pagination-container .disabled span {
-    background: #F1F5F9;
-    border-color: #E2E8F0;
-    color: #94A3B8;
+    background: var(--canvas);
+    border-color: var(--line-strong);
+    color: var(--ink-faint);   /* كان #94A3B8 على #F1F5F9 = 2.34 ✗ */
     cursor: not-allowed;
     opacity: 0.7;
 }
 
-body.dark-mode .pagination-wrapper nav ul li a,
-body.dark-mode .pagination-wrapper nav ul li span,
-body.dark-mode .pagination-container nav ul li a,
-body.dark-mode .pagination-container nav ul li span,
-body.dark-mode .pagination-wrapper nav a,
-body.dark-mode .pagination-wrapper nav span,
-body.dark-mode .pagination-container nav a,
-body.dark-mode .pagination-container nav span {
-    background: #232327;
-    border-color: #333338;
-    color: #7EB8DC;
-}
-
-body.dark-mode .pagination-wrapper nav span[aria-current="page"],
-body.dark-mode .pagination-wrapper nav .active span,
-body.dark-mode .pagination-wrapper nav a.active,
-body.dark-mode .pagination-container nav span[aria-current="page"],
-body.dark-mode .pagination-container nav .active span,
-body.dark-mode .pagination-container nav a.active,
-body.dark-mode .pagination-wrapper .active span,
-body.dark-mode .pagination-container .active span {
-    background: linear-gradient(135deg, #1C72A6, #155E85);
-    border-color: #155E85;
-    color: #ffffff !important;
-}
-
-body.dark-mode .pagination-wrapper nav .disabled span,
-body.dark-mode .pagination-wrapper nav .disabled a,
-body.dark-mode .pagination-container nav .disabled span,
-body.dark-mode .pagination-container nav .disabled a,
-body.dark-mode .pagination-wrapper .disabled span,
-body.dark-mode .pagination-container .disabled span {
-    background: #18181b;
-    border-color: #27272a;
-    color: #52525b;
-}
+/* الوضع الداكن لم يعد يحتاج تجاوزات هنا:
+   القواعد الأساسية أعلاه تستخدم tokens من resources/css/tokens.css
+   (paper / line-strong / teal-text / teal-mist / canvas / ink-faint)
+   وهي تتغيّر تلقائياً مع .dark-mode. */

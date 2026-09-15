@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "XSRF-TOKEN",
+      "value": "eyJpdiI6IkgycTBsUGVWMkVhQkRidmdSYVVBZlE9PSIsInZhbHVlIjoiTkpPMG53ZGVKaUg0TjJ1dWNOMlhrRUJoTWtWU210eUpXVUNjTFRhMVJRR2ZiWUpQeW9CSzlnOUJHZmk5TzREbVNjYzV5UXF6K3RDQ0VtWFcrcDd4Snhuejh2L2gxaGNvL3MvTFBNNUZ2TWZWZlR5WGFkaVNjcnU2enpyQ3FFeTEiLCJtYWMiOiJkYTgxMWQ5NTkyNDcwZGY4ODU3NDYyNGI3YWNjODcxZjE4MjRkMmYyMWY1N2VhY2QzZDJlODlmMTA5YzZmNzBkIiwidGFnIjoiIn0%3D",
+      "domain": "daway-backend-zlh2.onrender.com",
+      "path": "/",
+      "expires": 1789292293.030879,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "laravel-session",
+      "value": "eyJpdiI6ImNpdTM0c0pQeU5zczkrcSsxdkptZ1E9PSIsInZhbHVlIjoiR2dseGR1UkVwLzZZR1NGdjYyVTQ0bHBubEl5Ny9EdWlMa2Fsd3lic3BtdTZWQklGRWZWZTB1OURrRU95M1VWQzI5aHQ2UUpvcFNIdE01VjdEYUhwVnNFb1ozTDBqNUdjb1F6RURwaTNFaDRCMmN0WFRzTTZGeTkxZGdIRGVUbUwiLCJtYWMiOiJkODA0YzU5ZGQ5NTMyOTM0NjI1YmQ0NWNjMGZkZjZkZTkxNzczNzY1YmVjZmFhZmQzYzQ3NmE3NDhlMjQzYTYzIiwidGFnIjoiIn0%3D",
+      "domain": "daway-backend-zlh2.onrender.com",
+      "path": "/",
+      "expires": 1789292293.031412,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

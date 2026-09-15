@@ -2,16 +2,16 @@
    1. ط¸â€¦ط·ع¾ط·ط›ط¸ظ¹ط·آ±ط·آ§ط·ع¾ ط·آ§ط¸â€‍ط·ع¾ط·آµط¸â€¦ط¸ظ¹ط¸â€¦ ط¸ث†ط·آ§ط¸â€‍ط·آ£ط¸â€ ط¸â€¦ط·آ§ط·آ· ط·آ§ط¸â€‍ط·آ¹ط·آ§ط¸â€¦ط·آ©
    ========================================== */
 :root {
-    --primary-color: #1C72A6;
+    --primary-color: var(--teal-primary);
     --primary-glow: rgba(28, 114, 166, 0.2);
-    --border-color-light: #e2e8f0;
-    --border-color-dark: #334155;
-    --bg-light: #ffffff;
-    --bg-dark: #1e293b;
-    --text-main-light: #0f172a;
-    --text-main-dark: #f1f5f9;
-    --text-muted-light: #64748b;
-    --text-muted-dark: #94a3b8;
+    --border-color-light: var(--line);
+    --border-color-dark: var(--line-strong);
+    --bg-light: var(--paper);
+    --bg-dark: var(--paper);
+    --text-main-light: var(--ink);
+    --text-main-dark: var(--ink);
+    --text-muted-light: var(--ink-soft);
+    --text-muted-dark: var(--ink-soft);
 }
 
 /* ==========================================
@@ -95,7 +95,7 @@
 }
 
 .inventory-table th {
-    background-color: #f8fafc;
+    background-color: var(--canvas);
     color: var(--text-muted-light);
     font-size: 0.75rem;
     font-weight: 600;
@@ -116,7 +116,7 @@
 }
 
 .inventory-table tbody tr:hover {
-    background-color: #f8fafc;
+    background-color: var(--canvas);
 }
 
 /* ==========================================
@@ -132,7 +132,7 @@
     width: 40px;
     height: 40px;
     border-radius: 0.5rem;
-    background-color: #f0fdf4;
+    background-color: var(--success-bg);
     color: var(--primary-color);
     display: flex;
     align-items: center;
@@ -172,17 +172,17 @@
     border-radius: 50%;
 }
 
-.status-badge.available { background-color: #dcfce7; color: #166534; }
+.status-badge.available { background-color: var(--success-bg); color: var(--success-text); }
 .status-badge.available .dot { background-color: #22c55e; }
 
-.status-badge.low-stock { background-color: #fef9c3; color: #854d0e; }
+.status-badge.low-stock { background-color: var(--warning-bg); color: var(--warning-text); }
 .status-badge.low-stock .dot { background-color: #facc15; }
 
-.status-badge.out-of-stock { background-color: #fee2e2; color: #991b1b; }
-.status-badge.out-of-stock .dot { background-color: #ef4444; }
+.status-badge.out-of-stock { background-color: var(--danger-bg); color: var(--danger-text); }
+.status-badge.out-of-stock .dot { background-color: var(--danger-fill); }
 
 .action-button {
-    background-color: #f1f5f9;
+    background-color: var(--line-soft);
     color: var(--text-muted-light);
     border: 1px solid var(--border-color-light);
     padding: 0.5rem 1rem;
@@ -223,7 +223,7 @@ body.dark-mode .medicine-details .name {
 }
 
 body.dark-mode .inventory-table th {
-    background-color: #18181B;
+    background-color: var(--canvas);
     color: var(--text-muted-dark);
     border-color: var(--border-color-dark);
 }
@@ -233,12 +233,12 @@ body.dark-mode .inventory-table td {
 }
 
 body.dark-mode .inventory-table tbody tr:hover {
-    background-color: #18181B;
+    background-color: var(--canvas);
 }
 
 body.dark-mode .medicine-icon {
     background-color: rgba(161, 161, 170, 0.1);
-    color: #A1A1AA;
+    color: var(--ink-soft);
 }
 
 body.dark-mode .status-badge.available { background-color: rgba(74, 222, 128, 0.1); color: #86efac; }
@@ -246,9 +246,9 @@ body.dark-mode .status-badge.low-stock { background-color: rgba(250, 204, 21, 0.
 body.dark-mode .status-badge.out-of-stock { background-color: rgba(248, 113, 113, 0.1); color: #fca5a5; }
 
 body.dark-mode .action-button {
-    background-color: #333338;
+    background-color: var(--line-soft);
     color: var(--text-muted-dark);
-    border-color: #3F3F46;
+    border-color: var(--line-strong);
 }
 
 body.dark-mode .action-button:hover {

@@ -9,7 +9,7 @@
     {{-- الخطوط (Cairo + Tajawal) تُستضاف ذاتياً عبر Vite/bunny — لا طلب خارجي حاجب للعرض --}}
 
     <!-- ربط ملف الـ CSS الخارجي عبر Vite -->
-    @vite(['resources/css/app.css', 'resources/css/auth/forms.css'])
+    @vite(['resources/css/tokens.css', 'resources/css/app.css', 'resources/css/auth/forms.css'])
 </head>
 
 <body>

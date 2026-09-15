@@ -1,22 +1,12 @@
-:root {
-    --teal-900: #0f4c4a;
-    --teal-800: #125e60;
-    --teal-700: #17787a;
-    --teal-500: #10b981;
-    --gray-50:  #f8fafc;
-    --gray-100: #f1f5f9;
-    --gray-200: #e2e8f0;
-    --gray-400: #94a3b8;
-    --gray-600: #475569;
-    --gray-800: #1e293b;
-    --white:    #ffffff;
-    --r-sm:     8px;
-    --r-md:     12px;
-    --sidebar-width: 260px;
-    --accent-teal: #1C72A6; /* Added for consistency with topbar.css */
-    --accent-teal-dark: #155E85; /* Added for consistency with topbar.css */
-    --unread-notification-bg: #f0f9ff; /* Light blue for unread */
-}
+/* ==========================================================
+   tokens التصميم
+   ----------------------------------------------------------
+   ⚠️ المصدر الوحيد هو resources/css/tokens.css.
+   كانت هنا تعريفات مكرّرة (--teal-9xx / --gray-* / --white /
+   --accent-teal / --sidebar-width) بنفس الأسماء لكن بقيم
+   مستقلة — وهي سبب تفرّق اللوحة بين الصفحات. أُزيلت.
+   الأسماء القديمة صارت aliases في tokens.css.
+   ========================================================== */
 
 * {
     box-sizing: border-box;
@@ -26,7 +16,7 @@
 }
 
 html.dark-mode {
-    background-color: #050C12;
+    background-color: var(--canvas);
 }
 
 /* ==========================================================
@@ -71,23 +61,15 @@ body.dark-mode {
 }
 
 body {
-    background-color: var(--gray-50);
-    color: var(--gray-800);
+    background-color: var(--canvas);
+    color: var(--ink);
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* Dark Mode Styles */
+/* الوضع الداكن: كل القيم في tokens.css — هنا الخلفية واللون فقط. */
 body.dark-mode {
-    --gray-50:  #050C12;
-    --gray-100: #112433;
-    --gray-200: #1D3A4E;
-    --gray-400: #82A2B4;
-    --gray-600: #93C5FD;
-    --gray-800: #EAF4F8;
-    --white:    #112433;
-    background-color: #050C12;
-    color: #EAF4F8;
-    --unread-notification-bg: rgba(28, 114, 166, 0.15);
+    background-color: var(--canvas);
+    color: var(--ink);
 }
 
 /* Main layout container */
@@ -126,13 +108,13 @@ body.dark-mode {
 }
 body.dark-mode .breadcrumb-nav,
 body.dark-mode .breadcrumb-nav a {
-    color: #A1A1AA;
+    color: var(--ink-soft);
 }
 body.dark-mode .breadcrumb-nav .cur {
-    color: #E4E4E7;
+    color: var(--ink);
 }
 body.dark-mode .breadcrumb-nav .sep {
-    color: #71717A;
+    color: var(--ink-faint);
 }
 
 /* Main content wrapper adjustments */
@@ -283,8 +265,8 @@ th {
     justify-content: center;
     color: white;
 }
-.notification-icon-full .icon-wrapper.bg-red { background-color: #ef4444; }
-.notification-icon-full .icon-wrapper.bg-blue { background-color: #3b82f6; }
+.notification-icon-full .icon-wrapper.bg-red { background-color: var(--danger-fill); }
+.notification-icon-full .icon-wrapper.bg-blue { background-color: var(--info-fill); }
 .notification-icon-full .icon-wrapper.bg-gray { background-color: #64748b; }
 
 .notification-content-full {
@@ -396,11 +378,11 @@ body.dark-mode .notification-icon-full .icon-wrapper.bg-gray { background-color:
     flex-shrink: 0;
 }
 .site-toast.success { border-inline-start-color: #16A34A; }
-.site-toast.success .toast-icon { background: #16A34A; }
+.site-toast.success .toast-icon { background: var(--success-fill); }
 .site-toast.error { border-inline-start-color: #DC2626; }
-.site-toast.error .toast-icon { background: #DC2626; }
+.site-toast.error .toast-icon { background: var(--danger-fill); }
 .site-toast.warning { border-inline-start-color: #CA8A04; }
-.site-toast.warning .toast-icon { background: #CA8A04; }
+.site-toast.warning .toast-icon { background: var(--warning-fill); }
 .site-toast.info { border-inline-start-color: #1C72A6; }
 .site-toast.info .toast-icon { background: #1C72A6; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(-14px) scale(.96); } to { opacity: 1; transform: none; } }
@@ -445,7 +427,7 @@ nav[role="navigation"] > div:last-child {
 /* نص "عرض X إلى Y من Z" */
 nav[role="navigation"] > div:last-child > div:first-child p {
     margin: 0;
-    color: #64748b;
+    color: var(--ink-soft);
     font-size: 12.5px;
     font-weight: 500;
 }
@@ -474,10 +456,10 @@ nav[role="navigation"] span[aria-disabled="true"] > span {
     min-width: 38px;
     height: 38px;
     padding: 0 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
-    background: #ffffff;
-    color: #475569;
+    background: var(--paper);
+    color: var(--ink-soft);
     font-size: 13px;
     font-weight: 600;
     line-height: 1;
@@ -485,9 +467,9 @@ nav[role="navigation"] span[aria-disabled="true"] > span {
 }
 
 nav[role="navigation"] a:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    color: #0f172a;
+    background: var(--line-soft);
+    border-color: var(--line-strong);
+    color: var(--ink);
 }
 
 /* الصفحة الحالية */
@@ -512,24 +494,24 @@ nav[role="navigation"] svg {
 }
 
 /* الوضع الليلي */
-body.dark-mode nav[role="navigation"] > div:last-child > div:first-child p { color: #94a3b8; }
+body.dark-mode nav[role="navigation"] > div:last-child > div:first-child p { color: var(--ink-faint); }
 
 body.dark-mode nav[role="navigation"] a,
 body.dark-mode nav[role="navigation"] span[aria-disabled="true"] > span {
-    background: #333338;
-    border-color: #3F3F46;
-    color: #cbd5e1;
+    background: var(--paper);
+    border-color: var(--line-strong);
+    color: var(--ink);
 }
 
 body.dark-mode nav[role="navigation"] a:hover {
-    background: #3F3F46;
-    border-color: #71717A;
-    color: #E4E4E7;
+    background: var(--teal-mist);
+    border-color: var(--teal-text);
+    color: var(--teal-text);
 }
 
 body.dark-mode nav[role="navigation"] span[aria-current="page"] > span {
-    background: #1C72A6;
-    border-color: #1C72A6;
+    background: var(--teal-primary);
+    border-color: var(--teal-primary);
     color: #ffffff;
 }
 
@@ -622,3 +604,6 @@ body.dark-mode nav[role="navigation"] span[aria-current="page"] > span {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
+
+/* الوضع الداكن — --teal-deep ليس معرَّفًا للداكن فيبقى #155E85 */
+body.dark-mode .breadcrumb-nav a:hover { color: var(--teal-text); }
