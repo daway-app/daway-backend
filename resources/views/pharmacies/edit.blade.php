@@ -135,6 +135,23 @@
                 <button type="submit" class="btn-submit">@lang('pharmacies.submit_button')</button>
             </div>
         </form>
+
+        {{-- استرجاع بيانات الدخول لصيدلية فُقدت بياناتها — يظهر للمرة الأخيرة بشكل واحد --}}
+        <form action="{{ route('pharmacies.resetCredentials', $pharmacy->id) }}" method="POST"
+              onsubmit="return confirm('@lang('pharmacies.credentials_reset_confirm'));"
+              style="margin-top:14px;">
+            @csrf
+            @method('PATCH')
+            <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                <div>
+                    <strong style="color:#9a3412;">@lang('pharmacies.credentials_reset_title')</strong>
+                    <div style="color:#78350f;font-size:12.5px;margin-top:4px;">@lang('pharmacies.credentials_reset_hint')</div>
+                </div>
+                <button type="submit" class="btn-cancel" style="background:#ea580c;border-color:#ea580c;color:#fff;">
+                    @lang('pharmacies.credentials_reset_button')
+                </button>
+            </div>
+        </form>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

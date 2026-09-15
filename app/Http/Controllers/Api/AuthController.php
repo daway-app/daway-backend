@@ -27,7 +27,7 @@ class AuthController extends Controller
     public function pharmacyLogin(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'pharmacy_id' => 'required|string|exists:pharmacies,pharmacy_custom_id',
+            'pharmacy_id' => 'required|string',
             'password' => 'required|string',
         ]);
 
@@ -35,9 +35,13 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid login credentials'], 401);
         }
 
+        $pharmacyId = trim((string) $request->pharmacy_id);
         $pharmacy = Pharmacy::with('user')
-            ->where('pharmacy_custom_id', $request->pharmacy_id)
-            ->first();
+            ->where('pharmacy_custom_id', $pharmacyId)
+            ->first()
+            ?? Pharmacy::with('user')
+                ->where('phone_number', $pharmacyId)
+                ->first();
         $user = $pharmacy?->user;
 
         if (! $user || ! Hash::check($request->password, $user->password)) {

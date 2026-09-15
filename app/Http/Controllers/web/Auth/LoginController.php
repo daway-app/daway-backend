@@ -51,8 +51,10 @@ class LoginController extends Controller
 
         // دعم القيمة بالإنجليزية أو العربية لنوع الحساب
         if ($accountType === 'pharmacy' || $accountType === 'صيدلية') {
-            // 1. البحث عن الصيدلية باستخدام الـ Pharmacy ID (مثل PH-QGWV) في جدول pharmacies
-            $pharmacy = Pharmacy::where('pharmacy_custom_id', $identity)->first();
+            // 1. البحث عن الصيدلية باستخدام الـ Pharmacy ID (مثل PH-QGWV) — أو رقم الجوال كاحتياط
+            $identity = trim($identity);
+            $pharmacy = Pharmacy::where('pharmacy_custom_id', $identity)->first()
+                ?? Pharmacy::where('phone_number', $identity)->first();
 
             if (! $pharmacy) {
                 return back()->withErrors([

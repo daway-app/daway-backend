@@ -250,4 +250,38 @@ class PharmacyController extends Controller
 
         return $redirect;
     }
+
+    /**
+     * إعادة توليد بيانات الدخول لصيدلية فُقدت بياناتها (المسار الوحيد للاسترجاع):
+     * كلمة مرور عشوائية جديدة + إجبار التغيير عند أول دخول، ونظمة التسليم
+     *تصبح جاهزة من جديد (delivered_at=null) مع نسخة مشفّرة للرسالة.
+     * البيانات تظهر للأدمن مرة واحدة — نفس نمط الإنشاء ولا يبقى نص صريح مهما.
+     */
+    public function resetCredentials(string $id)
+    {
+        $pharmacy = Pharmacy::with('user')->findOrFail($id);
+        $user = $pharmacy->user;
+
+        if (! $user) {
+            return redirect()->route('pharmacies.index')
+                ->with('error', __('pharmacies.credentials_reset_failed'));
+        }
+
+        $plainPassword = Str::password(12, symbols: false);
+
+        DB::transaction(function () use ($pharmacy, $user, $plainPassword) {
+            $user->password = Hash::make($plainPassword);
+            $user->must_change_password = true; // تغيّرهایه من أول دخول — الأمان عن الوسيط
+            $user->save();
+
+            // نظمة التسليم جاهزة من جديد + نسخة مشفّرة للرسالة
+            $pharmacy->delivered_at = null;
+            $pharmacy->pending_password = Crypt::encryptString($plainPassword);
+            $pharmacy->save();
+        });
+
+        return redirect()->route('pharmacies.index')
+            ->with('delivered_pharmacy_id', $pharmacy->pharmacy_custom_id)
+            ->with('delivered_password', $plainPassword);
+    }
 }
