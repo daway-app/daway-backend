@@ -1,13 +1,34 @@
 /**
  * Daway Accounting — الطبقة المشتركة (shared)
  * ==========================================================
- * ⚠️ لا يوجد Backend محاسبة. هذا الملف يوفّر:
+ * هذا الملف يوفّر:
  *   1. أدوات تنسيق (مبلغ/تاريخ/باركود).
- *   2. `AccountingApi` — **الواجهة الوحيدة** التي ستتحدث للـAPI لاحقًا.
- *      حاليًا تفشل بهدوء وتُرجع بيانات من `window.acAccountingConfig.catalog`
- *      (mock) — فلا يوجد أي endpoint مُختلَق.
+ *   2. `AccountingApi` — **الواجهة الوحيدة** التي تتحدث للـAPI.
  *
- * عند بناء الـBackend: عدّل `AccountingApi` فقط. لا تلمس باقي الملفات.
+ * ── الحالة الآن: Backend حقيقي موجود ────────────────────────────────
+ * الـendpoints الحقيقية (routes/api.php):
+ *   GET  /api/pharmacy/accounting/overview
+ *   GET  /api/pharmacy/accounting/sales
+ *   POST /api/pharmacy/accounting/sales
+ *   GET  /api/pharmacy/accounting/sales/{number}
+ *   POST /api/pharmacy/accounting/sales/{number}/cancel
+ *   GET  /api/pharmacy/accounting/sales-summary
+ *   GET  /api/pharmacy/accounting/expenses
+ *   POST /api/pharmacy/accounting/expenses
+ *   POST /api/pharmacy/accounting/expenses/{id}/cancel
+ *   GET  /api/pharmacy/accounting/expense-categories
+ *   GET  /api/pharmacy/accounting/customers
+ *   POST /api/pharmacy/accounting/customers
+ *   POST /api/pharmacy/accounting/customers/{id}/payments
+ *   GET  /api/pharmacy/accounting/suppliers
+ *   POST /api/pharmacy/accounting/suppliers
+ *   POST /api/pharmacy/accounting/suppliers/{id}/payments
+ *   GET  /api/pharmacy/accounting/cash
+ *   POST /api/pharmacy/accounting/cash/adjustments
+ *   (+ البحث بالباركود في /api/medicines/barcode/{code} — موجود مسبقًا)
+ *
+ * كلها تحت `auth:sanctum` + `role:pharmacy`. تُمرَّر في Blade عبر
+ * `window.acAccountingConfig.endpoints` — **لا نبني مسارات في JS**.
  *
  * يُحمَّل هذا الملف **قبل** ملفات الصفحات في @vite([...]).
  */
@@ -104,18 +125,90 @@
        3) الـAPI — نقطة الفصل الوحيدة
        ------------------------------------------------------ */
     /**
-     * كل الدوال تُرجع Promise. عند عدم وجود endpoint (الحالة الراهنة)
-     * تُرجع بيانات من الـcatalog المحلي، أو `{ ok:false, reason:'no_backend' }.
+     * كل الدوال تُرجع Promise بالشكل الموحّد:
+     *   { ok:true, data }            نجاح
+     *   { ok:false, reason, status, message }   فشل
      *
-     * `endpoints` تأتي من Blade عبر window.acAccountingConfig.endpoints —
-     * ولا تُبنى هنا، حتى لا تختلق مسارات.
+     * ── قاعدة: الفشل **يُبلَّغ** ولا يُبتلع ──────────────────────────
+     * أي استجابة غير ناجحة تُرجع `ok:false` مع `message` عربي من الـAPI
+     * (لو وُجد). الواجهة تُظهر الخطأ بدل عرض صفر يوهم بأن البيانات فاضية.
+     * هذا مهم محاسبيًا: "الصندوق 0.00" و"فشل الجلب" حالتان مختلفتان تمامًا.
      */
     var AccountingApi = (function () {
         function config() {
             return window.acAccountingConfig || {};
         }
 
-        /** بحث الأدوية — يستخدم /api/medicines/search الموجود فعلاً. */
+        function endpoints() {
+            return config().endpoints || {};
+        }
+
+        /**
+         * طلب JSON موحّد. يضيف Accept + CSRF (للكتابة) ويرتّب الأخطاء.
+         *
+         * @param {string} method
+         * @param {string} url
+         * @param {object|null} body
+         * @returns {Promise<{ok:boolean,status:number,json:object|null,message:string}>}
+         */
+        function request(method, url, body) {
+            var headers = { 'Accept': 'application/json' };
+            var opts = {
+                method: method,
+                headers: headers,
+                credentials: 'same-origin'
+            };
+
+            if (body != null) {
+                headers['Content-Type'] = 'application/json';
+                var csrf = csrfToken();
+                if (csrf) {
+                    headers['X-CSRF-TOKEN'] = csrf;
+                }
+                opts.body = JSON.stringify(body);
+            }
+
+            return fetch(url, opts).then(function (res) {
+                // 204 أو استجابة بلا جسم
+                if (res.status === 204) {
+                    return { ok: res.ok, status: res.status, json: null, message: '' };
+                }
+                return res.json().catch(function () {
+                    return null;
+                }).then(function (json) {
+                    var message = (json && json.message) ? String(json.message) : '';
+                    return { ok: res.ok, status: res.status, json: json, message: message };
+                });
+            }).catch(function () {
+                // فشل شبكة (انقطاع، CORS، …) — يُبلَّغ كحالة مستقلة
+                return { ok: false, status: 0, json: null, message: 'تعذّر الاتصال بالخادم' };
+            });
+        }
+
+        function csrfToken() {
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? meta.getAttribute('content') : '';
+        }
+
+        /**
+         * يبني رابطًا مع معاملات الاستعلام.
+         * `from`/`to` يغلبان `range` — كما في الـbackend.
+         */
+        function withQuery(base, params) {
+            var parts = [];
+            Object.keys(params || {}).forEach(function (k) {
+                var v = params[k];
+                if (v === null || v === undefined || v === '') {
+                    return;
+                }
+                parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+            });
+            return parts.length ? (base + '?' + parts.join('&')) : base;
+        }
+
+        /* ─────────────── البحث (كتالوج + باركود) ─────────────── */
+
+        /** بحث الأدوية — /api/medicines/search (موجود مسبقًا، عام). */
         function searchMedicines(query) {
             var cfg = config();
             var q = String(query || '').trim();
@@ -123,7 +216,6 @@
                 return Promise.resolve({ ok: true, source: 'local', data: [] });
             }
 
-            // المسار يستخدم مسارًا موجودًا فعلاً في routes/api.php (عام، بلا auth)
             if (cfg.endpoints && cfg.endpoints.medicineSearch) {
                 var url = cfg.endpoints.medicineSearch + '?q=' + encodeURIComponent(q);
                 return fetch(url, {
@@ -148,7 +240,7 @@
             return Promise.resolve({ ok: true, source: 'local', data: localSearch(q) });
         }
 
-        /** بحث بالباركود — يستخدم /api/medicines/barcode/{code} الموجود فعلاً. */
+        /** بحث بالباركود — /api/medicines/barcode/{code} (موجود مسبقًا). */
         function lookupBarcode(code) {
             var cfg = config();
             var norm = normalizeBarcode(code);
@@ -203,18 +295,448 @@
             return Promise.resolve({ ok: false, reason: 'not_found', barcode: norm });
         }
 
+        /* ─────────────── المبيعات ─────────────── */
+
         /**
-         * حفظ فاتورة بيع.
-         * ⚠️ لا يوجد endpoint ⇒ تُرجع `{ok:false, reason:'no_backend'}` دائمًا.
-         * لا نرسل أي شيء لأي مسار — لا نختلق عقد API.
+         * حفظ فاتورة بيع — POST /api/pharmacy/accounting/sales.
+         *
+         * الباك-إند يخصم المخزون ويكتب حركة الصندوق ويزيد دين العميل
+         * داخل معاملة واحدة (AccountingLedger). الواجهة لا تحسب شيئًا
+         * من ذلك — تُرسل البنود كما هي وتنتظر الحقيقة.
+         *
+         * `optimistic:false` في الاستجابة لأن الأرقام الراجعة هي المرجع.
+         *
+         * @param {object} payload {customer_id, items[], discount, paid, payment_method, notes}
+         * @returns {Promise<{ok:boolean, sale?:object, message:string, reason?:string, errors?:object}>}
          */
-        function createSale() {
-            return Promise.resolve({ ok: false, reason: 'no_backend' });
+        function createSale(payload) {
+            var url = endpoints().salesCreate;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة حفظ الفاتورة' });
+            }
+
+            return request('POST', url, payload).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, sale: r.json.data, message: r.message || 'تم حفظ الفاتورة' };
+                }
+
+                // 422 = أخطاء تحقّق مفصّلة (لا خطأ عام)
+                var errors = (r.json && r.json.errors) ? r.json.errors : null;
+                var firstError = '';
+                if (errors) {
+                    var keys = Object.keys(errors);
+                    if (keys.length) {
+                        var v = errors[keys[0]];
+                        firstError = Array.isArray(v) ? String(v[0]) : String(v);
+                    }
+                }
+
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 422 ? 'validation' : (r.status === 0 ? 'network' : 'api_error'),
+                    message: firstError || r.message || 'تعذّر حفظ الفاتورة',
+                    errors: errors
+                };
+            });
         }
 
-        /** سجل المبيعات — لا endpoint بعد. */
-        function listSales() {
-            return Promise.resolve({ ok: false, reason: 'no_backend' });
+        /**
+         * سجل المبيعات — GET /api/pharmacy/accounting/sales.
+         *
+         * @param {object} params {page, per_page, search, status, payment_method, range, from, to}
+         * @returns {Promise<{ok:boolean, data:Array, pagination:object|null, stats:object|null, message:string}>}
+         */
+        function listSales(params) {
+            var url = endpoints().salesIndex;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة المبيعات', data: [] });
+            }
+
+            return request('GET', withQuery(url, params || {})).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return {
+                        ok: true,
+                        data: Array.isArray(r.json.data) ? r.json.data : [],
+                        pagination: r.json.pagination || null,
+                        stats: r.json.stats || null,
+                        message: r.message
+                    };
+                }
+
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر جلب المبيعات',
+                    data: []
+                };
+            });
+        }
+
+        /** تفاصيل فاتورة — GET /api/pharmacy/accounting/sales/{number}. */
+        function getSale(number) {
+            var base = endpoints().salesShow;
+            if (!base) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة الفاتورة' });
+            }
+
+            var url = base.replace('__NUMBER__', encodeURIComponent(String(number)));
+
+            return request('GET', url).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, sale: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 404 ? 'not_found' : (r.status === 0 ? 'network' : 'api_error'),
+                    message: r.message || 'تعذّر جلب الفاتورة'
+                };
+            });
+        }
+
+        /** إلغاء فاتورة — POST .../sales/{number}/cancel. */
+        function cancelSale(number, reason) {
+            var base = endpoints().salesCancel;
+            if (!base) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة الإلغاء' });
+            }
+
+            var url = base.replace('__NUMBER__', encodeURIComponent(String(number)));
+
+            return request('POST', url, reason ? { reason: reason } : {}).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, sale: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر إلغاء الفاتورة'
+                };
+            });
+        }
+
+        /** ملخّص المبيعات والتقارير — GET .../accounting/sales-summary. */
+        function salesSummary(params) {
+            var url = endpoints().salesSummary;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة الملخّص' });
+            }
+
+            return request('GET', withQuery(url, params || {})).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, data: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر جلب الملخّص'
+                };
+            });
+        }
+
+        /* ─────────────── النظرة العامة ─────────────── */
+
+        /**
+         * نظرة عامة المحاسبة — GET .../accounting/overview.
+         * تعيد: kpis · series · expense_breakdown · recent_transactions ·
+         * alerts · profit_indicator · comparison · receivables · barcode_coverage.
+         */
+        function overview(params) {
+            var url = endpoints().overview;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة النظرة العامة' });
+            }
+
+            return request('GET', withQuery(url, params || {})).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, data: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر جلب نظرة عامة المحاسبة'
+                };
+            });
+        }
+
+        /* ─────────────── المصروفات ─────────────── */
+
+        function listExpenses(params) {
+            var url = endpoints().expensesIndex;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة المصروفات', data: [] });
+            }
+
+            return request('GET', withQuery(url, params || {})).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return {
+                        ok: true,
+                        data: Array.isArray(r.json.data) ? r.json.data : [],
+                        pagination: r.json.pagination || null,
+                        stats: r.json.stats || null,
+                        message: r.message
+                    };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر جلب المصروفات',
+                    data: []
+                };
+            });
+        }
+
+        function createExpense(payload) {
+            var url = endpoints().expensesCreate;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة حفظ المصروف' });
+            }
+
+            return request('POST', url, payload).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, expense: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 422 ? 'validation' : (r.status === 0 ? 'network' : 'api_error'),
+                    message: r.message || 'تعذّر حفظ المصروف',
+                    errors: (r.json && r.json.errors) || null
+                };
+            });
+        }
+
+        function cancelExpense(id) {
+            var base = endpoints().expensesCancel;
+            if (!base) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة الإلغاء' });
+            }
+
+            var url = base.replace('__ID__', encodeURIComponent(String(id)));
+
+            return request('POST', url).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, expense: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر إلغاء المصروف'
+                };
+            });
+        }
+
+        function expenseCategories() {
+            var url = endpoints().expenseCategories;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة التصنيفات', data: [] });
+            }
+
+            return request('GET', url).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, data: Array.isArray(r.json.data) ? r.json.data : [], message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر جلب التصنيفات',
+                    data: []
+                };
+            });
+        }
+
+        /* ─────────────── العملاء والموردون ─────────────── */
+
+        function listCustomers(params) {
+            var url = endpoints().customersIndex;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة العملاء', data: [] });
+            }
+
+            return request('GET', withQuery(url, params || {})).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return {
+                        ok: true,
+                        data: Array.isArray(r.json.data) ? r.json.data : [],
+                        pagination: r.json.pagination || null,
+                        stats: r.json.stats || null,
+                        message: r.message
+                    };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر جلب العملاء',
+                    data: []
+                };
+            });
+        }
+
+        function createCustomer(payload) {
+            var url = endpoints().customersCreate;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة إضافة العميل' });
+            }
+
+            return request('POST', url, payload).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, customer: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 422 ? 'validation' : (r.status === 0 ? 'network' : 'api_error'),
+                    message: r.message || 'تعذّر إضافة العميل',
+                    errors: (r.json && r.json.errors) || null
+                };
+            });
+        }
+
+        function customerPayment(id, payload) {
+            var base = endpoints().customersPayment;
+            if (!base) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة تسجيل الدفعة' });
+            }
+
+            var url = base.replace('__ID__', encodeURIComponent(String(id)));
+
+            return request('POST', url, payload).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, data: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 422 ? 'validation' : (r.status === 0 ? 'network' : 'api_error'),
+                    message: r.message || 'تعذّر تسجيل الدفعة',
+                    errors: (r.json && r.json.errors) || null
+                };
+            });
+        }
+
+        function listSuppliers(params) {
+            var url = endpoints().suppliersIndex;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة الموردين', data: [] });
+            }
+
+            return request('GET', withQuery(url, params || {})).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return {
+                        ok: true,
+                        data: Array.isArray(r.json.data) ? r.json.data : [],
+                        stats: r.json.stats || null,
+                        message: r.message
+                    };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر جلب الموردين',
+                    data: []
+                };
+            });
+        }
+
+        function createSupplier(payload) {
+            var url = endpoints().suppliersCreate;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة إضافة المورّد' });
+            }
+
+            return request('POST', url, payload).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, supplier: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 422 ? 'validation' : (r.status === 0 ? 'network' : 'api_error'),
+                    message: r.message || 'تعذّر إضافة المورّد',
+                    errors: (r.json && r.json.errors) || null
+                };
+            });
+        }
+
+        function supplierPayment(id, payload) {
+            var base = endpoints().suppliersPayment;
+            if (!base) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة الدفعة' });
+            }
+
+            var url = base.replace('__ID__', encodeURIComponent(String(id)));
+
+            return request('POST', url, payload).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, data: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 422 ? 'validation' : (r.status === 0 ? 'network' : 'api_error'),
+                    message: r.message || 'تعذّر تسجيل الدفعة',
+                    errors: (r.json && r.json.errors) || null
+                };
+            });
+        }
+
+        /* ─────────────── الصندوق ─────────────── */
+
+        function cash(params) {
+            var url = endpoints().cashIndex;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة الصندوق', data: [] });
+            }
+
+            return request('GET', withQuery(url, params || {})).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return {
+                        ok: true,
+                        data: Array.isArray(r.json.data) ? r.json.data : [],
+                        pagination: r.json.pagination || null,
+                        stats: r.json.stats || null,
+                        period: r.json.period || null,
+                        message: r.message
+                    };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 0 ? 'network' : 'api_error',
+                    message: r.message || 'تعذّر جلب حركات الصندوق',
+                    data: []
+                };
+            });
+        }
+
+        function cashAdjustment(payload) {
+            var url = endpoints().cashAdjust;
+            if (!url) {
+                return Promise.resolve({ ok: false, reason: 'not_configured', message: 'لم تُهيَّأ نقطة حركة الصندوق' });
+            }
+
+            return request('POST', url, payload).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, data: r.json.data, message: r.message };
+                }
+                return {
+                    ok: false,
+                    status: r.status,
+                    reason: r.status === 422 ? 'validation' : (r.status === 0 ? 'network' : 'api_error'),
+                    message: r.message || 'تعذّر تسجيل حركة الصندوق',
+                    errors: (r.json && r.json.errors) || null
+                };
+            });
         }
 
         /* ---- أدوات داخلية ---- */
@@ -297,10 +819,37 @@
         }
 
         return {
+            // البحث
             searchMedicines: searchMedicines,
             lookupBarcode: lookupBarcode,
+
+            // المبيعات
             createSale: createSale,
-            listSales: listSales
+            listSales: listSales,
+            getSale: getSale,
+            cancelSale: cancelSale,
+            salesSummary: salesSummary,
+
+            // النظرة العامة
+            overview: overview,
+
+            // المصروفات
+            listExpenses: listExpenses,
+            createExpense: createExpense,
+            cancelExpense: cancelExpense,
+            expenseCategories: expenseCategories,
+
+            // الأطراف
+            listCustomers: listCustomers,
+            createCustomer: createCustomer,
+            customerPayment: customerPayment,
+            listSuppliers: listSuppliers,
+            createSupplier: createSupplier,
+            supplierPayment: supplierPayment,
+
+            // الصندوق
+            cash: cash,
+            cashAdjustment: cashAdjustment
         };
     })();
 

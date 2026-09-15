@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\AccountingCashController;
+use App\Http\Controllers\Api\AccountingExpenseController;
+use App\Http\Controllers\Api\AccountingOverviewController;
+use App\Http\Controllers\Api\AccountingPartiesController;
+use App\Http\Controllers\Api\AccountingSalesController;
 use App\Http\Controllers\Api\BarcodeLookupController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvailabilityAlertController;
@@ -162,6 +167,74 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('dashboard/stats', [PharmacyDashboardController::class, 'stats']);
         Route::post('change-password', [PharmacyProfileController::class, 'changePassword']);
+
+        // ==================== ACCOUNTING ====================
+        // محاسبة الصيدلية: فواتير بيع · مصروفات · عملاء/موردون · صندوق.
+        //
+        // ⚠️ الترتيب مهم: `sales-summary` قبل `sales/{number}` — وإلا التقط
+        // المسار الديناميكي كلمة `summary` كرقم فاتورة. نفس قاعدة
+        // `inventory/import/template` أعلاه.
+        //
+        // ⚠️ `sales/{number}` يستقبل **رقم الفاتورة** لا الـid (INV-1042)،
+        // والبحث مقيّد بـ pharmacy_id داخل الاستعلام (لا IDOR).
+        //
+        // ⚠️ الكتّاب (store/cancel/payments) تحت `throttle:writes` — نفس
+        // سياسة بقية مسارات الكتابة في المشروع. القراء بلا حدّ مخصّص
+        // (يخضعون لـ`throttle:api` العام).
+        Route::prefix('accounting')->group(function () {
+            Route::get('overview', [AccountingOverviewController::class, 'show'])
+                ->name('api.pharmacy.accounting.overview');
+
+            // القراءة أولًا كي لا تلتقط المسارات الديناميكية الكلمات الثابتة.
+            Route::get('sales-summary', [AccountingSalesController::class, 'summary'])
+                ->name('api.pharmacy.accounting.sales.summary');
+            Route::get('sales', [AccountingSalesController::class, 'index'])
+                ->name('api.pharmacy.accounting.sales.index');
+            Route::get('sales/{number}', [AccountingSalesController::class, 'show'])
+                ->name('api.pharmacy.accounting.sales.show');
+
+            Route::get('expense-categories', [AccountingExpenseController::class, 'categories'])
+                ->name('api.pharmacy.accounting.expense-categories');
+            Route::get('expenses', [AccountingExpenseController::class, 'index'])
+                ->name('api.pharmacy.accounting.expenses.index');
+            Route::post('expenses/{expense}/cancel', [AccountingExpenseController::class, 'cancel'])
+                ->name('api.pharmacy.accounting.expenses.cancel')
+                ->middleware('throttle:writes');
+
+            Route::get('customers', [AccountingPartiesController::class, 'customers'])
+                ->name('api.pharmacy.accounting.customers.index');
+            Route::get('customers/{customer}', [AccountingPartiesController::class, 'showCustomer'])
+                ->name('api.pharmacy.accounting.customers.show');
+            Route::get('suppliers', [AccountingPartiesController::class, 'suppliers'])
+                ->name('api.pharmacy.accounting.suppliers.index');
+
+            Route::get('cash', [AccountingCashController::class, 'show'])
+                ->name('api.pharmacy.accounting.cash.index');
+
+            // الكتابة مجمّعة تحت حدّ `writes`.
+            Route::middleware('throttle:writes')->group(function () {
+                Route::post('sales', [AccountingSalesController::class, 'store'])
+                    ->name('api.pharmacy.accounting.sales.store');
+                Route::post('sales/{number}/cancel', [AccountingSalesController::class, 'cancel'])
+                    ->name('api.pharmacy.accounting.sales.cancel');
+
+                Route::post('expenses', [AccountingExpenseController::class, 'store'])
+                    ->name('api.pharmacy.accounting.expenses.store');
+
+                Route::post('customers', [AccountingPartiesController::class, 'storeCustomer'])
+                    ->name('api.pharmacy.accounting.customers.store');
+                Route::post('customers/{customer}/payments', [AccountingPartiesController::class, 'storeCustomerPayment'])
+                    ->name('api.pharmacy.accounting.customers.payments');
+
+                Route::post('suppliers', [AccountingPartiesController::class, 'storeSupplier'])
+                    ->name('api.pharmacy.accounting.suppliers.store');
+                Route::post('suppliers/{supplier}/payments', [AccountingPartiesController::class, 'storeSupplierPayment'])
+                    ->name('api.pharmacy.accounting.suppliers.payments');
+
+                Route::post('cash/adjustments', [AccountingCashController::class, 'storeAdjustment'])
+                    ->name('api.pharmacy.accounting.cash.adjustments');
+            });
+        });
     });
 
     // Ratings

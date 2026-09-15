@@ -119,9 +119,53 @@
 
     $acAccountingConfig = [
         'currency' => __('accounting.common.currency'),
+        // ⚠️ انتبه: هذا المفتاح يبقى `true` لكن معناه تغيّر.
+        // سابقًا كان يعني «لا يوجد Backend». الآن يعني «الكاش المحلي للبحث
+        // بالباركود مفعّل كاحتياط» — الـAPI حقيقي وموجود.
+        // لا تحذفه: ملفات JS تقرأه لتفعيل مسار الاحتياط بلا شبكة.
         'demo' => true,
         'catalog' => [],
-        'endpoints' => [],
+        // مسارات الـAPI الحقيقية — تُبنى هنا (في Blade) لا في JS،
+        // كي تتغيّر مع `php artisan route:list` بلا تعديل أي ملف JS.
+        //
+        // ⚠️ العنصران `salesShow` و `salesCancel` يحملان `__NUMBER__`
+        // كعنصر نائب يستبدله JS برقم الفاتورة (لا بالـid) — لأن الرقم
+        // هو ما تعرفه الواجهة والمستخدم.
+        // وكذلك `__ID__` في `expensesCancel` و`customersPayment`
+        // و`suppliersPayment` (هذه تستخدم الـid لأنها كيانات بلا رقم معروض).
+        'endpoints' => [
+            // البحث (موجود مسبقًا في المشروع)
+            'medicineSearch' => url('/api/medicines/search'),
+            'barcodeLookup' => url('/api/medicines/barcode'),
+
+            // النظرة العامة
+            'overview' => route('api.pharmacy.accounting.overview'),
+
+            // المبيعات
+            'salesIndex' => route('api.pharmacy.accounting.sales.index'),
+            'salesCreate' => route('api.pharmacy.accounting.sales.store'),
+            'salesSummary' => route('api.pharmacy.accounting.sales.summary'),
+            'salesShow' => route('api.pharmacy.accounting.sales.show', ['number' => '__NUMBER__']),
+            'salesCancel' => route('api.pharmacy.accounting.sales.cancel', ['number' => '__NUMBER__']),
+
+            // المصروفات
+            'expensesIndex' => route('api.pharmacy.accounting.expenses.index'),
+            'expensesCreate' => route('api.pharmacy.accounting.expenses.store'),
+            'expensesCancel' => route('api.pharmacy.accounting.expenses.cancel', ['expense' => '__ID__']),
+            'expenseCategories' => route('api.pharmacy.accounting.expense-categories'),
+
+            // الأطراف
+            'customersIndex' => route('api.pharmacy.accounting.customers.index'),
+            'customersCreate' => route('api.pharmacy.accounting.customers.store'),
+            'customersPayment' => route('api.pharmacy.accounting.customers.payments', ['customer' => '__ID__']),
+            'suppliersIndex' => route('api.pharmacy.accounting.suppliers.index'),
+            'suppliersCreate' => route('api.pharmacy.accounting.suppliers.store'),
+            'suppliersPayment' => route('api.pharmacy.accounting.suppliers.payments', ['supplier' => '__ID__']),
+
+            // الصندوق
+            'cashIndex' => route('api.pharmacy.accounting.cash.index'),
+            'cashAdjust' => route('api.pharmacy.accounting.cash.adjustments'),
+        ],
     ];
 @endphp
 <script>
