@@ -55,6 +55,10 @@ Route::get('/medicines/{id}/pharmacies', [MedicineController::class, 'pharmacies
     // البحث بالباركود (read-only من DB المحلي — لا يضرب مزوّداً خارجياً، بلا auth)
     Route::get('/medicines/barcode/{barcode}', [BarcodeLookupController::class, 'show'])->middleware('throttle:60,1');
 
+    // صيدليات متوفر بها دواء كتالوج الوزارة — مرتبة من الأقرب حسب موقع المستخدم
+    // (نقطة عند الضغط على دواء في الأقسام/الفلاتر)، read-only، بلا auth
+    Route::get('/moh-medicines/{moh}/pharmacies', [MedicineController::class, 'mohPharmacies'])->middleware('throttle:60,1');
+
 // Pharmacies Routes Public
 Route::get('/pharmacies', [PharmacyController::class, 'index']);
 Route::get('/pharmacies/{id}', [PharmacyController::class, 'show']);

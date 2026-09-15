@@ -575,6 +575,88 @@ class MedicineController extends Controller
         ]);
     }
 
+    /**
+     * صيدليات متوفر بها دواء من كتالوج الوزارة (من «الأقسام» أو نتيجة الفلاتر)
+     * مرتّبة من الأقرب حسب موقع المستخدم — read-only، عام (بلا auth) لأنها نفس
+     * تفرع التفاصيل في التطبيق.
+     *
+     * المسار: moh_medicines.id → كتالوج محلي مطابق بالاسم (إذا وجد) → pharmacy_medicines.
+     * إن لم يوجد نظير محلي: fallback عبر MedicineResolver (نص الاسم + المديات الجغرافية)
+     * مع أكذعف قليلة وبيانات مُتصفّسة على كلا المماسكين.
+     */
+    public function mohPharmacies(Request $request, string $id): JsonResponse
+    {
+        $moh = MohMedicine::findOrFail($id);
+
+        $validated = $request->validate([
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'radius_km' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
+
+        $lat = isset($validated['latitude']) ? (float) $validated['latitude'] : null;
+        $lng = isset($validated['longitude']) ? (float) $validated['longitude'] : null;
+        $radiusKm = (int) ($validated['radius_km'] ?? 15);
+        $hasGeo = $lat !== null && $lng !== null;
+
+        // المسار الأساسي: نظير محلي بنفس اسم الترض (match موثوق موجود
+        // في idsByTradeName وهو نفس mapping الpayload في الأقسام).
+        $localId = Medicine::idsByTradeName([$moh->trade_name])[$moh->trade_name] ?? null;
+
+        if ($localId !== null) {
+            $medicine = Medicine::findOrFail($localId);
+
+            $query = PharmacyMedicine::query()
+                ->where('medicine_id', $medicine->id)
+                ->where('is_available', true)
+                ->where('quantity', '>', 0)
+                ->with(['pharmacy' => fn ($q) => $q->with('hours')]);
+
+            $rows = $query->get()
+                ->map(fn (PharmacyMedicine $pm) => $this->pharmacyRowPayload($pm, $lat, $lng, $radiusKm))
+                ->filter(fn ($row) => ! ($hasGeo
+                    && $row['distance_km'] !== null
+                    && $row['distance_km'] > $radiusKm))
+                ->sortBy(fn ($row) => $hasGeo ? ($row['distance_km'] ?? PHP_FLOAT_MAX) : 0, SORT_REGULAR)
+                ->values();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم جلب الصيدليات المتوفرة بنجاح',
+                'data' => [
+                    'moh_medicine' => $this->mohPayload($moh),
+                    'medicine_id' => $localId,
+                    'pharmacies' => $rows,
+                    'requires_location' => false,
+                ],
+            ]);
+        }
+
+        // المسار الاحتياطي: بلا نظير محلي — نستخدم الhyper Resolver (brightness matching عبر mapping المحلي)
+        // يرجع مرتباً بالمسافة أصلاً (distance ثم price) ويتحقق من الradius داخلياً.
+        $fallback = [];
+        if ($hasGeo) {
+            $fallback = $this->resolver->pharmaciesFor(
+                drugName: $moh->trade_name,
+                latitude: $lat,
+                longitude: $lng,
+                radiusKm: $radiusKm,
+                names: [$moh->trade_name],
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب الصيدليات المتوفرة بنجاح',
+            'data' => [
+                'moh_medicine' => $this->mohPayload($moh),
+                'medicine_id' => null,
+                'pharmacies' => $fallback,
+                'requires_location' => ! $hasGeo,
+            ],
+        ]);
+    }
+
     private function catalogVersion(): int
     {
         return (int) Cache::get('med_catalog_version', 1);
