@@ -1,0 +1,29 @@
+<?php
+// إعادة بذر بيانات العينة (النماذج الرهينية المسحوبة من database/daway_local.sqlite بسبب tests migrations)
+use App\Models\Medicine;
+use App\Models\MohMedicine;
+
+for ($i = 1; $i <= 20; $i++) {
+    MohMedicine::updateOrCreate(
+        ['moh_product_id' => 80000 + $i],
+        [
+            'trade_name' => 'PANADOL EXTRA '.$i,
+            'generic_name' => null,
+            'manufacturer' => 'GSK',
+            'dosage_form' => 'Tablet',
+            'packaging' => '24 tablets',
+        ]
+    );
+    Medicine::updateOrCreate(
+        ['trade_name' => 'PANADOL EXTRA '.$i],
+        [
+            'trade_name_ar' => 'بانادول اكسترا '.((int) $i),
+            'active_ingredient' => 'Paracetamol',
+            'is_available' => true,
+            'stock' => 0,
+        ]
+    );
+}
+
+echo 'moh: '.MohMedicine::whereBetween('moh_product_id', [80001, 80020])->count().'/20, '.
+     'local: '.Medicine::where('trade_name', 'like', 'PANADOL EXTRA%')->count().'/20';

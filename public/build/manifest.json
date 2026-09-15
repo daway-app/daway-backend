@@ -90,7 +90,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-Dbue-NFP.css",
+    "file": "assets/app-BJnrNCDJ.css",
     "name": "app",
     "names": [
       "app.css"
@@ -117,7 +117,7 @@
     "isEntry": true
   },
   "resources/css/auth/forms.css": {
-    "file": "assets/forms-CR2z2g3A.css",
+    "file": "assets/forms-jBnEQgYU.css",
     "name": "forms",
     "names": [
       "forms.css"
@@ -126,7 +126,7 @@
     "isEntry": true
   },
   "resources/css/layout/app_layout.css": {
-    "file": "assets/app_layout-DHPBzz8L.css",
+    "file": "assets/app_layout-C9C_a71q.css",
     "name": "app_layout",
     "names": [
       "app_layout.css"
@@ -135,7 +135,7 @@
     "isEntry": true
   },
   "resources/css/layout/sidebar.css": {
-    "file": "assets/sidebar-BTux-SnB.css",
+    "file": "assets/sidebar-Cb1AZUy7.css",
     "name": "sidebar",
     "names": [
       "sidebar.css"
@@ -144,7 +144,7 @@
     "isEntry": true
   },
   "resources/css/layout/topbar.css": {
-    "file": "assets/topbar-Dd90Eh6e.css",
+    "file": "assets/topbar-DuGwKilf.css",
     "name": "topbar",
     "names": [
       "topbar.css"
@@ -153,7 +153,7 @@
     "isEntry": true
   },
   "resources/css/pages/categories.css": {
-    "file": "assets/categories-vI9siBLF.css",
+    "file": "assets/categories-BXeGGAZc.css",
     "name": "categories",
     "names": [
       "categories.css"
@@ -162,7 +162,7 @@
     "isEntry": true
   },
   "resources/css/pages/dashboard.css": {
-    "file": "assets/dashboard-AnyN2ntB.css",
+    "file": "assets/dashboard-DvIohmDq.css",
     "name": "dashboard",
     "names": [
       "dashboard.css"
@@ -171,7 +171,7 @@
     "isEntry": true
   },
   "resources/css/pages/inventory.css": {
-    "file": "assets/inventory-ByBZ1xBa.css",
+    "file": "assets/inventory-BtvYtU9p.css",
     "name": "inventory",
     "names": [
       "inventory.css"
@@ -180,7 +180,7 @@
     "isEntry": true
   },
   "resources/css/pages/logs.css": {
-    "file": "assets/logs-DpGqzcNm.css",
+    "file": "assets/logs-ypZtYpFL.css",
     "name": "logs",
     "names": [
       "logs.css"
@@ -189,7 +189,7 @@
     "isEntry": true
   },
   "resources/css/pages/medicines.css": {
-    "file": "assets/medicines-CzFRhOUq.css",
+    "file": "assets/medicines-s1OXcwpn.css",
     "name": "medicines",
     "names": [
       "medicines.css"
@@ -198,7 +198,7 @@
     "isEntry": true
   },
   "resources/css/pages/medicines_create.css": {
-    "file": "assets/medicines_create-CBcYT5lV.css",
+    "file": "assets/medicines_create-BLN9m-jl.css",
     "name": "medicines_create",
     "names": [
       "medicines_create.css"
@@ -207,7 +207,7 @@
     "isEntry": true
   },
   "resources/css/pages/medicines_edit.css": {
-    "file": "assets/medicines_edit-BmUFaKPJ.css",
+    "file": "assets/medicines_edit-pxfOjcWF.css",
     "name": "medicines_edit",
     "names": [
       "medicines_edit.css"
@@ -216,7 +216,7 @@
     "isEntry": true
   },
   "resources/css/pages/patients.css": {
-    "file": "assets/patients-DGAiHi3Z.css",
+    "file": "assets/patients-CH5U8Oyc.css",
     "name": "patients",
     "names": [
       "patients.css"
@@ -225,7 +225,7 @@
     "isEntry": true
   },
   "resources/css/pages/pharmacies.css": {
-    "file": "assets/pharmacies-q9kSqnA6.css",
+    "file": "assets/pharmacies-B6HBwWFo.css",
     "name": "pharmacies",
     "names": [
       "pharmacies.css"
@@ -234,7 +234,7 @@
     "isEntry": true
   },
   "resources/css/pages/pharmacies_create.css": {
-    "file": "assets/pharmacies_create-D72ZX7EN.css",
+    "file": "assets/pharmacies_create-ChrEc1p4.css",
     "name": "pharmacies_create",
     "names": [
       "pharmacies_create.css"
@@ -252,7 +252,7 @@
     "isEntry": true
   },
   "resources/css/pages/pharmacy_hub.css": {
-    "file": "assets/pharmacy_hub-CshkktHr.css",
+    "file": "assets/pharmacy_hub-HG-xg7MZ.css",
     "name": "pharmacy_hub",
     "names": [
       "pharmacy_hub.css"
@@ -261,7 +261,7 @@
     "isEntry": true
   },
   "resources/css/pages/pharmacy_import.css": {
-    "file": "assets/pharmacy_import-BdozG3Tj.css",
+    "file": "assets/pharmacy_import-B8f8SdwU.css",
     "name": "pharmacy_import",
     "names": [
       "pharmacy_import.css"
@@ -270,7 +270,7 @@
     "isEntry": true
   },
   "resources/css/pages/pharmacy_medicine_create.css": {
-    "file": "assets/pharmacy_medicine_create-DMkzAoXg.css",
+    "file": "assets/pharmacy_medicine_create-D1LuiPzE.css",
     "name": "pharmacy_medicine_create",
     "names": [
       "pharmacy_medicine_create.css"
@@ -279,7 +279,7 @@
     "isEntry": true
   },
   "resources/css/pages/settings.css": {
-    "file": "assets/settings-CAQbVDE8.css",
+    "file": "assets/settings-Dw_GUNNJ.css",
     "name": "settings",
     "names": [
       "settings.css"
@@ -288,7 +288,7 @@
     "isEntry": true
   },
   "resources/css/pages/statistics.css": {
-    "file": "assets/statistics-rNzbAZGc.css",
+    "file": "assets/statistics-zefuRhlS.css",
     "name": "statistics",
     "names": [
       "statistics.css"
@@ -297,7 +297,7 @@
     "isEntry": true
   },
   "resources/css/pages/users.css": {
-    "file": "assets/users-C7E2ToQz.css",
+    "file": "assets/users-CZAyyWUw.css",
     "name": "users",
     "names": [
       "users.css"
@@ -306,12 +306,21 @@
     "isEntry": true
   },
   "resources/css/pages/users_create.css": {
-    "file": "assets/users_create-fnforiYI.css",
+    "file": "assets/users_create-CnBdi9yi.css",
     "name": "users_create",
     "names": [
       "users_create.css"
     ],
     "src": "resources/css/pages/users_create.css",
+    "isEntry": true
+  },
+  "resources/css/tokens.css": {
+    "file": "assets/tokens-B1MwEUo0.css",
+    "name": "tokens",
+    "names": [
+      "tokens.css"
+    ],
+    "src": "resources/css/tokens.css",
     "isEntry": true
   },
   "resources/js/offline/index.js": {

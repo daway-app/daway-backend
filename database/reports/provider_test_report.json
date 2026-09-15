@@ -1,0 +1,20 @@
+{
+    "provider": "manual",
+    "generated_at": "2026-09-15 09:42:40",
+    "barcodes_file": null,
+    "stats": {
+        "total": 5,
+        "found": 5,
+        "not_found": 0,
+        "english_name": 5,
+        "arabic_name": 5,
+        "barcode": 0,
+        "image": 0,
+        "manufacturer": 0,
+        "pack_size": 0,
+        "high_confidence": 0,
+        "needs_review": 0,
+        "conflicts": 0,
+        "provider_errors": 0
+    }
+}
