@@ -10,6 +10,11 @@
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
+            <!-- استبعاد فحوص التكافؤ البطيئة (~70 ثانية: مسحان كاملان لملف
+                 13MB × 14 استعلاماً). تُشغَّل بالاسم صراحةً عند تغيير منطق
+                 المطابقة في MedicineResolver:
+                 php vendor/bin/phpunit tests/Feature/Api/Patient/MappingGateEquivalenceTest.php -->
+            <exclude>tests/Feature/Api/Patient/MappingGateEquivalenceTest.php</exclude>
         </testsuite>
     </testsuites>
     <source>

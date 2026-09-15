@@ -60,7 +60,7 @@ final class MedicineResolver
             })
             ->orderBy('trade_name')
             ->limit(10)
-            ->get(['id', 'trade_name', 'active_ingredient', 'is_available']);
+            ->get(['id', 'trade_name', 'trade_name_ar', 'active_ingredient', 'image', 'is_available']);
 
         $moh = MohMedicine::query()
             ->where(function ($q) use ($name) {
@@ -114,7 +114,7 @@ final class MedicineResolver
         return array_slice(array_values(array_unique($keys)), 0, 8);
     }
 
-    /** يطبّق قائمة مفاتيح بحث على trade_name/active_ingredient بـ OR */
+    /** يطبّق قائمة مفاتيح بحث على trade_name/trade_name_ar/active_ingredient بـ OR */
     private function applyNameKeys($query, array $keys): void
     {
         $applied = false;
@@ -128,11 +128,13 @@ final class MedicineResolver
             if ($applied) {
                 $query->orWhere(function ($w) use ($like) {
                     $w->where('trade_name', 'like', $like)
+                        ->orWhere('trade_name_ar', 'like', $like)
                         ->orWhere('active_ingredient', 'like', $like);
                 });
             } else {
                 $query->where(function ($w) use ($like) {
                     $w->where('trade_name', 'like', $like)
+                        ->orWhere('trade_name_ar', 'like', $like)
                         ->orWhere('active_ingredient', 'like', $like);
                 });
                 $applied = true;

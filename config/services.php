@@ -55,6 +55,15 @@ return [
         'key'      => env('DAWAY_OCR_KEY'),
     ],
 
+    // خدمة تحليل نية رسالة المريض (نص → intent + drug_name).
+    // اختيارية بالكامل: عند غياب base_url يعمل المساعد بمستخرج محلي حتمي
+    // بلا أي استدعاء خارجي. المهلة 8 ثوانٍ — لا نحتجز عمال PHP على اتصال بطيء.
+    'daway_ai' => [
+        'base_url' => env('DAWAY_AI_BASE_URL'),
+        'timeout'  => (int) env('DAWAY_AI_TIMEOUT', 8),
+        'key'      => env('DAWAY_AI_KEY'),
+    ],
+
     // البروكسي الموثوق انتقل إلى config/trustedproxy.php (يقرؤه TrustProxies وقت الطلب) — H-2/H-3
 
     // Firebase Web Push — قيم العميل العامة (تُقرأ من layouts/app.blade.php عبر config())
