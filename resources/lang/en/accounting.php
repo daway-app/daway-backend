@@ -371,6 +371,7 @@ return [
         'step_2' => 'Scan the QR code or enter the pairing code.',
         'step_3' => 'Keep this window open while scanning.',
 
+        'state_idle' => 'No scan session yet',
         'state_waiting' => 'Waiting for phone…',
         'state_connecting' => 'Connecting…',
         'state_connected' => 'Phone connected — ready to scan',

@@ -179,15 +179,31 @@ final class MedicineResolver
                 return [];
             }
 
+            // بوّابة رخيصة مطابقة تماماً لما في lookupMappingBatch:
+            // haystackMayMatch آمنة كـsuperset — لو أعادت false فالمطابق الكامل
+            // (recordMatchesNeedle) كان سيعيد false حتماً ⇒ صفر تغيير في النتائج.
+            //
+            // ⚠️ مقصود: يُبنى haystack كل سجل لحظياً ثم يُترك للـGC — لا فهرس
+            // دائم. الفهرس الدائم (17,295 سجلاً) رفع الذاكرة من 24MB إلى 104MB
+            // وهو غير مقبول على خطة Render المجانية، ويُسقط الاختبارات عند حد
+            // الذاكرة الافتراضي. القراءة التدفقية تُبقي الذاكرة ثابتة.
+            $bucket = [
+                'needle' => $needle,
+                'skel' => $needleSkel,
+                'skel_glued' => str_replace(' ', '', $needleSkel),
+                'words' => preg_split('/\s+/u', $needleSkel, -1, PREG_SPLIT_NO_EMPTY) ?: [],
+                'hits' => [],
+            ];
+
             $hits = [];
 
+            $handle = @fopen($path, 'r');
+
+            if ($handle === false) {
+                return [];
+            }
+
             try {
-                $handle = fopen($path, 'r');
-
-                if ($handle === false) {
-                    return [];
-                }
-
                 while (($line = fgets($handle)) !== false && count($hits) < $limit) {
                     $line = trim($line, " \t\r\n,");
 
@@ -202,28 +218,31 @@ final class MedicineResolver
                     }
 
                     // الملف عادة سطر لكل سجل (JSONL)، لكن نتقبّل أيضاً مصفوفة كاملة في سطر واحد
-                    if (array_is_list($record)) {
-                        foreach ($record as $subRecord) {
-                            if (is_array($subRecord)) {
-                                $this->collectMappingHit($subRecord, $needle, $needleSkel, $hits, $limit);
-                            }
+                    $records = array_is_list($record) ? $record : [$record];
 
-                            if (count($hits) >= $limit) {
-                                break 2;
-                            }
+                    foreach ($records as $candidate) {
+                        if (! is_array($candidate) || count($hits) >= $limit) {
+                            continue;
                         }
 
-                        continue;
+                        // البوّابة: haystack رخيص (تطبيع واحد للسجل) يستبعد غير
+                        // المرشّحين قبل تشغيل المطابق الكامل. الذاكرة تبقى ثابتة
+                        // (سجل واحد في الذاكرة)، والحكم النهائي لـrecordMatchesNeedle.
+                        if (! $this->haystackMayMatch($this->recordHaystackLoose($candidate), $bucket)) {
+                            continue;
+                        }
+
+                        if ($this->recordMatchesNeedle($candidate, $needle, $needleSkel)) {
+                            $hits[] = $this->mappingHitPayload($candidate);
+                        }
                     }
-
-                    $this->collectMappingHit($record, $needle, $needleSkel, $hits, $limit);
                 }
-
-                fclose($handle);
             } catch (\Throwable $e) {
                 Log::warning('mapping lookup failed', ['error' => $e->getMessage()]);
 
                 return [];
+            } finally {
+                fclose($handle);
             }
 
             return $hits;
@@ -373,6 +392,38 @@ final class MedicineResolver
     }
 
     /**
+     * haystack رخيص للمسار المفرد — تطبيع **واحد** للسجل بدل تطبيع كل alias
+     * مرّتين (كما في recordHaystack). الغرض: البوّابة فقط، لا المطابقة.
+     *
+     * الأمان (مُثبَت بالبناء): `MedicineNameMapper::clean()` وskeletonOf()
+     * عملياتهما **محرفية** (استبدال ترقيم/حذف تشكيل/حذف ألف/طيّ مسافات)، لذا
+     * clean(alias_i) يبقى نصاً متصلاً داخل clean(join(aliases)). ونتيجة ذلك:
+     *   - needle موجود في normalize(alias_i)  ⟹ موجود في plain هنا
+     *   - أي تطابق في skel(alias_i)          ⟹ موجود في skel هنا
+     * ⇒ هذه البوّابة **superset** لما تفحصه haystackMayMatch، فلا يُسقط أي
+     * سجل كان recordMatchesNeedle سيقبله. الحكم النهائي يبقى لـrecordMatchesNeedle.
+     *
+     * @param  array<string, mixed>  $record
+     * @return array{plain: string, skel: string}
+     */
+    private function recordHaystackLoose(array $record): array
+    {
+        $aliases = array_values(array_filter(
+            (array) ($record['aliases'] ?? []),
+            'is_string'
+        ));
+
+        if ($aliases === []) {
+            return ['plain' => '', 'skel' => ''];
+        }
+
+        $plain = self::normalizeArabic(implode("\n", $aliases));
+        $skel = str_replace([' ', "\n"], '', str_replace('ا', '', $plain));
+
+        return ['plain' => $plain, 'skel' => $skel];
+    }
+
+    /**
      * بوّابة رخيصة: هل يستحق هذا السجل تشغيل المطابق الكامل؟
      *
      * آمنة كـ superset للمراحل الثلاث: لو أعادت false فالمطابق الكامل كان
@@ -417,31 +468,9 @@ final class MedicineResolver
     }
 
     /**
-     * يفحص سجل mapping واحداً ويضيفه للنتائج إن طابق الاستعلام عبر aliases.
-     * الملف لا يحتوي نسخاً ملزوقة (بدون مسافات) — تُبنى وقت المطابقة من الـ
-     * aliases متعددة الكلمات حتى تضمن حدود الكلمات ولا تسبب تطابقات كاذبة.
-     *
-     * المراحل:
-     *  1) مطابقة مباشرة بعد التطبيع (همزات/تشكيل/مسافات).
-     *  2) استعلام ملزوق (بدون مسافات، ≥ 8 أحرف): نلصق الـ aliases متعددة الكلمات
-     *     ونقارن الهياكل — "بنادولتابليت" ↔ لصق "بانادول تابليت".
-     *  3) مطابقة هيكلية كلمة-بكلمة تحذف الألف — "بنادول" ↔ "بانادول".
-     */
-    private function collectMappingHit(array $record, string $needle, string $needleSkel, array &$hits, int $limit): void
-    {
-        if (count($hits) >= $limit) {
-            return;
-        }
-
-        if ($this->recordMatchesNeedle($record, $needle, $needleSkel)) {
-            $hits[] = $this->mappingHitPayload($record);
-        }
-    }
-
-    /**
      * هل يطابق سجل mapping واحد استعلاماً واحداً؟ (دالة نقية بلا حالة)
      *
-     * استُخرجت من collectMappingHit حرفياً لتُعاد استخدامها في المسار المجمّع
+     * استُخرجت من منطق المطابقة الأصلي حرفياً لتُعاد استخدامها في المسار المجمّع
      * lookupMappingBatch — بلا تكرار للمنطق وبلا أي تغيير في السلوك.
      *
      * المراحل:

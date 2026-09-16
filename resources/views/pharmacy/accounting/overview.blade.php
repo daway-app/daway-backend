@@ -18,6 +18,9 @@
     @endpush
 
     @php
+        // تنسيق المبالغ للعرض — دالة واحدة تُستخدم في كل مكان بالصفحة.
+        $money = fn ($v) => \App\Services\Accounting\AccountingReports::money((float) $v);
+
         // بيانات الرسم تُمرَّر كمتغيّر واحد (@json على مصفوفة مبنيّة مسبقًا)
         $salesSeriesConfig = collect($salesSeries)->map(fn ($s) => [
             'labels' => $s['labels'],
@@ -82,24 +85,23 @@
         <div class="ac-kpi-grid">
             @foreach($kpis as $kpi)
                 @php
-                    $value = $kpi['format'] === 'money'
-                        ? \App\Support\Accounting\AccountingMockData::money($kpi['value'])
-                        : $kpi['value'];
+                    // العرض يُنسَّق في الـController — الـview يرسم فقط.
+                    $value = $kpi['display'] ?? $kpi['value'];
                 @endphp
                 @if($kpi['href'])
-                    <a href="{{ $kpi['href'] }}" class="ac-kpi">
+                    <a href="{{ $kpi['href'] }}" class="ac-kpi" data-ac-kpi="{{ $kpi['key'] }}">
                         <span class="ac-kpi-icon {{ $kpi['tone'] }}"><i class="{{ $kpi['icon'] }}" aria-hidden="true"></i></span>
                         <span class="ac-kpi-body">
-                            <span class="ac-kpi-value">{{ $value }}</span>
+                            <span class="ac-kpi-value" data-ac-kpi-value>{{ $value }}</span>
                             <span class="ac-kpi-label">{{ $kpi['label'] }}</span>
                         </span>
                         <i class="fas fa-chevron-left ac-kpi-caret" aria-hidden="true"></i>
                     </a>
                 @else
-                    <div class="ac-kpi">
+                    <div class="ac-kpi" data-ac-kpi="{{ $kpi['key'] }}">
                         <span class="ac-kpi-icon {{ $kpi['tone'] }}"><i class="{{ $kpi['icon'] }}" aria-hidden="true"></i></span>
                         <span class="ac-kpi-body">
-                            <span class="ac-kpi-value">{{ $value }}</span>
+                            <span class="ac-kpi-value" data-ac-kpi-value>{{ $value }}</span>
                             <span class="ac-kpi-label">{{ $kpi['label'] }}</span>
                         </span>
                     </div>
@@ -151,7 +153,7 @@
                                 <div class="ac-breakdown-top">
                                     <span class="dot" style="background:var({{ $tone }})" aria-hidden="true"></span>
                                     <span class="name">{{ $row['label'] }}</span>
-                                    <span class="amount">{{ \App\Support\Accounting\AccountingMockData::money($row['amount']) }}</span>
+                                    <span class="amount">{{ $money($row['amount']) }}</span>
                                     <span class="pct">{{ $row['percentage'] }}%</span>
                                 </div>
                                 <div class="ac-bar" aria-hidden="true">
@@ -197,15 +199,14 @@
                                     <tr>
                                         <td>
                                             <div class="ac-cell-stack">
-                                                <span>{{ $tx['date']->format('Y-m-d') }}</span>
-                                                <small class="ac-muted">{{ $tx['time'] }}</small>
+                                                <span>{{ $tx['date_human'] ?? '—' }}</span>
                                             </div>
                                         </td>
                                         <td><span class="ac-muted">@lang('accounting.payment_types.' . $tx['type'])</span></td>
                                         <td><span class="ac-mono">{{ $tx['reference'] }}</span></td>
                                         <td>{{ $tx['description'] }}</td>
                                         <td class="ac-num {{ $tx['amount'] < 0 ? 'ac-neg' : 'ac-pos' }}">
-                                            {{ ($tx['amount'] < 0 ? '−' : '+') . \App\Support\Accounting\AccountingMockData::money(abs($tx['amount'])) }}
+                                            {{ $tx['amount_label'] ?? $money($tx['amount']) }}
                                         </td>
                                         <td><span class="ac-muted">@lang('accounting.payment_methods.' . $tx['method'])</span></td>
                                         <td>
@@ -252,4 +253,13 @@
     <script>
         window.acOverviewConfig = @json($overviewConfig);
     </script>
+
+    {{-- ============================================================
+         التحديث الحيّ من الـAPI.
+         الصفحة تصيّر أرقامًا في السيرفر (أول رسم بلا انتظار)، ثم تُحدَّث
+         فورًا من `GET /api/pharmacy/accounting/overview` — لأن الأرقام
+         المصيَّرة تتجمّد لحظة التصيير: بيعٌ يُسجَّل بعدها لا يظهر حتى
+         إعادة تحميل الصفحة.
+         ============================================================ --}}
+    <div class="ac-inline-msg" data-ac-live-status role="status" aria-live="polite"></div>
 @endsection

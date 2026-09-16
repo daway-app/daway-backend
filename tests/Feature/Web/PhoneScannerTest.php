@@ -162,10 +162,15 @@ class PhoneScannerTest extends TestCase
 
     public function test_scanner_config_declares_no_fake_endpoints(): void
     {
+        // 🔴 عقد مصحَّح (2026-09-15): كانت هذه الحمولة تحمل `"scanSessions":[]`.
+        // و`[]` **truthy في JS** ⇒ `scanner-session.start()` يعتقد أن الـBackend
+        // متاح (mode='live')، ثم يفشل أول نداء بـ`no_backend` فيعرض للمستخدم
+        // **حالة خطأ** — بينما الصحيح أن يتصرّف بهدوء كـ«غير متوفّر».
+        // الإشارة الصحيحة هي `null` صريحًا (falsy ⇒ `unavailable`).
         $this->pos()
             ->assertOk()
-            // المسارات غير موجودة ⇒ الحمولة تحمل مصفوفة فارغة
-            ->assertSee('"scanSessions":[]', false)
+            ->assertSee('"scanSessions":null', false)
+            ->assertDontSee('"scanSessions":[]', false)
             // النقل المختار: polling محدود — لا WebSocket (غير موجود بالمشروع)
             ->assertSee('"scanSessionTransport":"polling"', false)
             // الوضع التجريبي مُفعَّل صراحةً
@@ -267,5 +272,142 @@ class PhoneScannerTest extends TestCase
         // JS يطبّق نفس التحويل — نتحقق من وجوده في الملف
         $js = file_get_contents(resource_path('js/accounting/accounting-shared.js'));
         $this->assertStringContainsString("replace(/[\\s\\-_]/g, '')", $js);
+    }
+
+    /* ==========================================================
+       🔴 انحدارات تدقيق 2026-09-15 — كل اختبار يمنع عودة عطل أُصلح
+       ========================================================== */
+
+    public function test_all_nine_states_exist_in_js_and_translations(): void
+    {
+        // 🔴 كان `STATE`/`allStates()` يعرّفان **تسع** حالات بينما الـBlade
+        // يعرّف ثمانيًا (ناقص `idle`) وشرحه يقول «الثمانية». الحالة الناقصة
+        // تُسقط `idle` إلى الـfallback فتظهر «بانتظار الهاتف» بدل «لا جلسة
+        // بعد» — وهي معلومة خاطئة لا مجرّد نصّ ناقص.
+        $js = file_get_contents(resource_path('js/accounting/accounting-scanner-session.js'));
+
+        // الحالات في JS
+        preg_match_all("/^\s+([A-Z]+):\s*'([a-z_]+)'/m", $js, $m);
+        $jsStates = array_values(array_unique($m[2]));
+
+        $this->assertCount(9, $jsStates, 'عدد حالات JS تغيّر: '.implode(',', $jsStates));
+
+        // كل حالة لها نصّ ترجمة في العربية والإنجليزية
+        foreach ($jsStates as $state) {
+            $key = 'accounting.scanner.state_'.$state;
+            $this->assertNotSame($key, __($key), "مفتاح مفقود (ar): {$key}");
+            $this->assertNotSame($key, trans($key, [], 'en'), "مفتاح مفقود (en): {$key}");
+        }
+
+        // وكل حالة لها صنف في مكوّن الحالة
+        $blade = file_get_contents(resource_path('views/components/accounting/scan-session-status.blade.php'));
+        foreach ($jsStates as $state) {
+            $this->assertStringContainsString("'{$state}' =>", $blade, "حالة مفقودة من scan-session-status: {$state}");
+        }
+    }
+
+    public function test_device_and_pairing_hooks_are_always_rendered(): void
+    {
+        // 🔴 كان `[data-device-disconnect]` يُرسم داخل `@if($active)` فقط،
+        // والنافذة تمرّر `:active="null"` ⇒ الزر غير موجود عند التحميل،
+        // و`bind()` لا يُنادى إلا مرة واحدة ⇒ **يستحيل فصل الهاتف** من الواجهة.
+        // ونفس الصنف من العطل في `[data-pair-qr-placeholder]`: كان في فرع
+        // `@else` وحده، فأول QR حقيقي يُفقد المرجع.
+        $html = $this->pos()->assertOk()->getContent();
+
+        foreach ([
+            'data-device-row',
+            'data-device-empty',
+            'data-device-disconnect',
+            'data-device-allow',
+            'data-device-reject',
+            'data-pair-qr-placeholder',
+        ] as $hook) {
+            $this->assertStringContainsString($hook, $html, "خطّاف DOM مفقود عند التحميل: {$hook}");
+        }
+    }
+
+    public function test_js_binds_device_buttons_via_delegation(): void
+    {
+        // الحلّ البنيوي: تفويض على الأب الثابت، لا `querySelectorAll` مرة واحدة.
+        $js = file_get_contents(resource_path('js/accounting/accounting-phone-scanner.js'));
+
+        $this->assertStringContainsString("target.closest('[data-device-disconnect]')", $js);
+        $this->assertStringContainsString("target.closest('[data-device-allow]')", $js);
+        $this->assertStringContainsString("target.closest('[data-device-reject]')", $js);
+    }
+
+    public function test_received_state_goes_through_set_state_not_direct_mutation(): void
+    {
+        // 🔴 كان المستهلك يكتب `controller.state.status = RECEIVED` مباشرة،
+        // فيتجاوز `setState` ولا يُطلق حدث `state` ⇒ تتجمّد أي شاشة تعتمد
+        // على الحدث (شارة الحالة، عدّاد الطابور).
+        $session = file_get_contents(resource_path('js/accounting/accounting-scanner-session.js'));
+        $phone = file_get_contents(resource_path('js/accounting/accounting-phone-scanner.js'));
+
+        // الانتقال متاح كواجهة صريحة
+        $this->assertStringContainsString('markReceived: markReceived', $session);
+        $this->assertStringContainsString('setState(STATE.RECEIVED', $session);
+
+        // والمستهلك يستعملها
+        $this->assertStringContainsString('controller.markReceived(', $phone);
+
+        // ولا كتابة مباشرة على حالة الـcontroller
+        $this->assertDoesNotMatchRegularExpression(
+            '/controller\.state\.status\s*=/',
+            $phone,
+            'كتابة مباشرة على controller.state.status — استعمل markReceived()'
+        );
+    }
+
+    public function test_phone_scanner_never_uses_bare_global_references(): void
+    {
+        // 🔴 `AccountingBarcode && AccountingBarcode.notify(...)` **لا يحمي**:
+        // الاسم المجرّد معرّف غير معلن ⇒ ReferenceError لا undefined. المرجع
+        // الصحيح `window.AccountingBarcode`.
+        $js = file_get_contents(resource_path('js/accounting/accounting-phone-scanner.js'));
+
+        // نستثني التعليقات (تشرح العطل نصًّا) بإزالة السطور المعلّقة.
+        // ⚠️ لاحظ `\s*\*` — تعليقات JSDoc المصدَّرة تبدأ بمسافة ثم `*`،
+        // و`^\s*(\*|...)` يلتقطها؛ لكن أيضاً نستثني أي سطر يبدأ بـ`*` في JSDoc
+        // داخل الكتلة. الأنظف: نحذف كتل التعليقات كاملة ثم نفحص الكود الباقي.
+        $code = preg_replace('#/\*.*?\*/#s', '', $js);
+        $code = preg_replace('#^[ \t]*//.*$#m', '', $code);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/(?<![\w.])AccountingBarcode\s*&&/',
+            $code,
+            'مرجع مجرّد غير محروس لـ AccountingBarcode'
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/(?<![\w.])AccountingBarcode\./',
+            $code,
+            'استعمال مجرّد لـ AccountingBarcode بلا window.'
+        );
+    }
+
+    public function test_qr_alt_is_available_to_the_js_bundle(): void
+    {
+        // 🔴 `qr_alt` كان معرّفًا في ملفّي الترجمة لكنه **غائب** من
+        // `$acScannerI18n` المحقون ⇒ `t('qr_alt','QR')` يسقط دائمًا إلى 'QR'
+        // فيُقرأ البديل الإنجليزي على واجهة عربية (WCAG 3.1.2 Language of Parts).
+        $html = $this->pos()->assertOk()->getContent();
+
+        $this->assertStringContainsString('"qr_alt"', $html, 'qr_alt غير محقون في acScannerI18n');
+
+        $ar = __('accounting.scanner.qr_alt');
+        $this->assertNotSame('accounting.scanner.qr_alt', $ar);
+
+        // نصّ البديل العربي يظهر فعلًا في الصفحة (لا البديل الإنجليزي)
+        $this->assertStringContainsString($ar, $html);
+    }
+
+    public function test_pos_i18n_has_a_safety_net(): void
+    {
+        // 🔴 25 موضعًا في accounting-pos.js تقرأ `window.acPosI18n.x` بلا حرس.
+        // لو غاب الـpartial تنفجر كل مسارات البيع بـTypeError. الحرس في الأعلى.
+        $js = file_get_contents(resource_path('js/accounting/accounting-pos.js'));
+
+        $this->assertStringContainsString('window.acPosI18n = window.acPosI18n ||', $js);
     }
 }

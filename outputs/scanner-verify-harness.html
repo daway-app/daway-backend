@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Scanner real-bundle verification harness</title>
+<style>
+  body { font-family: monospace; background:#0b1220; color:#e6edf7; padding:16px; }
+  .ok { color:#3ddc97; }
+  .bad { color:#ff6b6b; }
+  h1 { font-size:16px; }
+  #__out { white-space: pre-wrap; font-size:13px; line-height:1.7; }
+</style>
+</head>
+<body>
+<h1>Scanner verification — real built bundles</h1>
+<div id="__M"></div>
+<div id="__out"></div>
+
+<script>
+/* ── نُهيّئ الحد الأدنى قبل تحميل الحزم ───────────────────────────── */
+
+// إعداد مثل ما يكتبه Blade (endpoints.scanSessions = null بعد الإصلاح)
+window.acAccountingConfig = {
+  currency: '\u20aa',
+  demo: true,
+  catalog: [],
+  endpoints: {
+    medicineSearch: '/api/medicines/search',
+    barcodeLookup: '/api/medicines/barcode',
+    salesCreate: '/api/pharmacy/accounting/sales',
+    salesShow: '/pharmacy/accounting/sales/__NUMBER__',
+    scanSessions: null          // ← الإشارة الصحيحة (غير متوفّر)
+  },
+  scanSessionTransport: 'polling',
+  scanSessionMock: false,
+  scanSessionMockBarcodes: ['6281001001234', '0000000000000', '6291041500213']
+};
+
+window.acPosI18n = {
+  lines_required: 'أضف صنفًا', invalid_qty: 'كمية غير صحيحة',
+  invalid_amount: 'مبلغ غير صحيح', clear_cart_confirm: 'تأكيد؟',
+  not_in_inventory: 'ليس في المخزون', stock_none: 'نفد',
+  stock_available: 'متوفّر :qty', qty_label: 'الكمية', price_label: 'السعر',
+  discount_label: 'الخصم', remove_label: 'احذف', out_of_stock_warn: 'نفد :qty',
+  barcode_out_of_stock: '«:name» نفد من المخزون',
+  search_no_results: 'لا نتائج', paid_exceeds_total: 'المدفوع أكبر',
+  processing: 'جارٍ…', complete_sale: 'أتمم', sale_saved: 'حُفظت',
+  sale_failed: 'فشل'
+};
+window.acBarcodeI18n = { found_added:'أُضيف', found_title:'وُجد', empty_code:'فارغ', link_saved:'حُفظ' };
+window.acScannerI18n = {
+  states: { idle:'لا جلسة', waiting:'بانتظار الهاتف…', connecting:'جارٍ الاتصال…',
+    connected:'متصل', scanning:'جارٍ المسح', received:'استُلم',
+    disconnected:'انقطع', expired:'انتهت', error:'خطأ' },
+  received_label:'الباركود', queue_label:'الطابور',
+  disconnected_note:'انقطع الجهاز', session_expired_note:'انتهت الجلسة',
+  device_request_title:'طلب اقتران', device_active:'نشط', devices_empty:'لا أجهزة',
+  pairing_code:'رمز', qr_alt:'رمز اقتراح' };
+window.acCommonI18n = {};
+window.acOverviewI18n = {};
+window.acSalesI18n = {};
+window.acInvoiceI18n = {};
+</script>
+
+{{-- نُحاكي DOM نافذة الماسح كما ترسمه Blade بعد الإصلاح (كل الخطّافات حاضرة) --}}
+<div class="ac-modal" data-phone-scanner-modal>
+  <div class="ac-session-status" data-session-status data-status="idle" role="status" aria-live="polite">
+    <span data-session-label></span><span data-session-timer hidden></span>
+  </div>
+  <div data-pair-section>
+    <output data-pair-code>—</output>
+    <div data-pair-qr-placeholder></div>
+  </div>
+  <div data-devices-card>
+    <ul data-devices-list>
+      <li data-device-row hidden><span data-device-name></span>
+        <button data-device-disconnect>فصل</button></li>
+      <li data-device-empty>لا أجهزة</li>
+    </ul>
+    <div data-device-request hidden>
+      <p data-device-request-name></p>
+      <button data-device-allow>سماح</button>
+      <button data-device-reject>رفض</button>
+    </div>
+  </div>
+  <div data-session-received hidden><span data-received-code></span><span data-received-hint></span></div>
+  <div data-session-queue hidden><ul data-queue-list></ul></div>
+  <button data-scanner-reconnect>إعادة</button>
+  <button data-scanner-new-session>جلسة</button>
+  <button data-scanner-simulate>محاكاة</button>
+  <button data-phone-scanner-close>إغلاق</button>
+</div>
+<button data-phone-scanner-open>الماسح</button>
+<span data-phone-scanner-dot hidden></span>
+
+<script src="/build/assets/accounting-shared-D0oJlY83.js"></script>
+<script src="/build/assets/accounting-scanner-session-CA36oc8L.js"></script>
+<script src="/build/assets/accounting-barcode-DnnTfIWw.js"></script>
+<script src="/build/assets/accounting-phone-scanner-BS6DIn7C.js"></script>
+
+<script>
+(function () {
+  var out = [];
+  var pass = 0, fail = 0;
+
+  function ck(label, actual, expected) {
+    var ok = JSON.stringify(actual) === JSON.stringify(expected);
+    if (ok) { pass++; out.push('  \u2713 ' + label); }
+    else {
+      fail++;
+      out.push('  \u2717 ' + label + '  (متوقّع ' + JSON.stringify(expected) +
+               '، فعلي ' + JSON.stringify(actual) + ')');
+    }
+  }
+
+  function finish() {
+    document.getElementById('__out').innerHTML =
+      out.join('<br>').replace(/\u2713/g, '<span class="ok">\u2713</span>')
+                       .replace(/\u2717/g, '<span class="bad">\u2717</span>');
+    document.getElementById('__M').textContent =
+      'RESULT pass=' + pass + ' fail=' + fail;
+  }
+
+  try {
+    out.push('<b>1) الموديولات محمّلة من حِزَم البناء الحقيقية</b>');
+    ck('AccountingScanSession موجود', typeof window.AccountingScanSession, 'object');
+    ck('AccountingBarcode موجود', typeof window.AccountingBarcode, 'object');
+    ck('AccountingPhoneScanner موجود', typeof window.AccountingPhoneScanner, 'object');
+    ck('AccountingUtil موجود', typeof window.AccountingUtil, 'object');
+    ck('AccountingApi موجود', typeof window.AccountingApi, 'object');
+
+    out.push('<b>2) الحالات التسع في الحزمة المبنية</b>');
+    var S = window.AccountingScanSession;
+    ck('9 حالات', S.allStates().length, 9);
+    ck('idle حاضرة', S.allStates().indexOf('idle') >= 0, true);
+
+    out.push('<b>3) createController يُصدّر markReceived (الانتقال الصريح)</b>');
+    var c = S.createController();
+    ck('markReceived دالة', typeof c.markReceived, 'function');
+    ck('resolve دالة', typeof c.resolve, 'function');
+
+    out.push('<b>4) 🔴 غياب scanSessions ⇒ unavailable لا error</b>');
+    c.start().then(function (snap) {
+      ck('mode = unavailable', snap.mode, 'unavailable');
+      ck('status = waiting', snap.status, 'waiting');
+      ck('error = no_backend', snap.error, 'no_backend');
+
+      out.push('<b>5) markReceived تُطلق حدث state (لا كتابة مباشرة)</b>');
+      var events = [];
+      c.onChange(function (type, p, s) { events.push(type + ':' + (s && s.status)); });
+      c.markReceived('6281001001234');
+      ck('الحالة received', c.snapshot().status, 'received');
+      ck('حدث state:received أُطلق', events.indexOf('state:received') >= 0, true);
+
+      out.push('<b>6) DOM: عناصر الأجهزة حاضرة ومُتحكَّم بها</b>');
+      ck('data-device-row موجود', !!document.querySelector('[data-device-row]'), true);
+      ck('data-device-disconnect موجود', !!document.querySelector('[data-device-disconnect]'), true);
+      ck('data-device-allow موجود', !!document.querySelector('[data-device-allow]'), true);
+      ck('data-pair-qr-placeholder موجود', !!document.querySelector('[data-pair-qr-placeholder]'), true);
+
+      out.push('<b>7) بلا Backend وبلا mock ⇒ unavailable صريح (لا error)</b>');
+      return c.close().then(function () {
+        ck('close() لا يرمي', true, true);
+        finish();
+      });
+    }).catch(function (e) {
+      out.push('<span class="bad">استثناء: ' + e + '</span>');
+      fail++;
+      finish();
+    });
+  } catch (e) {
+    out.push('<span class="bad">استثناء عام: ' + e + '</span>');
+    document.getElementById('__M').textContent = 'RESULT pass=0 fail=1 error=' + e;
+    finish();
+  }
+})();
+</script>
+</body>
+</html>

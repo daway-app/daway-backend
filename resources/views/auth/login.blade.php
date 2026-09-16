@@ -8,21 +8,54 @@
     <meta name="theme-color" content="#1C72A6">
     {{-- الخطوط (Cairo + Tajawal) تُستضاف ذاتياً عبر Vite/bunny — لا طلب خارجي حاجب للعرض --}}
 
+    {{-- الوضع الداكن: يُقرأ قبل الرسم الأول لمنع وميض الصفحة البيضاء.
+         يتبع نفس نمط layouts/app.blade.php (الصنف على html و body معاً). --}}
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <!-- ربط ملف الـ CSS الخارجي عبر Vite -->
+    {{-- ملاحظة: auth_login.css و auth.css ملفان قديمان يتيمان — تعطيلهما مقصود.
+         الاستايلات الفعلية للصفحة كلها في forms.css (المصدر الموحّد فوق tokens). --}}
     @vite(['resources/css/tokens.css', 'resources/css/app.css', 'resources/css/auth/forms.css'])
 </head>
 
 <body>
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.body.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
 
     <div class="auth-container">
 
         <!-- Progress Loader Overlay -->
-        <div class="loader-overlay" id="loaderOverlay">
+        <div class="loader-overlay" id="loaderOverlay" role="status" aria-live="polite" aria-busy="true">
             <div class="loader-spinner-box">
                 <div class="spinner"></div>
-                <span class="loader-icon">💊</span>
+                <span class="loader-icon" aria-hidden="true">💊</span>
             </div>
             <div class="loader-text">جاري التحقق والدخول...</div>
+
+            {{-- شبكة أمان: تظهر إن تجاوز الطلب المهلة (شبكة بطيئة / خادم لا يستجيب) --}}
+            <div class="loader-timeout">
+                <div class="loader-timeout-icon" aria-hidden="true">⚠️</div>
+                <div class="loader-timeout-msg">
+                    استغرق الدخول وقتاً أطول من المتوقّع. تحقّق من اتصال الإنترنت وحاول مرة أخرى.
+                </div>
+                <button type="button" class="loader-timeout-btn" onclick="resetLoginState()">إعادة المحاولة</button>
+            </div>
         </div>
 
         <!-- الجانب الأيسر: النموذج -->
@@ -30,16 +63,17 @@
             <h1 class="form-title">تسجيل الدخول</h1>
             <p class="form-subtitle">اختر نوع الحساب وأدخل بياناتك للوصول إلى اللوحة.</p>
 
-            <form id="loginForm" action="{{ route('login') }}" method="POST">
+            <form id="loginForm" action="{{ route('login') }}" method="POST" novalidate>
                 @csrf
 
                 <!-- نوع الحساب -->
                 <div class="fg">
-                    <label class="fl">نوع الحساب</label>
+                    <label class="fl" for="account_type">نوع الحساب</label>
                     <select id="account_type" name="account_type" class="select-fc" onchange="switchRole(this.value)">
+                        <option value="pharmacy" {{ old('account_type') == 'pharmacy' ? 'selected' : '' }}>صيدلية
+                        </option>
                         <option value="admin" {{ old('account_type') == 'admin' ? 'selected' : '' }}>أدمن (مدير النظام)
                         </option>
-                        <option value="pharmacy" {{ old('account_type') == 'pharmacy' ? 'selected' : '' }}>صيدلية</option>
                     </select>
                     @error('account_type')
                         <div class="error-message">{{ $message }}</div>
@@ -48,39 +82,43 @@
 
                 <!-- معرف الحساب / البريد -->
                 <div class="fg">
-                    <label class="fl" id="identityLabel">البريد الإلكتروني</label>
+                    <label class="fl" id="identityLabel" for="identityInput">معرف الصيدلية (Pharmacy ID)</label>
                     <div class="fc-wrapper">
                         <input class="fc" type="text" id="identityInput" name="identity" value="{{ old('identity') }}"
-                            placeholder="example@email.com" required>
+                            placeholder="أدخل Pharmacy ID الخاص بالصيدلية" autocomplete="username"
+                            autocapitalize="characters" spellcheck="false" dir="ltr" required
+                            @error('identity') aria-invalid="true" aria-describedby="identityError" @enderror>
                     </div>
-                    <div class="info-hint" id="infoHint">
-                        💡 <strong>أدمن:</strong> استخدم البريد الإلكتروني وكلمة المرور الخاصة بك.
+                    <div class="info-hint" id="infoHint" role="note">
+                        💡 <strong>صيدلية:</strong> استخدم Pharmacy ID الذي منحه الأدمن.
                     </div>
                     @error('identity')
-                        <div class="error-message">{{ $message }}</div>
+                        <div class="error-message" id="identityError">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <!-- كلمة المرور -->
                 <div class="fg">
-                    <label class="fl">كلمة المرور</label>
+                    <label class="fl" for="passwordInput">كلمة المرور</label>
                     <div class="fc-wrapper">
                         <input class="fc" type="password" id="passwordInput" name="password" placeholder="••••••••"
-                            required>
-                        <button type="button" class="toggle-btn" onclick="togglePass()">إظهار</button>
+                            autocomplete="current-password" required
+                            @error('password') aria-invalid="true" aria-describedby="passwordError" @enderror>
+                        <button type="button" class="toggle-btn" onclick="togglePass()"
+                            aria-controls="passwordInput" aria-label="إظهار كلمة المرور">إظهار</button>
                     </div>
                     @error('password')
-                        <div class="error-message">{{ $message }}</div>
+                        <div class="error-message" id="passwordError">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="form-footer-options">
-                    <a href="{{ route('login.show') }}"
-                        style="color:#1C72A6; text-decoration:none; font-weight:700">نسيت كلمة المرور؟</a>
                     <label class="remember-label">
                         <span>تذكرني</span>
-                        <input type="checkbox" name="remember">
+                        <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}>
                     </label>
+                    {{-- لا يوجد مسار استعادة كلمة مرور بعد — نص إرشادي بدل رابط ميّت --}}
+                    <span class="forgot-hint">نسيت كلمة المرور؟ تواصل مع إدارة النظام</span>
                 </div>
 
                 <button type="submit" class="btn-p" id="submitBtn">تسجيل الدخول</button>
@@ -133,44 +171,94 @@
     </div>
 
     <script>
+        // مهلة الدخول: بعدها نُظهر خيار "إعادة المحاولة" بدل حبس المستخدم في سبينر أبدي.
+        var LOGIN_TIMEOUT_MS = 15000;
+
+        var loginForm = document.getElementById('loginForm');
+        var loaderOverlay = document.getElementById('loaderOverlay');
+        var submitBtn = document.getElementById('submitBtn');
+        var loginTimer = null;
+
+        function clearLoginTimer() {
+            if (loginTimer !== null) {
+                clearTimeout(loginTimer);
+                loginTimer = null;
+            }
+        }
+
+        // إعادة الصفحة لحالة قابلة للاستخدام (يُستدعى من زر إعادة المحاولة).
+        function resetLoginState() {
+            clearLoginTimer();
+            loaderOverlay.classList.remove('active', 'show-timeout');
+            loaderOverlay.removeAttribute('aria-busy');
+            submitBtn.disabled = false;
+            submitBtn.focus();
+        }
+
         function switchRole(type) {
-            const label = document.getElementById('identityLabel');
-            const input = document.getElementById('identityInput');
-            const hint = document.getElementById('infoHint');
+            var label = document.getElementById('identityLabel');
+            var input = document.getElementById('identityInput');
+            var hint = document.getElementById('infoHint');
+            var isSwitchingType = input.dataset.role !== type;
 
             if (type === 'pharmacy') {
-                label.innerText = 'معرف الصيدلية (Pharmacy ID)';
+                label.textContent = 'معرف الصيدلية (Pharmacy ID)';
                 input.placeholder = 'أدخل Pharmacy ID الخاص بالصيدلية';
-                input.value = '{{ old('identity', '') }}'; // Keep old value or clear
-                hint.innerHTML = '💡 <strong>صيدلية:</strong> استخدم Pharmacy ID الذي منحه الأدمن.';
+                input.setAttribute('dir', 'ltr');
+                input.setAttribute('autocapitalize', 'characters');
+                hint.textContent = '💡 صيدلية: استخدم Pharmacy ID الذي منحه الأدمن.';
             } else {
-                label.innerText = 'البريد الإلكتروني';
+                label.textContent = 'البريد الإلكتروني';
                 input.placeholder = 'example@email.com';
-                input.value = '{{ old('identity') }}'; // Keep old value only, no default
-                hint.innerHTML = '💡 <strong>أدمن:</strong> استخدم البريد الإلكتروني وكلمة المرور الخاصة بك.';
+                input.setAttribute('dir', 'ltr');
+                input.removeAttribute('autocapitalize');
+                hint.textContent = '💡 أدمن: استخدم البريد الإلكتروني وكلمة المرور الخاصة بك.';
             }
+
+            // لا تمسح ما كتبه المستخدم إلا إذا غيّر نوع الحساب فعلاً وكان الحقل يحمل قيمة
+            // من النوع السابق (أو قيمة old() المحقونة عند تحميل الصفحة).
+            if (isSwitchingType && input.value !== '') {
+                input.value = '';
+            }
+            input.dataset.role = type;
         }
 
         function togglePass() {
-            const input = document.getElementById('passwordInput');
-            const btn = document.querySelector('.toggle-btn');
-            if (input.type === 'password') {
-                input.type = 'text';
-                btn.innerText = 'إخفاء';
-            } else {
-                input.type = 'password';
-                btn.innerText = 'إظهار';
-            }
+            var input = document.getElementById('passwordInput');
+            var btn = document.querySelector('.toggle-btn');
+            var isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.textContent = isHidden ? 'إخفاء' : 'إظهار';
+            btn.setAttribute('aria-label', isHidden ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
         }
 
-        document.getElementById('loginForm').addEventListener('submit', function (e) {
-            document.getElementById('loaderOverlay').classList.add('active');
-            document.getElementById('submitBtn').disabled = true;
+        loginForm.addEventListener('submit', function () {
+            loaderOverlay.classList.add('active');
+            loaderOverlay.setAttribute('aria-busy', 'true');
+            submitBtn.disabled = true;
+
+            // شبكة الأمان: لا نترك المستخدم محبوساً إن لم يصل الرد.
+            clearLoginTimer();
+            loginTimer = setTimeout(function () {
+                loaderOverlay.classList.add('show-timeout');
+                loaderOverlay.removeAttribute('aria-busy');
+                submitBtn.disabled = false;
+            }, LOGIN_TIMEOUT_MS);
+        });
+
+        // عند العودة بالـ back (أو استعادة الصفحة من كاش الـ Service Worker)
+        // يجب إرجاع الواجهة لحالتها الطبيعية، وإلا بقيت معطّلة.
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted || loaderOverlay.classList.contains('active')) {
+                resetLoginState();
+            }
         });
 
         // Initialize role display on page load based on old input
         document.addEventListener('DOMContentLoaded', function () {
-            const accountTypeSelect = document.getElementById('account_type');
+            var accountTypeSelect = document.getElementById('account_type');
+            // نضبط dataset أولاً حتى لا يُحسب التحميل الأول "تبديلاً" فيُمسح old input.
+            document.getElementById('identityInput').dataset.role = accountTypeSelect.value;
             switchRole(accountTypeSelect.value);
         });
     </script>

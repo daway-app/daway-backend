@@ -150,10 +150,16 @@
                         </div>
                         <div class="complete-card-body">
                             {{-- الخريطة التفاعلية تُدار من pharmacy_hub.js (نفس حوار تعديل الموقع في البروفايل) --}}
-                            <div id='pharmacyMapEdit' class='complete-map' data-lat='{{ old('latitude', 31.5016) }}' data-lng='{{ old('longitude', 34.4668) }}'></div>
-                            <input type='hidden' name='latitude' id='latitude' value='{{ old('latitude') }}'>
-                            <input type='hidden' name='longitude' id='longitude' value='{{ old('longitude') }}'>
-                            <p class="hint-under">@lang('pharmacy.profile.map_hint')</p>
+                            <div id='pharmacyMapEdit' class='complete-map' data-lat='{{ old('latitude', $defaultLatitude) }}' data-lng='{{ old('longitude', $defaultLongitude) }}'></div>
+                            {{-- 🔴 الحقلان يحملان مركز الخريطة الافتراضي كقيمة ابتدائية.
+                                 سابقاً كانا فارغين، والكاتب الوحيد لهما هو applyChange() داخل
+                                 openLocationModal() — وهي لا تعمل هنا لأن #locationModal غائب عن
+                                 هذه الصفحة (موجود في edit.blade.php فقط). فكان الإرسال يفشل دائماً
+                                 وتبقى الصيدلية محبوسة. الآن يُرسل النموذج إحداثيات صالحة حتى لو
+                                 فشل تحميل الخريطة (unpkg محجوب مثلاً)، والمستخدم يعدّلها إن أراد. --}}
+                            <input type='hidden' name='latitude' id='latitude' value='{{ old('latitude', $defaultLatitude) }}'>
+                            <input type='hidden' name='longitude' id='longitude' value='{{ old('longitude', $defaultLongitude) }}'>
+                            <p class="hint-under">@lang('pharmacy.profile.complete.location_default_hint')</p>
                             @error('latitude')
                                 <span class="field-error">{{ $message }}</span>
                             @enderror

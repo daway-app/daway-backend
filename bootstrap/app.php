@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\EnsureProfileComplete;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\SetAppLocale;
@@ -59,6 +60,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureRole::class,
             'profile.complete' => EnsureProfileComplete::class,
+            // إلزام تغيير كلمة المرور المؤقتة — يسبق profile.complete (إجراء أمني).
+            'password.changed' => EnsurePasswordChanged::class,
         ]);
 
         $middleware->web(append: [

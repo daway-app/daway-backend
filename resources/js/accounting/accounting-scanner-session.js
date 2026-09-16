@@ -792,6 +792,22 @@
         }
 
         /* ---------- للاختبارات ---------- */
+        /**
+         * يُعلن أن باركودًا وصل وتم التعرّف على الدواء — انتقال `scanning`
+         * (أو `connected`) ⇒ `received`.
+         *
+         * ⚠️ موجودة لأن المستهلك (accounting-phone-scanner.js) كان يكتب
+         * `controller.state.status = RECEIVED` **مباشرة**، وهذا يتجاوز
+         * `setState` فلا يُطلق حدث `state` لأي مستمع آخر: أي شاشة تعتمد على
+         * الحدث (شارة الحالة، عدّاد الطابور) تتجمّد على الحالة القديمة.
+         */
+        function markReceived(barcode) {
+            if (barcode !== undefined) {
+                state.lastBarcode = barcode;
+            }
+            setState(STATE.RECEIVED, { lastBarcode: state.lastBarcode });
+        }
+
         function __setSession(s) {
             applySession(s);
         }
@@ -800,6 +816,7 @@
             start: start,
             enqueue: enqueue,
             resolve: resolve,
+            markReceived: markReceived,
             simulateScan: simulateScan,
             answerDeviceRequest: answerDeviceRequest,
             disconnect: disconnect,

@@ -8,21 +8,51 @@
     <meta name="theme-color" content="#1C72A6">
     {{-- الخطوط (Cairo + Tajawal) تُستضاف ذاتياً عبر Vite/bunny — لا طلب خارجي حاجب للعرض --}}
 
+    {{-- الوضع الداكن: يُقرأ قبل الرسم الأول لمنع وميض الصفحة البيضاء. --}}
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <!-- نفس نظام تصميم صفحات المصادقة (بلا ملف CSS جديد) -->
     @vite(['resources/css/tokens.css', 'resources/css/app.css', 'resources/css/auth/forms.css'])
 </head>
 
 <body>
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.body.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
 
     <div class="auth-container">
 
         <!-- Progress Loader Overlay -->
-        <div class="loader-overlay" id="loaderOverlay">
+        <div class="loader-overlay" id="loaderOverlay" role="status" aria-live="polite" aria-busy="true">
             <div class="loader-spinner-box">
                 <div class="spinner"></div>
-                <span class="loader-icon">💊</span>
+                <span class="loader-icon" aria-hidden="true">💊</span>
             </div>
             <div class="loader-text">جاري إنشاء الحساب...</div>
+
+            {{-- شبكة أمان: تظهر إن تجاوز الطلب المهلة (شبكة بطيئة / خادم لا يستجيب) --}}
+            <div class="loader-timeout">
+                <div class="loader-timeout-icon" aria-hidden="true">⚠️</div>
+                <div class="loader-timeout-msg">
+                    استغرق إنشاء الحساب وقتاً أطول من المتوقّع. تحقّق من اتصال الإنترنت وحاول مرة أخرى.
+                </div>
+                <button type="button" class="loader-timeout-btn" onclick="resetLoginState()">إعادة المحاولة</button>
+            </div>
         </div>
 
         <!-- الجانب الأيسر: النموذج -->
@@ -135,9 +165,39 @@
             }
         }
 
-        document.getElementById('registerForm').addEventListener('submit', function () {
-            document.getElementById('loaderOverlay').classList.add('active');
-            document.getElementById('submitBtn').disabled = true;
+        // مهلة الإنشاء: بعدها نُظهر خيار "إعادة المحاولة" بدل حبس المستخدم.
+        var LOGIN_TIMEOUT_MS = 15000;
+        var registerForm = document.getElementById('registerForm');
+        var loaderOverlay = document.getElementById('loaderOverlay');
+        var submitBtn = document.getElementById('submitBtn');
+        var loginTimer = null;
+
+        function resetLoginState() {
+            if (loginTimer !== null) { clearTimeout(loginTimer); loginTimer = null; }
+            loaderOverlay.classList.remove('active', 'show-timeout');
+            loaderOverlay.removeAttribute('aria-busy');
+            submitBtn.disabled = false;
+            submitBtn.focus();
+        }
+
+        registerForm.addEventListener('submit', function () {
+            loaderOverlay.classList.add('active');
+            loaderOverlay.setAttribute('aria-busy', 'true');
+            submitBtn.disabled = true;
+
+            if (loginTimer !== null) { clearTimeout(loginTimer); }
+            loginTimer = setTimeout(function () {
+                loaderOverlay.classList.add('show-timeout');
+                loaderOverlay.removeAttribute('aria-busy');
+                submitBtn.disabled = false;
+            }, LOGIN_TIMEOUT_MS);
+        });
+
+        // عند العودة بالـ back أو استعادة الصفحة من كاش الـ Service Worker.
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted || loaderOverlay.classList.contains('active')) {
+                resetLoginState();
+            }
         });
     </script>
 

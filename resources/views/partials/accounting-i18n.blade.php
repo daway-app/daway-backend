@@ -17,6 +17,7 @@
 
     $acOverviewI18n = [
         'sales_series' => [],
+        'stale' => __('accounting.overview.live_refresh_failed'),
     ];
 
     $acSalesI18n = [
@@ -95,9 +96,10 @@
         ],
     ];
 
-    // --- المسح بالهاتف: الحالات الثمانية + نصوص نافذة الاقتران ---
+    // --- المسح بالهاتف: الحالات التسع + نصوص نافذة الاقتران ---
     $acScannerI18n = [
         'states' => [
+            'idle' => __('accounting.scanner.state_idle'),
             'waiting' => __('accounting.scanner.state_waiting'),
             'connecting' => __('accounting.scanner.state_connecting'),
             'connected' => __('accounting.scanner.state_connected'),
@@ -115,6 +117,9 @@
         'device_active' => __('accounting.scanner.device_active'),
         'devices_empty' => __('accounting.scanner.devices_empty'),
         'pairing_code' => __('accounting.scanner.pairing_code'),
+        // ⚠️ كان ناقصًا: `accounting-phone-scanner.js:116` يقرأه عبر
+        // `t('qr_alt','QR')` وكان يسقط دائمًا إلى النصّ الإنجليزي البديل.
+        'qr_alt' => __('accounting.scanner.qr_alt'),
     ];
 
     $acAccountingConfig = [
@@ -165,6 +170,19 @@
             // الصندوق
             'cashIndex' => route('api.pharmacy.accounting.cash.index'),
             'cashAdjust' => route('api.pharmacy.accounting.cash.adjustments'),
+
+            // جلسات المسح بالهاتف — **الباك-إند غير موجود بعد**.
+            //
+            // ⚠️ MANDATORY: المفتاح `scanSessions` يجب أن يبقى موجودًا ولو
+            // فارغًا. `accounting-scanner-session.js:241` يقرأ
+            // `endpoints.scanSessions`، ثم `start()` يميّز:
+            //   - `null`/غائب  ⇒ mode='unavailable' + حالة `waiting` هادئة
+            //   - كائن غير فارغ ⇒ mode='live' ثم أول نداء يعيد `no_backend`
+            //     ⇒ حالة **`error`** (شاشة خطأ) للمستخدم.
+            // كمصفوفة/كائن فارغ يُعامَل كـ«live» ثم ينتهي بـ`error`. لذا نُبقيه
+            // `null` صريحًا: `AccountingMockData::scanSessionEndpoints()` يعيد
+            // `[]` (وهو truthy في JS!) — فلا تعتمد عليها لتعني «غير متوفّر».
+            'scanSessions' => null,
         ],
     ];
 @endphp

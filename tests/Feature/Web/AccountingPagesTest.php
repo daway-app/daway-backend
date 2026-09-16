@@ -2,12 +2,17 @@
 
 namespace Tests\Feature\Web;
 
+use App\Models\Medicine;
+use App\Models\MedicineBarcode;
+use App\Models\MohMedicine;
 use App\Models\Pharmacy;
+use App\Models\PharmacyMedicine;
+use App\Models\Sale;
 use App\Models\User;
 use Tests\TestCase;
 
 /**
- * وحدة محاسبة الصيدلية — Frontend-only.
+ * وحدة محاسبة الصيدلية — صفحات الويب.
  *
  * نطاق هذه الاختبارات (مهم):
  *   ✅ تسجيل المسارات و middleware.
@@ -16,8 +21,13 @@ use Tests\TestCase;
  *   ✅ وجود عناصر الواجهة الحرجة (حقل الباركود، السلة، الأزرار).
  *   ✅ عدم وجود روابط ميتة في الشريط الجانبي.
  *
- *   ❌ لا نختبر حفظًا في قاعدة البيانات — لا يوجد Backend محاسبة،
- *      واختبار «حفظ» سيكون اختبارًا لسلوك غير موجود.
+ * ⚠️ تحديث 2026-09-15: الموديول صار له Backend حقيقي (AccountingLedger +
+ * جداول sales/sale_items). لم يعد هناك mock في المسار الحقيقي، لذا:
+ *   - قائمة المبيعات تبدأ **فارغة** لصيدلية جديدة (لم يعد 20 فاتورة وهمية).
+ *   - `/sales/{number}` يرجع 404 لأي رقم غير موجود فعلًا في قاعدة البيانات.
+ * اختبارات البيانات الحقيقية (حفظ/خصم/بيع آجل) في
+ * `tests/Feature/Api/AccountingWiringTest.php`، والتحقق من أن كل نقطة وصل
+ * موجودة في الصفحات في `tests/Feature/Web/AccountingPosWiringRenderTest.php`.
  */
 class AccountingPagesTest extends TestCase
 {
@@ -148,10 +158,15 @@ class AccountingPagesTest extends TestCase
 
     public function test_sales_page_renders_full_table_headers(): void
     {
-        [$user] = $this->pharmacyUser();
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        // ⚠️ الجدول يُرسم فقط عند وجود صفوف (الحالة الفارغة بديل كامل)
+        // ⇒ ننشئ فاتورة حقيقية قبل فحص العناوين.
+        $this->makeSale($pharmacy->id, 'INV-5001');
 
         $this->actingAs($user)->get('/pharmacy/accounting/sales')
             ->assertOk()
+            ->assertSee('INV-5001')
             ->assertSee(__('accounting.sales.col_invoice'))
             ->assertSee(__('accounting.sales.col_discount'))
             ->assertSee(__('accounting.sales.col_remaining'))
@@ -159,58 +174,147 @@ class AccountingPagesTest extends TestCase
             ->assertSee(__('accounting.sales.col_status'));
     }
 
-    public function test_sales_filters_narrow_the_result_set(): void
+    public function test_sales_filters_accept_known_values_without_error(): void
     {
         [$user] = $this->pharmacyUser();
         $this->actingAs($user);
 
-        // فلتر الحالة: فاتورة مدفوعة موجودة، والملغاة يجب ألا تظهر
-        $paid = $this->get('/pharmacy/accounting/sales?status=paid');
-        $paid->assertOk();
-        $this->assertStringContainsString('INV-1042', $paid->getContent());
-
-        $cancelled = $this->get('/pharmacy/accounting/sales?status=cancelled');
-        $cancelled->assertOk()->assertSee('INV-1031');
-        $this->assertStringNotContainsString('INV-1042', $cancelled->getContent());
+        // ⚠️ القيم غير المعروفة تُتجاهل بصمت (200 لا 422) — نفس عقد الـAPI
+        // حرفيًا. هنا نتأكد أن كل قيمة معروفة تُرسم بلا خطأ 500.
+        foreach (['status=paid', 'status=cancelled', 'method=cash', 'range=today', 'range=all'] as $qs) {
+            $this->get('/pharmacy/accounting/sales?'.$qs)->assertOk();
+        }
     }
 
-    public function test_sales_search_filters_by_invoice_number(): void
+    public function test_sales_filter_values_round_trip_into_the_form(): void
     {
         [$user] = $this->pharmacyUser();
 
-        $this->actingAs($user)->get('/pharmacy/accounting/sales?q=INV-1042')
+        // الفلتر يُعاد إرساله للـview ويُحدَّد في الـ<select> — وإلا فُقد الفلتر
+        // عند الترقيم أو البحث.
+        $html = $this->actingAs($user)->get('/pharmacy/accounting/sales?status=paid&method=cash&range=today')
             ->assertOk()
-            ->assertSee('INV-1042')
-            ->assertDontSee('INV-1041');
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<option value="paid"\s+selected/', $html);
+        $this->assertMatchesRegularExpression('/<option value="cash"\s+selected/', $html);
+        $this->assertMatchesRegularExpression('/<option value="today"\s+selected/', $html);
+    }
+
+    public function test_sales_search_narrows_by_invoice_number(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        // ننشئ فاتورتين حقيقيتين — البحث يجب أن يعزل واحدة بالتحديد.
+        $this->makeSale($pharmacy->id, 'INV-2001');
+        $this->makeSale($pharmacy->id, 'INV-2002');
+
+        $html = $this->actingAs($user)->get('/pharmacy/accounting/sales?q=INV-2001')
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('INV-2001', $html);
+        $this->assertStringNotContainsString('INV-2002', $html);
     }
 
     public function test_sales_page_shows_empty_state_distinctly_from_no_results(): void
     {
         [$user] = $this->pharmacyUser();
 
+        // ⚠️ لا نستعمل assertSee/assertDontSee على النصّ المجرّد: كتلة i18n
+        // المحقونة في الصفحة تحتوي `barcode.link_no_results` = "No matching
+        // results." — وهي تحتوي "No matching results" كسلسلة فرعية، فينجح
+        // assertDontSee زورًا (أو يفشل زورًا). نقصر الفحص على كتلة الحالة الفارغة.
+        $empty = $this->actingAs($user)->get('/pharmacy/accounting/sales')->assertOk()->getContent();
+        $block = $this->emptyStateBlock($empty);
+
+        $this->assertStringContainsString(__('accounting.sales.empty'), $block);
+        $this->assertStringNotContainsString(__('accounting.sales.no_results'), $block);
+
         // فلتر لا يطابق شيئًا ⇒ «لا نتائج» (لا «لا مبيعات»)
-        $this->actingAs($user)->get('/pharmacy/accounting/sales?q=ZZZ-NOTHING')
-            ->assertOk()
-            ->assertSee(__('accounting.sales.no_results'))
-            ->assertDontSee(__('accounting.sales.empty'));
+        $filtered = $this->actingAs($user)->get('/pharmacy/accounting/sales?q=ZZZ-NOTHING')
+            ->assertOk()->getContent();
+        $block2 = $this->emptyStateBlock($filtered);
+
+        $this->assertStringContainsString(__('accounting.sales.no_results'), $block2);
+        $this->assertStringNotContainsString(__('accounting.sales.empty'), $block2);
+    }
+
+    /** مقطع كتلة الحالة الفارغة وحدها (`.ph-empty`) — لا الصفحة كلها. */
+    private function emptyStateBlock(string $html): string
+    {
+        if (preg_match('/<div class="ph-empty">.*?<\/div>\s*<\/div>/s', $html, $m)) {
+            return $m[0];
+        }
+
+        $this->fail('كتلة الحالة الفارغة (.ph-empty) غير موجودة في الصفحة');
     }
 
     public function test_sales_page_paginates_instead_of_dumping_every_row(): void
     {
-        [$user] = $this->pharmacyUser();
+        [$user, $pharmacy] = $this->pharmacyUser();
 
-        $response = $this->actingAs($user)->get('/pharmacy/accounting/sales');
-        $response->assertOk();
+        // 12 فاتورة، 10 لكل صفحة ⇒ صفحتان.
+        for ($i = 1; $i <= 12; $i++) {
+            $this->makeSale($pharmacy->id, 'INV-'.(3000 + $i));
+        }
 
-        // 20 فاتورة في mock، 10 لكل صفحة ⇒ يوجد ترقيم صفحات
-        $response->assertSee('page=2', false);
+        $page1 = $this->actingAs($user)->get('/pharmacy/accounting/sales')->assertOk();
+        $page1->assertSee('INV-3012');           // الأحدث في الصفحة الأولى
+        $page1->assertDontSee('INV-3001');       // الأقدم مؤجّلة للصفحة الثانية
+        $page1->assertSee('page=2', false);
 
-        // الفاتورة الحادية عشرة وما بعدها مؤجّلة للصفحة التالية (لا تُحمَّل مع الصفحة الأولى)
-        $response->assertDontSee('INV-1032');
-        $response->assertDontSee('INV-1023');
+        $page2 = $this->actingAs($user)->get('/pharmacy/accounting/sales?page=2')->assertOk();
+        $page2->assertSee('INV-3001');
+        $page2->assertDontSee('INV-3012');
+    }
 
-        // الأولى حاضرة
-        $response->assertSee('INV-1042');
+    public function test_sales_list_isolates_pharmacies(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        [$otherUser, $otherPharmacy] = $this->pharmacyUser();
+
+        $this->makeSale($pharmacy->id, 'INV-4001');
+        $this->makeSale($otherPharmacy->id, 'INV-4999');
+
+        // 🔴 IDOR: فاتورة صيدلية أخرى يجب ألا تظهر إطلاقًا
+        $html = $this->actingAs($user)->get('/pharmacy/accounting/sales')->assertOk()->getContent();
+        $this->assertStringContainsString('INV-4001', $html);
+        $this->assertStringNotContainsString('INV-4999', $html);
+
+        // ونفس المبدأ على صفحة الفاتورة المفردة
+        $this->actingAs($user)->get('/pharmacy/accounting/sales/INV-4999')->assertNotFound();
+        $this->actingAs($user)->get('/pharmacy/accounting/sales/INV-4001')->assertOk();
+    }
+
+    public function test_new_sale_saved_through_the_ledger_appears_in_the_list(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        // ⚠️ هذا هو جوهر الاندماج: فاتورة تُكتب عبر مسار الـAPI الحقيقي
+        // (`AccountingLedger`) يجب أن تُقرأ فورًا في صفحة الويب. قبل الإصلاح
+        // كانت الصفحة تقرأ من الـmock فلا تظهر الفاتورة أبدًا.
+        //
+        // نستعمل Sanctum:actingAs (لا actingAs وحدها) لأن مسار الـAPI محروس
+        // بـauth:sanctum — وactingAs تبني جلسة ويب لا توكِن الـAPI.
+        \Laravel\Sanctum\Sanctum::actingAs($user);
+
+        $this->postJson('/api/pharmacy/accounting/sales', [
+            'items' => [[
+                'medicine_name' => 'باراسيتامول ٥٠٠',
+                'quantity' => 2,
+                'unit_price' => 4.50,
+            ]],
+            'payment_method' => 'cash',
+        ])->assertCreated();
+
+        $list = $this->actingAs($user)->get('/pharmacy/accounting/sales')->assertOk()->getContent();
+
+        // الفاتورة ظهرت ⇒ الجدول مرسوم، ولا وجود لحالة فارغة
+        $this->assertStringContainsString('<thead', $list);
+        $this->assertStringNotContainsString('class="ph-empty"', $list);
+        $this->assertStringContainsString('باراسيتامول ٥٠٠', $this->firstInvoiceHtml($user));
     }
 
     /* ==========================================================
@@ -287,16 +391,97 @@ class AccountingPagesTest extends TestCase
             ->assertSee('medicines\/barcode"', false);
     }
 
-    public function test_pos_config_has_a_non_empty_local_catalog(): void
+    public function test_pos_config_catalog_reflects_the_pharmacys_real_inventory(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        // 🔴 قبل الإصلاح كان الكتالوج من الـmock (باركود وهمي 6281001001234).
+        // الآن يجب أن يكون **مخزون هذه الصيدلية** — وهذا ما نتحقق منه.
+        $this->stockItem($pharmacy->id, 'دواء كتالوج حقيقي', 42, 7.25, '6299999990001');
+
+        $html = $this->actingAs($user)->get('/pharmacy/accounting/sales/create')
+            ->assertOk()
+            ->getContent();
+
+        // ⚠️ `@json` (Blade) يهرّب غير-ASCII إلى \uXXXX — فالمطابقة تكون على
+        // الشكل المهرَّب. نستخرج كتلة الكتالوج ونفكّها ثم نتحقق من القيم.
+        $catalog = $this->catalogFromHtml($html);
+
+        $this->assertCount(1, $catalog, 'الكتالوج يجب أن يحوي صنفًا واحدًا فقط');
+
+        $item = $catalog[0];
+        $this->assertSame('دواء كتالوج حقيقي', $item['trade_name']);
+        $this->assertSame('6299999990001', $item['barcode']);
+        $this->assertSame(42, $item['quantity']);
+        $this->assertSame(7.25, $item['price']);
+        // المحوران مطلوبان: `medicine_id` (لكتابة الـbarcode) و`id` (للخصم)
+        $this->assertNotNull($item['medicine_id']);
+        $this->assertNotNull($item['id']);
+
+        // ولا يتسرّب مخزون صيدلية أخرى إلى كتالوج هذه الصيدلية
+        [$otherUser, $otherPharmacy] = $this->pharmacyUser();
+        $this->stockItem($otherPharmacy->id, 'دواء صيدلية أخرى', 5, 1.0, '6299999997777');
+
+        $catalog2 = $this->catalogFromHtml(
+            $this->actingAs($user)->get('/pharmacy/accounting/sales/create')->assertOk()->getContent()
+        );
+
+        $this->assertCount(1, $catalog2);
+        $this->assertSame('دواء كتالوج حقيقي', $catalog2[0]['trade_name']);
+    }
+
+    /** يفكّ `catalog` من كتلة إعداد POS (مع فكّ تهرّب `@json` لغير-ASCII). */
+    private function catalogFromHtml(string $html): array
+    {
+        $plain = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // ⚠️ `"catalog"` يظهر **مرّتين**: مرة في الإعداد الأساسي من
+        // `partials.accounting-i18n` (= `[]`، بديل مؤقّت) ومرة في كتلة الدمج
+        // من `sale-create` (= الكتالوج الحقيقي). الصفحة الفعّالة هي **الأخيرة**
+        // لأن `Object.assign(..., $posConfig)` يأتي بعدها. نأخذ آخر ظهور.
+        $key = strrpos($plain, '"catalog"');
+
+        $this->assertNotFalse($key, 'كتلة الكتالوج مفقودة من إعداد POS');
+        $this->assertSame(
+            2,
+            substr_count($plain, '"catalog"'),
+            'عدد كتل `catalog` تغيّر — راجع ترتيب دمج إعداد POS'
+        );
+
+        // نمشي من '[' مع عدّ الأقواس — أدقّ من regex على JSON متداخل.
+        $start = strpos($plain, '[', $key);
+        $depth = 0;
+        $end = $start;
+
+        for ($i = $start, $len = strlen($plain); $i < $len; $i++) {
+            if ($plain[$i] === '[') {
+                $depth++;
+            } elseif ($plain[$i] === ']') {
+                $depth--;
+                if ($depth === 0) {
+                    $end = $i;
+                    break;
+                }
+            }
+        }
+
+        $decoded = json_decode(substr($plain, $start, $end - $start + 1), true);
+
+        $this->assertIsArray($decoded, 'كتالوج POS ليس JSON صالحًا');
+
+        return $decoded;
+    }
+
+    public function test_pos_catalog_is_empty_for_a_pharmacy_with_no_inventory(): void
     {
         [$user] = $this->pharmacyUser();
 
-        $this->actingAs($user)->get('/pharmacy/accounting/sales/create')
+        // صيدلية بلا مخزون ⇒ كتالوج فارغ + شريط تجريبي (لا خطأ 500).
+        $html = $this->actingAs($user)->get('/pharmacy/accounting/sales/create')
             ->assertOk()
-            // كتالوج محلي جاهز للعمل بلا شبكة — عناصر حقيقية من AccountingMockData
-            ->assertSee('6281001001234', false)
-            ->assertSee('"quantity"', false)
-            ->assertSee('"price"', false);
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/"catalog":\s*\[\s*\]/', $html);
     }
 
     /* ==========================================================
@@ -305,12 +490,42 @@ class AccountingPagesTest extends TestCase
 
     public function test_invoice_page_renders_for_an_existing_sale(): void
     {
-        [$user] = $this->pharmacyUser();
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        $this->makeSale($pharmacy->id, 'INV-1042');
 
         $this->actingAs($user)->get('/pharmacy/accounting/sales/INV-1042')
             ->assertOk()
             ->assertSee('INV-1042')
             ->assertSee(__('accounting.invoice.payment_history'));
+    }
+
+    public function test_invoice_page_renders_the_real_line_items(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        // 🔴 قبل الإصلاح كانت الفاتورة تعرض «لا توجد بنود مسجّلة» دائمًا لأن
+        // الـmock بلا بنود. الآن البنود تُقرأ من `sale_items` (لقطة وقت البيع).
+        \Laravel\Sanctum\Sanctum::actingAs($user);
+
+        $created = $this->postJson('/api/pharmacy/accounting/sales', [
+            'items' => [[
+                'medicine_name' => 'أموكسيسيلين ٥٠٠',
+                'barcode' => '6291111112222',
+                'quantity' => 3,
+                'unit_price' => 6.00,
+            ]],
+            'payment_method' => 'cash',
+        ])->assertCreated()->json('data');
+
+        $html = $this->actingAs($user)
+            ->get('/pharmacy/accounting/sales/'.$created['number'])
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('أموكسيسيلين ٥٠٠', $html);
+        $this->assertStringContainsString('6291111112222', $html);
+        $this->assertStringNotContainsString(__('accounting.invoice.items_pending'), $html);
     }
 
     public function test_invoice_page_404s_for_an_unknown_number(): void
@@ -322,13 +537,88 @@ class AccountingPagesTest extends TestCase
 
     public function test_invoice_page_is_print_ready(): void
     {
-        [$user] = $this->pharmacyUser();
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        $this->makeSale($pharmacy->id, 'INV-1042');
 
         // زر الطباعة + قاعدة الطباعة التي تخفي عناصر التنقّل
         $this->actingAs($user)->get('/pharmacy/accounting/sales/INV-1042')
             ->assertOk()
             ->assertSee('data-ac-print', false)
             ->assertSee('ac-no-print', false);
+    }
+
+    /* ==========================================================
+       مساعدات الإنشاء — بيانات حقيقية في الجداول
+       ========================================================== */
+
+    /** فاتورة مباشرة في الجدول (بلا مسار الـAPI) — لاختبار القراءة/الترقيم. */
+    private function makeSale(int $pharmacyId, string $number): Sale
+    {
+        return Sale::create([
+            'pharmacy_id' => $pharmacyId,
+            'number' => $number,
+            'sold_at' => now(),
+            'subtotal' => 10,
+            'discount' => 0,
+            'total' => 10,
+            'paid' => 10,
+            'remaining' => 0,
+            'payment_method' => 'cash',
+            'status' => 'paid',
+            'items_count' => 1,
+        ]);
+    }
+
+    /** صف مخزون حقيقي بإحداثياته الكاملة (دواء + مخزون + باركود). */
+    private function stockItem(
+        int $pharmacyId,
+        string $tradeName,
+        int $qty,
+        float $price,
+        string $barcode
+    ): void {
+        $medicine = Medicine::factory()->create([
+            'trade_name' => $tradeName,
+            'trade_name_ar' => $tradeName,
+        ]);
+
+        PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacyId,
+            'medicine_id' => $medicine->id,
+            'quantity' => $qty,
+            'price' => $price,
+            'is_available' => true,
+        ]);
+
+        // ⚠️ `medicine_barcodes.moh_medicine_id` إلزامي (NOT NULL) — الباركود
+        // يُنسب لسجل وزارة الصحة، و`local_medicine_id` اختياري هو ما يربطه
+        // بمخزون الصيدلية. ترك `moh_medicine_id` فارغًا يرمي QueryException.
+        $moh = MohMedicine::create([
+            'trade_name' => $tradeName,
+            'moh_product_id' => random_int(100000, 999999),
+        ]);
+
+        MedicineBarcode::create([
+            'moh_medicine_id' => $moh->id,
+            'local_medicine_id' => $medicine->id,
+            'barcode' => $barcode,
+            'barcode_type' => 'EAN13',
+            'source' => 'manual',
+            'confidence' => 1.0,
+            'is_verified' => true,
+        ]);
+    }
+
+    /** HTML صفحة الفاتورة الأولى (أحدث فاتورة للصيدلية). */
+    private function firstInvoiceHtml(User $user): string
+    {
+        $number = Sale::query()->orderByDesc('id')->value('number');
+
+        return $this->actingAs($user)
+            ->get('/pharmacy/accounting/sales/'.$number)
+            ->assertOk()
+            ->getContent();
     }
 
     /* ==========================================================

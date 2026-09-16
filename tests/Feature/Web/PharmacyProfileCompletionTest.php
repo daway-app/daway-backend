@@ -299,4 +299,108 @@ class PharmacyProfileCompletionTest extends TestCase
         $this->assertEquals('0599111222', $pharmacy->phone_number);
         $this->assertEquals('Old Address', $pharmacy->address);
     }
+
+    /**
+     * 🔴 انحدار حرج: النموذج كان **لا يمكن إرساله أبداً** من المتصفح.
+     *
+     * السبب: latitude/longitude كانا `required`، والكاتب الوحيد للحقلين هو
+     * applyChange() في pharmacy_hub.js — ولا تُستدعى إلا من داخل openLocationModal()
+     * التي تخرج فوراً لأن #locationModal غائب عن complete.blade.php (موجود في
+     * edit.blade.php فقط). ⇒ الإرسال يفشل دائماً ⇒ profile_completed_at لا يُضبط
+     * ⇒ حلقة إعادة توجيه لا نهائية تحبس الصيدلية.
+     *
+     * هذا الاختبار يحاكي **ما يرسله المتصفح فعلاً** — بلا إحداثيات.
+     */
+    public function test_completion_succeeds_without_coordinates_as_the_browser_submits(): void
+    {
+        $user = User::factory()->pharmacy()->create();
+        $pharmacy = Pharmacy::factory()->create([
+            'user_id' => $user->id,
+            'profile_completed_at' => null,
+            'latitude' => null,
+            'longitude' => null,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('pharmacy.profile.complete'), [
+            'phone_number' => '0599123456',
+            'address' => 'Main St, Gaza',
+            'region' => 'Rimal',
+            // لا latitude ولا longitude — تماماً كما يرسل المتصفح
+            'hours' => [
+                'Saturday' => ['open_time' => '09:00', 'close_time' => '17:00'],
+                'Sunday' => ['open_time' => '09:00', 'close_time' => '17:00'],
+                'Monday' => ['is_closed' => true],
+                'Tuesday' => ['is_closed' => true],
+                'Wednesday' => ['is_closed' => true],
+                'Thursday' => ['is_closed' => true],
+                'Friday' => ['is_closed' => true],
+            ],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('pharmacy.dashboard.index'));
+
+        $pharmacy->refresh();
+        // الحقل الحاسم: بدون ضبطه تبقى الصيدلية محبوسة للأبد
+        $this->assertNotNull($pharmacy->profile_completed_at);
+        // وقعنا على مركز الخريطة الافتراضي بدل ترك الحقل فارغاً
+        $this->assertEquals(31.5016, (float) $pharmacy->latitude);
+        $this->assertEquals(34.4668, (float) $pharmacy->longitude);
+    }
+
+    /**
+     * وبعد الإكمال، اللوحة متاحة فعلاً (لا إعادة توجيه).
+     */
+    public function test_dashboard_is_reachable_after_completing_without_coordinates(): void
+    {
+        $user = User::factory()->pharmacy()->create();
+        Pharmacy::factory()->create([
+            'user_id' => $user->id,
+            'profile_completed_at' => null,
+            'latitude' => null,
+            'longitude' => null,
+        ]);
+
+        $this->actingAs($user)->post(route('pharmacy.profile.complete'), [
+            'phone_number' => '0599123456',
+            'address' => 'Main St, Gaza',
+            'region' => 'Rimal',
+            'hours' => [
+                'Saturday' => ['open_time' => '09:00', 'close_time' => '17:00'],
+            ],
+        ]);
+
+        $this->actingAs($user->fresh())
+            ->get(route('pharmacy.dashboard.index'))
+            ->assertOk();
+    }
+
+    /**
+     * تحصين مسبق: الحقلان المخفيان يجب أن يحملا قيمة ابتدائية صالحة،
+     * حتى لو فشل تحميل الخريطة (unpkg محجوب مثلاً) يبقى النموذج قابلاً للإرسال.
+     */
+    public function test_completion_view_renders_non_empty_coordinate_inputs(): void
+    {
+        $user = User::factory()->pharmacy()->create();
+        Pharmacy::factory()->create([
+            'user_id' => $user->id,
+            'profile_completed_at' => null,
+        ]);
+
+        $html = $this->actingAs($user)
+            ->get(route('pharmacy.profile.complete.show'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            "/name='latitude'\s+id='latitude'\s+value='31\.5016'/",
+            $html,
+            'حقل latitude المخفي يجب أن يحمل القيمة الافتراضية'
+        );
+        $this->assertMatchesRegularExpression(
+            "/name='longitude'\s+id='longitude'\s+value='34\.4668'/",
+            $html,
+            'حقل longitude المخفي يجب أن يحمل القيمة الافتراضية'
+        );
+    }
 }

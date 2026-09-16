@@ -218,6 +218,21 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
 Route::middleware(['auth', 'role:pharmacy'])->group(function () {
 
+    // ==================== PASSWORD CHANGE (forced on first login) ====================
+    // 🔴 إلزامي: كلمة مرور الصيدلية المؤقتة (يولّدها الأدمن) لا يجوز أن تُستخدم
+    // للوصول للوحة. الوسيط password.changed يعيد كل المسارات الأخرى إلى هنا.
+    // ملاحظة الترتيب: هذا المسار مسجَّل **قبل** profile.complete لأنه إجراء أمني.
+
+    Route::get('/pharmacy/password/change', [
+        \App\Http\Controllers\web\Auth\PasswordChangeController::class,
+        'show',
+    ])->name('pharmacy.password.change.show');
+
+    Route::post('/pharmacy/password/change', [
+        \App\Http\Controllers\web\Auth\PasswordChangeController::class,
+        'update',
+    ])->name('pharmacy.password.change');
+
     // ==================== PHARMACY PROFILE COMPLETION (first login) ====================
 
     Route::get('/pharmacy/profile/complete', [
@@ -231,7 +246,7 @@ Route::middleware(['auth', 'role:pharmacy'])->group(function () {
     ])->name('pharmacy.profile.complete');
 });
 
-Route::middleware(['auth', 'role:pharmacy', 'profile.complete'])->group(function () {
+Route::middleware(['auth', 'role:pharmacy', 'password.changed', 'profile.complete'])->group(function () {
 
     // ==================== PHARMACY DASHBOARD ====================
 

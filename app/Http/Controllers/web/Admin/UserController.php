@@ -143,6 +143,17 @@ class UserController extends Controller
             ])->withInput();
         }
 
+        // 🔴 منع تغيير دور حساب مرتبط بصيدلية.
+        // السبب: الدخول من الويب يبحث عن الصيدلية بـ pharmacy_custom_id ثم يتحقق من كلمة
+        // المرور، فإذا تغيّر الدور إلى patient/admin نجح الدخول ثم ردّه EnsureRole إلى
+        // صفحة الدخول برسالة عامة — أي "الدخول يعمل ثم توقف فجأة" بلا أي تفسير للمستخدم.
+        // تعطيل الحساب هو الإجراء الصحيح (ويزامن pharmacies.is_active أدناه).
+        if ($user->pharmacy()->exists() && $request->role !== 'pharmacy') {
+            return back()->withErrors([
+                'role' => 'هذا الحساب مرتبط بصيدلية — لا يمكن تغيير دوره. عطّل الحساب بدلاً من ذلك.',
+            ])->withInput();
+        }
+
         $user->name = $request->name;
         $user->email = $request->email;
         $user->phone = $request->phone;
@@ -150,6 +161,16 @@ class UserController extends Controller
         $user->is_active = (bool) $request->status;
         $user->save();
         $user->syncRoles([$user->role]);
+
+        // 🔴 مزامنة حالة الصيدلية مع حالة المستخدم — نفس منطق toggleStatus().
+        // بدونه: التعطيل من نموذج التعديل يترك pharmacies.is_active = 1
+        // ⇒ مسارَان يكتبان نفس الحقل بسلوك مختلف ⇒ حالة متناقضة صامتة.
+        $pharmacy = $user->pharmacy()->first();
+        if ($pharmacy && (bool) $pharmacy->is_active !== (bool) $user->is_active) {
+            $pharmacy->is_active = $user->is_active;
+            $pharmacy->save();
+            Cache::forget('pharmacies_list_cache');
+        }
 
         $this->clearUsersIndexCache();
 

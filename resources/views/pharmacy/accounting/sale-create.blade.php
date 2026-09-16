@@ -24,8 +24,12 @@
     @include('partials.accounting-i18n')
 
     @php
+        // ⚠️ `medicine_id` إلزامي في الـpayload: الـbarcode endpoint يعيد
+        // `local_medicine_id` = `medicines.id`، فبدونه لا يمكن ربط نتيجة
+        // المسح بصف مخزون ⇒ `in_inventory` يصير false والبيع يُمنع ظلمًا.
         $catalogPayload = collect($posCatalog)->map(fn ($m) => [
             'id' => $m['id'],
+            'medicine_id' => $m['medicine_id'] ?? null,
             'barcode' => $m['barcode'],
             'trade_name' => $m['trade_name'],
             'active_ingredient' => $m['active_ingredient'],
@@ -33,15 +37,17 @@
             'quantity' => $m['quantity'],
         ])->values()->all();
 
+        // ⚠️ لا نضع `endpoints` هنا: `Object.assign` سطحية فتُستبدل كتلة
+        // الـendpoints القادمة من `partials.accounting-i18n` وتضيع الـ19 مسارًا.
+        // (هذا ما كان يحدث فعلًا ⇒ حفظ الفاتورة يرجع not_configured بلا شبكة.)
+        // مسارا البحث يُدمجان أدناه في نفس كائن الـendpoints.
+        $searchEndpoint = url('/api/medicines/search');
+        $barcodeEndpoint = url('/api/medicines/barcode');
+
         $posConfig = [
             'currency' => \App\Support\Accounting\AccountingMockData::CURRENCY,
             'demo' => true,
             'catalog' => $catalogPayload,
-            'endpoints' => [
-                // مساران **موجودان فعلاً** في routes/api.php — لم يُختلق أي واحد
-                'medicineSearch' => $searchEndpoint,
-                'barcodeLookup' => $barcodeEndpoint,
-            ],
         ];
     @endphp
 
@@ -233,13 +239,11 @@
                         <div class="ph-group">
                             <label for="ac-customer">@lang('accounting.pos.customer_label')</label>
                             <input type="text" id="ac-customer" class="ph-control" data-ac-customer
-                                   list="ac-customers-list" autocomplete="off"
+                                   autocomplete="off"
                                    placeholder="@lang('accounting.pos.customer_search_placeholder')">
-                            <datalist id="ac-customers-list">
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer }}"></option>
-                                @endforeach
-                            </datalist>
+                            {{-- نتائج بحث العملاء الحقيقيين — كل زر يحمل customer_id --}}
+                            <div class="ac-search-results ac-customer-matches"
+                                 data-ac-customer-matches hidden></div>
                             <span class="ph-hint">@lang('accounting.pos.customer_walk_in')</span>
                         </div>
 
@@ -315,30 +319,66 @@
     <x-accounting.phone-scanner-modal />
 
     @php
-        // ⚠️ مسارات جلسة المسح **غير موجودة** في الباك-إند ⇒ مصفوفة فارغة،
-        // والواجهة تعلن «وضع تجريبي». لا نخترع endpoint ولا نبنيه.
+        // ⚠️ مسارات جلسة المسح **غير موجودة** في الباك-إند.
+        //
+        // 🔴 لا تمرّر `AccountingMockData::scanSessionEndpoints()` هنا: تُعيد
+        // `[]`، وهي **truthy في JS** ⇒ `scanner-session.start()` يعتقد أن
+        // الوضع 'live' ثم يفشل أول نداء ويعرض **حالة خطأ** للمستخدم. القيمة
+        // الصحيحة هي `null` صريحًا ليُصرّح الموديول بـ`unavailable` بهدوء.
+        // (والوضع التجريبي أدناه هو ما يُستعمل فعليًّا إلى أن يوجد الباك-إند.)
+        $scanSessionEndpoints = null;
+
         $scannerConfig = [
-            'scanSessions' => \App\Support\Accounting\AccountingMockData::scanSessionEndpoints(),
             // نقل الباركود: polling محدود (2000ms) — لا WebSocket (غير موجود
             // في المشروع أصلًا) ولا polling سريع.
             'transport' => 'polling',
             // الوضع التجريبي يُعلَن صراحةً في الواجهة عبر وسم «وضع تجريبي»
-            'scanSessionMock' => empty(\App\Support\Accounting\AccountingMockData::scanSessionEndpoints()),
+            'scanSessionMock' => $scanSessionEndpoints === null,
             'scanSessionMockBarcodes' => \App\Support\Accounting\AccountingMockData::scanSessionDemoBarcodes(),
         ];
 
         $posConfig = array_merge($posConfig, [
-            'endpoints' => array_merge($posConfig['endpoints'], [
-                'scanSessions' => $scannerConfig['scanSessions'],
-            ]),
             'scanSessionTransport' => $scannerConfig['transport'],
             'scanSessionMock' => $scannerConfig['scanSessionMock'],
             'scanSessionMockBarcodes' => $scannerConfig['scanSessionMockBarcodes'],
         ]);
+
+        // ⚠️ `scanSessions` **لا** يوجد داخل `$scannerConfig` عن قصد: المفتاح
+        // يُحقن في `accounting-i18n` كـ`null` (انظر التعليق هناك)، ولا نُعيد
+        // كتابته من هنا حتى لا نُدخل `[]` (truthy في JS ⇒ حالة خطأ).
+        // أسماء مسارات مسح الهاتف — مفقودة الآن لأن الـBackend غير موجود بعد.
+
+        // عنوان صفحة الفاتورة — يُبنى هنا بـroute() لأن JS لا يبني مسارات.
+        $invoiceUrlTemplate = route('pharmacy.accounting.sales.show', ['number' => '__NUMBER__']);
     @endphp
 
     <script>
-        // نوسّع الإعداد الأساسي (المُصدَّر من partials.accounting-i18n) بدل استبداله
-        window.acAccountingConfig = Object.assign({}, window.acAccountingConfig || {}, @json($posConfig));
+        // ⚠️ `Object.assign` سطحية (shallow): لو مرّرنا `endpoints` داخلها
+        // **يُستبدل الكائن كاملًا** ونفقد الـ19 مسارًا القادمة من
+        // `partials.accounting-i18n` — وعندها `salesCreate` تصير undefined
+        // فيتعطّل الحفظ كليًّا بلا أي طلب شبكي. لذا ندمج طبقةً بطبقة.
+        window.acAccountingConfig = Object.assign(
+            {},
+            window.acAccountingConfig || {},
+            @json($posConfig)
+        );
+
+        // ⚠️ لا نلمس `endpoints.scanSessions` هنا إطلاقًا.
+        // قيمته `null` (من `accounting-i18n`) هي **الإشارة المقصودة** إلى أن
+        // الباك-إند غير موجود — والموديول يحوّلها إلى `unavailable` بهدوء.
+        // تمرير مصفوفة فارغة هنا كان يجعل `start()` يظنّ الوضع 'live' ثم يعرض
+        // **حالة خطأ** للمستخدم (لأن `[]` truthy في JS).
+        // `Object.assign` تتجاهل المصادر `null` anyway، فالحذف لا يغيّر السلوك
+        // — لكنه يمنع عودة الخطأ سهوًا عند أي تعديل لاحق.
+
+        // إعدادات شاشة البيع (عنوان الفاتورة) + مسارا البحث — في نفس كائن
+        // الـendpoints الآتي من الـpartial، فلا يضيع أي مسار محاسبي.
+        window.acPosConfig = {
+            invoiceUrlTemplate: @json($invoiceUrlTemplate),
+            searchUrl: @json($searchEndpoint),
+            barcodeUrl: @json($barcodeEndpoint)
+        };
+        window.acAccountingConfig.endpoints.medicineSearch = @json($searchEndpoint);
+        window.acAccountingConfig.endpoints.barcodeLookup = @json($barcodeEndpoint);
     </script>
 @endsection

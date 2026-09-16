@@ -1,8 +1,8 @@
 /* ==========================================================
-   ط¯ظˆط§ط¦ظٹ â€” Global Foundation (app.css)
-   ط§ظ„ظ…طµط¯ط± ط§ظ„ظ…ظˆط­ظ‘ط¯ ظ„طھظˆظƒظگظ†ط² ط§ظ„طھطµظ…ظٹظ… ظˆط§ظ„ظ…ظƒظˆظ‘ظ†ط§طھ ط§ظ„ظ…ط´طھط±ظƒط©.
-   ظƒظ„ ظ…ظ„ظپط§طھ ط§ظ„طµظپط­ط§طھ (patients.css, inventory.css, settings.css ...)
-   ظٹط¬ط¨ ط£ظ† طھظڈط­ظ…ظژظ‘ظ„ ط¨ط¹ط¯ ظ‡ط°ط§ ط§ظ„ظ…ظ„ظپ ظˆطھط¨ظ†ظٹ ظپظˆظ‚ظ‡طŒ ظ„ط§ ط£ظ† طھظƒط±ط±ظ‡.
+   دوائي — Global Foundation (app.css)
+   المصدر الموحّد لتوكِنز التصميم والمكوّنات المشتركة.
+   كل ملفات الصفحات (patients.css, inventory.css, settings.css ...)
+   يجب أن تُحمَّل بعد هذا الملف وتبني فوقه، لا أن تكرره.
    ========================================================== */
 
 /* ==========================================================
@@ -19,7 +19,7 @@ body.dark-mode {
 }
 
 /* ==========================================================
-   2) Reset ظˆط¥ط¹ط¯ط§ط¯ط§طھ ط£ط³ط§ط³ظٹط©
+   2) Reset وإعدادات أساسية
    ========================================================== */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -66,12 +66,12 @@ img { max-width: 100%; display: block; }
 ::-webkit-scrollbar-corner { background: var(--canvas); }
 
 /* ==========================================================
-   3) ظ…ظƒظˆظ‘ظ†ط§طھ ظ…ط´طھط±ظƒط© (Primitives)
-   طھظڈط³طھط®ط¯ظ… ظƒط£ط³ط§ط³ ظپظٹ ظƒظ„ ط§ظ„طµظپط­ط§طھ â€” ط§ظ„طµظپط­ط§طھ ط§ظ„ط®ط§طµط© طھظڈط¶ظٹظپ ظپظˆظ‚ظ‡ط§
-   ظپظ‚ط· ظ…ط§ ظ‡ظˆ ظ…ط®طھظ„ظپطŒ ظ„ط§ طھظڈط¹ط±ظ‘ظپ ظ‡ط°ظ‡ ط§ظ„ط£طµظ†ط§ظپ ظ…ظ† ط¬ط¯ظٹط¯.
+   3) مكوّنات مشتركة (Primitives)
+   تُستخدم كأساس في كل الصفحات — الصفحات الخاصة تُضيف فوقها
+   فقط ما هو مختلف، لا تُعرّف هذه الأصناف من جديد.
    ========================================================== */
 
-/* -- ط§ظ„ظƒط±ظˆطھ -- */
+/* -- الكروت -- */
 .card {
     background: var(--paper);
     border: 1px solid var(--line);
@@ -99,7 +99,7 @@ body.dark-mode .card {
 
 .card-body { padding: 22px; }
 
-/* -- ط­ظ‚ظˆظ„ ط§ظ„ظپظˆط±ظ… -- */
+/* -- حقول الفورم -- */
 .fg, .form-group { margin-bottom: 18px; display: flex; flex-direction: column; }
 
 .fl, .form-label {
@@ -142,7 +142,7 @@ body.dark-mode .card {
     margin-top: 6px;
 }
 
-/* -- ط§ظ„ط£ط²ط±ط§ط± -- */
+/* -- الأزرار -- */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -185,7 +185,7 @@ body.dark-mode .btn-p, body.dark-mode .btn-primary {
 }
 .btn-danger:hover { background: var(--danger-fill); color: #fff; border-color: transparent; }
 
-/* -- ط§ظ„ط´ط§ط±ط§طھ (Badges / Status) -- */
+/* -- الشارات (Badges / Status) -- */
 .badge, .status-badge, .bdg {
     display: inline-flex;
     align-items: center;
@@ -219,7 +219,7 @@ body.dark-mode .badge-warning, body.dark-mode .bdg-warn, body.dark-mode .status-
 body.dark-mode .badge-danger, body.dark-mode .status-badge.out-of-stock { background: rgba(225, 92, 92, 0.22); border: 1px solid rgba(225, 92, 92, 0.55); }
 body.dark-mode .badge-info { background: rgba(28, 114, 166, 0.22); border: 1px solid rgba(28, 114, 166, 0.55); color: var(--info-text); }
 
-/* -- ط§ظ„ط¬ط¯ط§ظˆظ„ -- */
+/* -- الجداول -- */
 .table-container, .table-wrapper-card, .table-card-wrapper {
     background: var(--paper);
     border: 1px solid var(--line);
@@ -296,7 +296,7 @@ body.dark-mode tbody tr:hover { background: rgba(28, 114, 166, 0.06); }
     flex-shrink: 0;
 }
 
-/* -- ط¥طھط§ط­ط© ط§ظ„ظˆطµظˆظ„ -- */
+/* -- إتاحة الوصول -- */
 :focus-visible {
     outline: 2px solid var(--teal-primary);
     outline-offset: 2px;

@@ -18,31 +18,40 @@
      ويسقط إلى **بطاقة الرمز القصير** وحدها إن لم يتوفّر — بصراحة ودون
      تظاهر بعرض QR غير موجود. --}}
 <div class="ac-pair-card">
+    {{-- ⚠️ حاوية ثابتة `data-pair-qr-placeholder` تُرسم **دائمًا** مهما كان
+         مصدر الـQR. السبب: `accounting-phone-scanner.js:renderPairing` يكتب
+         المحتوى داخل هذا العنصر (وهو ما يسمح بوصول QR من الباك-إند لاحقًا
+         بلا تحديث الصفحة). لو كانت الحاوية موجودة في فرع `@else` وحده، فإن
+         أول QR حقيقي يُفقد المرجع (`dom.qrPlaceholder` لا يُعاد استعلامه). --}}
     <div class="ac-pair-qr">
-        @if($qrSvg)
-            {{-- SVG جاهز من الباك-إند — يُدرج كما هو (مصدره موثوق، خادمنا) --}}
-            <div class="ac-pair-qr-render" data-pair-qr-render role="img"
-                 aria-label="@lang('accounting.scanner.qr_alt')">
-                {!! $qrSvg !!}
-            </div>
-            <p class="ac-pair-qr-cap">@lang('accounting.scanner.qr_caption')</p>
-        @elseif($qrUrl)
-            {{-- صورة QR من مسار يوفّره الباك-إند --}}
-            <img src="{{ $qrUrl }}"
-                 class="ac-pair-qr-render"
-                 alt="@lang('accounting.scanner.qr_alt')"
-                 width="168" height="168">
-            <p class="ac-pair-qr-cap">@lang('accounting.scanner.qr_caption')</p>
-        @else
-            {{-- مؤقّت صريح: لا نوهم المستخدم بوجود QR --}}
-            <div class="ac-pair-qr-placeholder" data-pair-qr-placeholder role="img"
-                 aria-label="@lang('accounting.scanner.qr_pending_alt')">
+        <div class="ac-pair-qr-placeholder" data-pair-qr-placeholder role="img"
+             aria-label="{{ $qrSvg || $qrUrl
+                ? __('accounting.scanner.qr_alt')
+                : __('accounting.scanner.qr_pending_alt') }}">
+            @if($qrSvg)
+                {{-- SVG جاهز من الباك-إند — يُدرج كما هو (مصدره موثوق، خادمنا) --}}
+                <div class="ac-pair-qr-render" data-pair-qr-render>
+                    {!! $qrSvg !!}
+                </div>
+            @elseif($qrUrl)
+                {{-- صورة QR من مسار يوفّره الباك-إند --}}
+                <img src="{{ $qrUrl }}"
+                     class="ac-pair-qr-render"
+                     alt="@lang('accounting.scanner.qr_alt')"
+                     width="168" height="168">
+            @else
+                {{-- مؤقّت صريح: لا نوهم المستخدم بوجود QR --}}
                 <span class="ac-pair-qr-grid" aria-hidden="true">
                     @for($i = 0; $i < 64; $i++)
                         <span class="ac-pair-qr-cell {{ in_array($i % 9, [0, 2, 3, 6, 7], true) ? 'is-on' : '' }}"></span>
                     @endfor
                 </span>
-            </div>
+            @endif
+        </div>
+
+        @if($qrSvg || $qrUrl)
+            <p class="ac-pair-qr-cap">@lang('accounting.scanner.qr_caption')</p>
+        @else
             <p class="ac-pair-qr-cap is-pending">
                 @lang('accounting.scanner.qr_pending')
             </p>

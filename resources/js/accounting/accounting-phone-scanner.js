@@ -207,30 +207,36 @@
        احتمال أن تختلف نتيجة مسح الهاتف عن مسح USB لنفس الرقم.
        ====================================================== */
     function handleIncomingBarcode(barcode) {
-        if (!window.AccountingBarcode) {
+        // ⚠️ نُسمّي المرجع مرة واحدة. قبل ذلك كان الفحص على
+        // `window.AccountingBarcode` ثم الاستعمال بـ`AccountingBarcode` المجرّد
+        // (سطر 216 وما بعده) — وهو **ReferenceError** لا undefined، فلو فشل
+        // تحميل الملف لا يُنقَذ السطر بل يسقط المسار كله.
+        var B = window.AccountingBarcode;
+
+        if (!B || typeof B.resolveBarcode !== 'function') {
             // بلا محرّك باركود: نمرّر كما هو لأي مستهلك مسجَّل
             deliver(barcode, { status: 'pending', barcode: barcode, item: null });
             return;
         }
 
-        AccountingBarcode.resolveBarcode(barcode).then(function (result) {
+        B.resolveBarcode(barcode).then(function (result) {
             // نُبلّغ الحالة على الواجهة وفق نتيجة الحلّ الفعلية
             if (result.status === 'unknown') {
-                AccountingBarcode.openLinkModal(result.barcode, function () {
-                    AccountingBarcode.notify(t('link_saved', ''), 'success');
+                B.openLinkModal(result.barcode, function () {
+                    B.notify(t('link_saved', ''), 'success');
                 });
                 finish('unknown');
                 return;
             }
 
             if (result.status === 'conflict') {
-                AccountingBarcode.openConflictModal(result.barcode, '—', '');
+                B.openConflictModal(result.barcode, '—', '');
                 finish('conflict');
                 return;
             }
 
             if (result.status === 'invalid') {
-                AccountingBarcode.notify(
+                B.notify(
                     (window.acBarcodeI18n || {}).empty_code || '',
                     'error'
                 );
@@ -238,10 +244,13 @@
                 return;
             }
 
-            // معروف ⇒ نصعد الحالة إلى «تم الاستلام» ثم نسلّمه للسلة
-            controller && controller.state && (controller.state.status = STATE.RECEIVED);
-            var snap = controller ? controller.snapshot() : {};
-            renderAll(snap);
+            // معروف ⇒ نصعد الحالة إلى «تم الاستلام» ثم نسلّمه للسلة.
+            // ⚠️ عبر `markReceived()` لا بكتابة مباشرة على `controller.state`،
+            // وإلا لم يُطلَق حدث `state` وتجمّدت شارة الحالة والطابور.
+            if (controller && typeof controller.markReceived === 'function') {
+                controller.markReceived(result.barcode);
+            }
+            renderAll(controller ? controller.snapshot() : {});
 
             deliver(result.barcode, result);
             finish('resolved');
@@ -250,22 +259,23 @@
 
     /** يسلّم النتيجة إلى السلة إن كانت الصفحة توفّر خطّافًا */
     function deliver(barcode, result) {
+        // نفس السبب: مرجع واحد بـ`window.` لا اسم مجرّد.
+        var B = window.AccountingBarcode;
+
         if (typeof window.__acPosHook === 'object'
             && window.__acPosHook
             && typeof window.__acPosHook.addScannedResult === 'function') {
             window.__acPosHook.addScannedResult(result);
-            AccountingBarcode && AccountingBarcode.notify(
-                (window.acBarcodeI18n || {}).found_added || '',
-                'success'
-            );
+            if (B && typeof B.notify === 'function') {
+                B.notify((window.acBarcodeI18n || {}).found_added || '', 'success');
+            }
             return;
         }
 
         // لا خطّاف (صفحة غير نقطة البيع) ⇒ نكتفي بالإشعار
-        AccountingBarcode && AccountingBarcode.notify(
-            (window.acBarcodeI18n || {}).found_title || '',
-            'success'
-        );
+        if (B && typeof B.notify === 'function') {
+            B.notify((window.acBarcodeI18n || {}).found_title || '', 'success');
+        }
     }
 
     /** يُعلِم آلة الحالة أننا انتهينا من هذا الباركود (⇒ التالي في الطابور) */
@@ -297,9 +307,10 @@
                     handleIncomingBarcode(payload.barcode);
                 }
                 if (type === 'device_request') {
-                    AccountingBarcode && AccountingBarcode.notify(
-                        t('device_request_title', ''), 'warn'
-                    );
+                    var B = window.AccountingBarcode;
+                    if (B && typeof B.notify === 'function') {
+                        B.notify(t('device_request_title', ''), 'warn');
+                    }
                 }
             });
         }
@@ -416,37 +427,50 @@
             });
         }
 
-        // فصل الجهاز — ⚠️ السلة تبقى
-        dom.modal.querySelectorAll('[data-device-disconnect]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                if (controller) {
-                    controller.disconnect().then(function (snap) {
-                        renderAll(controller.snapshot());
-                        AccountingBarcode && AccountingBarcode.notify(
-                            t('disconnected_note', ''), 'warn'
-                        );
-                    });
-                }
-            });
-        });
+        /* ---------- أزرار منطقة الأجهزة: تفويض حدث واحد ----------
+         *
+         * ⚠️ لماذا التفويض لا `querySelectorAll` مباشر:
+         * كان `bind()` (يُنادى **مرة واحدة** في `init()`) يبحث عن
+         * `[data-device-disconnect]` / `[data-device-allow]` /
+         * `[data-device-reject]` في لحظة التحميل. لكن `connected-device-card`
+         * كان يُرسم بـ`@if($active)`، والنافذة تمرّر `:active="null"` ⇒ هذه
+         * الأزرار **غير موجودة** عند التحميل ⇒ لا يُربط أي مستمع، فيستحيل فصل
+         * الهاتف أو قبول جهاز ثانٍ من الواجهة إلى الأبد.
+         *
+         * التفويض على `dom.modal` يحلّ ذلك نهائيًّا: نستمع على الأب الثابت
+         * ونتعرّف على الهدف عبر `closest()` — فيعمل أي زر يُضاف أو يُظهر لاحقًا.
+         */
+        dom.modal.addEventListener('click', function (e) {
+            var target = e.target;
+            if (!target || typeof target.closest !== 'function') {
+                return;
+            }
 
-        // جهاز آخر يطلب الاتصال — [سماح] / [رفض]
-        var allowBtn = dom.modal.querySelector('[data-device-allow]');
-        var rejectBtn = dom.modal.querySelector('[data-device-reject]');
-        if (allowBtn) {
-            allowBtn.addEventListener('click', function () {
-                if (controller) {
-                    controller.answerDeviceRequest(true).then(renderAll);
-                }
-            });
-        }
-        if (rejectBtn) {
-            rejectBtn.addEventListener('click', function () {
-                if (controller) {
-                    controller.answerDeviceRequest(false).then(renderAll);
-                }
-            });
-        }
+            // فصل الجهاز — ⚠️ السلة تبقى
+            var off = target.closest('[data-device-disconnect]');
+            if (off && controller) {
+                controller.disconnect().then(function () {
+                    renderAll(controller.snapshot());
+                    var B = window.AccountingBarcode;
+                    if (B && typeof B.notify === 'function') {
+                        B.notify(t('disconnected_note', ''), 'warn');
+                    }
+                });
+                return;
+            }
+
+            // جهاز آخر يطلب الاتصال — [سماح] / [رفض]
+            var allow = target.closest('[data-device-allow]');
+            if (allow && controller) {
+                controller.answerDeviceRequest(true).then(renderAll);
+                return;
+            }
+
+            var reject = target.closest('[data-device-reject]');
+            if (reject && controller) {
+                controller.answerDeviceRequest(false).then(renderAll);
+            }
+        });
     }
 
     function init() {

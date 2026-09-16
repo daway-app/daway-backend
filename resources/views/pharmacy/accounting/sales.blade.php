@@ -14,7 +14,8 @@
     @include('partials.accounting-i18n')
 
     @php
-        $money = fn ($v) => \App\Support\Accounting\AccountingMockData::money((float) $v);
+        // ⚠️ نفس دالة تنسيق الـAPI حرفيًا — الـMock للتجربة وحدها.
+        $money = fn ($v) => \App\Services\Accounting\AccountingReports::money((float) $v);
 
         $statusBadge = function (string $status): string {
             return match ($status) {
@@ -132,7 +133,7 @@
                 <p>@lang('accounting.common.results_count', ['count' => $summary['count']])</p>
             </div>
 
-            @if($sales->isEmpty())
+            @if(count($sales) === 0)
                 <div class="ph-card-body">
                     @if($hasFilters)
                         <div class="ph-empty">
@@ -193,18 +194,18 @@
                                         @endif
                                     </td>
                                     <td><span class="ac-muted">@lang('accounting.sales.items_count', ['count' => $sale['items']])</span></td>
-                                    <td class="ac-num">{{ \App\Support\Accounting\AccountingMockData::money($sale['subtotal']) }}</td>
+                                    <td class="ac-num">{{ $money($sale['subtotal']) }}</td>
                                     <td class="ac-num">
                                         @if($sale['discount'] > 0)
-                                            <span class="ac-neg">−{{ \App\Support\Accounting\AccountingMockData::money($sale['discount']) }}</span>
+                                            <span class="ac-neg">−{{ $money($sale['discount']) }}</span>
                                         @else
                                             <span class="ac-muted">—</span>
                                         @endif
                                     </td>
-                                    <td class="ac-num ac-strong">{{ \App\Support\Accounting\AccountingMockData::money($sale['total']) }}</td>
-                                    <td class="ac-num">{{ \App\Support\Accounting\AccountingMockData::money($sale['paid']) }}</td>
+                                    <td class="ac-num ac-strong">{{ $money($sale['total']) }}</td>
+                                    <td class="ac-num">{{ $money($sale['paid']) }}</td>
                                     <td class="ac-num {{ $sale['remaining'] > 0 ? 'ac-neg ac-strong' : '' }}">
-                                        {{ \App\Support\Accounting\AccountingMockData::money($sale['remaining']) }}
+                                        {{ $money($sale['remaining']) }}
                                     </td>
                                     <td><span class="ac-muted">@lang('accounting.payment_methods.' . $sale['method'])</span></td>
                                     <td>

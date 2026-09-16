@@ -14,27 +14,29 @@
         <span class="ac-devices-title">@lang('accounting.scanner.devices_title')</span>
     </div>
 
-    {{-- جهاز واحد على الأقل --}}
+    {{-- جهاز واحد على الأقل.
+         ⚠️ الصفّان يُرسمان **دائمًا** ونتحكّم بـ`hidden` من JS.
+         قبل ذلك كانا في `@if/@else`: `bind()` في accounting-phone-scanner.js
+         يقرأ `[data-device-disconnect]` **مرة واحدة** عند التحميل، وزر الفصل
+         لا يوجد إلا في فرع `$active` — أي أنه لا يُربط أبدًا، فيستحيل فصل
+         الهاتف من الواجهة. رسمه دائمًا يجعل الربط يعمل بلا أي تأخير زمني. --}}
     <ul class="ac-devices-list" data-devices-list>
-        @if($active)
-            <li class="ac-device-row is-active" data-device-row>
-                <span class="ac-device-icon" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="6" y="2" width="12" height="20" rx="2"></rect>
-                        <line x1="10" y1="18" x2="14" y2="18"></line>
-                    </svg>
-                </span>
-                <span class="ac-device-name" data-device-name dir="auto">{{ $active }}</span>
-                <span class="ac-device-badge">@lang('accounting.scanner.device_active')</span>
-                <button type="button" class="ph-btn xs ghost" data-device-disconnect>
-                    @lang('accounting.scanner.disconnect')
-                </button>
-            </li>
-        @else
-            <li class="ac-device-empty" data-device-empty>
-                @lang('accounting.scanner.devices_empty')
-            </li>
-        @endif
+        <li class="ac-device-row is-active" data-device-row @if(!$active) hidden @endif>
+            <span class="ac-device-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="6" y="2" width="12" height="20" rx="2"></rect>
+                    <line x1="10" y1="18" x2="14" y2="18"></line>
+                </svg>
+            </span>
+            <span class="ac-device-name" data-device-name dir="auto">{{ $active }}</span>
+            <span class="ac-device-badge">@lang('accounting.scanner.device_active')</span>
+            <button type="button" class="ph-btn xs ghost" data-device-disconnect>
+                @lang('accounting.scanner.disconnect')
+            </button>
+        </li>
+        <li class="ac-device-empty" data-device-empty @if($active) hidden @endif>
+            @lang('accounting.scanner.devices_empty')
+        </li>
     </ul>
 
     {{-- طلب اقتران جهاز آخر — قرار بشري، لا تجاوز تلقائي --}}

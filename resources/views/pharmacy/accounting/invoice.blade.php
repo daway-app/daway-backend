@@ -16,8 +16,8 @@
     @include('partials.accounting-i18n')
 
     @php
-        $CUR = \App\Support\Accounting\AccountingMockData::CURRENCY;
-        $money = fn ($v) => \App\Support\Accounting\AccountingMockData::money((float) $v);
+        $CUR = '₪';
+        $money = fn ($v) => \App\Services\Accounting\AccountingReports::money((float) $v);
 
         $statusBadge = fn (string $s): string => match ($s) {
             'paid' => 'paid',
@@ -113,17 +113,34 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {{-- ⚠️ بنود السطر غير متوفّرة في mock — نعرض العدد المتاح بمبلغ موزّع
-                             افتراضي؟ لا: نعرض رسالة صريحة بدل اختلاق بنود وهمية بأسماء أدوية. --}}
-                        <tr>
-                            <td colspan="4">
-                                <div class="ph-empty" style="padding:28px 16px;">
-                                    <i class="fas fa-list-ul" aria-hidden="true"></i>
-                                    <h3>@lang('accounting.invoice.items_pending')</h3>
-                                    <p>@lang('accounting.invoice.items_pending_desc', ['count' => $sale['items']])</p>
-                                </div>
-                            </td>
-                        </tr>
+                        @forelse($sale['items'] as $item)
+                            <tr>
+                                <td>
+                                    <span class="ac-strong">{{ $item['name'] }}</span>
+                                    @if(! empty($item['barcode']))
+                                        <div class="ac-muted ac-mono">{{ $item['barcode'] }}</div>
+                                    @endif
+                                </td>
+                                <td class="ac-num">{{ $item['quantity'] }}</td>
+                                <td class="ac-num">{{ $money($item['unit_price']) }}</td>
+                                <td class="ac-num">
+                                    {{ $money($item['line_total']) }}
+                                    @if(($item['line_discount'] ?? 0) > 0)
+                                        <div class="ac-muted">−{{ $money($item['line_discount']) }}</div>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4">
+                                    <div class="ph-empty" style="padding:28px 16px;">
+                                        <i class="fas fa-list-ul" aria-hidden="true"></i>
+                                        <h3>@lang('accounting.invoice.items_pending')</h3>
+                                        <p>@lang('accounting.invoice.items_pending_desc', ['count' => $sale['items_count'] ?? 0])</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

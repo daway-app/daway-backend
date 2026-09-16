@@ -10,6 +10,10 @@ use Tests\TestCase;
 /**
  * M-4: تزويد الصيدليات من الأدمن — كلمة مرور أولية عشوائية (غير مساوية للمعرف)
  * مع flash في الجلسة وإلزام تغييرها عند أول دخول.
+ *
+ * ⚠️ درس مهم: كان هذا الملف يتحقق من مفاتيح الجلسة `initial_*` فقط، بينما القالب
+ * الوحيد لبيانات الدخول يقرأ `delivered_*` — فمرّ العطل: كلمة المرور تُولَّد ثم
+ * تُفقد ولا يراها الأدمن. لذلك نتحقق الآن من **الـHTML المرسوم** أيضاً، لا الجلسة وحدها.
  */
 class PharmacyProvisioningTest extends TestCase
 {
@@ -22,9 +26,11 @@ class PharmacyProvisioningTest extends TestCase
         ]);
 
         $response->assertRedirect(route('pharmacies.index'));
-        $response->assertSessionHas('initial_password');
+        // المفاتيح الموحّدة مع مسار التسجيل الذاتي (كانت initial_* = مفاتيح ميتة)
+        $response->assertSessionHas('delivered_password');
+        $response->assertSessionHas('delivered_pharmacy_id');
 
-        $initialPassword = $response->getSession()->get('initial_password');
+        $initialPassword = $response->getSession()->get('delivered_password');
         $this->assertNotEmpty($initialPassword);
 
         $pharmacy = Pharmacy::where('pharmacy_name', 'Provision Test Pharmacy')->first();
@@ -39,6 +45,64 @@ class PharmacyProvisioningTest extends TestCase
 
         // إلزام تغيير كلمة المرور عند أول تسجيل دخول
         $this->assertTrue((bool) $user->must_change_password);
+    }
+
+    /**
+     * 🔴 الانحدار الحقيقي: صندوق بيانات الدخول يجب أن **يُرسم فعلاً** في الصفحة.
+     * اختبار الجلسة وحده لا يكشف اختلاف أسماء المفاتيح — وهنا كان العطل يتخفّى.
+     */
+    public function test_credentials_box_is_actually_rendered_for_admin_created_pharmacy(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $response = $this->actingAs($admin)->post(route('pharmacies.store'), [
+            'pharmacy_name' => 'Rendered Credentials Pharmacy',
+        ]);
+
+        $password = $response->getSession()->get('delivered_password');
+        $this->assertNotEmpty($password);
+
+        // نتبع إعادة التوجيه ونفحص الـHTML — الصندوق يجب أن يظهر بكلمة المرور والمعرّف
+        $page = $this->actingAs($admin)->get(route('pharmacies.index'));
+
+        $page->assertOk();
+        $page->assertSee('deliveredCredentialsBox', false);
+        $page->assertSee('deliveredPassword', false);
+        $page->assertSee($password, false);
+        $page->assertSee($response->getSession()->get('delivered_pharmacy_id'), false);
+    }
+
+    /**
+     * مسار الاسترجاع الوحيد للأدمن — كان يرمي 500 لأن Crypt غير مستورد.
+     */
+    public function test_reset_credentials_works_and_flashes_new_password(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->post(route('pharmacies.store'), [
+            'pharmacy_name' => 'Reset Credentials Pharmacy',
+        ]);
+
+        $pharmacy = Pharmacy::where('pharmacy_name', 'Reset Credentials Pharmacy')->firstOrFail();
+        $oldHash = $pharmacy->user->password;
+
+        $response = $this->actingAs($admin)
+            ->patch(route('pharmacies.resetCredentials', $pharmacy->id));
+
+        // لا 500 — كان `Class "…\Crypt" not found`
+        $response->assertRedirect(route('pharmacies.index'));
+        $response->assertSessionHasNoErrors();
+
+        $newPassword = $response->getSession()->get('delivered_password');
+        $this->assertNotEmpty($newPassword);
+
+        $pharmacy->refresh();
+        $this->assertTrue(Hash::check($newPassword, $pharmacy->user->password));
+        $this->assertNotSame($oldHash, $pharmacy->user->password);
+        // إلزام التغيير من جديد + إعادة تجهيز نسخة مشفّرة للرسالة
+        $this->assertTrue((bool) $pharmacy->user->must_change_password);
+        $this->assertNotNull($pharmacy->pending_password);
+        $this->assertNull($pharmacy->delivered_at);
     }
 
     public function test_provisioned_pharmacy_custom_id_matches_format(): void

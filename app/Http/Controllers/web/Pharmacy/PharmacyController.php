@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon; // Import Hash facade
 use Illuminate\Support\Facades\Cache; // Import Rule for validation
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -110,11 +111,19 @@ class PharmacyController extends Controller
 
         $this->clearPharmaciesIndexCache();
 
-        // M-4: بيانات الدخول لمرة واحدة — تظهر للأدمن لإيصالها للصيدلية (لا تُعرض ثانية)
+        // M-4: بيانات الدخول لمرة واحدة — تظهر للأدمن لإيصالها للصيدلية (لا تُعرض ثانية).
+        //
+        // 🔴 عطل مُصلَح: كانت المفاتيح `initial_pharmacy_id` / `initial_password`، لكن صندوق
+        // العرض الوحيد في `pharmacies/index.blade.php` يقرأ `delivered_*` — ولا يوجد أي قالب
+        // يقرأ `initial_*` إطلاقاً. النتيجة كانت: كلمة المرور تُولَّد ثم **تُفقد فوراً**،
+        // ولا يستطيع الأدمن إيصالها، ولا يوجد مسار بديل (pending_password يبقى null فيمنع
+        // deliver()، وresetCredentials كان معطوباً). ⇒ الصيدلية المنشأة من الأدمن تُقفل نهائياً
+        // برسالة «بيانات الاعتماد غير صحيحة».
+        // الآن المسارَان (الأدمن والتسجيل الذاتي) يستخدمان نفس مفاتيح العرض — مصدر واحد.
         return redirect()->route('pharmacies.index')
             ->with('success', __('pharmacies.pharmacy_added_success'))
-            ->with('initial_pharmacy_id', $pharmacyCustomId)
-            ->with('initial_password', $plainPassword);
+            ->with('delivered_pharmacy_id', $pharmacyCustomId)
+            ->with('delivered_password', $plainPassword);
     }
 
     public function show(string $id)

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول — دواك</title>
+    <meta name="theme-color" content="#1C72A6">
+    
+
+    
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    <!-- ربط ملف الـ CSS الخارجي عبر Vite -->
+    
+    <link rel="preload" as="style" href="https://daway-backend.test/build/assets/tokens-kKaA9aHp.css" /><link rel="preload" as="style" href="https://daway-backend.test/build/assets/app-BJnrNCDJ.css" /><link rel="preload" as="style" href="https://daway-backend.test/build/assets/forms-CmaiA1h5.css" /><link rel="stylesheet" href="https://daway-backend.test/build/assets/tokens-kKaA9aHp.css" /><link rel="stylesheet" href="https://daway-backend.test/build/assets/app-BJnrNCDJ.css" /><link rel="stylesheet" href="https://daway-backend.test/build/assets/forms-CmaiA1h5.css" /></head>
+
+<body>
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.body.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    <div class="auth-container">
+
+        <!-- Progress Loader Overlay -->
+        <div class="loader-overlay" id="loaderOverlay" role="status" aria-live="polite" aria-busy="true">
+            <div class="loader-spinner-box">
+                <div class="spinner"></div>
+                <span class="loader-icon" aria-hidden="true">💊</span>
+            </div>
+            <div class="loader-text">جاري التحقق والدخول...</div>
+
+            
+            <div class="loader-timeout">
+                <div class="loader-timeout-icon" aria-hidden="true">⚠️</div>
+                <div class="loader-timeout-msg">
+                    استغرق الدخول وقتاً أطول من المتوقّع. تحقّق من اتصال الإنترنت وحاول مرة أخرى.
+                </div>
+                <button type="button" class="loader-timeout-btn" onclick="resetLoginState()">إعادة المحاولة</button>
+            </div>
+        </div>
+
+        <!-- الجانب الأيسر: النموذج -->
+        <div class="auth-form-side">
+            <h1 class="form-title">تسجيل الدخول</h1>
+            <p class="form-subtitle">اختر نوع الحساب وأدخل بياناتك للوصول إلى اللوحة.</p>
+
+            <form id="loginForm" action="https://daway-backend.test/login" method="POST" novalidate>
+                <input type="hidden" name="_token" value="LpBSYYAZ6JFJjIgOUyAqADgoHfjaoA9fiY7D1QoL" autocomplete="off">
+                <!-- نوع الحساب -->
+                <div class="fg">
+                    <label class="fl" for="account_type">نوع الحساب</label>
+                    <select id="account_type" name="account_type" class="select-fc" onchange="switchRole(this.value)">
+                        <option value="pharmacy" >صيدلية
+                        </option>
+                        <option value="admin" >أدمن (مدير النظام)
+                        </option>
+                    </select>
+                                    </div>
+
+                <!-- معرف الحساب / البريد -->
+                <div class="fg">
+                    <label class="fl" id="identityLabel" for="identityInput">معرف الصيدلية (Pharmacy ID)</label>
+                    <div class="fc-wrapper">
+                        <input class="fc" type="text" id="identityInput" name="identity" value=""
+                            placeholder="أدخل Pharmacy ID الخاص بالصيدلية" autocomplete="username"
+                            autocapitalize="characters" spellcheck="false" dir="ltr" required
+                            >
+                    </div>
+                    <div class="info-hint" id="infoHint" role="note">
+                        💡 <strong>صيدلية:</strong> استخدم Pharmacy ID الذي منحه الأدمن.
+                    </div>
+                                    </div>
+
+                <!-- كلمة المرور -->
+                <div class="fg">
+                    <label class="fl" for="passwordInput">كلمة المرور</label>
+                    <div class="fc-wrapper">
+                        <input class="fc" type="password" id="passwordInput" name="password" placeholder="••••••••"
+                            autocomplete="current-password" required
+                            >
+                        <button type="button" class="toggle-btn" onclick="togglePass()"
+                            aria-controls="passwordInput" aria-label="إظهار كلمة المرور">إظهار</button>
+                    </div>
+                                    </div>
+
+                <div class="form-footer-options">
+                    <label class="remember-label">
+                        <span>تذكرني</span>
+                        <input type="checkbox" name="remember" >
+                    </label>
+                    
+                    <span class="forgot-hint">نسيت كلمة المرور؟ تواصل مع إدارة النظام</span>
+                </div>
+
+                <button type="submit" class="btn-p" id="submitBtn">تسجيل الدخول</button>
+            </form>
+
+            
+            
+            <div class="auth-footer">
+                ليس لديك حساب؟ <a href="https://daway-backend.test/register">إنشاء حساب صيدلية</a>
+            </div>
+        </div>
+
+        <!-- الجانب الأيمن: الهوية البصرية ورادار الموقع -->
+        <div class="auth-hero">
+            <div class="hero-content">
+                <div class="logo-wrapper">
+                    <img src="https://daway-backend.test/images/dawak-logo-384.jpg"
+                        srcset="https://daway-backend.test/images/dawak-logo-256.jpg 256w, https://daway-backend.test/images/dawak-logo-384.jpg 384w"
+                        sizes="92px" width="92" height="92" fetchpriority="high" decoding="async"
+                        alt="شعار دواك" class="brand-logo-img">
+                </div>
+
+                <span class="hero-subtitle-tag">منصة دواك</span>
+                <h2 class="hero-title">مرحباً بك مجدداً</h2>
+                <p class="hero-desc">إدارة الصيدليات، الأدوية، والطلبات ومتابعة كافة العمليات من مكان واحد بسهولة وأمان.
+                </p>
+            </div>
+
+            <!-- جرافيك الرادار والدبوس التفاعلي الاحترافي -->
+            <div class="graphic-wrapper">
+                <div class="radar-circle">
+                    <div class="radar-ripple-1"></div>
+                    <div class="radar-ripple-2"></div>
+
+                    <div class="pin-container">
+                        <div class="map-pin"></div>
+                        <div class="pin-base-platform"></div>
+                        <div class="pin-shadow"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // مهلة الدخول: بعدها نُظهر خيار "إعادة المحاولة" بدل حبس المستخدم في سبينر أبدي.
+        var LOGIN_TIMEOUT_MS = 15000;
+
+        var loginForm = document.getElementById('loginForm');
+        var loaderOverlay = document.getElementById('loaderOverlay');
+        var submitBtn = document.getElementById('submitBtn');
+        var loginTimer = null;
+
+        function clearLoginTimer() {
+            if (loginTimer !== null) {
+                clearTimeout(loginTimer);
+                loginTimer = null;
+            }
+        }
+
+        // إعادة الصفحة لحالة قابلة للاستخدام (يُستدعى من زر إعادة المحاولة).
+        function resetLoginState() {
+            clearLoginTimer();
+            loaderOverlay.classList.remove('active', 'show-timeout');
+            loaderOverlay.removeAttribute('aria-busy');
+            submitBtn.disabled = false;
+            submitBtn.focus();
+        }
+
+        function switchRole(type) {
+            var label = document.getElementById('identityLabel');
+            var input = document.getElementById('identityInput');
+            var hint = document.getElementById('infoHint');
+            var isSwitchingType = input.dataset.role !== type;
+
+            if (type === 'pharmacy') {
+                label.textContent = 'معرف الصيدلية (Pharmacy ID)';
+                input.placeholder = 'أدخل Pharmacy ID الخاص بالصيدلية';
+                input.setAttribute('dir', 'ltr');
+                input.setAttribute('autocapitalize', 'characters');
+                hint.textContent = '💡 صيدلية: استخدم Pharmacy ID الذي منحه الأدمن.';
+            } else {
+                label.textContent = 'البريد الإلكتروني';
+                input.placeholder = 'example@email.com';
+                input.setAttribute('dir', 'ltr');
+                input.removeAttribute('autocapitalize');
+                hint.textContent = '💡 أدمن: استخدم البريد الإلكتروني وكلمة المرور الخاصة بك.';
+            }
+
+            // لا تمسح ما كتبه المستخدم إلا إذا غيّر نوع الحساب فعلاً وكان الحقل يحمل قيمة
+            // من النوع السابق (أو قيمة old() المحقونة عند تحميل الصفحة).
+            if (isSwitchingType && input.value !== '') {
+                input.value = '';
+            }
+            input.dataset.role = type;
+        }
+
+        function togglePass() {
+            var input = document.getElementById('passwordInput');
+            var btn = document.querySelector('.toggle-btn');
+            var isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.textContent = isHidden ? 'إخفاء' : 'إظهار';
+            btn.setAttribute('aria-label', isHidden ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+        }
+
+        loginForm.addEventListener('submit', function () {
+            loaderOverlay.classList.add('active');
+            loaderOverlay.setAttribute('aria-busy', 'true');
+            submitBtn.disabled = true;
+
+            // شبكة الأمان: لا نترك المستخدم محبوساً إن لم يصل الرد.
+            clearLoginTimer();
+            loginTimer = setTimeout(function () {
+                loaderOverlay.classList.add('show-timeout');
+                loaderOverlay.removeAttribute('aria-busy');
+                submitBtn.disabled = false;
+            }, LOGIN_TIMEOUT_MS);
+        });
+
+        // عند العودة بالـ back (أو استعادة الصفحة من كاش الـ Service Worker)
+        // يجب إرجاع الواجهة لحالتها الطبيعية، وإلا بقيت معطّلة.
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted || loaderOverlay.classList.contains('active')) {
+                resetLoginState();
+            }
+        });
+
+        // Initialize role display on page load based on old input
+        document.addEventListener('DOMContentLoaded', function () {
+            var accountTypeSelect = document.getElementById('account_type');
+            // نضبط dataset أولاً حتى لا يُحسب التحميل الأول "تبديلاً" فيُمسح old input.
+            document.getElementById('identityInput').dataset.role = accountTypeSelect.value;
+            switchRole(accountTypeSelect.value);
+        });
+    </script>
+
+</body>
+
+</html>

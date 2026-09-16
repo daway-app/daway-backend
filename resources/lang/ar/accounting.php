@@ -3,9 +3,12 @@
 /**
  * نصوص وحدة المحاسبة (Pharmacy Accounting).
  *
- * ملاحظة معمارية: هذه الوحدة Frontend-only حاليًا — لا يوجد Backend محاسبة.
- * البيانات المعروضة mock من App\Support\Accounting\AccountingMockData،
- * والنصوص هنا جاهزة كما هي عند ربط الـAPI لاحقًا.
+ * ⚠️ الموديول له Backend حقيقي: جداول parties/sales/sale_items/cash_movements،
+ * بوابة الكتابة الوحيدة `App\Services\Accounting\AccountingLedger`، والقراءة في
+ * `AccountingReports`. `AccountingMockData` باقٍ للتجربة فقط ولا يُستخدم في
+ * المسار الحقيقي (يبقى مرجعًا لـ`scanSessionEndpoints`/`money` حيث يلزم).
+ *
+ * سلسلة الـAPI: `api.pharmacy.accounting.*` في routes/api.php.
  */
 return [
     'sidebar' => [
@@ -126,6 +129,7 @@ return [
         'alert_low_stock' => 'مخزون منخفض',
         'alert_out_of_stock' => 'نفد من المخزون',
         'alert_stock_remaining' => 'بقي :count وحدة',
+        'live_refresh_failed' => 'تعذّر تحديث الأرقام — المعروض من آخر تحميل للصفحة',
         'no_alerts' => 'لا توجد تنبيهات',
         'no_alerts_desc' => 'كل شيء تحت السيطرة',
         'no_transactions' => 'لا توجد حركات بعد',
@@ -250,8 +254,8 @@ return [
         'download_soon' => 'تنزيل PDF غير مدعوم في النظام الحالي',
         'not_found' => 'الفاتورة غير موجودة',
         'no_payments' => 'لا توجد دفعات مسجّلة على هذه الفاتورة',
-        'items_pending' => 'بنود الفاتورة غير متوفّرة',
-        'items_pending_desc' => 'الفاتورة تحتوي :count صنفًا — تفاصيل البنود تظهر عند ربط نظام المحاسبة الخلفي.',
+        'items_pending' => 'لا توجد بنود مسجّلة لهذه الفاتورة',
+        'items_pending_desc' => 'عدد الأصناف المسجّل :count — لم تُحفظ بنودها. راجع الفاتورة قبل الاعتماد عليها.',
     ],
 
     /*
@@ -385,6 +389,7 @@ return [
         'step_3' => 'اترك هذه النافذة مفتوحة أثناء المسح.',
 
         // الحالات الثمانية
+        'state_idle' => 'لا جلسة مسح بعد',
         'state_waiting' => 'بانتظار الهاتف…',
         'state_connecting' => 'جارٍ الاتصال…',
         'state_connected' => 'الهاتف متصل — جاهز للمسح',

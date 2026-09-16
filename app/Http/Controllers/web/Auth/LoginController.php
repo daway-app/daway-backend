@@ -9,7 +9,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
 
 class LoginController extends Controller
@@ -31,12 +30,10 @@ class LoginController extends Controller
      */
     public function login(Request $request)
     {
-        if (RateLimiter::tooManyAttempts('login:'.$request->ip(), 5)) {
-            return back()->withErrors([
-                'identity' => 'محاولات كثيرة، انتظر قليلاً.',
-            ])->onlyInput('identity', 'account_type');
-        }
-        RateLimiter::hit('login:'.$request->ip(), 60);
+        // ملاحظة: حدّ المعدل يُدار بالكامل عبر middleware المسار
+        // (throttle:login لكل IP + throttle:login-account لكل حساب) — انظر routes/web.php.
+        // كان هنا RateLimiter يدوي ثالث، فكان يتجاوز حدّاً قبل الآخر ويعيد استجابة
+        // مختلفة (رسالة عربية تارة و429 تارة) — أُزيل لتوحيد السلوك.
 
         $credentials = $request->validate([
             'identity' => ['required', 'string'],
@@ -54,39 +51,48 @@ class LoginController extends Controller
             // 1. البحث عن الصيدلية باستخدام الـ Pharmacy ID (مثل PH-QGWV)
             $identity = trim($identity);
             $pharmacy = Pharmacy::where('pharmacy_custom_id', $identity)->first();
+            $user = $pharmacy?->user;
 
-            if (! $pharmacy) {
+            // 2. التحقق من كلمة المرور **أولاً**
+            // 🔴 الترتيب مقصود: كان فحص is_active قبل فحص كلمة المرور، وهذا كان
+            //   (أ) يكشف وجود الحساب لأي شخص يعرف Pharmacy ID بلا كلمة مرور،
+            //   (ب) ويُضلّل الصيدلية: كلمة مرور خاطئة تُعرض كـ"الحساب غير مفعّل"
+            //       فتنتظر موافقة الإدارة أياماً بينما المشكلة كلمة مرور.
+            //   توحيد الرسالة + نفس المسار الزمني = لا تسريب معلومات.
+            if (! $user || ! Hash::check($password, $user->password)) {
                 return back()->withErrors([
                     'identity' => 'بيانات الاعتماد غير صحيحة.',
                 ])->onlyInput('identity', 'account_type');
             }
 
-            // 2. جلب المستخدم المرتبط بهذه الصيدلية عبر العلاقة user()
-            $user = $pharmacy->user;
-
-            if (! $user) {
+            // 3. التحقق من أن الحساب ما زال حساب صيدلية.
+            // 🔴 بعد إثبات ملكية كلمة المرور (لا تسريب)، وقبل فحص التفعيل.
+            // بدون هذا الفحص: لو تغيّر دور الحساب إلى patient/admin من لوحة الأدمن،
+            // نجح الدخول ثم ردّه EnsureRole إلى صفحة الدخول برسالة عامة
+            // ⇒ "الدخول كان يعمل ثم توقف" بلا أي تفسير. الرسالة الصريحة أدقّ.
+            if ($user->role !== 'pharmacy') {
                 return back()->withErrors([
-                    'identity' => 'بيانات الاعتماد غير صحيحة.',
+                    'identity' => 'هذا الحساب لم يعد حساب صيدلية. تواصل مع إدارة النظام.',
                 ])->onlyInput('identity', 'account_type');
             }
 
-            // 3. التحقق من تفعيل الحساب — حساب مسجّل حديثاً ينتظر موافقة الإدارة
+            // 4. التحقق من تفعيل الحساب — بعد إثبات ملكية كلمة المرور فقط
             if (! $pharmacy->is_active || ! $user->is_active) {
                 return back()->withErrors([
                     'identity' => 'الحساب غير مفعّل. إن كان قد سجّل حديثاً فسيُفعَّل بعد موافقة الإدارة.',
                 ])->onlyInput('identity', 'account_type');
             }
 
-            // 4. التحقق من تطابق كلمة المرور وتسجيل الدخول
-            if (! Hash::check($password, $user->password)) {
-                return back()->withErrors([
-                    'identity' => 'بيانات الاعتماد غير صحيحة.',
-                ])->onlyInput('identity', 'account_type'); // Keep identity input for convenience
-            }
-
             // If all checks pass
             Auth::login($user, $remember);
             $request->session()->regenerate();
+
+            // 5. 🔴 إلزام تغيير كلمة المرور المؤقتة — يسبق أي redirect آخر.
+            //    (يحرسه أيضاً middleware password.changed على مجموعة مسارات الصيدلية)
+            if ($user->must_change_password) {
+                return redirect()->route('pharmacy.password.change.show')
+                    ->with('warning', __('pharmacy.password.change.required_message'));
+            }
 
             $pharmacy = $user->pharmacy;
 

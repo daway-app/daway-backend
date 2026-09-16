@@ -16,8 +16,6 @@ export default defineConfig({
                 // المصدر الوحيد لـtokens التصميم — يُحمَّل أولاً في كل layout
                 'resources/css/tokens.css',
                 'resources/css/app.css',
-                'resources/css/auth/auth.css',
-                'resources/css/auth/auth_login.css',
                 'resources/css/auth/forms.css',
                 'resources/css/layout/app_layout.css',
                 'resources/css/layout/sidebar.css',

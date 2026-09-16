@@ -464,6 +464,28 @@
             });
         }
 
+        /**
+         * بحث العملاء بالاسم/الهاتف — GET .../accounting/customers?search=.
+         *
+         * يُستخدم في نقطة البيع لربط الفاتورة بعميل **حقيقي** بدل اسم نصّي:
+         * الـBackend يحتاج `customer_id` ليزيد دين العميل عند البيع الآجل.
+         * اسم نصّي بلا id ينتج فاتورة آجلة بلا مدين — دين يضيع بلا أثر.
+         */
+        function searchCustomers(query) {
+            var url = endpoints().customersIndex;
+            var q = String(query || '').trim();
+            if (!url || q.length < 2) {
+                return Promise.resolve({ ok: true, data: [] });
+            }
+
+            return request('GET', withQuery(url, { search: q, per_page: 8 })).then(function (r) {
+                if (r.ok && r.json && r.json.success) {
+                    return { ok: true, data: Array.isArray(r.json.data) ? r.json.data : [] };
+                }
+                return { ok: false, status: r.status, data: [], message: r.message || '' };
+            });
+        }
+
         /* ─────────────── المصروفات ─────────────── */
 
         function listExpenses(params) {
@@ -764,7 +786,14 @@
             return null;
         }
 
-        /** يوحّد شكل نتيجة /api/medicines/search إلى شكل السلة الموحّد. */
+        /**
+         * يوحّد شكل نتيجة البحث إلى شكل السلة الموحّد.
+         *
+         * ⚠️ `/api/medicines/search` يبحث في **الكتالوج العام**، فمعرّفه
+         * `medicines.id` وليس سطر مخزون. النتيجة تُوسم `in_inventory:false`
+         * ما لم يوجد ربط محلي — لأن البيع من الكتالوج بلا مخزون لا يخصم شيئًا،
+         * وعرضه كـ«متوفر» يوهم الكاشير بمخزون غير موجود.
+         */
         function normalizeSearchPayload(json) {
             var rows = [];
             if (json && Array.isArray(json.data)) {
@@ -776,30 +805,65 @@
             }
 
             return rows.map(function (r) {
+                var medId = r.medicine_id != null ? r.medicine_id
+                    : (r.id != null ? r.id : null);
+
+                // اربط بصف المخزون إن كان البحث يعيد معرّف مخزون صريحًا
+                var pmId = r.pharmacy_medicine_id != null ? r.pharmacy_medicine_id : null;
+                var local = null;
+
+                if (pmId === null && medId !== null) {
+                    var list = catalog();
+                    for (var i = 0; i < list.length; i++) {
+                        if (list[i].medicine_id != null
+                            && String(list[i].medicine_id) === String(medId)) {
+                            local = list[i];
+                            break;
+                        }
+                    }
+                }
+
                 return {
-                    id: r.id != null ? r.id : null,
+                    medicine_id: medId,
+                    pharmacy_medicine_id: pmId !== null ? pmId : (local ? local.id : null),
+                    id: local ? local.id : medId,
                     barcode: r.barcode || r.bar_code || '',
                     trade_name: r.trade_name || r.trade_name_ar || r.name || '',
                     active_ingredient: r.active_ingredient || r.generic_name || '',
-                    price: r.official_price != null ? Number(r.official_price)
-                        : (r.price != null ? Number(r.price) : 0),
-                    quantity: null, // غير معروف من الكتالوج — يُحلّ من المخزون المحلي
+                    price: local ? Number(local.price)
+                        : (r.official_price != null ? Number(r.official_price)
+                            : (r.price != null ? Number(r.price) : 0)),
+                    quantity: local ? local.quantity : null,
+                    in_inventory: !!local,
                     from_catalog: true
                 };
             });
         }
 
-        /** يوحّد شكل نتيجة /api/medicines/barcode/{code}. */
+        /**
+         * يوحّد شكل نتيجة /api/medicines/barcode/{code}.
+         *
+         * ── محوران مختلفان — لا تخلط ────────────────────────────────────
+         * `data.medicine.local_medicine_id` هو **`medicines.id`**
+         * (الكتالوج العام)، بينما `cfg.catalog` صفوف **مخزون الصيدلية**
+         * (`pharmacy_medicines`) بمفتاحها الخاص + `medicine_id`.
+         *
+         * ⚠️ مقارنة `local_medicine_id` بـ`catalog[].id` كانت خطأ صامتًا:
+         * المعرّفان من جدولين مستقلين، فالمطابقة تفشل دائمًا ⇒ `in_inventory`
+         * يصير false ⇒ الواجهة تمنع بيع دواء موجود فعلًا في الرف.
+         * المطابقة الصحيحة على `catalog[].medicine_id`.
+         */
         function mapBarcodeResult(data) {
             var med = (data && data.medicine) || {};
-            var localId = med.local_medicine_id != null ? med.local_medicine_id : null;
+            var medicineId = med.local_medicine_id != null ? med.local_medicine_id : null;
 
-            // لو الـbackend أعاد local_medicine_id، نحاول ربطه بمخزوننا المحلي
+            // اربط بصف المخزون عبر `medicine_id` (المحور الصحيح)
             var local = null;
-            if (localId != null) {
+            if (medicineId != null) {
                 var list = catalog();
                 for (var i = 0; i < list.length; i++) {
-                    if (String(list[i].id) === String(localId)) {
+                    if (list[i].medicine_id != null
+                        && String(list[i].medicine_id) === String(medicineId)) {
                         local = list[i];
                         break;
                     }
@@ -807,7 +871,12 @@
             }
 
             return {
-                id: localId != null ? localId : med.id,
+                // معرّف الدواء في الكتالوج العام
+                medicine_id: medicineId != null ? medicineId : med.id,
+                // معرّف سطر المخزون — **هو ما يخصمه الـBackend**
+                pharmacy_medicine_id: local ? local.id : null,
+                // `id` يبقى سطر المخزون إن وُجد (توافقًا مع بقية الواجهة)
+                id: local ? local.id : (medicineId != null ? medicineId : med.id),
                 barcode: (data.barcode && data.barcode.value) || '',
                 trade_name: med.name_en || med.name_ar || '',
                 active_ingredient: med.active_ingredient || '',
@@ -841,6 +910,7 @@
 
             // الأطراف
             listCustomers: listCustomers,
+            searchCustomers: searchCustomers,
             createCustomer: createCustomer,
             customerPayment: customerPayment,
             listSuppliers: listSuppliers,

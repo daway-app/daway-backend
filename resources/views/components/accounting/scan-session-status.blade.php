@@ -3,8 +3,13 @@
 ])
 
 @php
-    // الحالات الثمانية المطلوبة — كل واحدة بنقطة ولون دلالي من tokens.css
+    // ⚠️ الحالات **تسع** لا ثماني: `accounting-scanner-session.js` يعرّف
+    // `STATE.IDLE` و`allStates()` يُرجعه ضمن القائمة. إغفال `idle` هنا كان
+    // يُسقطه إلى الـfallback (`waiting`) فيظهر للمستخدم «ننتظر الهاتف» بدل
+    // «لا جلسة بعد» — وهذا كذب صغير على المستخدم.
+    // كل حالة بنقطة ولون دلالي من tokens.css.
     $statuses = [
+        'idle' => ['class' => 'is-idle', 'key' => 'scanner.state_idle'],
         'waiting' => ['class' => 'is-waiting', 'key' => 'scanner.state_waiting'],
         'connecting' => ['class' => 'is-connecting', 'key' => 'scanner.state_connecting'],
         'connected' => ['class' => 'is-connected', 'key' => 'scanner.state_connected'],
@@ -15,7 +20,7 @@
         'error' => ['class' => 'is-error', 'key' => 'scanner.state_error'],
     ];
 
-    $meta = $statuses[$status] ?? $statuses['waiting'];
+    $meta = $statuses[$status] ?? $statuses['idle'];
 @endphp
 
 {{-- مؤشّر حالة جلسة المسح.

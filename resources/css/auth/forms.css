@@ -27,10 +27,22 @@ body {
     padding: 28px;
     font-family: 'Tajawal', system-ui, -apple-system, sans-serif;
     color: var(--ink);
+    /* ⚠️ الطبقة الأساسية `--canvas` لا `--teal-mist-2`:
+       في الفاتح القيمتان متطابقتان (#F5FAF9) فالنتيجة بصرية واحدة، لكن
+       `--teal-mist-2` يصير شبه شفاف في الداكن ⇒ لا سطح فعلي خلف الصفحة.
+       `--canvas` معرّف في الوضعين، فيمنح الصفحة قاعدة صحيحة. */
     background:
         radial-gradient(1100px 620px at 12% -10%, rgba(123,193,183,.35), transparent 60%),
         radial-gradient(900px 560px at 105% 110%, rgba(28,114,166,.30), transparent 55%),
-        var(--teal-mist-2);
+        var(--canvas);
+}
+
+/* الداكن: تخفيف التدرّجات الزخرفية كي لا تُغرق الكحلي */
+html.dark-mode body {
+    background:
+        radial-gradient(1100px 620px at 12% -10%, rgba(123,193,183,.10), transparent 60%),
+        radial-gradient(900px 560px at 105% 110%, rgba(28,114,166,.16), transparent 55%),
+        var(--canvas);
 }
 
 /* ==========================================================
@@ -376,6 +388,14 @@ body {
     cursor: pointer;
 }
 
+/* نص إرشادي بديل عن رابط "نسيت كلمة المرور" الميّت (لا يوجد مسار استعادة بعد) */
+.forgot-hint {
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: end;
+}
+
 /* -- الزر الأساسي -- */
 .btn-p {
     width: 100%;
@@ -478,6 +498,37 @@ body {
 .loader-overlay.show-timeout .loader-timeout { display: flex; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ==========================================================
+   الوضع الداكن — تجاوزات لا تغيّر الفاتح إطلاقاً
+   ----------------------------------------------------------
+   الصفحة كانت لا تقرأ `.dark-mode` أصلاً، فكان مستخدم الثيم الداكن
+   يحصل على صفحة بيضاء ساطعة. هذه التجاوزات تجعلها متوافقة مع
+   tokens.css دون المساس بأي قيمة في الوضع الفاتح.
+   ========================================================== */
+
+/* الحقول: `--teal-mist-2` شبه شفاف في الداكن ⇒ لا سطح للحقل.
+   `--field-bg` هو التوكن المخصّص لحقول الإدخال (نفس نمط بقية الصفحات). */
+html.dark-mode .fc,
+html.dark-mode .select-fc {
+    background: var(--field-bg);
+}
+
+/* طبقة التحميل كانت بيضاء صريحة (rgba(255,255,255,.92)) — تُبهت العين
+   في الداكن وتُخفي المحتوى خلف حجاب ساطع. */
+html.dark-mode .loader-overlay {
+    background: rgba(5, 12, 18, .92);
+}
+
+/* الكرت: `--paper` يصير #112433 تلقائياً، لكن الظل الأبيض حول الحاوية
+   يجب أن يتبع الظلال الداكنة المعرّفة في tokens.css. */
+html.dark-mode .auth-container {
+    box-shadow: var(--sh-lg);
+    border: 1px solid var(--line-soft);
+}
+
+/* الفقاعات/الشبكة الزخرفية في الجانب البصري تبقى بيضاء شفافة — مقبولة
+   فوق التدرّج التيل الداكن، لا تحتاج تغييراً. */
 
 /* ==========================================================
    استجابة

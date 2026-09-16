@@ -98,26 +98,8 @@
     "src": "resources/css/app.css",
     "isEntry": true
   },
-  "resources/css/auth/auth.css": {
-    "file": "assets/auth-BLg0B_bn.css",
-    "name": "auth",
-    "names": [
-      "auth.css"
-    ],
-    "src": "resources/css/auth/auth.css",
-    "isEntry": true
-  },
-  "resources/css/auth/auth_login.css": {
-    "file": "assets/auth_login-BDxehoTc.css",
-    "name": "auth_login",
-    "names": [
-      "auth_login.css"
-    ],
-    "src": "resources/css/auth/auth_login.css",
-    "isEntry": true
-  },
   "resources/css/auth/forms.css": {
-    "file": "assets/forms-jBnEQgYU.css",
+    "file": "assets/forms-CmaiA1h5.css",
     "name": "forms",
     "names": [
       "forms.css"
@@ -345,19 +327,19 @@
     "isEntry": true
   },
   "resources/js/accounting/accounting-overview.js": {
-    "file": "assets/accounting-overview-Dci4GEVO.js",
+    "file": "assets/accounting-overview-BrYTrVcZ.js",
     "name": "accounting-overview",
     "src": "resources/js/accounting/accounting-overview.js",
     "isEntry": true
   },
   "resources/js/accounting/accounting-phone-scanner.js": {
-    "file": "assets/accounting-phone-scanner-BjNsBmkU.js",
+    "file": "assets/accounting-phone-scanner-BS6DIn7C.js",
     "name": "accounting-phone-scanner",
     "src": "resources/js/accounting/accounting-phone-scanner.js",
     "isEntry": true
   },
   "resources/js/accounting/accounting-pos.js": {
-    "file": "assets/accounting-pos-DkLHgNH8.js",
+    "file": "assets/accounting-pos-DJ8TOb9n.js",
     "name": "accounting-pos",
     "src": "resources/js/accounting/accounting-pos.js",
     "isEntry": true
@@ -369,13 +351,13 @@
     "isEntry": true
   },
   "resources/js/accounting/accounting-scanner-session.js": {
-    "file": "assets/accounting-scanner-session-CILYmZP7.js",
+    "file": "assets/accounting-scanner-session-CA36oc8L.js",
     "name": "accounting-scanner-session",
     "src": "resources/js/accounting/accounting-scanner-session.js",
     "isEntry": true
   },
   "resources/js/accounting/accounting-shared.js": {
-    "file": "assets/accounting-shared-D71O8K4b.js",
+    "file": "assets/accounting-shared-D0oJlY83.js",
     "name": "accounting-shared",
     "src": "resources/js/accounting/accounting-shared.js",
     "isEntry": true

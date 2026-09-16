@@ -26,8 +26,9 @@ class PharmacyPasswordChangeTest extends TestCase
         $this->assertNull($pharmacy->profile_completed_at);
 
         // M-4: بيانات الدخول لمرة واحدة تُفلاش للجلسة
-        $initialPassword = session('initial_password');
-        $initialId = session('initial_pharmacy_id');
+        // (المفاتيح موحّدة مع مسار التسجيل الذاتي — كانت initial_* وهي مفاتيح لا يقرأها أي قالب)
+        $initialPassword = session('delivered_password');
+        $initialId = session('delivered_pharmacy_id');
         $this->assertNotEmpty($initialPassword);
         $this->assertSame($pharmacy->pharmacy_custom_id, $initialId);
 

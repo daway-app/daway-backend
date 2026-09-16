@@ -95,4 +95,78 @@ class AdminCrudAccessTest extends TestCase
         // EnsureRole web → redirect (302) وليس 403
         $this->patch(route('users.toggleStatus', $target))->assertRedirect();
     }
+
+    /**
+     * 🔴 نموذج تعديل المستخدم كان يكتب users.is_active **بلا** مزامنة pharmacies.is_active،
+     * بينما زر التبديل (toggleStatus) يزامن. مسارَان يكتبان نفس الحقل بسلوك مختلف
+     * ⇒ تعطيل صامت: الأدمن يعطّل الحساب فيظن أنه انتهى، والصيدلية تبقى مفعّلة.
+     */
+    public function test_editing_user_status_via_form_syncs_pharmacy_is_active(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $owner = User::factory()->pharmacy()->create(['is_active' => true]);
+        $pharmacy = Pharmacy::factory()->create(['user_id' => $owner->id, 'is_active' => true]);
+        $this->actingAs($admin);
+
+        $this->put(route('users.update', $owner), [
+            'name' => $owner->name,
+            'email' => $owner->email,
+            'phone' => $owner->phone,
+            'role' => 'pharmacy',
+            'status' => '0',
+        ])->assertRedirect(route('users.index'));
+
+        $owner->refresh();
+        $pharmacy->refresh();
+
+        $this->assertFalse($owner->is_active);
+        $this->assertFalse(
+            $pharmacy->is_active,
+            'C1-فورم: pharmacies.is_active يجب أن يبقى متزامناً مع users.is_active'
+        );
+    }
+
+    /**
+     * 🔴 تغيير دور حساب مرتبط بصيدلية يكسره تماماً: الدخول ينجح ثم يردّه EnsureRole
+     * إلى صفحة الدخول ⇒ يبدو كأن الدخول توقف فجأة. الحارس يمنعه برسالة صريحة.
+     */
+    public function test_admin_cannot_change_role_of_account_linked_to_pharmacy(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $owner = User::factory()->pharmacy()->create();
+        Pharmacy::factory()->create(['user_id' => $owner->id]);
+        $this->actingAs($admin);
+
+        $this->put(route('users.update', $owner), [
+            'name' => $owner->name,
+            'email' => $owner->email,
+            'phone' => $owner->phone,
+            'role' => 'patient',
+            'status' => '1',
+        ])->assertSessionHasErrors('role');
+
+        $owner->refresh();
+        $this->assertSame('pharmacy', $owner->role, 'دور حساب مرتبط بصيدلية لا يُغيَّر');
+    }
+
+    /**
+     * العكس: حساب بلا صيدلية يتغيّر دوره بحرية (الحارس لا يوسّع نطاقه بلا داعٍ).
+     */
+    public function test_admin_can_still_change_role_of_account_without_pharmacy(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $target = User::factory()->patient()->create();
+        $this->actingAs($admin);
+
+        $this->put(route('users.update', $target), [
+            'name' => $target->name,
+            'email' => $target->email,
+            'phone' => $target->phone,
+            'role' => 'admin',
+            'status' => '1',
+        ])->assertRedirect(route('users.index'));
+
+        $target->refresh();
+        $this->assertSame('admin', $target->role);
+    }
 }

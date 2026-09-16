@@ -1,8 +1,18 @@
 /**
  * Daway Accounting — شاشة البيع (POS)
  * ==========================================================
- * ⚠️ لا حفظ حقيقي: `AccountingApi.createSale()` تُرجع no_backend دائمًا،
- * فنعرض رسالة صريحة بدل الإيهام بحفظ ناجح. لا نختلق endpoint.
+ * الحفظ حقيقي: `AccountingApi.createSale()` يضرب
+ * POST /api/pharmacy/accounting/sales، والـBackend يخصم المخزون ويكتب
+ * حركة الصندوق ويزيد دين العميل داخل معاملة واحدة (AccountingLedger).
+ *
+ * ── عقد الطلب (مطابق لـAccountingSalesController@store حرفيًا) ────────
+ *   { items:[{pharmacy_medicine_id, medicine_id, medicine_name, barcode,
+ *             unit_price, quantity, line_discount}],
+ *     payment_method, paid?, discount?, customer_id?, notes? }
+ *
+ * ⚠️ **`payment_method` لا `payment`، و`items` لا `lines`.** أي انحراف في
+ * المفاتيح يُرفض بـ422 برسالة مضلّلة («طريقة الدفع مطلوبة») لأن الـBackend
+ * يرى الحقل مفقودًا. هذا العطل وقع فعلًا — لذلك المفاتيح مكتوبة هنا صراحة.
  *
  * آلة الحالة: cart[] (مصدر الحقيقة الوحيد) → render → totals.
  * كل العمليات المالية تُقرّب بـ round2() لتفادي أخطاء الفاصلة العائمة.
@@ -13,12 +23,28 @@
     var U = window.AccountingUtil;
     var Api = window.AccountingApi;
 
+    /**
+     * شبكة أمان للنصوص: `window.acPosI18n` يُحقن من
+     * `partials/accounting-i18n`. لو لم يُحمَّل الـpartial (أو تغيّر ترتيب
+     * السكربتات) فإن **كل** `window.acPosI18n.x` يرمي TypeError داخل مسار
+     * البيع — فيفشل الحفظ أو الرسم بلا رسالة مفهومة.
+     *
+     * ⚠️ نحرس مرة واحدة هنا (فنّ التوكيد على نمط `|| {}`) بدل تعديل 25 موضعًا:
+     * القيم المفقودة تصير `''` لا `undefined`، و`.replace()` يبقى صالحًا.
+     */
+    window.acPosI18n = window.acPosI18n || new Proxy({}, {
+        get: function (target, key) {
+            return key in target ? target[key] : '';
+        }
+    });
+
     /* ------------------------------------------------------
        الحالة
        ------------------------------------------------------ */
     var state = {
         lines: [],          // {key, id, barcode, name, ingredient, qty, price, discount, stock, fromCatalog}
-        customer: null,     // اسم نصي أو null (زائر نقدي)
+        customer: null,     // الاسم المعروض
+        customerId: null,   // id عميل حقيقي — إلزامي للبيع الآجل (وإلا ضاع الدين)
         payment: 'cash',
         paid: 0,
         saving: false
@@ -86,7 +112,15 @@
 
     /**
      * إضافة صنف. لو موجود بنفس المعرّف/الباركود ⇒ زيادة الكمية (لا صف مكرر).
-     * يُرجع {added:true} أو {added:false, reason:'out_of_stock'|'not_in_inventory'}
+     * يُرجع {added:true} أو {added:false, reason:'out_of_stock'}
+     *
+     * ── محورا المعرّف: لا تخلط بينهما ────────────────────────────────────
+     *   `medicine_id`          → `medicines.id`        (الكتالوج العام)
+     *   `pharmacy_medicine_id` → `pharmacy_medicines.id` (سطر مخزون هذه الصيدلية)
+     *
+     * الـBackend يخصم بـ`pharmacy_medicine_id` تحديدًا. لو أرسلنا
+     * `medicines.id` في مكانه، يخصم الـLedger سطر مخزون **لا علاقة له**
+     * بالدواء المبيع — أو يفشل بلا سبب ظاهر. لذلك نحفظ الاثنين منفصلين.
      */
     function addItem(item) {
         var stock = item.quantity;
@@ -95,9 +129,16 @@
             return { added: false, reason: 'out_of_stock', item: item };
         }
 
-        var matchKey = String(item.id != null ? item.id : item.barcode);
+        // معرّف سطر المخزون هو ما يُخصم فعلًا؛ وإلا فالكتالوج العام.
+        var pmId = item.pharmacy_medicine_id != null ? item.pharmacy_medicine_id : null;
+        var medId = item.medicine_id != null ? item.medicine_id : (pmId === null ? item.id : null);
+
+        // مفتاح الدمج: سطر المخزون أولًا، ثم الدواء، ثم الباركود.
+        var matchKey = String(pmId != null ? 'pm:' + pmId
+            : (medId != null ? 'm:' + medId : 'b:' + (item.barcode || '')));
+
         var existing = state.lines.find(function (l) {
-            return String(l.id != null ? l.id : l.barcode) === matchKey;
+            return l.matchKey === matchKey;
         });
 
         if (existing) {
@@ -107,7 +148,10 @@
 
         state.lines.push({
             key: 'l' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-            id: item.id != null ? item.id : null,
+            matchKey: matchKey,
+            medicine_id: medId != null ? medId : null,
+            pharmacy_medicine_id: pmId,
+            id: medId != null ? medId : null,
             barcode: item.barcode || '',
             name: item.trade_name || '',
             ingredient: item.active_ingredient || '',
@@ -115,7 +159,7 @@
             price: Number(item.price) || 0,
             discount: 0,
             stock: stock === undefined ? null : stock,
-            inInventory: item.in_inventory !== false && stock !== null
+            inInventory: pmId !== null
         });
 
         return { added: true, line: state.lines[state.lines.length - 1] };
@@ -439,6 +483,48 @@
     }
 
     /* ------------------------------------------------------
+       البحث عن عميل (لربط الفاتورة الآجلة بمدين حقيقي)
+       ------------------------------------------------------ */
+    /**
+     * يعرض نتائج بحث العملاء تحت الحقل.
+     * كل زر يحمل `data-ac-customer-id` — وهو ما يُرسل للـBackend فعلًا.
+     */
+    function renderCustomerMatches(rows) {
+        if (!dom.customerMatches) {
+            return;
+        }
+
+        if (!rows || !rows.length) {
+            dom.customerMatches.innerHTML = '';
+            dom.customerMatches.hidden = true;
+            return;
+        }
+
+        dom.customerMatches.hidden = false;
+        dom.customerMatches.innerHTML = rows.map(function (c) {
+            var debt = Number(c.current_balance) || 0;
+            var debtTxt = debt > 0 ? ' · ' + U.fmtMoney(debt) : '';
+            return '<button type="button" class="ac-search-item"'
+                + ' data-ac-customer-id="' + escapeAttr(c.id) + '"'
+                + ' data-ac-customer-name="' + escapeAttr(c.name || '') + '">'
+                + '<span class="ac-search-name">' + escapeHtml(c.name || '') + '</span>'
+                + '<span class="ac-search-meta">'
+                + escapeHtml(c.phone || '') + debtTxt
+                + '</span></button>';
+        }).join('');
+    }
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function escapeAttr(s) {
+        return escapeHtml(s);
+    }
+
+    /* ------------------------------------------------------
        البحث عن دواء
        ------------------------------------------------------ */
     function renderSearchResults(rows) {
@@ -485,6 +571,60 @@
     /* ------------------------------------------------------
        إتمام البيع
        ------------------------------------------------------ */
+
+    /**
+     * يحوّل سلة الواجهة إلى عقد الـBackend.
+     *
+     * ⚠️ أسماء المفاتيح ليست تجميلية — هي العقد. `qty→quantity`،
+     * `price→unit_price`، `discount→line_discount`، `name→medicine_name`.
+     * و`state.customer` نصّي (اسم) أو null، بينما الـBackend يريد
+     * `customer_id` رقميًا — لذا نرسله فقط لو كان رقمًا حقيقيًا.
+     *
+     * @returns {object} payload جاهز لـPOST
+     */
+    function buildSalePayload(paid) {
+        var t = computeTotals(state.lines);
+
+        var items = state.lines.map(function (l) {
+            var row = {
+                medicine_name: String(l.name || ''),
+                barcode: l.barcode || null,
+                unit_price: U.round2(Number(l.price) || 0),
+                quantity: Number(l.qty) || 1,
+                line_discount: U.round2(Number(l.discount) || 0)
+            };
+
+            // المعرّفان يُرسلان فقط لو موجودان — لا نرسل null صريحًا
+            // لأن `nullable|integer` تقبل الغياب ولا تحتاج المفتاح.
+            if (l.pharmacy_medicine_id != null) {
+                row.pharmacy_medicine_id = l.pharmacy_medicine_id;
+            }
+            if (l.medicine_id != null) {
+                row.medicine_id = l.medicine_id;
+            }
+
+            return row;
+        });
+
+        var payload = {
+            items: items,
+            payment_method: state.payment || 'cash',
+            // الخصم الكلي على الفاتورة = مجموع خصومات الأسطر (الواجهة لا
+            // تفرّق بينهما)، والـBackend يحسب total = subtotal − discount.
+            discount: U.round2(t.discount),
+            paid: U.round2(paid)
+        };
+
+        // العميل: نقبل id رقميًا فقط. الاسم النصّي لا يكفي لأن الـBackend
+        // يحتاجه لربط الدين — والزائر النقدي لا دين عليه أصلًا.
+        var cid = Number(state.customerId);
+        if (state.customerId != null && !isNaN(cid) && cid > 0) {
+            payload.customer_id = cid;
+        }
+
+        return payload;
+    }
+
     function completeSale() {
         if (state.saving) {
             return; // حماية من الضغط المكرر
@@ -514,7 +654,7 @@
             dom.submitLabel.textContent = window.acPosI18n.processing;
         }
 
-        Api.createSale({ lines: state.lines, payment: state.payment, paid: paid }).then(function (res) {
+        Api.createSale(buildSalePayload(paid)).then(function (res) {
             state.saving = false;
             if (dom.submitBtn) {
                 dom.submitBtn.disabled = false;
@@ -523,19 +663,49 @@
             }
 
             if (res.ok) {
+                lastSavedSale = res.sale || null;
                 U.showMessage(dom.msg, 'success', window.acPosI18n.sale_saved);
                 state.lines = [];
+                state.paid = 0;
+                if (dom.paidInput) {
+                    dom.paidInput.value = '';
+                    dom.paidInput.dataset.touched = '';
+                }
                 render();
+                notifySaleSaved(lastSavedSale);
                 return;
             }
 
-            // لا backend بعد — نقولها بصراحة بدل إيهام المستخدم
-            if (res.reason === 'no_backend') {
-                U.showMessage(dom.msg, 'warning', window.acPosI18n.sale_no_backend);
-                return;
-            }
-            U.showMessage(dom.msg, 'error', window.acPosI18n.sale_failed);
+            // خطأ حقيقي من الـBackend. السبب يُقال كما هو — لا رسالة عامة
+            // تُخفي السبب الحقيقي (كان يحدث حين كان الرد يُبتلع).
+            U.showMessage(dom.msg, 'error', res.message || window.acPosI18n.sale_failed);
         });
+    }
+
+    /** آخر فاتورة محفوظة — تُستخدم لزر «عرض/طباعة». */
+    var lastSavedSale = null;
+
+    /** إظهار رابط الفاتورة المحفوظة بدل تركه للمستخدم يبحث عنها. */
+    function notifySaleSaved(sale) {
+        if (!sale || !sale.number || !dom.msg) {
+            return;
+        }
+        var href = (window.acPosConfig && window.acPosConfig.invoiceUrlTemplate)
+            ? window.acPosConfig.invoiceUrlTemplate.replace('__NUMBER__', encodeURIComponent(sale.number))
+            : null;
+
+        if (!href) {
+            return;
+        }
+
+        var link = document.createElement('a');
+        link.href = href;
+        link.className = 'ac-inline-link';
+        link.textContent = sale.number;
+        if (dom.msg.querySelector('span')) {
+            dom.msg.querySelector('span').appendChild(document.createTextNode(' — '));
+            dom.msg.querySelector('span').appendChild(link);
+        }
     }
 
     /* ------------------------------------------------------
@@ -664,11 +834,41 @@
         }
 
         // العميل
+        // ⚠️ حقل نصّي حرّ لا يكفي: البيع الآجل يحتاج `customer_id` رقميًا
+        // ليزيد دين عميل حقيقي. لذلك نبحث في الـAPI ونخزّن id المختار،
+        // ولو كتب المستخدم اسمًا لا يطابق شيئًا نبقيه null ولا نرسله.
         if (dom.customerInput) {
-            dom.customerInput.addEventListener('input', function () {
+            var lookupCustomer = U.debounce(function () {
                 var v = dom.customerInput.value.trim();
                 state.customer = v === '' ? null : v;
-            });
+                state.customerId = null;
+
+                if (v.length < 2) {
+                    renderCustomerMatches([]);
+                    return;
+                }
+
+                Api.searchCustomers(v).then(function (res) {
+                    renderCustomerMatches(res.ok ? res.data : []);
+                });
+            }, 300);
+
+            dom.customerInput.addEventListener('input', lookupCustomer);
+            dom.customerInput.addEventListener('change', lookupCustomer);
+
+            // اختيار صريح من القائمة ⇒ نثبّت الـid
+            if (dom.customerMatches) {
+                dom.customerMatches.addEventListener('click', function (e) {
+                    var btn = e.target.closest ? e.target.closest('[data-ac-customer-id]') : null;
+                    if (!btn) {
+                        return;
+                    }
+                    state.customerId = Number(btn.getAttribute('data-ac-customer-id'));
+                    state.customer = btn.getAttribute('data-ac-customer-name') || dom.customerInput.value;
+                    dom.customerInput.value = state.customer;
+                    renderCustomerMatches([]);
+                });
+            }
         }
 
         // إتمام البيع
@@ -700,6 +900,7 @@
             remainingLine: document.querySelector('[data-ac-remaining-line]'),
             paymentSelect: document.querySelector('[data-ac-payment]'),
             customerInput: document.querySelector('[data-ac-customer]'),
+            customerMatches: document.querySelector('[data-ac-customer-matches]'),
             submitBtn: document.querySelector('[data-ac-submit]'),
             submitLabel: document.querySelector('[data-ac-submit-label]'),
             msg: document.querySelector('[data-ac-msg]'),

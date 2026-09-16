@@ -2,19 +2,128 @@
  * Daway Accounting — صفحة النظرة العامة (Overview)
  * ==========================================================
  * مسؤولياته:
- *   1. رسم مخطط المبيعات + تبديل الفترة (Today / 7d / 30d / Month).
- *   2. إعادة الرسم عند تبديل الوضع الفاتح/الداكن (نفس نمط pharmacy_hub.js).
- *   3. فتح/إغلاق حوارات الصفحة.
- * لا يحمل أي منطق أعمال — الأرقام تُمرَّر عبر data-* أو window.acOverviewConfig.
+ *   1. جلب الأرقام الحيّة من `GET /api/pharmacy/accounting/overview`.
+ *   2. رسم مخطط المبيعات + تبديل الفترة (Today / 7d / 30d / Month).
+ *   3. إعادة الرسم عند تبديل الوضع الفاتح/الداكن (نفس نمط pharmacy_hub.js).
+ *   4. فتح/إغلاق حوارات الصفحة.
+ *
+ * ── لماذا جلب حيّ فوق أرقام مصيَّرة في السيرفر؟ ────────────────────
+ * الأرقام المصيَّرة تتجمّد لحظة التصيير. بيع يُسجَّل بعدها لا يظهر في
+ * «مبيعات اليوم» حتى إعادة تحميل الصفحة — وهو أسوأ عطل في شاشة مالية:
+ * رقم يبدو صحيحًا لكنه قديم. لذا نُبقي المصيَّر كأول رسم (بلا انتظار)،
+ * ثم نستبدله بالحقيقة من الـAPI.
  */
 (function () {
     'use strict';
 
     var U = window.AccountingUtil;
+    var Api = window.AccountingApi;
     var charts = [];
 
     function el(name) {
         return document.querySelector('[data-ac-chart="' + name + '"]');
+    }
+
+    /* ------------------------------------------------------
+       تحديث البطاقات والتخطيطات من رد الـAPI
+       ------------------------------------------------------ */
+
+    /** يحدّث قيم بطاقات الـKPI بمفاتيحها — لا بـالترتيب (الترتيب هشّ). */
+    function applyKpis(kpis) {
+        if (!Array.isArray(kpis)) {
+            return 0;
+        }
+        var applied = 0;
+
+        kpis.forEach(function (kpi) {
+            if (!kpi || !kpi.key) {
+                return;
+            }
+            var card = document.querySelector('[data-ac-kpi="' + kpi.key + '"]');
+            if (!card) {
+                return;
+            }
+            var valueEl = card.querySelector('[data-ac-kpi-value]');
+            if (!valueEl) {
+                return;
+            }
+            var raw = Number(kpi.value) || 0;
+            valueEl.textContent = kpi.format === 'money' ? U.fmtMoney(raw) : String(kpi.value);
+            applied++;
+        });
+
+        return applied;
+    }
+
+    /** يطبّق سلاسل الرسم الجديدة على الحالة ويُحدّث الرسم المعروض. */
+    function applySeries(series) {
+        if (!series || typeof series !== 'object') {
+            return false;
+        }
+        var cfg = window.acOverviewConfig || {};
+        cfg.salesSeries = series;
+        window.acOverviewConfig = cfg;
+
+        var active = document.querySelector('[data-ac-range].active');
+        var key = active ? active.getAttribute('data-ac-range') : (cfg.defaultRange || '7d');
+        var picked = series[key] || series.today || null;
+
+        var canvas = el('sales');
+        if (canvas && picked) {
+            var existing = window.Chart && window.Chart.getChart(canvas);
+            if (existing) {
+                existing.destroy();
+            }
+            buildSalesChart(canvas, picked);
+        }
+
+        return true;
+    }
+
+    function setStatus(text, kind) {
+        var box = document.querySelector('[data-ac-live-status]');
+        if (!box) {
+            return;
+        }
+        if (!text) {
+            box.className = 'ac-inline-msg';
+            box.textContent = '';
+            return;
+        }
+        box.className = 'ac-inline-msg show ' + (kind || 'warning');
+        box.textContent = text;
+    }
+
+    /**
+     * الجلب الحيّ. الفشل **لا يكسر الصفحة** (الأرقام المصيَّرة تبقى معروضة)
+     * لكنه **يُعلَن** — لأن الصمت هنا يعني أرقامًا قديمة تُقرأ كأنها حيّة.
+     */
+    function refresh() {
+        if (!Api || typeof Api.overview !== 'function') {
+            return;
+        }
+
+        Api.overview({ range: (window.acOverviewConfig || {}).defaultRange || 'today' })
+            .then(function (res) {
+                if (!res || !res.ok) {
+                    setStatus(
+                        (res && res.message) || (window.acOverviewI18n && window.acOverviewI18n.stale) || '',
+                        'error'
+                    );
+                    return;
+                }
+
+                var data = res.data || {};
+                applyKpis(data.kpis);
+                applySeries(data.series);
+                setStatus('');
+            })
+            .catch(function () {
+                setStatus(
+                    (window.acOverviewI18n && window.acOverviewI18n.stale) || '',
+                    'error'
+                );
+            });
     }
 
     /* ------------------------------------------------------
@@ -43,6 +152,7 @@
                     pointHoverRadius: 6
                 }]
             },
+
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -127,18 +237,25 @@
             return;
         }
         var cfg = window.acOverviewConfig || {};
-        var series = cfg.salesSeries || {};
+
+        // ⚠️ نقرأ السلاسل من الإعداد الحيّ في كل ضغطة — لا من متغيّر مُلتقَط
+        // عند الإقلاع. وإلا فتبديل الفترة بعد الجلب الحيّ يعرض بيانات قديمة.
+        function liveSeries() {
+            return (window.acOverviewConfig || {}).salesSeries || {};
+        }
 
         // 1) مخطط المبيعات + تبويبات الفترة
         var salesCanvas = el('sales');
         if (salesCanvas) {
             var current = cfg.defaultRange || '7d';
-            var chart = buildSalesChart(salesCanvas, series[current] || { labels: [], data: [] });
+            var initial = liveSeries();
+            var chart = buildSalesChart(salesCanvas, initial[current] || { labels: [], data: [] });
             charts.push({ canvas: salesCanvas, mode: 'sales' });
 
             document.querySelectorAll('[data-ac-range]').forEach(function (tab) {
                 tab.addEventListener('click', function () {
                     var key = tab.getAttribute('data-ac-range');
+                    var series = liveSeries();
                     if (!series[key]) {
                         return;
                     }
@@ -167,6 +284,16 @@
         }
 
         U.initModalA11y();
+
+        // 3) الجلب الحيّ — بعد أول رسم، فلا ينتظر المستخدم الشبكة
+        refresh();
+
+        // 4) العودة إلى التبويب تُحدّث الأرقام (فواتير سُجّلت على تاب آخر)
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                refresh();
+            }
+        });
     }
 
     /* ------------------------------------------------------
