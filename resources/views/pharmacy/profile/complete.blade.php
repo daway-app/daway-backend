@@ -34,7 +34,7 @@
                         </div>
                     </div>
 
-                    <form action="{{ route('pharmacy.profile.complete') }}" method="POST">
+                    <form action="{{ route('pharmacy.profile.complete') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
                         @if (session('success'))
@@ -85,6 +85,22 @@
                             @error('region')
                                 <span class="field-error">{{ $message }}</span>
                             @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>@lang('pharmacy.profile.complete.logo_label')</label>
+                            <div style="display:flex;align-items:center;gap:14px;">
+                                <div id="completeLogoPreview" style="width:64px;height:64px;border-radius:16px;background:#E3F0F8;color:#155E85;display:grid;place-items:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 8px rgba(28,114,166,.15);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                                </div>
+                                <div style="flex:1;">
+                                    <input type="file" name="logo" id="logoInput" accept=".jpg,.jpeg,.png,.webp" class="form-control" style="padding:9px 12px;">
+                                    <p class="hint-under">@lang('pharmacy.profile.complete.logo_hint')</p>
+                                    @error('logo')
+                                        <span class="field-error">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -223,6 +239,23 @@
 
     <script>
         var hoursDays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+        // معاينة مباشرة لشعار الصيدلية المختار
+        document.addEventListener('DOMContentLoaded', function () {
+            var logoInput = document.getElementById('logoInput');
+            var preview = document.getElementById('completeLogoPreview');
+            if (logoInput && preview) {
+                logoInput.addEventListener('change', function () {
+                    var file = this.files && this.files[0];
+                    if (!file || !file.type.startsWith('image/')) return;
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        preview.innerHTML = '<img src="' + e.target.result + '" alt="logo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">';
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        });
 
         function togglePass(inputId, btn) {
             const input = document.getElementById(inputId);

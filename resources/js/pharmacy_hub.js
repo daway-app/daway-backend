@@ -29,19 +29,22 @@ document.querySelectorAll('.ph-modal-overlay').forEach(o=>mo.observe(o,{attribut
 syncScrollLock();}
 
 function initMap(){
+if(!window.L)return;
 // خريطة العرض: ثابتة وغير تفاعلية — لا سحب ولا ضغط (التعديل من حوار الموقع فقط)
 const display=document.getElementById('pharmacyMap');
-if(display&&window.L){
-const dLat=parseFloat(display.dataset.lat)||15.3694,dLng=parseFloat(display.dataset.lng)||44.1910;
+if(display){
+const dLat=parseFloat(display.dataset.lat)||31.5016,dLng=parseFloat(display.dataset.lng)||34.4668;
 const dmap=L.map(display,{dragging:false,doubleClickZoom:false,scrollWheelZoom:false,touchZoom:false,boxZoom:false,keyboard:false,zoomControl:false,attributionControl:true});
 dmap.setView([dLat,dLng],14);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(dmap);
 L.marker([dLat,dLng]).addTo(dmap);
 }
 
-// خريطة التعديل داخل الحوار: تُهيأ عند أول فتح للحوار
+// خريطة التعديل: مع حوار الموقع (تعديل الملف) تُهيأ عند أول فتح للحوار؛
+// في صفحة إكمال البيانات (بلا #locationModal) تُهيأ فوراً والنقر/السحب
+// يكتب الإحداثيات مباشرة — كانت سطحاً رمادياً ميتاً هنا.
 const editor=document.getElementById('pharmacyMapEdit');
-if(!editor||!window.L)return;
-const lat=parseFloat(editor.dataset.lat)||15.3694,lng=parseFloat(editor.dataset.lng)||44.1910;
+if(!editor)return;
+const lat=parseFloat(editor.dataset.lat)||31.5016,lng=parseFloat(editor.dataset.lng)||34.4668;
 let map=null,marker=null,prev={lat:lat,lng:lng},pending=null;
 const la=document.getElementById('latitude'),ln=document.getElementById('longitude');
 const modal=()=>document.getElementById('mapConfirmModal');
@@ -50,16 +53,24 @@ function cancelChange(){if(!pending)return;marker.setLatLng(prev);pending=null;}
 window.mapConfirmOk=function(){applyChange();const o=modal();if(o)o.classList.remove('active');};
 window.mapConfirmCancel=function(){cancelChange();const o=modal();if(o)o.classList.remove('active');};
 function requestChange(p){pending={lat:p.lat,lng:p.lng};marker.setLatLng(p);const o=modal();if(o)o.classList.add('active');else applyChange();}
-window.openLocationModal=function(){
-const lm=document.getElementById('locationModal');if(!lm)return;
-if(!map){
+function buildEditorMap(){
+if(map)return;
 map=L.map(editor);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
 map.setView([prev.lat,prev.lng],14);
 marker=L.marker([prev.lat,prev.lng],{draggable:true}).addTo(map);
 marker.on('dragend',()=>requestChange(marker.getLatLng()));
 map.on('click',ev=>requestChange(ev.latlng));
+setTimeout(()=>{if(map)map.invalidateSize();},80);
 }
+// الحوار موجود → السلوك القديم (تهيئة عند فتح الحوار)؛ غير موجود → فوري
+if(document.getElementById('locationModal')){
+window.openLocationModal=function(){
+const lm=document.getElementById('locationModal');if(!lm)return;
+buildEditorMap();
 lm.classList.add('active');
 setTimeout(()=>{if(map)map.invalidateSize();},60);
 };
+}else{
+buildEditorMap();
+}
 }

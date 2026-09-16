@@ -4,6 +4,7 @@ namespace App\Http\Controllers\web\Pharmacy;
 
 use App\Http\Controllers\Controller;
 use App\Models\PharmacyHour;
+use App\Support\Cloudinary;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -86,6 +87,8 @@ class PharmacyProfileCompletionController extends Controller
             'password' => ['nullable', 'string', 'min:8', 'confirmed', Password::min(8)],
             'password_confirmation' => ['nullable', 'string'],
             'hours' => ['required', 'array'],
+            // شعار الصيدلية — نفس قواعد مسار تعديل الملف (jpg/png/webp حتى 2MB)
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         // تحقق من مواعيد العمل — يجب تحديد يوم واحد على الأقل
@@ -141,6 +144,19 @@ class PharmacyProfileCompletionController extends Controller
             'latitude' => $validated['latitude'] ?? self::DEFAULT_LATITUDE,
             'longitude' => $validated['longitude'] ?? self::DEFAULT_LONGITUDE,
         ]);
+
+        // شعار الصيدلية (اختياري) — رفع إلى Cloudinary وحذف القديم، مع مزامنة
+        // أفاتار المستخدم كي يظهر في السايدبار (نفس منطق تعديل الملف)
+        if ($request->hasFile('logo')) {
+            Cloudinary::deleteLocal($pharmacy->logo);
+            $pharmacy->logo = Cloudinary::upload($request->file('logo'), 'pharmacy_logos');
+            $pharmacy->save();
+
+            if ($pharmacy->user) {
+                $pharmacy->user->avatar = $pharmacy->logo;
+                $pharmacy->user->save();
+            }
+        }
         // C1: profile_completed_at يُضبط صراحة (الحقول الحساسة تُدار عبر direct assignment
         // حتى لو بقيت في $fillable — لمنع الـ user من التلاعب بها عبر payload).
         $pharmacy->profile_completed_at = now();
