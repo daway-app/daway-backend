@@ -84,4 +84,7 @@ ENV PHP_CLI_SERVER_WORKERS=2
 # C-1: تسخين /api/medicines مرة واحدة قبل الحلقة (يبني كاش الأدوية)، والحلقة تضرب
 # /healthz فقط (يلمس الـ DB بـ SELECT 1 خفيف — بلا boot لـ Laravel كاملاً
 # ولا منافسة على ذاكرة العمال) حتى لا تستهلك عمال الـ CLI server
-CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan storage:link || true && php artisan migrate --force && { curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/api/medicines; while true; do curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/healthz; sleep 240; done & } && exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+# Seeders: MedicineSeeder + PharmacySeeder فقط (idempotent — تحديثات لا تحذف،
+# وكلمات السر تُضبط عند الإنشاء فقط). db:seed العام يحتاج CategorySeeder غير
+# المُتتبَّع — لا نستخدمه هنا.
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan storage:link || true && php artisan migrate --force && php artisan db:seed --class=Database\\\\Seeders\\\\MedicineSeeder --force && php artisan db:seed --class=Database\\\\Seeders\\\\PharmacySeeder --force && { curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/api/medicines; while true; do curl -s -o /dev/null http://127.0.0.1:${PORT:-10000}/healthz; sleep 240; done & } && exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]

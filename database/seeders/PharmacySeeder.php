@@ -14,24 +14,9 @@ class PharmacySeeder extends Seeder
     public function run(): void
     {
         // ✅ استخدام updateOrCreate عشان ما يكرر
-        $pharmacyUser = User::updateOrCreate(
-            ['email' => 'pharmacy@daway.com'],
-            [
-                'name' => 'صيدلية الأمل',
-                'password' => Hash::make('password'),
-                'phone' => '+970591234567',
-            ]
-        );
+        $pharmacyUser = $this->pharmacyUser('pharmacy@daway.com', 'صيدلية الأمل', '+970591234567');
 
-        $pharmacyUser->is_active = true;
-        $pharmacyUser->role = 'pharmacy';
-        $pharmacyUser->email_verified_at = now();
-        $pharmacyUser->phone_verified_at = now();
-        $pharmacyUser->save();
-        $pharmacyUser->syncRoles(['pharmacy']);
-
-        // ✅ استخدام updateOrCreate للصيدلية
-        $pharmacy = Pharmacy::unguarded(fn () => Pharmacy::updateOrCreate(
+        Pharmacy::unguarded(fn () => Pharmacy::updateOrCreate(
             ['pharmacy_custom_id' => 'PH-1234'],
             [
                 'user_id' => $pharmacyUser->id,
@@ -46,24 +31,9 @@ class PharmacySeeder extends Seeder
                 'profile_completed_at' => now(),
             ]
         ));
-        // C1: الحقول الحساسة تُضبط صراحة بعد الإنشاء (أزيلت من $fillable لمنع التصعيد).
 
         // ✅ صيدلية ثانية
-        $pharmacyUser2 = User::updateOrCreate(
-            ['email' => 'pharmacy2@daway.com'],
-            [
-                'name' => 'صيدلية الشفاء',
-                'password' => Hash::make('password'),
-                'phone' => '+970598765432',
-            ]
-        );
-
-        $pharmacyUser2->is_active = true;
-        $pharmacyUser2->role = 'pharmacy';
-        $pharmacyUser2->email_verified_at = now();
-        $pharmacyUser2->phone_verified_at = now();
-        $pharmacyUser2->save();
-        $pharmacyUser2->syncRoles(['pharmacy']);
+        $pharmacyUser2 = $this->pharmacyUser('pharmacy2@daway.com', 'صيدلية الشفاء', '+970598765432');
 
         Pharmacy::unguarded(fn () => Pharmacy::updateOrCreate(
             ['pharmacy_custom_id' => 'PH-5678'],
@@ -259,20 +229,7 @@ class PharmacySeeder extends Seeder
         ];
 
         foreach ($demo as $row) {
-            $user = User::updateOrCreate(
-                ['email' => $row['email']],
-                [
-                    'name' => $row['name'],
-                    'password' => Hash::make('password'),
-                    'phone' => $row['phone'],
-                ]
-            );
-            $user->role = 'pharmacy';
-            $user->is_active = true;
-            $user->email_verified_at = now();
-            $user->phone_verified_at = now();
-            $user->save();
-            $user->syncRoles(['pharmacy']);
+            $user = $this->pharmacyUser($row['email'], $row['name'], $row['phone']);
 
             Pharmacy::unguarded(fn () => Pharmacy::updateOrCreate(
                 ['pharmacy_custom_id' => $row['custom_id']],
@@ -297,13 +254,14 @@ class PharmacySeeder extends Seeder
                 continue;
             }
 
+            // firstOrCreate: لا تُعِد ضبط مخزون حدثه المستخدم فعلاً على الإنتاج
             foreach ($inventories[$row['custom_id']] ?? [] as $tradeName => [$price, $quantity, $available, $minStock]) {
                 $medicine = $medicinesByName->get($tradeName);
                 if ($medicine === null) {
                     continue; // يُشغَّل بعد MedicineSeeder — احتياط فقط
                 }
 
-                PharmacyMedicine::updateOrCreate(
+                PharmacyMedicine::firstOrCreate(
                     ['pharmacy_id' => $pharmacy->id, 'medicine_id' => $medicine->id],
                     [
                         'price' => $price,
@@ -314,5 +272,53 @@ class PharmacySeeder extends Seeder
                 );
             }
         }
+    }
+
+    /**
+     * مستخدم صيدلية تجريبي — كلمة السر تُضبط عند الإنشاء فقط.
+     * إعادة تشغيل الـ seeder (مثل boot في كل deploy على الإنتاج) لا
+     * تعيد تعيين كلمات السر ولا تسحق تعديلات المستخدمين اللاحقة.
+     */
+    private function pharmacyUser(string $email, string $name, string $phone): User
+    {
+        $user = User::where('email', $email)->first();
+
+        if ($user === null) {
+            $user = User::create([
+                'email' => $email,
+                'name' => $name,
+                'password' => Hash::make('password'),
+                'phone' => $phone,
+            ]);
+            $user->role = 'pharmacy';
+            $user->is_active = true;
+            $user->email_verified_at = now();
+            $user->phone_verified_at = now();
+            $user->save();
+
+            // قد لا تكون أدوار Spatie موجودة في قاعدة بيانات لم تشغّل
+            // RolePermissionSeeder — لا نُسقط الـ seeder بسببها
+            if (\Spatie\Permission\Models\Role::where('name', 'pharmacy')->exists()) {
+                $user->syncRoles(['pharmacy']);
+            }
+
+            return $user;
+        }
+
+        // ضمان الدور والتفعيل فقط — بلا مس بكلمة السر أو البروفايل
+        if ($user->role !== 'pharmacy') {
+            $user->role = 'pharmacy';
+            $user->is_active = true;
+            $user->email_verified_at = $user->email_verified_at ?? now();
+            $user->phone_verified_at = $user->phone_verified_at ?? now();
+            $user->save();
+        }
+
+        if (\Spatie\Permission\Models\Role::where('name', 'pharmacy')->exists()
+            && ! $user->hasRole('pharmacy')) {
+            $user->syncRoles(['pharmacy']);
+        }
+
+        return $user;
     }
 }
