@@ -5,10 +5,13 @@ use App\Http\Controllers\Api\AccountingExpenseController;
 use App\Http\Controllers\Api\AccountingOverviewController;
 use App\Http\Controllers\Api\AccountingPartiesController;
 use App\Http\Controllers\Api\AccountingSalesController;
+use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\BarcodeLookupController;
+use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvailabilityAlertController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\MedicalProfileController;
@@ -117,6 +120,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('health-profile', [MedicalProfileController::class, 'show']);
         Route::put('health-profile', [MedicalProfileController::class, 'update']);
+
+        Route::get('addresses', [AddressController::class, 'index']);
+        Route::post('addresses', [AddressController::class, 'store']);
+        Route::get('addresses/{address}', [AddressController::class, 'show']);
+        Route::put('addresses/{address}', [AddressController::class, 'update']);
+        Route::delete('addresses/{address}', [AddressController::class, 'destroy']);
+
+        Route::get('cart', [CartController::class, 'show'])->name('cart.show');
+        Route::post('cart/items', [CartController::class, 'store'])->name('cart.store');
+        Route::put('cart/items/{item}', [CartController::class, 'update'])->name('cart.update');
+        Route::delete('cart/items/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
+        Route::delete('cart', [CartController::class, 'clear'])->name('cart.clear');
+
+        Route::post('coupons/validate', [CouponController::class, 'validateCoupon']);
 
         // مساعد المريض النصّي: رسالة حرة → دواء → صيدليات متوفرة فعلاً مرتّبة.
         // حدّ مخصّص (assistant) لأن كل طلب قد يستدعي خدمة AI خارجية، ولأن
