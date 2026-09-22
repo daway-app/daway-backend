@@ -320,9 +320,9 @@
                             ]
                         },
                         {
-                            "name": "OTP - Verify - Success (saves patient_token)",
+                            "name": "OTP - Verify - Existing user login (saves patient_token)",
                             "request": {
-                                "description": "Existing phone + valid OTP -> 200 + data.token. Replace {{patient_otp}} with the code from Send response.",
+                                "description": "Registered phone + valid OTP -> 200 + data.token. Paste the code from Send response into {{patient_otp}}.",
                                 "method": "POST",
                                 "header": [
                                     {
@@ -374,9 +374,9 @@
                             ]
                         },
                         {
-                            "name": "OTP - Verify - New phone needs registration",
+                            "name": "OTP - Register - Success (new patient via OTP verify)",
                             "request": {
-                                "description": "Unknown phone -> 422 with registration_required flag (then resend with name, birth_date, latitude, longitude).",
+                                "description": "THERE IS NO SEPARATE PATIENT REGISTER ROUTE: POST /api/otp/verify creates the patient on first verify. Flow: 1) Send OTP to a NEW phone, 2) run this with the fresh code + name/birth_date/latitude/longitude -> 200 data.token (user.is_new=true), token auto-saved to patient_token.",
                                 "method": "POST",
                                 "header": [
                                     {
@@ -406,7 +406,7 @@
                                             "language": "json"
                                         }
                                     },
-                                    "raw": "{\"phone\":\"0599999999\",\"otp\":\"123456\"}"
+                                    "raw": "{\"phone\":\"{{patient_phone}}\",\"otp\":\"{{patient_otp}}\",\"name\":\"{{patient_name}}\",\"birth_date\":\"{{patient_birth_date}}\",\"latitude\":31.5,\"longitude\":34.46}"
                                 }
                             },
                             "response": [],
@@ -416,8 +416,266 @@
                                     "script": {
                                         "type": "text/javascript",
                                         "exec": [
-                                            "pm.test('Validation failure 422', function () {",
-                                            "    pm.expect(pm.response.code).to.eql(422);",
+                                            "pm.test('Status is successful', function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                                            "});",
+                                            "const j = pm.response.json();",
+                                            "if (j && j.data && j.data.token) { pm.collectionVariables.set('patient_token', j.data.token); }",
+                                            "if (j && j.token) { pm.collectionVariables.set('patient_token', j.token); }"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "OTP - Register - Missing name",
+                            "request": {
+                                "description": "New phone + fresh OTP without name -> 422 errors.name + registration_required. Stale OTP -> 400 instead.",
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/otp/verify",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "otp",
+                                        "verify"
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    },
+                                    "raw": "{\"phone\":\"{{patient_phone}}\",\"otp\":\"{{patient_otp}}\",\"birth_date\":\"{{patient_birth_date}}\",\"latitude\":31.5,\"longitude\":34.46}"
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "pm.test('Validation failure', function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                                            "});"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "OTP - Register - Missing birth date",
+                            "request": {
+                                "description": "New phone + fresh OTP without birth_date -> 422 errors.birth_date + registration_required. Stale OTP -> 400 instead.",
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/otp/verify",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "otp",
+                                        "verify"
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    },
+                                    "raw": "{\"phone\":\"{{patient_phone}}\",\"otp\":\"{{patient_otp}}\",\"name\":\"{{patient_name}}\",\"latitude\":31.5,\"longitude\":34.46}"
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "pm.test('Validation failure', function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                                            "});"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "OTP - Register - Missing latitude",
+                            "request": {
+                                "description": "New phone + fresh OTP without latitude -> 422 errors.latitude + registration_required. Stale OTP -> 400 instead.",
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/otp/verify",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "otp",
+                                        "verify"
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    },
+                                    "raw": "{\"phone\":\"{{patient_phone}}\",\"otp\":\"{{patient_otp}}\",\"name\":\"{{patient_name}}\",\"birth_date\":\"{{patient_birth_date}}\",\"longitude\":34.46}"
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "pm.test('Validation failure', function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                                            "});"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "OTP - Register - Missing longitude",
+                            "request": {
+                                "description": "New phone + fresh OTP without longitude -> 422 errors.longitude + registration_required. Stale OTP -> 400 instead.",
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/otp/verify",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "otp",
+                                        "verify"
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    },
+                                    "raw": "{\"phone\":\"{{patient_phone}}\",\"otp\":\"{{patient_otp}}\",\"name\":\"{{patient_name}}\",\"birth_date\":\"{{patient_birth_date}}\",\"latitude\":31.5}"
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "pm.test('Validation failure', function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                                            "});"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "OTP - Register - Invalid phone (missing)",
+                            "request": {
+                                "description": "Missing phone -> 400 (existing-phone path) or 422 registration_required (new-phone path).",
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/otp/verify",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "otp",
+                                        "verify"
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    },
+                                    "raw": "{\"otp\":\"{{patient_otp}}\",\"name\":\"{{patient_name}}\",\"birth_date\":\"{{patient_birth_date}}\",\"latitude\":31.5,\"longitude\":34.46}"
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "pm.test('Validation failure', function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
                                             "});"
                                         ]
                                     }
@@ -525,7 +783,7 @@
                             ]
                         }
                     ],
-                    "description": "Actual routes: POST /api/otp/send, POST /api/otp/verify. Wrong/expired OTP -> 400. Rate limited after 5 attempts -> 429."
+                    "description": "Actual routes: POST /api/otp/send, POST /api/otp/verify. NO standalone patient-register route: verify with a new phone + name/birth_date/latitude/longitude IS the registration. Wrong/expired OTP -> 400. Rate limited after 5 attempts -> 429."
                 },
                 {
                     "name": "Pharmacy login",
@@ -8134,11 +8392,19 @@
         },
         {
             "key": "patient_name",
-            "value": ""
+            "value": "Postman Test Patient"
         },
         {
             "key": "patient_birth_date",
-            "value": ""
+            "value": "2000-01-01"
+        },
+        {
+            "key": "patient_latitude",
+            "value": "31.5"
+        },
+        {
+            "key": "patient_longitude",
+            "value": "34.46"
         },
         {
             "key": "patient_otp",
