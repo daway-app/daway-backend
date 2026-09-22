@@ -212,6 +212,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         LogController::class,
         'exportExcel',
     ])->name('logs.export.excel');
+
+    // ==================== TEMP: ADMIN MAINTENANCE TOKEN ====================
+    // مؤقت — يصدر Sanctum token من جلسة ويب أدمن للوصول إلى admin API maintenance endpoints.
+    Route::get('/admin/maintenance/token', [\App\Http\Controllers\Api\AdminTokenController::class, 'issue'])
+        ->name('admin.maintenance.token');
 });
 
 // ==================== PHARMACY ONLY ====================
