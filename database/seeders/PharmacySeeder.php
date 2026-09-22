@@ -51,9 +51,20 @@ class PharmacySeeder extends Seeder
             ]
         ));
 
-        // 10 صيدليات تجريبية واقعية في محافظات غزة — إحداثيات حقيقية تقريبية،
-        // مخزون متشابك بين الصيدليات (مثل الواقع: بانادول في كل صيدلية تقريباً
-        // بأسعار مختلفة، والنوادر في القليل فقط).
+        // ⚠️ PRODUCTION-SAFE: Demo inventory (PH-2001–PH-2010) is skipped in production
+        // environments to prevent seeding fake pharmacy_medicines on every deploy.
+        // Local/test environments retain demo data for development.
+        if (app()->environment('local', 'testing')) {
+            $this->seedDemoPharmacies();
+        }
+    }
+
+    /**
+     * إنشاء الصيدليات التجريبية والمخزون الخاص بها (PH-2001–PH-2010).
+     * يُستدعى فقط في بيئات local/testing — لا يعمل في production.
+     */
+    private function seedDemoPharmacies(): void
+    {
         $medicinesByName = Medicine::whereIn('trade_name', [
             'Panadol', 'Amoxil', 'Glucophage', 'Ventolin', 'Augmentin',
         ])->get()->keyBy('trade_name');
