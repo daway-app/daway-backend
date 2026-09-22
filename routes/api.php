@@ -271,7 +271,13 @@ Route::middleware(['auth:sanctum', 'role:pharmacy'])->prefix('sync')->group(func
     Route::get('pull', [SyncController::class, 'pull']);
 });
 
-// Categories (public catalog metadata) â€” {category} ظٹظ‚ط¨ظ„ id ط£ظˆ slug
+// ===== Admin-only: Dry-run للتحقق من ربط pharmacy_medicines ↔ moh_medicines =====
+// ⚠️ Read-Only: لا تنفذ أي تعديل بيانات. مؤقتة — تغريد بعد الاستخدام.
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/maintenance')->group(function () {
+    Route::get('pharmacy-moh-backfill/dry-run', \App\Http\Controllers\Api\AdminPharmacyMohDryRunController::class);
+});
+
+// Categories (public catalog metadata)
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::get('/categories/{category}/medicines', [CategoryController::class, 'medicines']);
