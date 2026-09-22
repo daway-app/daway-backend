@@ -4,7 +4,10 @@ namespace Tests\Feature\Api;
 
 use App\Models\Medicine;
 use App\Models\Pharmacy;
+use App\Models\PharmacyHour;
 use App\Models\PharmacyMedicine;
+use App\Support\PharmacyAvailability;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class PharmacyApiTest extends TestCase
@@ -76,5 +79,96 @@ class PharmacyApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.id', $pharmacy->id);
+    }
+
+    public function test_open_now_filter_returns_only_open_pharmacies(): void
+    {
+        $now = Carbon::parse('next sunday 13:00');
+        Carbon::setTestNow($now);
+
+        $openPharmacy = Pharmacy::factory()->create(['is_active' => true]);
+        PharmacyHour::factory()->create([
+            'pharmacy_id' => $openPharmacy->id,
+            'day_of_week' => 'Sunday',
+            'open_time' => '08:00',
+            'close_time' => '22:00',
+            'is_closed' => false,
+        ]);
+
+        $closedPharmacy = Pharmacy::factory()->create(['is_active' => true]);
+        PharmacyHour::factory()->create([
+            'pharmacy_id' => $closedPharmacy->id,
+            'day_of_week' => 'Sunday',
+            'open_time' => '08:00',
+            'close_time' => '10:00',
+            'is_closed' => false,
+        ]);
+
+        $response = $this->getJson('/api/pharmacies?open_now=1');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $openPharmacy->id)
+            ->assertJsonPath('data.0.is_open_now', true);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_no_open_now_filter_preserves_existing_behavior(): void
+    {
+        $pharmacy = Pharmacy::factory()->create(['is_active' => true]);
+
+        $response = $this->getJson('/api/pharmacies');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.0.id', $pharmacy->id);
+    }
+
+    public function test_open_now_filter_excludes_inactive_pharmacies(): void
+    {
+        $now = Carbon::parse('next sunday 13:00');
+        Carbon::setTestNow($now);
+
+        $activeOpen = Pharmacy::factory()->create(['is_active' => true]);
+        PharmacyHour::factory()->create([
+            'pharmacy_id' => $activeOpen->id,
+            'day_of_week' => 'Sunday',
+            'open_time' => '08:00',
+            'close_time' => '22:00',
+            'is_closed' => false,
+        ]);
+
+        Pharmacy::factory()->create(['is_active' => false]);
+
+        $response = $this->getJson('/api/pharmacies?open_now=1');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonMissing(['data.0.is_active', false]);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_pharmacy_show_exposes_is_open_now(): void
+    {
+        $now = Carbon::parse('next sunday 13:00');
+        Carbon::setTestNow($now);
+
+        $pharmacy = Pharmacy::factory()->create(['is_active' => true]);
+        PharmacyHour::factory()->create([
+            'pharmacy_id' => $pharmacy->id,
+            'day_of_week' => 'Sunday',
+            'open_time' => '08:00',
+            'close_time' => '22:00',
+            'is_closed' => false,
+        ]);
+
+        $response = $this->getJson('/api/pharmacies/'.$pharmacy->id);
+
+        $response->assertOk()
+            ->assertJsonPath('data.is_open_now', true);
+
+        Carbon::setTestNow();
     }
 }

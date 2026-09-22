@@ -23,6 +23,7 @@ class PharmacyController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'radius_km' => 'nullable|integer|min:1|max:50',
             'per_page' => 'nullable|integer|min:1|max:100',
+            'open_now' => ['nullable', 'boolean'],
         ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
 
@@ -32,10 +33,13 @@ class PharmacyController extends Controller
         $radiusKm = (int) ($validated['radius_km'] ?? 15);
 
         $userId = request()->user()?->id;
+        $openNow = $request->boolean('open_now');
+
         $query = Pharmacy::query()
             ->where('is_active', true)
             ->withCount('ratings')
             ->withAvg('ratings', 'stars_rating')
+            ->with('hours')
             ->when($userId, function ($q) use ($userId) {
                 $q->with(['ratings' => function ($q) use ($userId) {
                     $q->where('user_id', $userId);
@@ -103,6 +107,11 @@ class PharmacyController extends Controller
             ];
         });
 
+        // open_now filter: applied in PHP because overnight hours require runtime logic
+        if ($openNow) {
+            $rows = $rows->filter(fn ($r) => $r['is_open_now'])->values();
+        }
+
         // للـ drivers غير MySQL مع geo: فلترة/ترتيب في PHP بعد الجلب.
         if ($hasGeo && DB::connection()->getDriverName() !== 'mysql') {
             $rows = $rows->filter(fn ($r) => $r['distance_km'] === null || $r['distance_km'] <= $radiusKm)
@@ -115,10 +124,10 @@ class PharmacyController extends Controller
             'message' => 'تم جلب الصيدليات بنجاح',
             'data' => $rows,
             'pagination' => [
-                'total' => $items->total(),
-                'per_page' => $items->perPage(),
-                'current_page' => $items->currentPage(),
-                'last_page' => $items->lastPage(),
+                'total' => $openNow ? $rows->count() : $items->total(),
+                'per_page' => $perPage,
+                'current_page' => $openNow ? 1 : $items->currentPage(),
+                'last_page' => $openNow ? ($rows->count() > 0 ? 1 : 0) : $items->lastPage(),
             ],
         ]);
     }
