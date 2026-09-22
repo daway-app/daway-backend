@@ -31,10 +31,16 @@ class PharmacyController extends Controller
         $lng = $hasGeo ? (float) $validated['longitude'] : null;
         $radiusKm = (int) ($validated['radius_km'] ?? 15);
 
+        $userId = request()->user()?->id;
         $query = Pharmacy::query()
             ->where('is_active', true)
             ->withCount('ratings')
-            ->withAvg('ratings', 'stars_rating');
+            ->withAvg('ratings', 'stars_rating')
+            ->when($userId, function ($q) use ($userId) {
+                $q->with(['ratings' => function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                }]);
+            });
 
         $search = trim((string) $request->get('pharmacy_name', ''));
         if ($search !== '') {
@@ -84,8 +90,14 @@ class PharmacyController extends Controller
                 }
             }
 
+            $payload = $this->payload($pharmacy);
+            $userRating = $this->userRating($pharmacy);
+            if ($userRating !== null) {
+                $payload['user_rating'] = $userRating;
+            }
+
             return [
-                ...$this->payload($pharmacy),
+                ...$payload,
                 'distance_km' => $distance,
                 'is_open_now' => PharmacyAvailability::isOpenNow($pharmacy),
             ];
@@ -131,12 +143,16 @@ class PharmacyController extends Controller
             ], 404);
         }
 
+        $userId = request()->user()?->id;
+        $userRating = $pharmacy->ratings->firstWhere('user_id', $userId);
+
         return response()->json([
             'success' => true,
             'message' => 'تم جلب تفاصيل الصيدلية بنجاح',
             'data' => [
                 ...$this->payload($pharmacy),
                 'is_open_now' => PharmacyAvailability::isOpenNow($pharmacy),
+                'user_rating' => $userRating ? (int) $userRating->stars_rating : null,
                 'hours' => $pharmacy->hours->map(fn ($hour) => [
                     'day_of_week' => $hour->day_of_week,
                     'open_time' => $hour->open_time?->format('H:i'),
@@ -185,5 +201,18 @@ class PharmacyController extends Controller
             'ratings_count' => $pharmacy->ratings_count ?? null,
             'ratings_avg' => $pharmacy->ratings_avg_stars_rating !== null ? round((float) $pharmacy->ratings_avg_stars_rating, 2) : null,
         ];
+    }
+
+    /**
+     * Get the authenticated user's rating for this pharmacy, if exists.
+     */
+    private function userRating(Pharmacy $pharmacy): ?int
+    {
+        if (! $pharmacy->relationLoaded('ratings')) {
+            return null;
+        }
+
+        $rating = $pharmacy->ratings->firstWhere('user_id', request()->user()?->id);
+        return $rating ? (int) $rating->stars_rating : null;
     }
 }

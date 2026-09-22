@@ -261,6 +261,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Ratings
     Route::get('ratings', [RatingController::class, 'index']);
     Route::post('ratings', [RatingController::class, 'store'])->middleware('throttle:writes');
+    Route::get('ratings/{rating}', [RatingController::class, 'show'])->name('api.ratings.show');
+    Route::put('ratings/{rating}', [RatingController::class, 'update'])->middleware('throttle:writes')->name('api.ratings.update');
+    Route::delete('ratings/{rating}', [RatingController::class, 'destroy'])->name('api.ratings.destroy');
 });
 
 // Offline-first Sync (Pharmacy web PWA)

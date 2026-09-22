@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\RatingRequest;
+use App\Http\Requests\Api\RatingUpdateRequest;
 use App\Http\Resources\RatingResource;
 use App\Models\Pharmacy;
 use App\Models\Rating;
@@ -65,5 +66,72 @@ class RatingController extends Controller
             'message' => 'تم إضافة التقييم بنجاح',
             'data' => new RatingResource($rating),
         ], 201);
+    }
+
+    public function show(Request $request, Rating $rating): JsonResponse
+    {
+        $this->authorizeOwner($request, $rating);
+
+        $rating->load('user');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب التقييم بنجاح',
+            'data' => new RatingResource($rating),
+        ]);
+    }
+
+    public function update(RatingUpdateRequest $request, Rating $rating): JsonResponse
+    {
+        $this->authorizeOwner($request, $rating);
+
+        $rating->update([
+            'stars_rating' => $request->validated()['stars_rating'],
+            'comment' => $request->validated()['comment'] ?? $rating->comment,
+        ]);
+
+        $rating->load('user');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث التقييم بنجاح',
+            'data' => new RatingResource($rating),
+        ]);
+    }
+
+    public function destroy(Request $request, Rating $rating): JsonResponse
+    {
+        $this->authorizeOwner($request, $rating);
+
+        $pharmacyId = $rating->pharmacy_id;
+
+        $rating->delete();
+
+        $this->rebuildAverage(collect([$pharmacyId]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حذف التقييم بنجاح',
+        ]);
+    }
+
+    private function authorizeOwner(Request $request, Rating $rating): void
+    {
+        abort_unless($rating->user_id === $request->user()->id, 404);
+    }
+
+    private function rebuildAverage($pharmacyIds): void
+    {
+        $pharmacyIds->each(function ($pharmacyId) {
+            $avg = Rating::where('pharmacy_id', $pharmacyId)->avg('stars_rating');
+            $count = Rating::where('pharmacy_id', $pharmacyId)->count();
+
+            $pharmacy = Pharmacy::find($pharmacyId);
+            if ($pharmacy) {
+                $pharmacy->forceFill([
+                    'avg_rating' => $avg !== null ? round((float) $avg, 2) : 0.00,
+                ])->save();
+            }
+        });
     }
 }
