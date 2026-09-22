@@ -23,6 +23,7 @@ class Reminder extends Model
         'frequency',
         'quantity_remaining',
         'is_active',
+        'reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -32,6 +33,7 @@ class Reminder extends Model
             'reminder_time' => 'datetime:H:i',
             'quantity_remaining' => 'integer',
             'is_active' => 'boolean',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 

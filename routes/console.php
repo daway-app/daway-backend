@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 // مزامنة بيانات وزارة الصحة يومياً — ملاحظة: Render المجاني بلا cron؛
 // تنفيذ الجدولة يتطلب إبقاء العملية حية (schedule:work) أو GitHub Actions
 Schedule::command('moh:sync')->dailyAt('02:00');
+Schedule::command('reminders:send-due')->everyMinute();
