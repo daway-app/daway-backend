@@ -9,6 +9,7 @@ use App\Models\Pharmacy;
 use App\Support\Image;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FavoriteController extends Controller
 {
@@ -24,8 +25,18 @@ class FavoriteController extends Controller
             ->latest('created_at')
             ->paginate(20);
 
-        $data = $favorites->getCollection()->map(function (Favorite $favorite) {
+        $medicineIds = $favorites->pluck('favoritable_id')->filter()->all();
+
+        $availability = $this->medicineAvailabilityAggregates($medicineIds);
+
+        $data = $favorites->getCollection()->map(function (Favorite $favorite) use ($availability) {
             $medicine = $favorite->favoritable;
+
+            $agg = $availability[$medicine?->id] ?? [
+                'is_available' => false,
+                'pharmacies_count' => 0,
+                'min_price' => null,
+            ];
 
             return [
                 'id' => $favorite->id,
@@ -34,7 +45,12 @@ class FavoriteController extends Controller
                 'medicine_id' => $medicine?->id,
                 'trade_name' => $medicine?->trade_name,
                 'trade_name_ar' => $medicine?->trade_name_ar,
+                'active_ingredient' => $medicine?->active_ingredient,
                 'image_url' => $medicine ? Image::url($medicine->image) : null,
+                'is_available' => (bool) $agg['is_available'],
+                'availability_status' => $agg['is_available'] ? 'available' : 'unavailable',
+                'pharmacies_count' => (int) $agg['pharmacies_count'],
+                'min_price' => $agg['min_price'] !== null ? (float) $agg['min_price'] : null,
                 'created_at' => $favorite->created_at,
             ];
         })->all();
@@ -50,6 +66,43 @@ class FavoriteController extends Controller
                 'last_page' => $favorites->lastPage(),
             ],
         ]);
+    }
+
+    private function medicineAvailabilityAggregates(array $medicineIds): array
+    {
+        if (empty($medicineIds)) {
+            return [];
+        }
+
+        $rows = DB::table('pharmacy_medicines')
+            ->join('pharmacies', 'pharmacy_medicines.pharmacy_id', '=', 'pharmacies.id')
+            ->whereIn('pharmacy_medicines.medicine_id', $medicineIds)
+            ->where('pharmacies.is_active', true)
+            ->where('pharmacy_medicines.is_available', true)
+            ->where('pharmacy_medicines.quantity', '>', 0)
+            ->groupBy('pharmacy_medicines.medicine_id')
+            ->selectRaw('pharmacy_medicines.medicine_id as medicine_id, COUNT(DISTINCT pharmacies.id) as pharmacies_count, MIN(pharmacy_medicines.price) as min_price')
+            ->get();
+
+        $result = [];
+        foreach ($medicineIds as $id) {
+            $row = $rows->firstWhere('medicine_id', $id);
+            if ($row) {
+                $result[$id] = [
+                    'is_available' => true,
+                    'pharmacies_count' => (int) $row->pharmacies_count,
+                    'min_price' => (float) $row->min_price,
+                ];
+            } else {
+                $result[$id] = [
+                    'is_available' => false,
+                    'pharmacies_count' => 0,
+                    'min_price' => null,
+                ];
+            }
+        }
+
+        return $result;
     }
 
     public function storeMedicine(Request $request, Medicine $medicine): JsonResponse

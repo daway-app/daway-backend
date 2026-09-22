@@ -6,6 +6,7 @@ use App\Models\Favorite;
 use App\Models\Medicine;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
+use App\Models\Rating;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -123,5 +124,231 @@ class FavoriteTest extends TestCase
 
         $this->deleteJson("/api/patient/favorites/pharmacies/{$pharmacy->id}")->assertOk();
         $this->assertSame(0, Favorite::count());
+    }
+
+    protected function createFavoriteWithMedicine(User $patient, Medicine $medicine): Favorite
+    {
+        return Favorite::create([
+            'user_id' => $patient->id,
+            'favoritable_type' => Medicine::class,
+            'favoritable_id' => $medicine->id,
+            'created_at' => now(),
+        ]);
+    }
+
+    public function test_favorite_list_returns_enriched_medicine_fields(): void
+    {
+        $patient = User::factory()->patient()->create();
+        $medicine = Medicine::factory()->create([
+            'trade_name' => 'Panadol',
+            'trade_name_ar' => 'بانادول',
+            'active_ingredient' => 'Paracetamol',
+        ]);
+        $this->createFavoriteWithMedicine($patient, $medicine);
+
+        Sanctum::actingAs($patient);
+
+        $response = $this->getJson('/api/patient/favorites/medicines');
+
+        $response->assertOk()
+            ->assertJsonPath('data.0.medicine_id', $medicine->id)
+            ->assertJsonPath('data.0.trade_name', 'Panadol')
+            ->assertJsonPath('data.0.trade_name_ar', 'بانادول')
+            ->assertJsonPath('data.0.active_ingredient', 'Paracetamol')
+            ->assertJsonPath('data.0.is_available', false)
+            ->assertJsonPath('data.0.availability_status', 'unavailable')
+            ->assertJsonPath('data.0.pharmacies_count', 0)
+            ->assertJsonPath('data.0.min_price', null);
+    }
+
+    public function test_favorite_list_returns_available_medicine(): void
+    {
+        $patient = User::factory()->patient()->create();
+        $medicine = Medicine::factory()->create(['active_ingredient' => 'IBUPROFEN']);
+        $pharmacy1 = Pharmacy::factory()->create(['is_active' => true]);
+        $pharmacy2 = Pharmacy::factory()->create(['is_active' => true]);
+        $inactivePharmacy = Pharmacy::factory()->create(['is_active' => false]);
+
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy1->id,
+            'medicine_id' => $medicine->id,
+            'price' => 10.00,
+            'quantity' => 5,
+            'is_available' => true,
+        ]);
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy2->id,
+            'medicine_id' => $medicine->id,
+            'price' => 8.00,
+            'quantity' => 3,
+            'is_available' => true,
+        ]);
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $inactivePharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => 5.00,
+            'quantity' => 10,
+            'is_available' => true,
+        ]);
+
+        $this->createFavoriteWithMedicine($patient, $medicine);
+
+        Sanctum::actingAs($patient);
+
+        $response = $this->getJson('/api/patient/favorites/medicines');
+
+        $response->assertOk()
+            ->assertJsonPath('data.0.is_available', true)
+            ->assertJsonPath('data.0.availability_status', 'available')
+            ->assertJsonPath('data.0.pharmacies_count', 2)
+            ->assertJsonPath('data.0.min_price', 8);
+    }
+
+    public function test_favorite_list_unavailable_medicine_shows_correct_status(): void
+    {
+        $patient = User::factory()->patient()->create();
+        $medicine = Medicine::factory()->create();
+        $pharmacy = Pharmacy::factory()->create(['is_active' => true]);
+
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => 10.00,
+            'quantity' => 0,
+            'is_available' => true,
+        ]);
+
+        $this->createFavoriteWithMedicine($patient, $medicine);
+
+        Sanctum::actingAs($patient);
+
+        $response = $this->getJson('/api/patient/favorites/medicines');
+
+        $response->assertOk()
+            ->assertJsonPath('data.0.is_available', false)
+            ->assertJsonPath('data.0.availability_status', 'unavailable')
+            ->assertJsonPath('data.0.pharmacies_count', 0)
+            ->assertJsonPath('data.0.min_price', null);
+    }
+
+    public function test_favorite_list_excludes_inactive_pharmacies(): void
+    {
+        $patient = User::factory()->patient()->create();
+        $medicine = Medicine::factory()->create();
+        $activePharmacy = Pharmacy::factory()->create(['is_active' => true]);
+        $inactivePharmacy = Pharmacy::factory()->create(['is_active' => false]);
+
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $activePharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => 5.00,
+            'quantity' => 5,
+            'is_available' => true,
+        ]);
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $inactivePharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => 1.00,
+            'quantity' => 10,
+            'is_available' => true,
+        ]);
+
+        $this->createFavoriteWithMedicine($patient, $medicine);
+
+        Sanctum::actingAs($patient);
+
+        $response = $this->getJson('/api/patient/favorites/medicines');
+
+        $response->assertOk()
+            ->assertJsonPath('data.0.pharmacies_count', 1)
+            ->assertJsonPath('data.0.min_price', 5);
+    }
+
+    public function test_empty_favorites_list(): void
+    {
+        $patient = User::factory()->patient()->create();
+
+        Sanctum::actingAs($patient);
+
+        $response = $this->getJson('/api/patient/favorites/medicines');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_favorites_list_returns_only_own_medicine_favorites(): void
+    {
+        $patientA = User::factory()->patient()->create();
+        $patientB = User::factory()->patient()->create();
+        $medicine = Medicine::factory()->create();
+
+        Sanctum::actingAs($patientA);
+        $this->postJson("/api/patient/favorites/medicines/{$medicine->id}")->assertStatus(201);
+
+        Sanctum::actingAs($patientB);
+        $response = $this->getJson('/api/patient/favorites/medicines');
+
+        $response->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_favorite_list_handles_missing_medicine(): void
+    {
+        $patient = User::factory()->patient()->create();
+        Favorite::create([
+            'user_id' => $patient->id,
+            'favoritable_type' => Medicine::class,
+            'favoritable_id' => 999999,
+            'created_at' => now(),
+        ]);
+
+        Sanctum::actingAs($patient);
+
+        $response = $this->getJson('/api/patient/favorites/medicines');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.medicine_id', null)
+            ->assertJsonPath('data.0.trade_name', null);
+    }
+
+    public function test_pharmacy_index_includes_user_rating_for_authenticated_user(): void
+    {
+        $patient = User::factory()->patient()->create();
+        $pharmacy = Pharmacy::factory()->create(['is_active' => true, 'avg_rating' => 0.00]);
+
+        Rating::create([
+            'user_id' => $patient->id,
+            'pharmacy_id' => $pharmacy->id,
+            'stars_rating' => 5,
+            'created_at' => now(),
+        ]);
+
+        Sanctum::actingAs($patient);
+
+        $response = $this->getJson('/api/pharmacies');
+
+        $response->assertOk()
+            ->assertJsonPath('data.0.id', $pharmacy->id)
+            ->assertJsonPath('data.0.user_rating', 5);
+    }
+
+    public function test_pharmacy_index_omits_user_rating_without_auth(): void
+    {
+        $patient = User::factory()->patient()->create();
+        $pharmacy = Pharmacy::factory()->create(['is_active' => true]);
+
+        Rating::create([
+            'user_id' => $patient->id,
+            'pharmacy_id' => $pharmacy->id,
+            'stars_rating' => 4,
+            'created_at' => now(),
+        ]);
+
+        $response = $this->getJson('/api/pharmacies');
+
+        $response->assertOk()
+            ->assertJsonMissing(['user_rating']);
     }
 }
