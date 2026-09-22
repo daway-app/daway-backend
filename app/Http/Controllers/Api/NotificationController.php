@@ -12,10 +12,14 @@ class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $notifications = Notification::with('medicine')
-            ->where('user_id', $request->user()->id)
-            ->latest('created_at')
-            ->paginate(20);
+        $query = Notification::with('medicine')
+            ->where('user_id', $request->user()->id);
+
+        if ($request->has('type')) {
+            $query->where('type', $request->input('type'));
+        }
+
+        $notifications = $query->latest('created_at')->paginate(20);
 
         $unreadCount = Notification::where('user_id', $request->user()->id)
             ->where('is_read', false)

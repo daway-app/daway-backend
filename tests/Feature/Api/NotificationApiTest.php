@@ -100,6 +100,92 @@ class NotificationApiTest extends TestCase
         ]);
     }
 
+    public function test_user_can_filter_by_type(): void
+    {
+        $user = User::factory()->patient()->create();
+
+        $this->createNotification($user->id, false, 'medicine_available');
+        $this->createNotification($user->id, false, 'inquiry_answered');
+        $this->createNotification($user->id, false, 'system');
+        $this->createNotification($user->id, false, 'medicine_available');
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/notifications?type=medicine_available');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('pagination.total', 2);
+    }
+
+    public function test_filter_by_inquiry_answered(): void
+    {
+        $user = User::factory()->patient()->create();
+
+        $this->createNotification($user->id, false, 'medicine_available');
+        $this->createNotification($user->id, false, 'inquiry_answered');
+        $this->createNotification($user->id, false, 'system');
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/notifications?type=inquiry_answered');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('pagination.total', 1);
+    }
+
+    public function test_filter_by_system(): void
+    {
+        $user = User::factory()->patient()->create();
+
+        $this->createNotification($user->id, false, 'medicine_available');
+        $this->createNotification($user->id, false, 'inquiry_answered');
+        $this->createNotification($user->id, false, 'system');
+        $this->createNotification($user->id, true, 'system');
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/notifications?type=system');
+
+        $response->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('pagination.total', 2);
+    }
+
+    public function test_invalid_type_returns_empty(): void
+    {
+        $user = User::factory()->patient()->create();
+
+        $this->createNotification($user->id, false, 'medicine_available');
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/notifications?type=nonexistent_type');
+
+        $response->assertOk()
+            ->assertJsonCount(0, 'data')
+            ->assertJsonPath('pagination.total', 0);
+    }
+
+    public function test_user_can_get_all_notifications_without_filter(): void
+    {
+        $user = User::factory()->patient()->create();
+
+        $this->createNotification($user->id, false, 'medicine_available');
+        $this->createNotification($user->id, false, 'inquiry_answered');
+        $this->createNotification($user->id, false, 'system');
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/notifications');
+
+        $response->assertOk()
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('pagination.total', 3);
+    }
+
     public function test_user_can_mark_all_as_read(): void
     {
         $user = User::factory()->patient()->create();
