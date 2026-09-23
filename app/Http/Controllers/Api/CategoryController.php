@@ -40,7 +40,7 @@ class CategoryController extends Controller
                 ->active()
                 ->ordered()
                 ->withCount('categoryMedicineLinks')
-                ->with(['subcategories' => fn ($q) => $q->active()->ordered()])
+                ->with(['subcategories' => fn ($q) => $q->active()->ordered()->withCount('categoryMedicineLinks')])
                 ->get()
                 ->map(fn (Category $category) => $this->payload($category))
                 ->values()
@@ -251,7 +251,7 @@ class CategoryController extends Controller
             $categories = Category::query()
                 ->active()
                 ->ordered()
-                ->with(['subcategories' => fn ($q) => $q->active()->ordered()])
+                ->with(['subcategories' => fn ($q) => $q->active()->ordered()->withCount('categoryMedicineLinks')])
                 ->get();
 
             return [
@@ -372,7 +372,7 @@ class CategoryController extends Controller
         $query = Category::query()
             ->active()
             ->withCount('categoryMedicineLinks')
-            ->with(['subcategories' => fn ($q) => $q->active()->ordered()]);
+            ->with(['subcategories' => fn ($q) => $q->active()->ordered()->withCount('categoryMedicineLinks')]);
 
         return ctype_digit($idOrSlug)
             ? $query->find((int) $idOrSlug)

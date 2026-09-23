@@ -9,6 +9,7 @@ use App\Models\MohMedicine;
 use App\Models\User;
 use App\Services\MedicineCatalogService;
 use Database\Seeders\CategorySeeder;
+use Database\Seeders\SubcategorySeeder;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
@@ -19,11 +20,17 @@ class CategoryApiTest extends TestCase
         parent::setUp();
 
         $this->seed(CategorySeeder::class);
+        $this->seed(SubcategorySeeder::class);
     }
 
     private function categoryId(string $slug): int
     {
         return (int) Category::where('slug', $slug)->value('id');
+    }
+
+    private function subcategoryId(string $slug): int
+    {
+        return (int) \App\Models\Subcategory::where('slug', $slug)->value('id');
     }
 
     private function createMohMedicine(array $attributes = []): MohMedicine
@@ -474,5 +481,85 @@ class CategoryApiTest extends TestCase
     {
         $this->assertSame('array', config('cache.default'));
         $this->assertInstanceOf(\Illuminate\Cache\ArrayStore::class, Cache::store()->getStore());
+    }
+
+    public function test_index_returns_subcategory_medicine_counts(): void
+    {
+        $medCat = $this->categoryId('medicines');
+        $hairSub = $this->subcategoryId('cough-sore-throat');
+
+        $moh1 = $this->createMohMedicine(['trade_name' => 'SUBCAT COUNT MED 1', 'moh_product_id' => 8701]);
+        $moh2 = $this->createMohMedicine(['trade_name' => 'SUBCAT COUNT MED 2', 'moh_product_id' => 8702]);
+
+        CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $hairSub, 'moh_product_id' => 8701, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
+        CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $hairSub, 'moh_product_id' => 8702, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
+
+        $data = $this->getJson('/api/categories')->assertOk()->json('data');
+        $medCatData = collect($data)->firstWhere('slug', 'medicines');
+        $this->assertNotNull($medCatData);
+
+        $subcat = collect($medCatData['subcategories'])->firstWhere('id', $hairSub);
+        $this->assertNotNull($subcat);
+        $this->assertSame(2, $subcat['medicines_count']);
+
+        // other subcategories under medicines with no links should be 0
+        $coldSub = $this->subcategoryId('cold-flu');
+        $coldSubData = collect($medCatData['subcategories'])->firstWhere('id', $coldSub);
+        $this->assertNotNull($coldSubData);
+        $this->assertSame(0, $coldSubData['medicines_count']);
+    }
+
+    public function test_show_returns_subcategory_medicine_counts(): void
+    {
+        $medCat = $this->categoryId('medicines');
+        $painSub = $this->subcategoryId('pain-headache');
+
+        $this->createMohMedicine(['trade_name' => 'PAIN MED 1', 'moh_product_id' => 8801]);
+        CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $painSub, 'moh_product_id' => 8801, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
+
+        $data = $this->getJson("/api/categories/{$medCat}")->assertOk()->json('data');
+
+        $subcat = collect($data['subcategories'])->firstWhere('id', $painSub);
+        $this->assertSame(1, $subcat['medicines_count']);
+    }
+
+    public function test_subcategory_medicine_counts_do_not_affect_parent_category_count(): void
+    {
+        $vitCat = $this->categoryId('vitamins-supplements');
+        $proteinSub = $this->subcategoryId('protein-supplements');
+
+        $this->createMohMedicine(['trade_name' => 'VITALINK', 'moh_product_id' => 8901]);
+        CategoryMedicineLink::create(['category_id' => $vitCat, 'subcategory_id' => $proteinSub, 'moh_product_id' => 8901, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
+
+        $data = $this->getJson('/api/categories')->assertOk()->json('data');
+        $vitCatData = collect($data)->firstWhere('slug', 'vitamins-supplements');
+
+        $subcat = collect($vitCatData['subcategories'])->firstWhere('id', $proteinSub);
+        $this->assertSame(1, $subcat['medicines_count']);
+        $this->assertSame(1, $vitCatData['medicines_count']);
+    }
+
+    public function test_subcategory_medicines_endpoint_still_works_after_count_fix(): void
+    {
+        $medCat = $this->categoryId('medicines');
+        $coughSub = $this->subcategoryId('cough-sore-throat');
+
+        $this->createMohMedicine(['trade_name' => 'COUGH MED A', 'moh_product_id' => 9001]);
+        $this->createMohMedicine(['trade_name' => 'COUGH MED B', 'moh_product_id' => 9002]);
+        CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $coughSub, 'moh_product_id' => 9001, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
+        CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $coughSub, 'moh_product_id' => 9002, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
+
+        $response = $this->getJson('/api/categories/medicines/medicines?subcategory_id='.$coughSub)->assertOk();
+        $this->assertSame(2, $response->json('pagination.total'));
+    }
+
+    public function test_filters_endpoint_returns_correct_subcategory_counts(): void
+    {
+        $this->createMohMedicine(['trade_name' => 'FILTER COUNT MED', 'moh_product_id' => 9101]);
+        CategoryMedicineLink::create(['category_id' => $this->categoryId('medicines'), 'subcategory_id' => $this->subcategoryId('cough-sore-throat'), 'moh_product_id' => 9101, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
+
+        $data = $this->getJson('/api/medicine-filters')->assertOk()->json('data');
+        $coughSub = collect($data['categories'][0]['subcategories'])->firstWhere('slug', 'cough-sore-throat');
+        $this->assertSame(1, $coughSub['medicines_count']);
     }
 }
