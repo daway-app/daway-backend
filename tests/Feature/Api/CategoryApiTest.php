@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\CategoryMedicineLink;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
+use App\Models\Pharmacy;
+use App\Models\PharmacyMedicine;
 use App\Models\User;
 use App\Services\MedicineCatalogService;
 use Database\Seeders\CategorySeeder;
@@ -38,6 +40,34 @@ class CategoryApiTest extends TestCase
         return MohMedicine::create($attributes + [
             'trade_name' => 'CATMED 5mg',
             'moh_product_id' => 2001,
+        ]);
+    }
+
+    /**
+     * Patient DEFAULT: أي دواء مرتبط بقسم يجب أن يملك مخزوناً متوفراً
+     * (صيدلية نشطة + is_available + quantity>0) ليظهر في مسارات الأقسام.
+     */
+    private function stockMoh(MohMedicine $moh, bool $available = true, int $quantity = 10): void
+    {
+        $medicine = Medicine::factory()->create();
+        $user = User::factory()->create();
+        $pharmacy = Pharmacy::unguarded(fn () => Pharmacy::create([
+            'user_id' => $user->id,
+            'pharmacy_custom_id' => 'ST-'.uniqid(),
+            'pharmacy_name' => 'Stock Pharmacy '.uniqid(),
+            'address' => 'Addr',
+            'phone_number' => '0590000000',
+            'region' => 'Region',
+            'is_active' => true,
+            'avg_rating' => 0,
+        ]));
+        PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'moh_medicine_id' => $moh->id,
+            'price' => 5,
+            'quantity' => $quantity,
+            'is_available' => $available,
         ]);
     }
 
@@ -145,6 +175,7 @@ class CategoryApiTest extends TestCase
     {
         $category = $this->categoryId('medicines');
         $this->createMohMedicine(['trade_name' => 'BRIDGE MED 5mg', 'moh_product_id' => 8301]);
+        $this->stockMoh(MohMedicine::where('moh_product_id', 8301)->first());
         $local = Medicine::factory()->create(['trade_name' => 'BRIDGE MED 5mg']);
         CategoryMedicineLink::create([
             'category_id' => $category,
@@ -165,6 +196,7 @@ class CategoryApiTest extends TestCase
     {
         $category = $this->categoryId('medicines');
         $this->createMohMedicine(['trade_name' => 'NO LOCAL TWIN 5mg', 'moh_product_id' => 8302]);
+        $this->stockMoh(MohMedicine::where('moh_product_id', 8302)->first());
         CategoryMedicineLink::create([
             'category_id' => $category,
             'moh_product_id' => 8302,
@@ -215,9 +247,12 @@ class CategoryApiTest extends TestCase
     {
         $category = $this->categoryId('medicines');
 
-        $this->createMohMedicine(['trade_name' => 'ALPHA MED 5mg', 'moh_product_id' => 2001]);
-        $this->createMohMedicine(['trade_name' => 'BETA MED 5mg', 'moh_product_id' => 2002]);
-        $this->createMohMedicine(['trade_name' => 'GAMMA OTHER 5mg', 'moh_product_id' => 2003]);
+        $alpha = $this->createMohMedicine(['trade_name' => 'ALPHA MED 5mg', 'moh_product_id' => 2001]);
+        $beta = $this->createMohMedicine(['trade_name' => 'BETA MED 5mg', 'moh_product_id' => 2002]);
+        $gamma = $this->createMohMedicine(['trade_name' => 'GAMMA OTHER 5mg', 'moh_product_id' => 2003]);
+        $this->stockMoh($alpha);
+        $this->stockMoh($beta);
+        // gamma is NOT stocked — should be excluded by availability filter.
 
         CategoryMedicineLink::create(['category_id' => $category, 'moh_product_id' => 2001, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
         CategoryMedicineLink::create(['category_id' => $category, 'moh_product_id' => 2002, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
@@ -246,8 +281,10 @@ class CategoryApiTest extends TestCase
     {
         $category = $this->categoryId('medicines');
 
-        $this->createMohMedicine(['trade_name' => 'ALPHA MED 5mg', 'moh_product_id' => 2001]);
-        $this->createMohMedicine(['trade_name' => 'BETA MED 5mg', 'moh_product_id' => 2002]);
+        $alpha = $this->createMohMedicine(['trade_name' => 'ALPHA MED 5mg', 'moh_product_id' => 2001]);
+        $beta = $this->createMohMedicine(['trade_name' => 'BETA MED 5mg', 'moh_product_id' => 2002]);
+        $this->stockMoh($alpha);
+        $this->stockMoh($beta);
         CategoryMedicineLink::create(['category_id' => $category, 'moh_product_id' => 2001, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
         CategoryMedicineLink::create(['category_id' => $category, 'moh_product_id' => 2002, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
 
@@ -264,8 +301,10 @@ class CategoryApiTest extends TestCase
     {
         $category = $this->categoryId('medicines');
 
-        $this->createMohMedicine(['trade_name' => 'PANARELief 500mg', 'moh_product_id' => 2001]);
-        $this->createMohMedicine(['trade_name' => 'IBULief 400mg', 'moh_product_id' => 2002]);
+        $pana = $this->createMohMedicine(['trade_name' => 'PANARELief 500mg', 'moh_product_id' => 2001]);
+        $ibu = $this->createMohMedicine(['trade_name' => 'IBULief 400mg', 'moh_product_id' => 2002]);
+        $this->stockMoh($pana);
+        $this->stockMoh($ibu);
         CategoryMedicineLink::create(['category_id' => $category, 'moh_product_id' => 2001, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
         CategoryMedicineLink::create(['category_id' => $category, 'moh_product_id' => 2002, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
 
@@ -363,6 +402,7 @@ class CategoryApiTest extends TestCase
             'moh_product_id' => 8501,
             'moh_drug_id' => 9501,
         ]);
+        $this->stockMoh($moh);
         CategoryMedicineLink::create([
             'category_id' => $category->id,
             'moh_product_id' => 8501,
@@ -437,7 +477,8 @@ class CategoryApiTest extends TestCase
     {
         $category = $this->categoryId('medicines');
 
-        $this->createMohMedicine(['trade_name' => 'CACHED CAT MED', 'moh_product_id' => 7001]);
+        $cached = $this->createMohMedicine(['trade_name' => 'CACHED CAT MED', 'moh_product_id' => 7001]);
+        $this->stockMoh($cached);
         CategoryMedicineLink::create(['category_id' => $category, 'moh_product_id' => 7001, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
 
         $first = $this->getJson('/api/categories/medicines/medicines');
@@ -452,8 +493,10 @@ class CategoryApiTest extends TestCase
     public function test_admin_attach_invalidates_warm_category_medicine_caches(): void
     {
         $category = Category::where('slug', 'medicines')->firstOrFail();
-        $this->createMohMedicine(['trade_name' => 'FIRST CACHE MED', 'moh_product_id' => 8201, 'moh_drug_id' => 9201]);
-        $this->createMohMedicine(['trade_name' => 'SECOND CACHE MED', 'moh_product_id' => 8202, 'moh_drug_id' => 9202]);
+        $first = $this->createMohMedicine(['trade_name' => 'FIRST CACHE MED', 'moh_product_id' => 8201, 'moh_drug_id' => 9201]);
+        $second = $this->createMohMedicine(['trade_name' => 'SECOND CACHE MED', 'moh_product_id' => 8202, 'moh_drug_id' => 9202]);
+        $this->stockMoh($first);
+        $this->stockMoh($second);
         CategoryMedicineLink::create([
             'category_id' => $category->id,
             'moh_product_id' => 8201,
@@ -490,6 +533,8 @@ class CategoryApiTest extends TestCase
 
         $moh1 = $this->createMohMedicine(['trade_name' => 'SUBCAT COUNT MED 1', 'moh_product_id' => 8701]);
         $moh2 = $this->createMohMedicine(['trade_name' => 'SUBCAT COUNT MED 2', 'moh_product_id' => 8702]);
+        $this->stockMoh($moh1);
+        $this->stockMoh($moh2);
 
         CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $hairSub, 'moh_product_id' => 8701, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
         CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $hairSub, 'moh_product_id' => 8702, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
@@ -514,7 +559,8 @@ class CategoryApiTest extends TestCase
         $medCat = $this->categoryId('medicines');
         $painSub = $this->subcategoryId('pain-headache');
 
-        $this->createMohMedicine(['trade_name' => 'PAIN MED 1', 'moh_product_id' => 8801]);
+        $moh = $this->createMohMedicine(['trade_name' => 'PAIN MED 1', 'moh_product_id' => 8801]);
+        $this->stockMoh($moh);
         CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $painSub, 'moh_product_id' => 8801, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
 
         $data = $this->getJson("/api/categories/{$medCat}")->assertOk()->json('data');
@@ -528,7 +574,8 @@ class CategoryApiTest extends TestCase
         $vitCat = $this->categoryId('vitamins-supplements');
         $proteinSub = $this->subcategoryId('protein-supplements');
 
-        $this->createMohMedicine(['trade_name' => 'VITALINK', 'moh_product_id' => 8901]);
+        $moh = $this->createMohMedicine(['trade_name' => 'VITALINK', 'moh_product_id' => 8901]);
+        $this->stockMoh($moh);
         CategoryMedicineLink::create(['category_id' => $vitCat, 'subcategory_id' => $proteinSub, 'moh_product_id' => 8901, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
 
         $data = $this->getJson('/api/categories')->assertOk()->json('data');
@@ -544,8 +591,10 @@ class CategoryApiTest extends TestCase
         $medCat = $this->categoryId('medicines');
         $coughSub = $this->subcategoryId('cough-sore-throat');
 
-        $this->createMohMedicine(['trade_name' => 'COUGH MED A', 'moh_product_id' => 9001]);
-        $this->createMohMedicine(['trade_name' => 'COUGH MED B', 'moh_product_id' => 9002]);
+        $coughA = $this->createMohMedicine(['trade_name' => 'COUGH MED A', 'moh_product_id' => 9001]);
+        $coughB = $this->createMohMedicine(['trade_name' => 'COUGH MED B', 'moh_product_id' => 9002]);
+        $this->stockMoh($coughA);
+        $this->stockMoh($coughB);
         CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $coughSub, 'moh_product_id' => 9001, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
         CategoryMedicineLink::create(['category_id' => $medCat, 'subcategory_id' => $coughSub, 'moh_product_id' => 9002, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
 
@@ -555,7 +604,8 @@ class CategoryApiTest extends TestCase
 
     public function test_filters_endpoint_returns_correct_subcategory_counts(): void
     {
-        $this->createMohMedicine(['trade_name' => 'FILTER COUNT MED', 'moh_product_id' => 9101]);
+        $filterMed = $this->createMohMedicine(['trade_name' => 'FILTER COUNT MED', 'moh_product_id' => 9101]);
+        $this->stockMoh($filterMed);
         CategoryMedicineLink::create(['category_id' => $this->categoryId('medicines'), 'subcategory_id' => $this->subcategoryId('cough-sore-throat'), 'moh_product_id' => 9101, 'source' => 'admin', 'confidence' => 100, 'needs_review' => false]);
 
         $data = $this->getJson('/api/medicine-filters')->assertOk()->json('data');

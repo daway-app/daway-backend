@@ -20,8 +20,8 @@ use Illuminate\Support\Facades\DB;
  * أقسام الكتالوج العامة — عامة بدون مصادقة (بيانات وصفية للكتالوج).
  *
  * الروابط مع الأدوية تعتمد المفاتيح المستقرة فقط (moh_product_id / moh_drug_id)
- * ولا يُشار إلى moh_medicines.id مطلقاً — فهو غير مستقر عبر moh:import / moh:sync
- * (كلاهما يعمل delete-all ثم insert).
+ * ولا يُشار إلى moh_medicines.id في الروابط — فـ moh:import / moh:sync يحافظان
+ * على نفس moh_medicines.id لنفس المنتج (key-aware upsert بلا delete-all).
  */
 class CategoryController extends Controller
 {
@@ -34,15 +34,23 @@ class CategoryController extends Controller
     public function index(): JsonResponse
     {
         $categoryVersion = CategoryCatalogCache::version();
-        $cacheKey = self::CATEGORIES_CACHE_KEY.'|v'.$categoryVersion;
+        // Patient default = available only: counts depend on inventory too,
+        // so the key includes the catalog version (bumped on inventory writes).
+        $catalogVersion = (int) Cache::get('med_catalog_version', 1);
+        $cacheKey = self::CATEGORIES_CACHE_KEY.'|v'.$categoryVersion.'|mv'.$catalogVersion.'|availdef1';
         $categories = Cache::remember($cacheKey, self::CACHE_TTL, function () {
-            return Category::query()
+            $models = Category::query()
                 ->active()
                 ->ordered()
-                ->withCount('categoryMedicineLinks')
-                ->with(['subcategories' => fn ($q) => $q->active()->ordered()->withCount('categoryMedicineLinks')])
-                ->get()
-                ->map(fn (Category $category) => $this->payload($category))
+                ->with(['subcategories' => fn ($q) => $q->active()->ordered()])
+                ->get();
+            $catCounts = $this->availableCategoryCounts($models->pluck('id')->all());
+            $subCounts = $this->availableSubcategoryCounts(
+                $models->flatMap(fn (Category $c) => $c->subcategories->pluck('id'))->unique()->values()->all()
+            );
+
+            return $models
+                ->map(fn (Category $category) => $this->payload($category, $catCounts, $subCounts))
                 ->values()
                 ->all();
         });
@@ -65,10 +73,13 @@ class CategoryController extends Controller
             return response()->json(['success' => false, 'message' => 'القسم غير موجود'], 404);
         }
 
+        $catCounts = $this->availableCategoryCounts([$model->id]);
+        $subCounts = $this->availableSubcategoryCounts($model->subcategories->pluck('id')->all());
+
         return response()->json([
             'success' => true,
             'message' => 'تم جلب القسم بنجاح',
-            'data' => $this->payload($model),
+            'data' => $this->payload($model, $catCounts, $subCounts),
         ]);
     }
 
@@ -88,6 +99,9 @@ class CategoryController extends Controller
             'subcategory_id' => 'nullable|integer|min:1',
             'subcategory' => 'nullable|string|max:180',
             'dosage_form' => 'nullable|string|max:50',
+            // توافق خلفي فقط: المريض يرى المتوفر دائماً (DEFAULT)، والقيمة تُتجاهل.
+            // لا يجعل available_only=0 المسار يعرض الكتالوج الكامل.
+            'available_only' => 'nullable|boolean',
         ]);
         $perPage = (int) ($validated['per_page'] ?? 20);
         $page = (int) $request->get('page', 1);
@@ -173,9 +187,15 @@ class CategoryController extends Controller
             });
         }
 
+        // Patient DEFAULT: moh موجود + مخزون مرتبط فعلياً + متاح + كمية + صيدلية
+        // نشطة. دائماً مطبّق هنا — عرض الإدارة (web/Admin) لا يستخدم هذا المسار أصلاً.
+        $this->whereAvailable($query);
+
         $catalogVersion = (int) Cache::get('med_catalog_version', 1);
         $categoryVersion = CategoryCatalogCache::version();
-        $key = "api_cat_meds|v{$catalogVersion}|cv{$categoryVersion}|cat{$model->id}|{$page}|{$perPage}";
+        // availdef1: السلوك الافتراضي تغيّر (متوفر فقط) — مفتاح جديد حتى لا تُخدم
+        // نتائج الكتالوج الكامل المخزّنة سابقاً.
+        $key = "api_cat_meds|v{$catalogVersion}|cv{$categoryVersion}|availdef1|cat{$model->id}|{$page}|{$perPage}";
         if ($subcategoryId !== null) {
             $key .= '|sub'.$subcategoryId;
         }
@@ -218,6 +238,121 @@ class CategoryController extends Controller
     }
 
     /**
+     * Admin: Full catalog of MOH medicines in a category (no availability filter).
+     * Requires role:admin. Used by admin tools to manage the complete catalog.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $category
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function adminMedicines(Request $request, string $category): JsonResponse
+    {
+        if (! $request->user() || $request->user()->role !== 'admin') {
+            return response()->json(['success' => false, 'message' => 'غير مخول'], 403);
+        }
+
+        $model = $this->resolveActiveCategory($category);
+
+        if ($model === null) {
+            return response()->json(['success' => false, 'message' => 'القسم غير موجود'], 404);
+        }
+
+        $validated = $request->validate([
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'subcategory_id' => 'nullable|integer|min:1',
+            'dosage_form' => 'nullable|string|max:50',
+            'q' => 'nullable|string|max:180',
+        ]);
+
+        $perPage = (int) ($validated['per_page'] ?? 20);
+        $page = (int) $request->get('page', 1);
+        $q = trim((string) ($validated['q'] ?? ''));
+        $subcategoryId = $validated['subcategory_id'] ?? null;
+        $dosageForm = isset($validated['dosage_form']) ? DosageFormNormalizer::forInput($validated['dosage_form']) : null;
+
+        $query = MohMedicine::query();
+
+        $query->where(function ($outer) use ($model) {
+            $outer->whereExists(function ($sub) use ($model) {
+                $sub->selectRaw(1)
+                    ->from('category_medicine_links')
+                    ->whereColumn('category_medicine_links.moh_product_id', 'moh_medicines.moh_product_id')
+                    ->where('category_medicine_links.category_id', $model->id)
+                    ->whereNotNull('category_medicine_links.moh_product_id');
+            })->orWhereExists(function ($sub) use ($model) {
+                $sub->selectRaw(1)
+                    ->from('category_medicine_links')
+                    ->whereColumn('category_medicine_links.moh_drug_id', 'moh_medicines.moh_drug_id')
+                    ->where('category_medicine_links.category_id', $model->id)
+                    ->whereNotNull('category_medicine_links.moh_drug_id');
+            });
+        });
+
+        if ($subcategoryId !== null) {
+            $query->where(function ($outer) use ($subcategoryId) {
+                $outer->whereExists(function ($sub) use ($subcategoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links')
+                        ->whereColumn('category_medicine_links.moh_product_id', 'moh_medicines.moh_product_id')
+                        ->where('category_medicine_links.subcategory_id', $subcategoryId)
+                        ->whereNotNull('category_medicine_links.moh_product_id');
+                })->orWhereExists(function ($sub) use ($subcategoryId) {
+                    $sub->selectRaw(1)
+                        ->from('category_medicine_links')
+                        ->whereColumn('category_medicine_links.moh_drug_id', 'moh_medicines.moh_drug_id')
+                        ->where('category_medicine_links.subcategory_id', $subcategoryId)
+                        ->whereNotNull('category_medicine_links.moh_drug_id');
+                });
+            });
+        }
+
+        if ($dosageForm !== null) {
+            $query->where(function ($builder) use ($dosageForm) {
+                $builder->where(function ($inner) use ($dosageForm) {
+                    $inner->whereJsonContains('moh_medicines.dosage_forms', $dosageForm)
+                        ->whereNotNull('moh_medicines.moh_product_id');
+                })->orWhere(function ($inner) use ($dosageForm) {
+                    $inner->whereJsonContains('moh_medicines.dosage_forms', $dosageForm)
+                        ->whereNotNull('moh_medicines.moh_drug_id');
+                });
+            });
+        }
+
+        if ($q !== '') {
+            $query->where(function ($builder) use ($q) {
+                $builder->where('trade_name', 'like', "%{$q}%")
+                    ->orWhere('generic_name', 'like', "%{$q}%");
+            });
+        }
+
+        $total = $query->count();
+        $medicines = $query->orderBy('trade_name')
+            ->skip(($page - 1) * $perPage)->take($perPage)
+            ->get()
+            ->map(fn ($m) => [
+                'id' => $m->id,
+                'moh_medicine_id' => $m->moh_medicine_id ?? $m->id,
+                'trade_name' => $m->trade_name,
+                'generic_name' => $m->generic_name,
+                'dosage_form' => $m->dosage_form,
+                'unit' => $m->unit,
+                'strength' => $m->strength,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب الكتالوج الكامل للقسم',
+            'data' => $medicines,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => (int) ceil($total / $perPage),
+            ],
+        ]);
+    }
+
+    /**
      * القائمة القياسية لأشكال الجرعات (facets) لاستخدامها مع فلتر dosage_form.
      */
     public function dosageForms(): JsonResponse
@@ -245,7 +380,8 @@ class CategoryController extends Controller
     {
         $categoryVersion = CategoryCatalogCache::version();
         $catalogVersion = (int) Cache::get('med_catalog_version', 1);
-        $cacheKey = "api_medicine_filters|v{$catalogVersion}|cv{$categoryVersion}";
+        // availdef1: العدّادات أصبحت للمتوفر فقط — مفتاح جديد يبطل الكاش القديم.
+        $cacheKey = "api_medicine_filters|v{$catalogVersion}|cv{$categoryVersion}|availdef1";
 
         $payload = Cache::remember($cacheKey, self::CACHE_TTL, function () {
             $categories = Category::query()
@@ -282,50 +418,128 @@ class CategoryController extends Controller
     }
 
     /**
-     * عدد الأدوية في قسم رئيسي — يُحسب من الروابط (سواء على مستوى القسم أو
-     * على مستوى قسم فرعي) بنفس منطق المفاتيح المستقرة المستخدم في الفلترة.
+     * Patient DEFAULT: الدواء مرئي فقط مع مخزون متوفر فعلياً في صيدلية نشطة
+     * واحدة على الأقل (moh_medicine_id + is_available + quantity>0 + is_active).
+     * تعريف واحد تشترك فيه القائمة والعدّادات حتى تتطابق الأرقام مع النتائج.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder  $query
+     */
+    private function whereAvailable($query, string $mohAlias = 'moh_medicines'): void
+    {
+        $query->whereExists(function ($sub) use ($mohAlias) {
+            $sub->selectRaw(1)
+                ->from('pharmacy_medicines as pm')
+                ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
+                ->whereColumn('pm.moh_medicine_id', $mohAlias.'.id')
+                ->where('pm.is_available', true)
+                ->where('pm.quantity', '>', 0)
+                ->where('p.is_active', true);
+        });
+    }
+
+    /**
+     * عدد الأدوية *المتوفرة* (مميزة) في أقسام رئيسية — دفعة واحدة (استعلامان
+     * فقط مهما بلغ عدد الأقسام) بنفس تعريف whereAvailable حرفياً.
+     *
+     * @param  array<int>  $categoryIds
+     * @return array<int, int>
+     */
+    private function availableCategoryCounts(array $categoryIds): array
+    {
+        if ($categoryIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('moh_medicines as m')
+            ->join('category_medicine_links as l', function ($join) {
+                $join->where(function ($w) {
+                    $w->whereColumn('l.moh_product_id', 'm.moh_product_id')
+                        ->whereNotNull('l.moh_product_id');
+                })->orWhere(function ($w) {
+                    $w->whereColumn('l.moh_drug_id', 'm.moh_drug_id')
+                        ->whereNotNull('l.moh_drug_id');
+                });
+            })
+            ->whereIn('l.category_id', $categoryIds)
+            ->whereExists(function ($sub) {
+                $sub->selectRaw(1)
+                    ->from('pharmacy_medicines as pm')
+                    ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
+                    ->whereColumn('pm.moh_medicine_id', 'm.id')
+                    ->where('pm.is_available', true)
+                    ->where('pm.quantity', '>', 0)
+                    ->where('p.is_active', true);
+            })
+            ->groupBy('l.category_id')
+            ->select('l.category_id as id', DB::raw('COUNT(DISTINCT m.id) as c'))
+            ->get();
+
+        $out = array_fill_keys(array_map('intval', $categoryIds), 0);
+        foreach ($rows as $r) {
+            $out[(int) $r->id] = (int) $r->c;
+        }
+
+        return $out;
+    }
+
+    /**
+     * عدد الأدوية *المتوفرة* (مميزة) في أقسام فرعية — دفعة واحدة.
+     *
+     * @param  array<int>  $subcategoryIds
+     * @return array<int, int>
+     */
+    private function availableSubcategoryCounts(array $subcategoryIds): array
+    {
+        $subcategoryIds = array_values(array_filter(array_map('intval', $subcategoryIds)));
+        if ($subcategoryIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('moh_medicines as m')
+            ->join('category_medicine_links as l', function ($join) {
+                $join->where(function ($w) {
+                    $w->whereColumn('l.moh_product_id', 'm.moh_product_id')
+                        ->whereNotNull('l.moh_product_id');
+                })->orWhere(function ($w) {
+                    $w->whereColumn('l.moh_drug_id', 'm.moh_drug_id')
+                        ->whereNotNull('l.moh_drug_id');
+                });
+            })
+            ->whereIn('l.subcategory_id', $subcategoryIds)
+            ->whereExists(function ($sub) {
+                $sub->selectRaw(1)
+                    ->from('pharmacy_medicines as pm')
+                    ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
+                    ->whereColumn('pm.moh_medicine_id', 'm.id')
+                    ->where('pm.is_available', true)
+                    ->where('pm.quantity', '>', 0)
+                    ->where('p.is_active', true);
+            })
+            ->groupBy('l.subcategory_id')
+            ->select('l.subcategory_id as id', DB::raw('COUNT(DISTINCT m.id) as c'))
+            ->get();
+
+        $out = array_fill_keys($subcategoryIds, 0);
+        foreach ($rows as $r) {
+            $out[(int) $r->id] = (int) $r->c;
+        }
+
+        return $out;
+    }
+
+    /**
+     * عدد الأدوية المتوفرة في قسم رئيسي — يُحسب من الروابط (سواء على مستوى
+     * القسم أو على مستوى قسم فرعي) بنفس منطق المفاتيح المستقرة + التوفر.
      */
     private function categoryMedicinesCount(int $categoryId): int
     {
-        return (int) DB::table('moh_medicines as m')
-            ->where(function ($outer) use ($categoryId) {
-                $outer->whereExists(function ($sub) use ($categoryId) {
-                    $sub->selectRaw(1)
-                        ->from('category_medicine_links as l')
-                        ->whereColumn('l.moh_product_id', 'm.moh_product_id')
-                        ->where('l.category_id', $categoryId)
-                        ->whereNotNull('l.moh_product_id');
-                })->orWhereExists(function ($sub) use ($categoryId) {
-                    $sub->selectRaw(1)
-                        ->from('category_medicine_links as l')
-                        ->whereColumn('l.moh_drug_id', 'm.moh_drug_id')
-                        ->where('l.category_id', $categoryId)
-                        ->whereNotNull('l.moh_drug_id');
-                });
-            })
-            ->count();
+        return $this->availableCategoryCounts([$categoryId])[$categoryId] ?? 0;
     }
 
-    /** عدد الأدوية المرتبطة بقسم فرعي بعينه */
+    /** عدد الأدوية المتوفرة المرتبطة بقسم فرعي بعينه */
     private function subcategoryMedicinesCount(int $subcategoryId): int
     {
-        return (int) DB::table('moh_medicines as m')
-            ->where(function ($outer) use ($subcategoryId) {
-                $outer->whereExists(function ($sub) use ($subcategoryId) {
-                    $sub->selectRaw(1)
-                        ->from('category_medicine_links as l')
-                        ->whereColumn('l.moh_product_id', 'm.moh_product_id')
-                        ->where('l.subcategory_id', $subcategoryId)
-                        ->whereNotNull('l.moh_product_id');
-                })->orWhereExists(function ($sub) use ($subcategoryId) {
-                    $sub->selectRaw(1)
-                        ->from('category_medicine_links as l')
-                        ->whereColumn('l.moh_drug_id', 'm.moh_drug_id')
-                        ->where('l.subcategory_id', $subcategoryId)
-                        ->whereNotNull('l.moh_drug_id');
-                });
-            })
-            ->count();
+        return $this->availableSubcategoryCounts([$subcategoryId])[$subcategoryId] ?? 0;
     }
 
     /**
@@ -379,7 +593,11 @@ class CategoryController extends Controller
             : $query->where('slug', $idOrSlug)->first();
     }
 
-    private function payload(Category $category): array
+    /**
+     * @param  array<int, int>  $catCounts  عدّادات التوفر (availableCategoryCounts)
+     * @param  array<int, int>  $subCounts  عدّادات التوفر (availableSubcategoryCounts)
+     */
+    private function payload(Category $category, array $catCounts = [], array $subCounts = []): array
     {
         return [
             'id' => $category->id,
@@ -389,19 +607,22 @@ class CategoryController extends Controller
             'image' => Image::url($category->image),
             'is_active' => (bool) $category->is_active,
             'sort_order' => (int) $category->sort_order,
-            'medicines_count' => (int) ($category->category_medicine_links_count ?? 0),
+            // Patient DEFAULT: أدوية متوفرة فقط — لا عدد الروابط الخام.
+            'medicines_count' => $catCounts[$category->id] ?? (int) ($category->category_medicine_links_count ?? 0),
             // الأقسام الفرعية النشطة — تُحمَّل مسبقاً (eager) عند توفرها على الموديل
             // حتى لا يتحول العرض إلى N+1 على قائمة الأقسام.
             'subcategories' => $category->relationLoaded('subcategories')
-                ? $category->subcategories->map(fn (Subcategory $sub) => $this->subcategoryPayload($sub))->values()->all()
+                ? $category->subcategories->map(fn (Subcategory $sub) => $this->subcategoryPayload($sub, $subCounts))->values()->all()
                 : [],
         ];
     }
 
     /**
      * شكل القسم الفرعي في الـAPI.
+     *
+     * @param  array<int, int>  $subCounts
      */
-    private function subcategoryPayload(Subcategory $subcategory): array
+    private function subcategoryPayload(Subcategory $subcategory, array $subCounts = []): array
     {
         return [
             'id' => $subcategory->id,
@@ -410,7 +631,7 @@ class CategoryController extends Controller
             'slug' => $subcategory->slug,
             'group_key' => $subcategory->group_key,
             'sort_order' => (int) $subcategory->sort_order,
-            'medicines_count' => (int) ($subcategory->category_medicine_links_count ?? 0),
+            'medicines_count' => $subCounts[$subcategory->id] ?? (int) ($subcategory->category_medicine_links_count ?? 0),
         ];
     }
 

@@ -285,6 +285,11 @@ Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::get('/categories/{category}/medicines', [CategoryController::class, 'medicines']);
 
+// Admin: full catalog (no availability filter)
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/admin/categories/{category}/medicines', [CategoryController::class, 'adminMedicines']);
+});
+
 // ط£ط´ظƒط§ظ„ ط§ظ„ط¬ط±ط¹ط§طھ (ظ‚ط§ط¦ظ…ط© ط£ط¹ط±ط§ظپ canonical ظ„ط§ط³طھط®ط¯ط§ظ…ظ‡ط§ ظ…ط¹ ظپظ„طھط± dosage_form)
 Route::get('/dosage-forms', [CategoryController::class, 'dosageForms']);
 

@@ -29,12 +29,13 @@ class PharmacyMedicine extends Model
     protected $table = 'pharmacy_medicines';
 
     protected $fillable = [
-        'pharmacy_id',    // الصيدلية
-        'medicine_id',     // الدواء
-        'price',            // سعر الدواء بهاي الصيدلية بالتحديد
-        'quantity',         // الكمية المتوفرة
-        'is_available',     // هل متوفر حالياً أو لأ
-        'min_stock',        // حد المخزون المنخفض المخصص لهذا الدواء
+        'pharmacy_id',
+        'medicine_id',
+        'moh_medicine_id',
+        'price',
+        'quantity',
+        'is_available',
+        'min_stock',
     ];
 
     protected function casts(): array
