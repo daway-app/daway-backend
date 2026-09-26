@@ -4,16 +4,16 @@ namespace Tests\Feature\Api;
 
 use App\Models\Category;
 use App\Models\CategoryMedicineLink;
+use App\Models\Medicine;
 use App\Models\MohMedicine;
+use App\Models\Pharmacy;
+use App\Models\PharmacyMedicine;
 use App\Models\Subcategory;
+use App\Models\User;
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\SubcategorySeeder;
 use Tests\TestCase;
 
-/**
- * فلاتر الكتالوج الجديدة: الأقسام الفرعية + الشكل الدوائي
- * على مساري /api/medicines و /api/categories/{c}/medicines، و endpoint الفلاتر.
- */
 class MedicineFilterApiTest extends TestCase
 {
     protected function setUp(): void
@@ -42,6 +42,30 @@ class MedicineFilterApiTest extends TestCase
         return MohMedicine::create($attributes + [
             'trade_name' => 'FILTER MED '.$seq,
             'moh_product_id' => $seq,
+        ]);
+    }
+
+    private function stockMedicine(MohMedicine $moh): void
+    {
+        $user = User::factory()->create();
+        $pharmacy = Pharmacy::unguarded(fn () => Pharmacy::create([
+            'user_id' => $user->id,
+            'pharmacy_custom_id' => 'STOCK-'.uniqid(),
+            'pharmacy_name' => 'Stock Pharmacy '.uniqid(),
+            'address' => 'Addr',
+            'phone_number' => '0590000000',
+            'region' => 'Region',
+            'is_active' => true,
+            'avg_rating' => 0,
+        ]));
+        $medicine = Medicine::factory()->create(['trade_name' => 'STOCKED '.$moh->id]);
+        PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'moh_medicine_id' => $moh->id,
+            'price' => 10,
+            'quantity' => 10,
+            'is_available' => true,
         ]);
     }
 
@@ -133,8 +157,11 @@ class MedicineFilterApiTest extends TestCase
         $vitaminsCat = $this->categoryId('vitamins-supplements');
         $hairId = $this->subcategoryId('hair-vitamins');
 
-        $this->moh(['trade_name' => 'HAIR SYRUP', 'moh_product_id' => 75001, 'dosage_form' => 'Oral syrup']);
-        $this->moh(['trade_name' => 'HAIR TABLET', 'moh_product_id' => 75002, 'dosage_form' => 'Film coated tablet']);
+        $syrup = $this->moh(['trade_name' => 'HAIR SYRUP', 'moh_product_id' => 75001, 'dosage_form' => 'Oral syrup']);
+        $tablet = $this->moh(['trade_name' => 'HAIR TABLET', 'moh_product_id' => 75002, 'dosage_form' => 'Film coated tablet']);
+
+        $this->stockMedicine($syrup);
+        $this->stockMedicine($tablet);
 
         foreach ([75001, 75002] as $pid) {
             CategoryMedicineLink::create([
@@ -143,20 +170,18 @@ class MedicineFilterApiTest extends TestCase
             ]);
         }
 
-        $bySub = $this->getJson("/api/categories/vitamins-supplements/medicines?subcategory={$hairId}")->assertOk();
-        $this->assertSame(2, $bySub->json('pagination.total'));
+        $bySub = $this->getJson("/api/categories/{$vitaminsCat}/medicines?subcategory={$hairId}")->assertOk();
+        $this->assertSame(2, $bySub->json('pagination.total'), 'Should have 2 medicines in subcategory');
 
-        $byForm = $this->getJson('/api/categories/vitamins-supplements/medicines?dosage_form='.urlencode('حبوب'))->assertOk();
-        $this->assertSame(1, $byForm->json('pagination.total'));
+        $byForm = $this->getJson("/api/categories/{$vitaminsCat}/medicines?dosage_form=".urlencode('حبوب'))->assertOk();
+        $this->assertSame(1, $byForm->json('pagination.total'), 'Should have 1 tablet medicine');
         $this->assertSame('HAIR TABLET', $byForm->json('data.0.trade_name'));
 
-        // فلتران معاً: قسم فرعي + شكل دوائي
-        $combined = $this->getJson("/api/categories/vitamins-supplements/medicines?subcategory={$hairId}&dosage_form=".urlencode('شراب'))->assertOk();
-        $this->assertSame(1, $combined->json('pagination.total'));
+        $combined = $this->getJson("/api/categories/{$vitaminsCat}/medicines?subcategory={$hairId}&dosage_form=".urlencode('شراب'))->assertOk();
+        $this->assertSame(1, $combined->json('pagination.total'), 'Should have 1 syrup medicine');
         $this->assertSame('HAIR SYRUP', $combined->json('data.0.trade_name'));
 
-        // تقاطع لا نتيجة له: القسم الفرعي نفسه مع شكل لا ينتمي إليه
-        $empty = $this->getJson("/api/categories/vitamins-supplements/medicines?subcategory={$hairId}&dosage_form=".urlencode('بخاخ'))->assertOk();
+        $empty = $this->getJson("/api/categories/{$vitaminsCat}/medicines?subcategory={$hairId}&dosage_form=".urlencode('بخاخ'))->assertOk();
         $this->assertSame(0, $empty->json('pagination.total'));
     }
 
@@ -238,8 +263,10 @@ class MedicineFilterApiTest extends TestCase
         $vitaminsCat = $this->categoryId('vitamins-supplements');
         $hairId = $this->subcategoryId('hair-vitamins');
 
-        $this->moh(['trade_name' => 'COUNT HAIR', 'moh_product_id' => 77001]);
-        $this->moh(['trade_name' => 'COUNT OTHER', 'moh_product_id' => 77002]);
+        $hairMed = $this->moh(['trade_name' => 'COUNT HAIR', 'moh_product_id' => 77001]);
+        $otherMed = $this->moh(['trade_name' => 'COUNT OTHER', 'moh_product_id' => 77002]);
+
+        $this->stockMedicine($hairMed);
 
         CategoryMedicineLink::create([
             'category_id' => $vitaminsCat, 'subcategory_id' => $hairId,
@@ -251,7 +278,6 @@ class MedicineFilterApiTest extends TestCase
         $hairFacet = collect($facets['subcategories'])->firstWhere('slug', 'hair-vitamins');
         $this->assertSame(1, $hairFacet['medicines_count']);
 
-        // الرقم المعروض في الفلتر = نتيجة الفلترة الفعلية
         $actual = $this->getJson('/api/medicines?subcategory='.$hairFacet['id'])->assertOk();
         $this->assertSame($hairFacet['medicines_count'], $actual->json('pagination.total'));
         $this->assertSame('COUNT HAIR', $actual->json('data.0.trade_name'));

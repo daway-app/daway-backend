@@ -4,7 +4,11 @@ namespace Tests\Feature\Commands;
 
 use App\Models\Category;
 use App\Models\CategoryMedicineLink;
+use App\Models\Medicine;
 use App\Models\MohMedicine;
+use App\Models\Pharmacy;
+use App\Models\PharmacyMedicine;
+use App\Models\User;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -40,6 +44,30 @@ class ClassifyMohCatalogTest extends TestCase
             ->when($productId !== null, fn ($query) => $query->where('moh_product_id', $productId))
             ->when($drugId !== null, fn ($query) => $query->where('moh_drug_id', $drugId))
             ->first();
+    }
+
+    private function stockMedicine(MohMedicine $moh): void
+    {
+        $user = User::factory()->create();
+        $pharmacy = Pharmacy::unguarded(fn () => Pharmacy::create([
+            'user_id' => $user->id,
+            'pharmacy_custom_id' => 'STOCK-'.uniqid(),
+            'pharmacy_name' => 'Stock Pharmacy '.uniqid(),
+            'address' => 'Addr',
+            'phone_number' => '0590000000',
+            'region' => 'Region',
+            'is_active' => true,
+            'avg_rating' => 0,
+        ]));
+        $medicine = Medicine::factory()->create(['trade_name' => 'STOCKED '.$moh->id]);
+        PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'moh_medicine_id' => $moh->id,
+            'price' => 10,
+            'quantity' => 10,
+            'is_available' => true,
+        ]);
     }
 
     public function test_product_class_rows_map_to_expected_categories(): void
@@ -288,7 +316,10 @@ class ClassifyMohCatalogTest extends TestCase
             ->where('moh_drug_id', 5001)
             ->exists(), 'Re-imported row must resolve via stable keys');
 
-        $response = $this->getJson('/api/categories/medicines/medicines');
+        $moh = MohMedicine::where('moh_product_id', 1001)->first();
+        $this->stockMedicine($moh);
+
+        $response = $this->getJson("/api/categories/{$this->categoryId('medicines')}/medicines");
         $response->assertOk();
         $this->assertSame(1, $response->json('pagination.total'));
         $this->assertSame('REIMPORT MED 1', $response->json('data.0.trade_name'));
