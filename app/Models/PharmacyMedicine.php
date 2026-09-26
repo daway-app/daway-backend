@@ -63,4 +63,12 @@ class PharmacyMedicine extends Model
     {
         return $this->belongsTo(Medicine::class);
     }
+
+    /**
+     * علاقة عكسية: هاد السطر مربوط بدواء من كتالوج الوزارة (MOH) عبر المفاتيح المستقرة.
+     */
+    public function mohMedicine(): BelongsTo
+    {
+        return $this->belongsTo(MohMedicine::class, 'moh_medicine_id');
+    }
 }
