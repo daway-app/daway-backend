@@ -177,13 +177,15 @@ class PharmacyMedicineController extends Controller
         ]);
 
         // 1) دواء مختار من الكتالوج العام
-        // 2) دواء من كتالوج وزارة الصحة (يُضاف تلقائياً للكتالوج العام عند الحاجة)
+        // 2) دواء من كتالوج وزارة الصحة (يُضاف تلقائيا للكتالوج العام عند الحاجة)
         // 3) إضافة يدوية ببيانات كاملة
+        $mohMedicineId = null;
         if ($request->filled('medicine_id')) {
             $medicine = Medicine::findOrFail($request->medicine_id);
         } elseif ($request->filled('moh_medicine_id')) {
             $moh = MohMedicine::findOrFail($request->moh_medicine_id);
             $medicine = $this->catalog->findOrCreateFromMoh($moh);
+            $mohMedicineId = $moh->id;
         } else {
             $request->validate([
                 // الاسم الإنجليزي إلزامي — يُرفض أي اسم يحتوي حروفاً عربية
@@ -252,6 +254,7 @@ class PharmacyMedicineController extends Controller
         $pharmacyMedicine = PharmacyMedicine::create([
             'pharmacy_id' => $pharmacy->id,
             'medicine_id' => $medicine->id,
+            'moh_medicine_id' => $mohMedicineId,
             'price' => $request->price,
             'quantity' => $request->quantity, // Changed from 'stock' to 'quantity'
             'is_available' => $request->boolean('is_available'),
