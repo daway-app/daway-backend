@@ -6,10 +6,11 @@ use App\Http\Controllers\Api\AccountingOverviewController;
 use App\Http\Controllers\Api\AccountingPartiesController;
 use App\Http\Controllers\Api\AccountingSalesController;
 use App\Http\Controllers\Api\AddressController;
-use App\Http\Controllers\Api\BarcodeLookupController;
-use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\AdminPharmacyMohDryRunController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvailabilityAlertController;
+use App\Http\Controllers\Api\BarcodeLookupController;
+use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\DeviceTokenController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Api\MedicalProfileController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OcrController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PatientAssistantController;
 use App\Http\Controllers\Api\PatientInquiryController;
 use App\Http\Controllers\Api\PatientProfileController;
@@ -35,16 +37,12 @@ use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Route;
 
-// âœ… Routes Public
 Route::post('/otp/send', [AuthController::class, 'sendOtp'])->middleware('throttle:otp');
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:otp-verify');
 Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middleware(['throttle:login', 'throttle:login-account']);
 
-// ط§ظ„طھط³ط¬ظٹظ„ ط§ظ„ط°ط§طھظٹ ظ„ظ„طµظٹط¯ظ„ظٹط§طھ (طھط·ط¨ظٹظ‚ ط§ظ„ظ…ظˆط¨ط§ظٹظ„) â€” ظٹظ†ط´ط¦ ط­ط³ط§ط¨ط§ظ‹ ط؛ظٹط± ظ…ظپط¹ظ‘ظ„ ط¨ط§ظ†طھط¸ط§ط± ظ…ظˆط§ظپظ‚ط© ط§ظ„ط¥ط¯ط§ط±ط©طŒ
-// ظˆظٹظڈط¹ظٹط¯ Pharmacy ID (PH-XXXX) ط§ظ„ط°ظٹ طھط¯ط®ظ„ ط¨ظ‡ ط§ظ„طµظٹط¯ظ„ظٹط© ط¨ط¹ط¯ ط§ظ„ظ…ظˆط§ظپظ‚ط©.
 Route::post('/register/pharmacy', [AuthController::class, 'pharmacyRegister'])->middleware('throttle:register');
 
-// Medicines Routes Public
 Route::get('/medicines', [MedicineController::class, 'index']);
 Route::get('/medicines/search', [MedicineController::class, 'search']);
 Route::get('/medicines/active-ingredient/{ingredient}', [MedicineController::class, 'byActiveIngredient']);
@@ -53,14 +51,14 @@ Route::get('/medicines/{id}/pharmacies', [MedicineController::class, 'pharmacies
 
 // ط­ظ„ظ‘ ط§ط³ظ… ط§ظ„ط¯ظˆط§ط، ظ…ط¨ط§ط´ط±ط© ط¹ط¨ط± MedicineResolver (ط¨ط¯ظˆظ† ط§ظ†طھط¸ط§ط± ط®ط¯ظ…ط© AI)
 // ظ…ظپظٹط¯ ظ„ظ„ط¨ط­ط« ط§ظ„ظپظˆط±ظٹ ظˆط§ظ„طھط·ط¨ظٹظ‚ط§طھ ط§ظ„طھظٹ طھط±ظٹط¯ ظ†طھط§ط¦ط¬ ظپظˆط±ظٹط© ط¨ط§ظ„ط¹ط±ط¨ظٹط©/ط§ظ„ط¥ظ†ط¬ظ„ظٹط²ظٹط©
-    Route::post('/medicines/resolve', [MedicineController::class, 'resolve'])->middleware('auth:sanctum')->middleware('throttle:30,1');
+Route::post('/medicines/resolve', [MedicineController::class, 'resolve'])->middleware('auth:sanctum')->middleware('throttle:30,1');
 
-    // البحث بالباركود (read-only من DB المحلي — لا يضرب مزوّداً خارجياً، بلا auth)
-    Route::get('/medicines/barcode/{barcode}', [BarcodeLookupController::class, 'show'])->middleware('throttle:60,1');
+// البحث بالباركود (read-only من DB المحلي — لا يضرب مزوّداً خارجياً، بلا auth)
+Route::get('/medicines/barcode/{barcode}', [BarcodeLookupController::class, 'show'])->middleware('throttle:60,1');
 
-    // صيدليات متوفر بها دواء كتالوج الوزارة — مرتبة من الأقرب حسب موقع المستخدم
-    // (نقطة عند الضغط على دواء في الأقسام/الفلاتر)، read-only، بلا auth
-    Route::get('/moh-medicines/{moh}/pharmacies', [MedicineController::class, 'mohPharmacies'])->middleware('throttle:60,1');
+// صيدليات متوفر بها دواء كتالوج الوزارة — مرتبة من الأقرب حسب موقع المستخدم
+// (نقطة عند الضغط على دواء في الأقسام/الفلاتر)، read-only، بلا auth
+Route::get('/moh-medicines/{moh}/pharmacies', [MedicineController::class, 'mohPharmacies'])->middleware('throttle:60,1');
 
 // Pharmacies Routes Public
 Route::get('/pharmacies', [PharmacyController::class, 'index']);
@@ -133,6 +131,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('cart/items/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
         Route::delete('cart', [CartController::class, 'clear'])->name('cart.clear');
 
+        Route::post('checkout', [OrderController::class, 'checkout'])->name('checkout');
+        Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+        Route::get('orders/{order}/tracking', [OrderController::class, 'tracking'])->name('orders.tracking');
+        Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+
         Route::post('coupons/validate', [CouponController::class, 'validateCoupon']);
 
         // مساعد المريض النصّي: رسالة حرة → دواء → صيدليات متوفرة فعلاً مرتّبة.
@@ -188,6 +192,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('dashboard/stats', [PharmacyDashboardController::class, 'stats']);
         Route::post('change-password', [PharmacyProfileController::class, 'changePassword']);
+
+        Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('api.pharmacy.orders.status');
 
         // ==================== ACCOUNTING ====================
         // محاسبة الصيدلية: فواتير بيع · مصروفات · عملاء/موردون · صندوق.
@@ -277,7 +283,7 @@ Route::middleware(['auth:sanctum', 'role:pharmacy'])->prefix('sync')->group(func
 // ===== Admin-only: Dry-run للتحقق من ربط pharmacy_medicines ↔ moh_medicines =====
 // ⚠️ Read-Only: لا تنفذ أي تعديل بيانات. مؤقتة — تغريد بعد الاستخدام.
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/maintenance')->group(function () {
-    Route::get('pharmacy-moh-backfill/dry-run', \App\Http\Controllers\Api\AdminPharmacyMohDryRunController::class);
+    Route::get('pharmacy-moh-backfill/dry-run', AdminPharmacyMohDryRunController::class);
 });
 
 // Categories (public catalog metadata)
