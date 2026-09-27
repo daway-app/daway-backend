@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\web\Pharmacy;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Medicine;
+use App\Models\MedicineRequest;
 use App\Models\MohMedicine;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine; // Assuming this model exists for pivot table
+use App\Models\Subcategory;
 use App\Models\SearchLog;
 use App\Services\MedicineCatalogService;
 use App\Support\Cloudinary;
@@ -261,10 +264,80 @@ class PharmacyMedicineController extends Controller
         ]);
 
         // D-FCM: توحيد مع LowStockNotifier — النسخة الخاصة المحذوفة كانت تُنشئ
-        // الإشعار بدون FCM؛ الآن الويب أيضاً يرسل push مثل API والـ sync
+        // الإشعار بدون FCM؛ الآن الويب أيضا يرسل push مثل API والـ sync
         LowStockNotifier::notifyIfLowStock($pharmacyMedicine);
 
         return redirect()->route('pharmacy.medicines.index')->with('success', __('pharmacy.medicines.create.success'));
+    }
+
+    /**
+     * صفحة طلب دواء جديد (غير موجود بالكتالوج) → تُحفظ كـ medicine_request
+     * بانتظار مراجعة الإدارة.
+     */
+    public function createRequest()
+    {
+        $user = Auth::user();
+        $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+
+        $categories = Category::active()->ordered()->get();
+        $subcategories = Subcategory::active()->with('category')->get()->groupBy('category_id');
+
+        return view('pharmacy.medicines.request', compact('pharmacy', 'categories', 'subcategories'));
+    }
+
+    /**
+     * حفظ طلب دواء جديد (pending) للمراجعة الإدارية.
+     */
+    public function storeRequest(Request $request)
+    {
+        $user = Auth::user();
+        $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+
+        $data = $request->validate([
+            'trade_name' => ['required', 'string', 'max:150', 'not_regex:/[\x{0600}-\x{06FF}]/u'],
+            'trade_name_ar' => ['nullable', 'string', 'max:150', 'regex:/[\x{0600}-\x{06FF}]/u'],
+            'generic_name' => ['nullable', 'string', 'max:150'],
+            'manufacturer' => ['nullable', 'string', 'max:150'],
+            'active_ingredient' => ['nullable', 'string', 'max:150'],
+            'dosage_form' => ['nullable', 'string', 'max:150'],
+            'packaging' => ['nullable', 'string', 'max:150'],
+            'barcode' => ['nullable', 'string', 'max:64'],
+            'official_price' => ['nullable', 'numeric', 'min:0'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'subcategory_id' => ['nullable', 'integer', 'exists:subcategories,id'],
+        ]);
+
+        $category = Category::active()->find($data['category_id']);
+        if (! $category) {
+            return back()->withInput()->withErrors(['category_id' => 'القسم غير صالح']);
+        }
+
+        if (! empty($data['subcategory_id'])) {
+            $subcategory = Subcategory::where('category_id', $category->id)->find($data['subcategory_id']);
+            if (! $subcategory) {
+                return back()->withInput()->withErrors(['subcategory_id' => 'القسم الفرعي لا ينتمي إلى القسم المختار']);
+            }
+        }
+
+        MedicineRequest::create([
+            'pharmacy_id' => $pharmacy->id,
+            'requested_by' => $user->id,
+            'status' => MedicineRequest::STATUS_PENDING,
+            'trade_name' => $data['trade_name'],
+            'trade_name_ar' => $data['trade_name_ar'] ?? null,
+            'generic_name' => $data['generic_name'] ?? null,
+            'manufacturer' => $data['manufacturer'] ?? null,
+            'active_ingredient' => $data['active_ingredient'] ?? null,
+            'dosage_form' => $data['dosage_form'] ?? null,
+            'packaging' => $data['packaging'] ?? null,
+            'barcode' => $data['barcode'] ?? null,
+            'official_price' => $data['official_price'] ?? null,
+            'category_id' => $category->id,
+            'subcategory_id' => $data['subcategory_id'] ?? null,
+        ]);
+
+        return redirect()->route('pharmacy.medicines.index')
+            ->with('success', 'تم إرسال طلب الدواء للمراجعة بنجاح. سيُضاف لمخزونك فور موافقة الإدارة.');
     }
 
     /**

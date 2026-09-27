@@ -137,6 +137,7 @@
             <div class="form-actions">
                 <button type="submit" class="btn-submit">@lang('pharmacy.medicines.create.add_button')</button>
                 <a href="{{ route('pharmacy.medicines.index') }}" class="btn-cancel">@lang('pharmacy.medicines.create.cancel_button')</a>
+                <a href="{{ route('pharmacy.medicines.request.create') }}" class="btn-cancel" style="color:#1C72A6;">@lang('pharmacy.medicines.create.request_new_button')</a>
             </div>
         </form>
     </div>

@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\MedicalProfileController;
 use App\Http\Controllers\Api\MedicineController;
+use App\Http\Controllers\Api\MedicineRequestController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OcrController;
 use App\Http\Controllers\Api\OrderController;
@@ -158,6 +159,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('ratings', [PharmacyRatingController::class, 'index']);
 
         Route::get('medicines/search', [PharmacyMedicineController::class, 'search']);
+        Route::post('medicine-requests', [MedicineRequestController::class, 'store'])->middleware('throttle:writes');
+        Route::get('medicine-requests', [MedicineRequestController::class, 'index']);
         // ط¥ط¶ط§ظپط© ط¯ظˆط§ط، ط¨ط§ظ„ط§ط³ظ… ظ…ط¨ط§ط´ط±ط© (ظ„ظ„ظ…ظˆط¨ط§ظٹظ„) â€” ط¨ط¯ظˆظ† medicine_id ط£ظˆ moh_medicine_id
         Route::post('medicines/by-name', [PharmacyMedicineController::class, 'storeByName'])->middleware('throttle:writes');
         Route::apiResource('medicines', PharmacyMedicineController::class)

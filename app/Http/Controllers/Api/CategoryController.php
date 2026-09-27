@@ -218,21 +218,38 @@ class CategoryController extends Controller
         // يضمن الاتساق لأن مفتاح الكاش يشمل categoryVersion.
         $linkMeta = $this->fetchLinkMeta($model->id, $pageItems);
 
+        // مسار محلي إضافي (لا يمسّ مسار MOH): أدوية local canonical معتمدة
+        // تظهر في القسم عبر category_medicine_links.medicine_id + مخزون متوفر.
+        $localRows = $this->availableLocalMedicines($model->id, $subcategoryId, $q);
+
+        $mohData = $pageItems->map(fn (MohMedicine $m) => $this->mohPayload($m)
+            + ['medicine_id' => $localMedicineIds[$m->trade_name] ?? null]
+            + ($linkMeta[$m->moh_product_id] ?? $linkMeta['d:'.$m->moh_drug_id] ?? [
+                'source' => null,
+                'confidence' => null,
+                'needs_review' => null,
+            ]))->values();
+
+        // دمج المحلي مع حذف المكرر (دواء محلي بنفس اسم دواء MOH موجود لا يُعاد)
+        $mohNames = $mohData->pluck('trade_name')->all();
+        $localData = collect($localRows)
+            ->map(fn (Medicine $m) => $this->localPayload($m))
+            ->filter(fn ($row) => ! in_array($row['trade_name'], $mohNames, true))
+            ->values();
+
+        $data = $mohData->concat($localData)->values();
+
+        $localCount = $localData->count();
+
         return response()->json([
             'success' => true,
             'message' => 'تم جلب أدوية القسم بنجاح',
-            'data' => $pageItems->map(fn (MohMedicine $m) => $this->mohPayload($m)
-                + ['medicine_id' => $localMedicineIds[$m->trade_name] ?? null]
-                + ($linkMeta[$m->moh_product_id] ?? $linkMeta['d:'.$m->moh_drug_id] ?? [
-                    'source' => null,
-                    'confidence' => null,
-                    'needs_review' => null,
-                ])),
+            'data' => $data->all(),
             'pagination' => [
-                'total' => $items->total(),
+                'total' => $items->total() + $localCount,
                 'per_page' => $items->perPage(),
                 'current_page' => $items->currentPage(),
-                'last_page' => $items->lastPage(),
+                'last_page' => max(1, (int) ceil(($items->total() + $localCount) / $items->perPage())),
             ],
         ]);
     }
@@ -438,6 +455,66 @@ class CategoryController extends Controller
     }
 
     /**
+     * مسار محلي إضافي (لا يمسّ مسار MOH): أدوية local canonical معتمدة تظهر في
+     * القسم عبر category_medicine_links.medicine_id + مخزون متوفر فعلاً.
+     * كل دواء يظهر مرة واحدة مهما تكررت صيدلياته أو روابطه.
+     */
+    private function availableLocalMedicines(int $categoryId, ?int $subcategoryId, string $q): array
+    {
+        $q = trim($q);
+
+        $rows = Medicine::query()
+            ->whereExists(function ($sub) use ($categoryId, $subcategoryId) {
+                $sub->selectRaw(1)
+                    ->from('category_medicine_links as l')
+                    ->where('l.category_id', $categoryId)
+                    ->whereNotNull('l.medicine_id')
+                    ->whereColumn('l.medicine_id', 'medicines.id');
+                if ($subcategoryId !== null) {
+                    $sub->where('l.subcategory_id', $subcategoryId);
+                }
+            })
+            ->whereExists(function ($sub) {
+                $sub->selectRaw(1)
+                    ->from('pharmacy_medicines as pm')
+                    ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
+                    ->whereColumn('pm.medicine_id', 'medicines.id')
+                    ->where('pm.is_available', true)
+                    ->where('pm.quantity', '>', 0)
+                    ->where('p.is_active', true);
+            })
+            ->when($q !== '', fn ($query) => $query->where('trade_name', 'like', "%{$q}%"))
+            ->orderBy('trade_name')
+            ->get()
+            ->all();
+
+        return $rows;
+    }
+
+    /** شكل صف الدواء المحلي بنفس مفاتيح mohPayload + medicine_id (توافق العقد). */
+    private function localPayload(Medicine $m): array
+    {
+        return [
+            'id' => $m->id,
+            'medicine_id' => $m->id,
+            'trade_name' => $m->trade_name,
+            'generic_name' => $m->active_ingredient,
+            'manufacturer' => null,
+            'dosage_form' => null,
+            'product_class' => null,
+            'origin' => null,
+            'official_price' => null,
+            'packaging' => null,
+            'company' => null,
+            'availability' => null,
+            'price_updated_at' => null,
+            'source' => CategoryMedicineLink::SOURCE_ADMIN,
+            'confidence' => 100,
+            'needs_review' => false,
+        ];
+    }
+
+    /**
      * عدد الأدوية *المتوفرة* (مميزة) في أقسام رئيسية — دفعة واحدة (استعلامان
      * فقط مهما بلغ عدد الأقسام) بنفس تعريف whereAvailable حرفياً.
      *
@@ -477,6 +554,27 @@ class CategoryController extends Controller
         $out = array_fill_keys(array_map('intval', $categoryIds), 0);
         foreach ($rows as $r) {
             $out[(int) $r->id] = (int) $r->c;
+        }
+
+        // مسار محلي إضافي: أدوية local canonical متوفرة في القسم.
+        $localRows = DB::table('category_medicine_links as l')
+            ->whereIn('l.category_id', $categoryIds)
+            ->whereNotNull('l.medicine_id')
+            ->whereExists(function ($sub) {
+                $sub->selectRaw(1)
+                    ->from('pharmacy_medicines as pm')
+                    ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
+                    ->whereColumn('pm.medicine_id', 'l.medicine_id')
+                    ->where('pm.is_available', true)
+                    ->where('pm.quantity', '>', 0)
+                    ->where('p.is_active', true);
+            })
+            ->groupBy('l.category_id')
+            ->select('l.category_id as id', DB::raw('COUNT(DISTINCT l.medicine_id) as c'))
+            ->get();
+
+        foreach ($localRows as $r) {
+            $out[(int) $r->id] += (int) $r->c;
         }
 
         return $out;
@@ -522,6 +620,27 @@ class CategoryController extends Controller
         $out = array_fill_keys($subcategoryIds, 0);
         foreach ($rows as $r) {
             $out[(int) $r->id] = (int) $r->c;
+        }
+
+        // مسار محلي إضافي: أدوية local canonical متوفرة في القسم الفرعي.
+        $localRows = DB::table('category_medicine_links as l')
+            ->whereIn('l.subcategory_id', $subcategoryIds)
+            ->whereNotNull('l.medicine_id')
+            ->whereExists(function ($sub) {
+                $sub->selectRaw(1)
+                    ->from('pharmacy_medicines as pm')
+                    ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
+                    ->whereColumn('pm.medicine_id', 'l.medicine_id')
+                    ->where('pm.is_available', true)
+                    ->where('pm.quantity', '>', 0)
+                    ->where('p.is_active', true);
+            })
+            ->groupBy('l.subcategory_id')
+            ->select('l.subcategory_id as id', DB::raw('COUNT(DISTINCT l.medicine_id) as c'))
+            ->get();
+
+        foreach ($localRows as $r) {
+            $out[(int) $r->id] = ($out[(int) $r->id] ?? 0) + (int) $r->c;
         }
 
         return $out;
