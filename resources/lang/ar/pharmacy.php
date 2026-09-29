@@ -112,6 +112,11 @@ return [
             'already_exists' => 'هذا الدواء موجود بالفعل في صيدليتك.',
             'success' => 'تم إضافة الدواء إلى صيدليتك بنجاح.',
             'request_new_button' => 'طلب دواء جديد للإدارة',
+            'category' => 'القسم',
+            'subcategory' => 'القسم الفرعي',
+            'category_required' => 'القسم مطلوب لاختيار دواء جديد.',
+            'category_invalid' => 'القسم غير صالح أو غير نشط.',
+            'subcategory_mismatch' => 'القسم الفرعي لا ينتمي إلى القسم المختار.',
         ],
         'request' => [
             'title' => 'طلب دواء جديد',

@@ -112,6 +112,11 @@ return [
             'already_exists' => 'This medicine already exists in your pharmacy.',
             'success' => 'Medicine added to your pharmacy successfully.',
             'request_new_button' => 'Request new medicine to admin',
+            'category' => 'Category',
+            'subcategory' => 'Subcategory',
+            'category_required' => 'A category is required to add a new medicine.',
+            'category_invalid' => 'The category is invalid or not active.',
+            'subcategory_mismatch' => 'The subcategory does not belong to the selected category.',
         ],
         'request' => [
             'title' => 'Request New Medicine',

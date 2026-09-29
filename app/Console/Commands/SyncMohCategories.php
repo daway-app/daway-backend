@@ -54,6 +54,7 @@ class SyncMohCategories extends Command
     protected $signature = 'moh:sync-categories
         {--file=database/data/moh_medicines_categorized.json : ملف التصنيف المصدر}
         {--fresh : حذف الروابط الآلية (source != admin) قبل المزامنة}
+        {--primary-only : مزامنة القسم الرئيسي (الأول في المصدر) فقط لكل سجل — قاعدة «دواء واحد = قسم واحد»}
         {--chunk=500 : حجم الدفعات عند المعالجة}
         {--dry-run : عرض الأعداد المتوقعة دون كتابة أي رابط}
         {--offset=0 : بداية الشريحة (وضع القطع — المتصفح المتسلسل)}
@@ -67,6 +68,7 @@ class SyncMohCategories extends Command
         $path = base_path($this->option('file'));
         $dryRun = (bool) $this->option('dry-run');
         $fresh = (bool) $this->option('fresh');
+        $primaryOnly = (bool) $this->option('primary-only');
         $chunkSize = max(1, (int) $this->option('chunk'));
 
         if (! is_file($path)) {
@@ -172,7 +174,7 @@ class SyncMohCategories extends Command
         // all-or-nothing: فشل أي صف (خطأ DB مثلاً) يلغي المزامنة كاملة —
         // لا يُترك الكتالوج بحالة نصف مُزامنة، وإعادة التشغيل idempotent.
         // ملاحظة: يجب تمرير resolveCategory (Closure) صراحةً إلى الـtransaction.
-        DB::transaction(function () use ($rows, $chunkSize, $bar, &$counters, &$perCategory, &$unknownSlugs, $dryRun, $categoriesBySlug, $resolveCategory) {
+        DB::transaction(function () use ($rows, $chunkSize, $bar, &$counters, &$perCategory, &$unknownSlugs, $dryRun, $categoriesBySlug, $resolveCategory, $primaryOnly) {
         foreach (array_chunk($rows, $chunkSize) as $batch) {
             foreach ($batch as $row) {
                 $counters['processed']++;
@@ -194,7 +196,12 @@ class SyncMohCategories extends Command
                     continue;
                 }
 
-                foreach ($recordCategories as $cat) {
+                foreach ($recordCategories as $i => $cat) {
+                    // --primary-only: القسم الأول في المصدر هو القسم الوحيد المعتمد
+                    // (قاعدة «دواء واحد = قسم واحد»); بقية أقسام السجل تُتجاهل.
+                    if ($primaryOnly && $i > 0) {
+                        continue;
+                    }
                     $fileSlug = trim((string) ($cat['slug'] ?? ''));
                     if ($fileSlug === '') {
                         continue;

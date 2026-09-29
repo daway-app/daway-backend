@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Category;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
 use App\Models\Pharmacy;
@@ -18,6 +19,17 @@ class PharmacyMedicineApiTest extends TestCase
         $pharmacy = Pharmacy::factory()->create(['user_id' => $user->id]);
 
         return [$user, $pharmacy];
+    }
+
+    private function makeCategory(): Category
+    {
+        return Category::create([
+            'name_ar' => 'أدوية الاختبار',
+            'name_en' => 'Test Cat '.uniqid(),
+            'slug' => 'test-cat-'.uniqid(),
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
     }
 
     public function test_pharmacy_can_list_own_medicines(): void
@@ -364,6 +376,7 @@ class PharmacyMedicineApiTest extends TestCase
     public function test_pharmacy_can_add_medicine_by_name_without_id(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $category = $this->makeCategory();
         Medicine::factory()->create(['trade_name' => 'Panadol', 'active_ingredient' => 'Paracetamol']);
 
         Sanctum::actingAs($user);
@@ -371,6 +384,7 @@ class PharmacyMedicineApiTest extends TestCase
         $response = $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Panadol',
             'active_ingredient' => 'Paracetamol',
+            'category_id' => $category->id,
             'price' => 8,
             'quantity' => 15,
             'is_available' => true,
@@ -392,6 +406,7 @@ class PharmacyMedicineApiTest extends TestCase
     public function test_add_medicine_by_name_resolves_moh_catalog_entry(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $category = $this->makeCategory();
         MohMedicine::create([
             'trade_name' => 'Adol Extra',
             'generic_name' => 'Paracetamol',
@@ -403,6 +418,7 @@ class PharmacyMedicineApiTest extends TestCase
         $response = $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Adol Extra',
             'active_ingredient' => 'Paracetamol',
+            'category_id' => $category->id,
             'price' => 10,
             'quantity' => 5,
         ]);
@@ -421,12 +437,14 @@ class PharmacyMedicineApiTest extends TestCase
     public function test_add_medicine_by_unknown_name_creates_new_catalog_entry(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $category = $this->makeCategory();
 
         Sanctum::actingAs($user);
 
         $response = $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Brand New Drug',
             'active_ingredient' => 'Mysteryol',
+            'category_id' => $category->id,
             'price' => 20,
             'quantity' => 7,
         ]);
@@ -446,6 +464,7 @@ class PharmacyMedicineApiTest extends TestCase
     public function test_duplicate_medicine_by_name_returns_422(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $category = $this->makeCategory();
         $medicine = Medicine::factory()->create(['trade_name' => 'Duplix']);
 
         PharmacyMedicine::create([
@@ -461,6 +480,7 @@ class PharmacyMedicineApiTest extends TestCase
         $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Duplix',
             'active_ingredient' => 'Paracetamol',
+            'category_id' => $category->id,
             'price' => 6,
             'quantity' => 3,
         ])->assertStatus(422)
@@ -522,6 +542,7 @@ class PharmacyMedicineApiTest extends TestCase
     public function test_add_medicine_with_optional_arabic_name_persists_it(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $category = $this->makeCategory();
 
         Sanctum::actingAs($user);
 
@@ -529,6 +550,7 @@ class PharmacyMedicineApiTest extends TestCase
             'trade_name' => 'Panadol Advance',
             'trade_name_ar' => 'بنادول أدفانس',
             'active_ingredient' => 'Paracetamol',
+            'category_id' => $category->id,
             'price' => 9,
             'quantity' => 12,
         ]);
@@ -545,6 +567,7 @@ class PharmacyMedicineApiTest extends TestCase
     public function test_add_medicine_resolves_existing_entry_by_arabic_name(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $category = $this->makeCategory();
         $existing = Medicine::factory()->create([
             'trade_name' => 'Panadol XR',
             'trade_name_ar' => 'بنادول ممتد',
@@ -556,6 +579,7 @@ class PharmacyMedicineApiTest extends TestCase
             'trade_name' => 'Brand Unknown EN',
             'trade_name_ar' => 'بنادول ممتد',
             'active_ingredient' => 'Paracetamol',
+            'category_id' => $category->id,
             'price' => 11,
             'quantity' => 6,
         ]);
@@ -592,6 +616,7 @@ class PharmacyMedicineApiTest extends TestCase
     public function test_add_by_name_enriches_existing_medicine_with_active_ingredient(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $category = $this->makeCategory();
 
         // دواء موجود بالكتالوج بدون مادة فعالة (سلسلة فارغة — العمود NOT NULL)
         $existing = Medicine::factory()->create([
@@ -604,6 +629,7 @@ class PharmacyMedicineApiTest extends TestCase
         $response = $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Brufen 400',
             'active_ingredient' => 'Ibuprofen',
+            'category_id' => $category->id,
             'price' => 7.5,
             'quantity' => 10,
         ]);
@@ -628,12 +654,14 @@ class PharmacyMedicineApiTest extends TestCase
             'trade_name' => 'Adol 500',
             'active_ingredient' => 'Paracetamol',
         ]);
+        $category = $this->makeCategory();
 
         Sanctum::actingAs($user);
 
         $this->postJson('/api/pharmacy/medicines/by-name', [
             'trade_name' => 'Adol 500',
             'active_ingredient' => 'مادة خاطئة',
+            'category_id' => $category->id,
             'price' => 5,
             'quantity' => 3,
         ])->assertStatus(201);

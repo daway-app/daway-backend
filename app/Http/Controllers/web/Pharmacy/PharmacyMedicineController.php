@@ -4,6 +4,7 @@ namespace App\Http\Controllers\web\Pharmacy;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\CategoryMedicineLink;
 use App\Models\Medicine;
 use App\Models\MedicineRequest;
 use App\Models\MohMedicine;
@@ -115,7 +116,11 @@ class PharmacyMedicineController extends Controller
 
         $catalogEmpty = MohMedicine::count() === 0 && Medicine::count() === 0;
 
-        return view('pharmacy.medicines.create', compact('pharmacy', 'suggestedAlternatives', 'catalogEmpty'));
+        // الـ11 أقسام الحالية فقط (القائمة المغلقة — لا قسم جديد ولا نص حر)
+        $categories = Category::active()->ordered()->get();
+        $subcategories = Subcategory::active()->with('category')->get()->groupBy('category_id');
+
+        return view('pharmacy.medicines.create', compact('pharmacy', 'suggestedAlternatives', 'catalogEmpty', 'categories', 'subcategories'));
     }
 
     /**
@@ -206,14 +211,30 @@ class PharmacyMedicineController extends Controller
                     'regex:/[\x{0600}-\x{06FF}]/u',
                 ],
                 'active_ingredient' => 'required|string|max:150',
+                // قاعدة «دواء جديد = قسم إلزامي»: يُختار من الأقسام الحالية فقط
+                'category_id' => ['required', 'integer', 'exists:categories,id'],
+                'subcategory_id' => ['nullable', 'integer', 'exists:subcategories,id'],
             ], [
                 'trade_name.required' => __('pharmacy.medicines.create.trade_name_required'),
                 'trade_name.not_regex' => __('pharmacy.medicines.create.trade_name_english'),
                 'trade_name_ar.regex' => __('pharmacy.medicines.create.arabic_name_required'),
                 'active_ingredient.required' => __('pharmacy.medicines.create.ingredient_required'),
+                'category_id.required' => __('pharmacy.medicines.create.category_required'),
             ]);
 
             $nameAr = trim((string) $request->input('trade_name_ar'));
+
+            // القسم يجب أن يكون نشطاً (ضمن القائمة المغلقة للأقسام الحالية)
+            $category = Category::active()->find($request->category_id);
+            if (! $category) {
+                return back()->withInput()->withErrors(['category_id' => __('pharmacy.medicines.create.category_invalid')]);
+            }
+            if (! empty($request->input('subcategory_id'))) {
+                $subcategory = Subcategory::where('category_id', $category->id)->find((int) $request->subcategory_id);
+                if (! $subcategory) {
+                    return back()->withInput()->withErrors(['subcategory_id' => __('pharmacy.medicines.create.subcategory_mismatch')]);
+                }
+            }
 
             // D-WEB1/D-WEB2: مسار الويب اليدوي يبقى كما هو عمداً — بدون بحث بالاسم
             // العربي وبدون بحث بكتالوج الوزارة وبدون إثراء المادة الفعالة
@@ -234,6 +255,23 @@ class PharmacyMedicineController extends Controller
                     $nameAr !== '' ? $nameAr : null,
                     (string) $request->active_ingredient
                 );
+            }
+
+            // دواء محلي جديد/محل — يربطه بقسمه (إلزامي) لضمان عدم وجود دواء بلا قسم.
+            // يُنشأ فقط إذا كان الدواء بلا قسم بعد — حفاظا على قاعدة «دواء واحد = قسم واحد»
+            // (لا يُضاف قسم ثانٍ لدواء سبق تصنيفه، و firstOrCreate يمنع التكرار داخل نفس القسم).
+            $hasCategory = CategoryMedicineLink::where('medicine_id', $medicine->id)->exists();
+            if (! $hasCategory) {
+                CategoryMedicineLink::create([
+                    'category_id' => $category->id,
+                    'medicine_id' => $medicine->id,
+                    'moh_product_id' => null,
+                    'moh_drug_id' => null,
+                    'subcategory_id' => $request->input('subcategory_id') ? (int) $request->input('subcategory_id') : null,
+                    'source' => CategoryMedicineLink::SOURCE_ADMIN,
+                    'confidence' => 100,
+                    'needs_review' => false,
+                ]);
             }
         }
 

@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\PharmacyMedicineRequest;
 use App\Http\Resources\PharmacyMedicineResource;
+use App\Models\Category;
+use App\Models\CategoryMedicineLink;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
+use App\Models\Subcategory;
 use App\Services\MedicineCatalogService;
 use App\Services\PharmacyContext;
 use App\Models\SyncTombstone;
@@ -187,9 +190,29 @@ class PharmacyMedicineController extends Controller
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
             'is_available' => 'sometimes|boolean',
+            // قاعدة «دواء جديد = قسم إلزامي»: يُختار من القائمة المغلقة للأقسام الحالية
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'subcategory_id' => ['nullable', 'integer', 'exists:subcategories,id'],
             // C4: SecureImageUrl rule تستبعد javascript:/data: و http://
             'image_url' => ['nullable', 'string', 'max:2048', new \App\Rules\SecureImageUrl],
         ]);
+
+        // القسم يجب أن يكون نشطاً (ضمن القائمة المغلقة للأقسام الحالية)
+        $category = Category::active()->find($data['category_id']);
+        if (! $category) {
+            throw ValidationException::withMessages([
+                'category_id' => 'القسم غير صالح أو غير نشط',
+            ])->status(422);
+        }
+
+        if (! empty($data['subcategory_id'])) {
+            $subcategory = Subcategory::where('category_id', $category->id)->find((int) $data['subcategory_id']);
+            if (! $subcategory) {
+                throw ValidationException::withMessages([
+                    'subcategory_id' => 'القسم الفرعي لا ينتمي إلى القسم المختار',
+                ])->status(422);
+            }
+        }
 
         $name = trim($data['trade_name']);
         $nameAr = isset($data['trade_name_ar']) ? trim($data['trade_name_ar']) : null;
@@ -218,6 +241,22 @@ class PharmacyMedicineController extends Controller
                 $nameAr,
                 trim($data['active_ingredient'])
             );
+        }
+
+        // دواء محلي جديد/محل — يربطه بقسمه (إلزامي) حفاظاً على «دواء واحد = قسم واحد»:
+        // يُنشأ الرابط فقط إذا كان الدواء بلا قسم بعد، وبمفتاح medicine_id المستقر.
+        $hasCategory = CategoryMedicineLink::where('medicine_id', $medicine->id)->exists();
+        if (! $hasCategory) {
+            CategoryMedicineLink::create([
+                'category_id' => $category->id,
+                'medicine_id' => $medicine->id,
+                'moh_product_id' => null,
+                'moh_drug_id' => null,
+                'subcategory_id' => ! empty($data['subcategory_id']) ? (int) $data['subcategory_id'] : null,
+                'source' => CategoryMedicineLink::SOURCE_ADMIN,
+                'confidence' => 100,
+                'needs_review' => false,
+            ]);
         }
 
         $exists = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)

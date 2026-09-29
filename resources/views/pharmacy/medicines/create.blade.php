@@ -76,6 +76,25 @@
                             <input class="fc" type="text" id="trade_name_ar" name="trade_name_ar" value="{{ old('trade_name_ar') }}" placeholder="@lang('pharmacy.medicines.create.arabic_name_placeholder')">
                             @error('trade_name_ar')<span class="error-text" role="alert">{{ $message }}</span>@enderror
                         </div>
+                        <div class="form-row">
+                            <div class="fg">
+                                <label class="fl" for="category_id">@lang('pharmacy.medicines.create.category') <span class="req">*</span></label>
+                                <select class="fc" id="category_id" name="category_id" required>
+                                    <option value="">—</option>
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name_ar }}</option>
+                                    @endforeach
+                                </select>
+                                @error('category_id')<span class="error-text" role="alert">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="fg">
+                                <label class="fl" for="subcategory_id">@lang('pharmacy.medicines.create.subcategory')</label>
+                                <select class="fc" id="subcategory_id" name="subcategory_id">
+                                    <option value="">—</option>
+                                </select>
+                                @error('subcategory_id')<span class="error-text" role="alert">{{ $message }}</span>@enderror
+                            </div>
+                        </div>
                     </div>
 
                     <div class="fg" style="margin-top:12px;">
@@ -152,6 +171,9 @@
         'badge_local' => __('pharmacy.medicines.create.badge_local'),
         'official_price' => __('pharmacy.medicines.create.official_price', ['price' => ':price']),
     ];
+    $subByCat = $subcategories->map(function ($subs) {
+        return $subs->pluck('name_ar', 'id')->all();
+    })->all();
 @endphp
 <script>
 (function () {
@@ -168,6 +190,22 @@
     const mohId = document.getElementById('moh_medicine_id');
     const searchUrl = @json(route('pharmacy.medicines.search'));
     const i18n = @json($pharmacyI18n);
+    const subByCat = @json($subByCat);
+
+    const catSel = document.getElementById('category_id');
+    const subSel = document.getElementById('subcategory_id');
+    function fillSubs(catId) {
+        subSel.innerHTML = '<option value="">—</option>';
+        (subByCat[catId] || []).forEach(function (name, id) {
+            const opt = document.createElement('option');
+            opt.value = id; opt.textContent = name;
+            subSel.appendChild(opt);
+        });
+    }
+    if (catSel) {
+        catSel.addEventListener('change', function () { fillSubs(this.value); });
+        fillSubs(catSel.value);
+    }
 
     let debounceTimer = null;
     let selected = null;
