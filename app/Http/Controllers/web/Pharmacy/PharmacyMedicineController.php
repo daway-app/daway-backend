@@ -393,6 +393,11 @@ class PharmacyMedicineController extends Controller
     /**
      * صفحة طلب دواء جديد (غير موجود بالكتالوج) → تُحفظ كـ medicine_request
      * بانتظار مراجعة الإدارة.
+     *
+     * ⚠️ لا تُمرَّر `$subcategories`: حقل «القسم الفرعي» أُزيل من الواجهة
+     * (لا يقرأه الأدمن عند الاعتماد)، فبقي الاستعلام بلا مستهلك. `storeRequest()`
+     * ما زال يقبل `subcategory_id` اختياريًا، و`approve()` ما زال يقرأه من
+     * الطلب — فلا انحدار في البيانات القديمة.
      */
     public function createRequest()
     {
@@ -400,9 +405,8 @@ class PharmacyMedicineController extends Controller
         $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
 
         $categories = Category::active()->ordered()->get();
-        $subcategories = Subcategory::active()->with('category')->get()->groupBy('category_id');
 
-        return view('pharmacy.medicines.request', compact('pharmacy', 'categories', 'subcategories'));
+        return view('pharmacy.medicines.request', compact('pharmacy', 'categories'));
     }
 
     /**

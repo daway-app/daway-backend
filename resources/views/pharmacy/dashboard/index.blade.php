@@ -37,7 +37,6 @@
                 <p>@lang('pharmacy.dashboard.subtitle', ['pharmacy' => $pharmacy->pharmacy_name])</p>
             </div>
             <div class='ph-actions'>
-                <a href='{{ route('pharmacy.medicines.create') }}' class='ph-btn primary'><i class='fas fa-plus'></i> @lang('pharmacy.dashboard.add_medicine')</a>
                 <a href='{{ route('pharmacy.inventory.index') }}' class='ph-btn outline'><i class='fas fa-rotate'></i> @lang('pharmacy.dashboard.update_inventory')</a>
             </div>
         </div>

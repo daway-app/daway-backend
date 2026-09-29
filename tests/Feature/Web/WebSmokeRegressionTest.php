@@ -53,6 +53,7 @@ class WebSmokeRegressionTest extends TestCase
             'pharmacy inventory' => ['/pharmacy/inventory'],
             'pharmacy medicines' => ['/pharmacy/medicines'],
             'pharmacy medicines create' => ['/pharmacy/medicines/create'],
+            'pharmacy medicines request' => ['/pharmacy/medicines/request'],
             'pharmacy inquiries' => ['/pharmacy/inquiries'],
             'pharmacy alternatives' => ['/pharmacy/alternatives'],
             'pharmacy alternatives create' => ['/pharmacy/alternatives/create'],

@@ -3,7 +3,23 @@
 @section('title', __('pharmacy.medicines.request.title'))
 
 @section('content')
-    @vite(['resources/css/pages/medicines_edit.css'])
+    {{-- ⚠️ لماذا تُحمَّل ملفات المحاسبة هنا:
+         صفحة «طلب دواء جديد» تحتاج **مسح الباركود**، ومحرّك الباركود في المشروع
+         واحد فقط: `resources/js/accounting/*`. لا نكتب ماسحًا ثانيًا (قرار مسبق:
+         «لا نظام نقطة بيع موازٍ»)، بل نُعيد استخدام نفس المكوّنات ونمرّر سلوكًا
+         مخصّصًا لهذه الصفحة عبر `window.__acScanHandlers` (انظر قسم scripts أدناه).
+         الترتيب إلزامي: shared → barcode → session → phone-scanner. --}}
+    @vite([
+        'resources/css/pages/medicines_edit.css',
+        'resources/css/pages/pharmacy_hub.css',
+        'resources/css/pages/pharmacy_accounting.css',
+        'resources/js/accounting/accounting-shared.js',
+        'resources/js/accounting/accounting-barcode.js',
+        'resources/js/accounting/accounting-scanner-session.js',
+        'resources/js/accounting/accounting-phone-scanner.js',
+    ])
+    @include('partials.accounting-i18n')
+
     <div class="edit-medicine-page-wrapper">
         <div class="page-heading">
             <div>
@@ -31,38 +47,10 @@
 
                 <div class="form-row">
                     <div class="fg">
-                        <label class="fl" for="generic_name">@lang('pharmacy.medicines.request.generic_name')</label>
-                        <input class="fc" type="text" id="generic_name" name="generic_name" dir="ltr" value="{{ old('generic_name') }}">
-                    </div>
-                    <div class="fg">
-                        <label class="fl" for="manufacturer">@lang('pharmacy.medicines.request.manufacturer')</label>
-                        <input class="fc" type="text" id="manufacturer" name="manufacturer" dir="ltr" value="{{ old('manufacturer') }}">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="fg">
                         <label class="fl" for="active_ingredient">@lang('pharmacy.medicines.request.active_ingredient')</label>
                         <input class="fc" type="text" id="active_ingredient" name="active_ingredient" dir="ltr" value="{{ old('active_ingredient') }}">
+                        @error('active_ingredient')<span class="error-text" role="alert">{{ $message }}</span>@enderror
                     </div>
-                    <div class="fg">
-                        <label class="fl" for="dosage_form">@lang('pharmacy.medicines.request.dosage_form')</label>
-                        <input class="fc" type="text" id="dosage_form" name="dosage_form" value="{{ old('dosage_form') }}">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="fg">
-                        <label class="fl" for="barcode">@lang('pharmacy.medicines.request.barcode')</label>
-                        <input class="fc" type="text" id="barcode" name="barcode" dir="ltr" value="{{ old('barcode') }}">
-                    </div>
-                    <div class="fg">
-                        <label class="fl" for="official_price">@lang('pharmacy.medicines.request.official_price')</label>
-                        <input class="fc" type="number" id="official_price" name="official_price" step="0.01" min="0" value="{{ old('official_price') }}">
-                    </div>
-                </div>
-
-                <div class="form-row" style="margin-top:14px;">
                     <div class="fg">
                         <label class="fl" for="category_id">@lang('pharmacy.medicines.request.category') <span class="req">*</span></label>
                         <select class="fc" id="category_id" name="category_id" required>
@@ -73,12 +61,25 @@
                         </select>
                         @error('category_id')<span class="error-text" role="alert">{{ $message }}</span>@enderror
                     </div>
-                    <div class="fg">
-                        <label class="fl" for="subcategory_id">@lang('pharmacy.medicines.request.subcategory')</label>
-                        <select class="fc" id="subcategory_id" name="subcategory_id">
-                            <option value="">—</option>
-                        </select>
-                        @error('subcategory_id')<span class="error-text" role="alert">{{ $message }}</span>@enderror
+                </div>
+
+                {{-- الباركود — اختياري، لكنه أهمّ ما يوفّر وقت الإدارة عند الاعتماد.
+                     يُملأ بثلاث طرق: كتابة يدوية · قارئ USB (Enter) · المسح بالهاتف. --}}
+                <div class="form-row">
+                    <div class="fg" style="grid-column: 1 / -1;">
+                        <x-accounting.barcode-input
+                            name="barcode"
+                            id="request_barcode"
+                            :value="old('barcode', '')"
+                            :label="__('pharmacy.medicines.request.barcode')"
+                            :show-status="true" />
+
+                        <div class="ac-scan-actions">
+                            <x-accounting.barcode-scan-button target="request_barcode" />
+                            <x-accounting.phone-scanner-button />
+                        </div>
+
+                        @error('barcode')<span class="error-text" role="alert">{{ $message }}</span>@enderror
                     </div>
                 </div>
 
@@ -88,30 +89,68 @@
                 <a href="{{ route('pharmacy.medicines.index') }}" class="btn-cancel">@lang('pharmacy.medicines.request.cancel')</a>
             </div>
         </form>
+
+        {{-- نافذة المسح بالهاتف — نفس المكوّن المستخدم في المحاسبة بلا أي تغيير.
+             `accounting-phone-scanner.js` تخرج مبكرًا إن لم تجد `[data-phone-scanner-modal]`. --}}
+        <x-accounting.phone-scanner-modal />
+
+        {{-- نافذة تعارض الباركود — الباركود فريد عالميًا في `medicine_barcodes`.
+             لو مُسح باركود مرتبط بدواء آخر، نعرض الحوار بدل تجاهل صامت. --}}
+        <x-accounting.barcode-conflict-modal />
     </div>
 @endsection
 
 @section('scripts')
-@php
-    $subByCat = $subcategories->map(function ($subs) {
-        return $subs->pluck('name_ar', 'id')->all();
-    })->toJson();
-@endphp
 <script>
+/*
+ * جسر هذه الصفحة مع محرّك الباركود المشترك.
+ *
+ * ⚠️ لماذا `__acScanHandlers` وليس `__acPosHook`:
+ *   `__acPosHook.addScannedResult` مسار **السلة** في نقطة البيع. هذه الصفحة
+ *   لا سلة فيها؛ غايتها تعبئة حقل الباركود فقط. لو استُخدم مسار السلة لظهرت
+ *   رسالة «أُضيف للسلة» — وهي كاذبة هنا.
+ *
+ * ⚠️ التوقيت: هذا سكربت كلاسيكي inline، يُنفَّذ أثناء تحليل الصفحة، بينما
+ *   ملفات Vite تُحمَّل كـ`type="module"` (deferred). لذا يُضبط المتغيّر
+ *   **قبل** تنفيذ `init()` في accounting-barcode.js — بلا سباق.
+ */
 (function () {
-    const subByCat = @json($subByCat);
-    const catSel = document.getElementById('category_id');
-    const subSel = document.getElementById('subcategory_id');
-    function fillSubs(catId) {
-        subSel.innerHTML = '<option value="">—</option>';
-        (subByCat[catId] || []).forEach(function (name, id) {
-            const opt = document.createElement('option');
-            opt.value = id; opt.textContent = name;
-            subSel.appendChild(opt);
-        });
+    'use strict';
+
+    var BARCODE_INPUT_ID = 'request_barcode';
+
+    /** يكتب الباركود في الحقل ويُحدّث مؤشّر الحالة — بلا أي منطق إضافي. */
+    function fillBarcode(result) {
+        var input = document.getElementById(BARCODE_INPUT_ID);
+        if (!input) {
+            return;
+        }
+
+        var code = (result && result.barcode) ? String(result.barcode) : '';
+        if (!code) {
+            return;
+        }
+
+        input.value = code;
+
+        var wrap = input.closest('.ac-barcode-wrap');
+        if (wrap && window.AccountingBarcode && window.AccountingBarcode.setFieldState) {
+            // الحالة 'pending' لأن الـendpoint لم يُثبِت توثيق الرقم بعد.
+            window.AccountingBarcode.setFieldState(wrap, 'pending', code);
+        }
+
+        if (window.AccountingBarcode && window.AccountingBarcode.notify) {
+            window.AccountingBarcode.notify(@json(__('pharmacy.medicines.request.barcode_filled')), 'success');
+        }
     }
-    catSel.addEventListener('change', function () { fillSubs(this.value); });
-    fillSubs(catSel.value);
+
+    window.__acScanHandlers = {
+        // باركود غير مسجَّل — الحالة الطبيعية هنا (الدواء غير موجود بالكتالوج أصلًا).
+        // بدون هذا المعالج تُفتح نافذة «ربط بدواء موجود»، وهي بلا معنى في صفحة الطلب.
+        onUnknown: fillBarcode,
+        // باركود مسجَّل — نكتفي بتعبئة الحقل بدل إشعار «أُضيف للسلة» الكاذب.
+        onResolved: fillBarcode
+    };
 })();
 </script>
 @endsection

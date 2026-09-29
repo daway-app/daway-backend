@@ -36,7 +36,6 @@
             </div>
             <div class='ph-actions'>
                 <a href='{{ route('pharmacy.inventory.import.index') }}' class='ph-btn outline'><i class='fas fa-file-import'></i> @lang('pharmacy.sidebar.bulk_import')</a>
-                <a href='{{ route('pharmacy.medicines.create') }}' class='ph-btn primary'><i class='fas fa-plus'></i> @lang('pharmacy.inventory.add_medicine')</a>
             </div>
         </div>
 

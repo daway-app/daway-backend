@@ -222,6 +222,16 @@
         B.resolveBarcode(barcode).then(function (result) {
             // نُبلّغ الحالة على الواجهة وفق نتيجة الحلّ الفعلية
             if (result.status === 'unknown') {
+                // ⚠️ صفحة تُدخل دواءً جديدًا (لا ربط بمخزون) تُعالج «غير معروف»
+                // بنفسها عبر window.__acScanHandlers. وإلا فسلوك نافذة الربط
+                // يبقى كما هو في كل صفحات المحاسبة.
+                var pageHandlers = window.__acScanHandlers;
+                if (pageHandlers && typeof pageHandlers.onUnknown === 'function') {
+                    pageHandlers.onUnknown(result, null);
+                    finish('unknown');
+                    return;
+                }
+
                 B.openLinkModal(result.barcode, function () {
                     B.notify(t('link_saved', ''), 'success');
                 });
@@ -251,6 +261,16 @@
                 controller.markReceived(result.barcode);
             }
             renderAll(controller ? controller.snapshot() : {});
+
+            // ⚠️ متناظر مع `onUnknown` أعلاه: صفحة ليست نقطة بيع (لا سلة عندها)
+            // تتسلّم النتيجة بنفسها. بدون هذا، `deliver()` تُطلق إشعار
+            // «أُضيف للسلة» على صفحة لا سلة فيها ⇒ رسالة كاذبة.
+            var resolvedHandlers = window.__acScanHandlers;
+            if (resolvedHandlers && typeof resolvedHandlers.onResolved === 'function') {
+                resolvedHandlers.onResolved(result, null);
+                finish('resolved');
+                return;
+            }
 
             deliver(result.barcode, result);
             finish('resolved');

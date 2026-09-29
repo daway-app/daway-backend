@@ -134,6 +134,7 @@ return [
             'active_ingredient' => 'Active ingredient (optional)',
             'dosage_form' => 'Dosage form (optional)',
             'barcode' => 'Barcode (optional)',
+            'barcode_filled' => 'Barcode filled from the scan — review it before submitting.',
             'official_price' => 'Official price (optional)',
             'category' => 'Category',
             'subcategory' => 'Subcategory',
