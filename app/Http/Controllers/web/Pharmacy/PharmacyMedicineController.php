@@ -80,24 +80,24 @@ class PharmacyMedicineController extends Controller
 
         $pharmacyMedicines = $query->orderByDesc('id')->paginate(50)->withQueryString();
 
-        $availableCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-            ->where('is_available', true)
-            ->where('quantity', '>', 0)
-            ->count();
+        // P2: استعلام تجميعي واحد بدل 4 `count()` منفصلة على نفس الجدول.
+        // العدّادات غير متنافية (`out` قد يجتمع مع `low`) ⇒ كل واحد
+        // بـ`SUM(CASE…)` مستقل. `quantity`/`is_available` عمودان NOT NULL
+        // ⇒ لا فرق عن `where(...)->count()` في أي حالة حدّية.
+        $stats = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->selectRaw(
+                'COUNT(*) as total,
+                 SUM(CASE WHEN is_available = 1 AND quantity > 0 THEN 1 ELSE 0 END) as available,
+                 SUM(CASE WHEN is_available = 0 OR quantity <= 0 THEN 1 ELSE 0 END) as out_count,
+                 SUM(CASE WHEN quantity > 0 AND quantity <= ? THEN 1 ELSE 0 END) as low',
+                [$threshold]
+            )
+            ->first();
 
-        $outCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-            ->where(function ($query) {
-                $query->where('is_available', false)
-                    ->orWhere('quantity', '<=', 0);
-            })
-            ->count();
-
-        $lowCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-            ->where('quantity', '>', 0)
-            ->where('quantity', '<=', $threshold)
-            ->count();
-
-        $totalCount = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->count();
+        $availableCount = (int) ($stats->available ?? 0);
+        $outCount = (int) ($stats->out_count ?? 0);
+        $lowCount = (int) ($stats->low ?? 0);
+        $totalCount = (int) ($stats->total ?? 0);
 
         return view('pharmacy.medicines.index', compact('pharmacyMedicines', 'pharmacy', 'availableCount', 'outCount', 'lowCount', 'totalCount', 'q', 'status', 'threshold'));
     }
