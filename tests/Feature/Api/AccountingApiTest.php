@@ -10,6 +10,7 @@ use App\Models\Sale;
 use App\Models\Supplier;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 /**
@@ -547,6 +548,11 @@ class AccountingApiTest extends TestCase
     {
         [$user, $pharmacy] = $this->pharmacyUser();
         [$pm] = $this->stock($pharmacy, price: 10.00, qty: 100);
+
+        // تثبيت الساعة في نافذة ما قبل 08:00 (كانت «سلسلة اليوم» تتجاهلها):
+        // يضمن أن الاختبار يمرّ في أي ساعة تشغيل للـCI، ويثبت أن مبيعات
+        // الفجر تدخل المقطع الأول من سلسلة اليوم.
+        $this->travelTo(Carbon::today()->setTimeFromTimeString('02:30:00'));
 
         Sanctum::actingAs($user);
 
