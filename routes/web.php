@@ -365,6 +365,12 @@ Route::middleware(['auth', 'role:pharmacy', 'password.changed', 'profile.complet
         'search',
     ])->name('pharmacy.medicines.search');
 
+    // بحث الكتالوج الموحّد (صفحة إضافة الدواء): يقرأ من الكتالوج المحلي فقط
+    Route::get('/pharmacy/medicines/catalog-search', [
+        PharmacyMedicineController::class,
+        'catalogSearch',
+    ])->name('pharmacy.medicines.catalog-search');
+
     Route::resource(
         'pharmacy/medicines',
         PharmacyMedicineController::class

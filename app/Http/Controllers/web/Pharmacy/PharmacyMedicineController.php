@@ -165,6 +165,88 @@ class PharmacyMedicineController extends Controller
     }
 
     /**
+     * بحث محسوب في الكتالوج المحلي (moh_medicines) فقط — لا اتصال بوزارة الصحة.
+     *
+     * الحقول المدعومة:
+     *   - الاسم التجاري  (moh_medicines.trade_name)
+     *   - المادة الفعالة (moh_medicines.generic_name)
+     *   - المصنّع        (moh_medicines.manufacturer)
+     *   - الاسم العربي    (medicines.trade_name_ar → جسر الاسم التجاري)
+     *   - معرفات MOH المستقرة (moh_product_id / moh_drug_id) عند بحث رقمي
+     *
+     * النتائج محدودة بـ20، وتُعلَّم الحالات المضافة مسبقًا لصيدليتك.
+     */
+    public function catalogSearch(Request $request)
+    {
+        $user = Auth::user();
+        $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+
+        $q = trim((string) $request->get('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json(['items' => [], 'count' => 0, 'is_complete' => false]);
+        }
+
+        SearchLog::track($q, 'pharmacy');
+
+        $query = MohMedicine::query()->where(function ($outer) use ($q) {
+            $outer
+                ->where('trade_name', 'like', "%{$q}%")
+                ->orWhere('generic_name', 'like', "%{$q}%")
+                ->orWhere('manufacturer', 'like', "%{$q}%");
+
+            // الاسم العربي: عبر جسر الكتالوج المحلي (medicines.trade_name_ar → trade_name)
+            $arabicMatches = Medicine::where('trade_name_ar', 'like', "%{$q}%")
+                ->whereNotNull('trade_name')
+                ->pluck('trade_name');
+            if ($arabicMatches->isNotEmpty()) {
+                $outer->orWhereIn('trade_name', $arabicMatches);
+            }
+
+            // بحث رقمي بمعرّفات MOH المستقرة
+            if (ctype_digit($q)) {
+                $outer->orWhere('moh_product_id', (int) $q)
+                    ->orWhere('moh_drug_id', (int) $q);
+            }
+        });
+
+        $items = $query->orderBy('trade_name')->limit(20)->get();
+
+        // إسكايه واحدة: trade_name → medicine_id لكل النتائج (نفس جسر الكتالوج المحلي)
+        $idMap = Medicine::idsByTradeName($items->pluck('trade_name')->all());
+
+        $rows = [];
+        if ($idMap !== []) {
+            $rows = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+                ->whereIn('medicine_id', array_values($idMap))
+                ->get()
+                ->keyBy('medicine_id');
+        }
+
+        return response()->json([
+            'items' => $items->map(function (MohMedicine $m) use ($idMap, $rows) {
+                $bridgeId = $idMap[$m->trade_name] ?? null;
+                $row = $bridgeId !== null ? ($rows->get($bridgeId) ?? null) : null;
+
+                return [
+                    'type' => 'moh',
+                    'id' => $m->id,
+                    'moh_medicine_id' => $m->id,
+                    'moh_product_id' => $m->moh_product_id,
+                    'moh_drug_id' => $m->moh_drug_id,
+                    'name' => $m->trade_name,
+                    'sub' => $m->generic_name ?: $m->manufacturer,
+                    'official_price' => $m->official_price !== null ? (float) $m->official_price : null,
+                    'already_added' => $row !== null,
+                    'existing_row_id' => $row?->id,
+                ];
+            })->values()->all(),
+            'count' => $items->count(),
+            'is_complete' => true,
+        ]);
+    }
+
+
+    /**
      * Store a newly created medicine in storage for the pharmacy.
      *
      * @return Response
@@ -275,11 +357,11 @@ class PharmacyMedicineController extends Controller
             }
         }
 
-        $exists = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+        $existingRow = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
             ->where('medicine_id', $medicine->id)
-            ->exists();
+            ->first();
 
-        if ($exists) {
+        if ($existingRow) {
             return back()->withInput()->withErrors([
                 'medicine_id' => __('pharmacy.medicines.create.already_exists'),
             ]);

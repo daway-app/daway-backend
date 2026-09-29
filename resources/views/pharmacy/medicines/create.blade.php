@@ -28,11 +28,12 @@
                 </div>
             @endif
 
+            {{-- ── 1) الدواء: بحث في الكتالوج المحلي أو إضافة يدوية عند غياب النتيجة ── --}}
             <div class="premium-card">
                 <div class="card-head">
                     <div class="card-head-content">
                         <div class="card-icon teal">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         </div>
                         <div>
                             <h2>@lang('pharmacy.medicines.create.choose_medicine')</h2>
@@ -40,7 +41,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="fg">
+                    <div class="fg" id="search_zone">
                         <label class="fl" for="medicine_search">@lang('pharmacy.medicines.create.search_label') <span class="req">*</span></label>
                         <input class="fc" type="text" id="medicine_search" autocomplete="off" placeholder="@lang('pharmacy.medicines.create.search_placeholder')" />
                         <div id="search_results" class="moh-search-results" style="display:none;"></div>
@@ -50,16 +51,31 @@
                     <input type="hidden" name="medicine_id" id="medicine_id" value="{{ old('medicine_id') }}">
                     <input type="hidden" name="moh_medicine_id" id="moh_medicine_id" value="{{ old('moh_medicine_id') }}">
 
+                    {{-- الدواء المختار من الكتالوج --}}
                     <div id="selected_box" class="moh-selected" style="display:none;">
                         <div class="moh-selected-info">
                             <strong id="selected_name"></strong>
                             <span id="selected_sub"></span>
+                            <span id="selected_moh" class="moh-result-meta" style="display:none;"></span>
                             <span id="selected_price" class="moh-official-price" style="display:none;"></span>
                         </div>
-                        <button type="button" id="clear_selection" class="btn-cancel">@lang('pharmacy.medicines.create.change_button')</button>
+                        <div style="display:flex;gap:8px;">
+                            <a id="selected_edit_link" class="btn-cancel" style="display:none;" href="#" target="_blank">@lang('pharmacy.medicines.create.edit_existing')</a>
+                            <button type="button" id="clear_selection" class="btn-cancel">@lang('pharmacy.medicines.create.change_button')</button>
+                        </div>
                     </div>
 
-                    <div id="manual_box" style="display:none;">
+                    {{-- إضافة يدوية — تظهر فقط عند غياب النتائج في الكتالوج --}}
+                    <div id="manual_cta" class="fg" style="display:none;margin-top:12px;">
+                        <div class="alert alert-error" style="margin-bottom:10px;">
+                            <span class="alert-icon">!</span>
+                            <div><div class="alert-title">@lang('pharmacy.medicines.create.no_results_title')</div>
+                            <div style="font-size:.85rem;">@lang('pharmacy.medicines.create.no_results_desc')</div></div>
+                        </div>
+                        <button type="button" id="open_manual" class="btn-cancel">@lang('pharmacy.medicines.create.manual_button')</button>
+                    </div>
+
+                    <div id="manual_box" style="display:none;margin-top:14px;">
                         <div class="form-row">
                             <div class="fg">
                                 <label class="fl" for="trade_name">@lang('pharmacy.medicines.create.manual_trade_name') <span class="req">*</span></label>
@@ -69,6 +85,7 @@
                             <div class="fg">
                                 <label class="fl" for="active_ingredient">@lang('pharmacy.medicines.create.manual_ingredient') <span class="req">*</span></label>
                                 <input class="fc" type="text" id="active_ingredient" name="active_ingredient" value="{{ old('active_ingredient') }}" placeholder="@lang('pharmacy.medicines.create.manual_ingredient_placeholder')">
+                                @error('active_ingredient')<span class="error-text" role="alert">{{ $message }}</span>@enderror
                             </div>
                         </div>
                         <div class="fg">
@@ -97,16 +114,15 @@
                         </div>
                     </div>
 
-                    <div class="fg" style="margin-top:12px;">
-                        <button type="button" id="toggle_manual" class="btn-cancel">@lang('pharmacy.medicines.create.not_found_button')</button>
-                    </div>
-
                     @error('medicine_id')
-                        <span class="error-text" role="alert"><strong>{{ $message }}</strong></span>
+                        <div class="fg" style="margin-top:12px;">
+                            <span class="error-text" role="alert"><strong>{{ $message }}</strong></span>
+                        </div>
                     @enderror
                 </div>
             </div>
 
+            {{-- ── 2) السعر والمخزون (موحد للطريقتين) ── --}}
             <div class="premium-card">
                 <div class="card-head">
                     <div class="card-head-content">
@@ -166,10 +182,11 @@
 @php
     $pharmacyI18n = [
         'search_error' => __('pharmacy.medicines.create.search_error'),
-        'no_results' => __('pharmacy.medicines.create.no_results'),
+        'no_results_title' => __('pharmacy.medicines.create.no_results_title'),
         'badge_moh' => __('pharmacy.medicines.create.badge_moh'),
-        'badge_local' => __('pharmacy.medicines.create.badge_local'),
         'official_price' => __('pharmacy.medicines.create.official_price', ['price' => ':price']),
+        'already_added' => __('pharmacy.medicines.create.already_added_badge'),
+        'edit_existing' => __('pharmacy.medicines.create.edit_existing'),
     ];
     $subByCat = $subcategories->map(function ($subs) {
         return $subs->pluck('name_ar', 'id')->all();
@@ -182,13 +199,17 @@
     const selectedBox = document.getElementById('selected_box');
     const selectedName = document.getElementById('selected_name');
     const selectedSub = document.getElementById('selected_sub');
+    const selectedMoh = document.getElementById('selected_moh');
     const selectedPrice = document.getElementById('selected_price');
+    const selectedEditLink = document.getElementById('selected_edit_link');
+    const manualCta = document.getElementById('manual_cta');
     const manualBox = document.getElementById('manual_box');
-    const toggleManualBtn = document.getElementById('toggle_manual');
+    const openManualBtn = document.getElementById('open_manual');
     const clearSelectionBtn = document.getElementById('clear_selection');
     const medId = document.getElementById('medicine_id');
     const mohId = document.getElementById('moh_medicine_id');
-    const searchUrl = @json(route('pharmacy.medicines.search'));
+    const searchUrl = @json(route('pharmacy.medicines.catalog-search'));
+    const editUrl = @json(route('pharmacy.medicines.edit', 'ROWIDPH'));
     const i18n = @json($pharmacyI18n);
     const subByCat = @json($subByCat);
 
@@ -208,29 +229,28 @@
     }
 
     let debounceTimer = null;
-    let selected = null;
 
     function clearSelection() {
-        selected = null;
         medId.value = '';
         mohId.value = '';
         selectedBox.style.display = 'none';
+        selectedEditLink.style.display = 'none';
+        manualCta.style.display = 'none';
+        manualBox.style.display = 'none';
         searchInput.value = '';
         searchInput.disabled = false;
+        resultsBox.style.display = 'none';
+        document.getElementById('search_zone').style.display = '';
     }
 
     clearSelectionBtn.addEventListener('click', clearSelection);
 
-    toggleManualBtn.addEventListener('click', function () {
-        const show = manualBox.style.display === 'none';
-        manualBox.style.display = show ? 'block' : 'none';
-        clearSelection();
-        if (show) {
-            searchInput.disabled = true;
-            resultsBox.style.display = 'none';
-        } else {
-            searchInput.disabled = false;
-        }
+    openManualBtn.addEventListener('click', function () {
+        // وضع اليدوي: يخبّأ البحث ويُظهر نموذج البيانات — لا طريقتين متداخلتين
+        manualBox.style.display = 'block';
+        searchInput.value = '';
+        resultsBox.style.display = 'none';
+        manualCta.style.display = 'none';
     });
 
     searchInput.addEventListener('input', function () {
@@ -238,6 +258,7 @@
         const q = searchInput.value.trim();
         if (q.length < 2) {
             resultsBox.style.display = 'none';
+            manualCta.style.display = 'none';
             return;
         }
         debounceTimer = setTimeout(function () { runSearch(q); }, 350);
@@ -270,24 +291,23 @@
 
     function runSearch(q) {
         const url = searchUrl + '?q=' + encodeURIComponent(q);
-        // M-27: إلغاء الطلب السابق — استجابة قديمة لا تتغلب على الأحدث
-        if (window._mohSearchAbort) window._mohSearchAbort.abort();
+        if (window._catalogSearchAbort) window._catalogSearchAbort.abort();
         const controller = new AbortController();
-        window._mohSearchAbort = controller;
-        const seq = ++window._mohSearchSeq;
+        window._catalogSearchAbort = controller;
+        const seq = ++window._catalogSearchSeq;
 
         fetch(url, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             signal: controller.signal,
         })
             .then(function (r) { return r.json(); })
-            .then(function (items) {
-                if (seq !== window._mohSearchSeq) return; // وصلت متأخرة — تجاهُل
-                renderResults(items);
+            .then(function (res) {
+                if (seq !== window._catalogSearchSeq) return;
+                renderResults(res.items || []);
             })
             .catch(function (err) {
                 if (err && err.name === 'AbortError') return;
-                if (seq !== window._mohSearchSeq) return;
+                if (seq !== window._catalogSearchSeq) return;
                 resultsBox.innerHTML = '<div class="moh-search-empty">' + i18n.search_error + '</div>';
                 resultsBox.style.display = 'block';
             });
@@ -295,18 +315,26 @@
 
     function renderResults(items) {
         if (!items.length) {
-            resultsBox.innerHTML = '<div class="moh-search-empty">' + i18n.no_results + '</div>';
-            resultsBox.style.display = 'block';
+            // لا نتائج في الكتالوج → يظهر خيار الإضافة اليدوية هنا فقط
+            resultsBox.innerHTML = '';
+            resultsBox.style.display = 'none';
+            manualCta.style.display = 'block';
             return;
         }
+        manualCta.style.display = 'none';
         const html = items.map(function (item) {
             const priceBadge = item.official_price != null
                 ? '<span class="moh-result-price">' + i18n.official_price.replace(':price', item.official_price) + '</span>'
                 : '';
-            const badge = item.type === 'moh' ? '<span class="moh-result-badge">' + i18n.badge_moh + '</span>' : '<span class="moh-result-badge moh-result-badge-local">' + i18n.badge_local + '</span>';
-            return '<div class="moh-search-item" data-type="' + item.type + '" data-id="' + item.id + '" data-name="' + esc(item.name) + '" data-sub="' + esc(item.sub || '') + '" data-price="' + (item.official_price != null ? item.official_price : '') + '">' +
+            const mohBadge = (item.moh_product_id || item.moh_drug_id)
+                ? '<span class="moh-result-badge">' + i18n.badge_moh + ' #' + (item.moh_product_id || item.moh_drug_id) + '</span>'
+                : '';
+            const added = item.already_added
+                ? '<span class="moh-result-badge" style="color:#c2611c;">' + i18n.already_added + '</span>'
+                : '';
+            return '<div class="moh-search-item" data-id="' + item.id + '" data-name="' + esc(item.name) + '" data-sub="' + esc(item.sub || '') + '" data-price="' + (item.official_price != null ? item.official_price : '') + '" data-moh="' + (item.moh_product_id || item.moh_drug_id || '') + '" data-row="' + (item.existing_row_id || '') + '">' +
                 '<div><strong>' + esc(item.name) + '</strong>' + (item.sub ? '<small>' + esc(item.sub) + '</small>' : '') + '</div>' +
-                '<div class="moh-result-meta">' + badge + priceBadge + '</div>' +
+                '<div class="moh-result-meta">' + mohBadge + priceBadge + added + '</div>' +
                 '</div>';
         }).join('');
         resultsBox.innerHTML = html;
@@ -318,18 +346,20 @@
     }
 
     function selectItem(el) {
-        const type = el.getAttribute('data-type');
         const id = el.getAttribute('data-id');
         const name = el.getAttribute('data-name');
         const sub = el.getAttribute('data-sub');
         const price = el.getAttribute('data-price');
+        const mohKey = el.getAttribute('data-moh');
+        const rowId = el.getAttribute('data-row');
 
-        selected = { type: type, id: id, name: name };
-        medId.value = type === 'medicine' ? id : '';
-        mohId.value = type === 'moh' ? id : '';
+        mohId.value = id;
+        medId.value = '';
 
         selectedName.textContent = name;
         selectedSub.textContent = sub || '';
+        selectedMoh.textContent = mohKey ? 'MOH #' + mohKey : '';
+        selectedMoh.style.display = mohKey ? '' : 'none';
         if (price !== '') {
             selectedPrice.textContent = i18n.official_price.replace(':price', price);
             selectedPrice.style.display = '';
@@ -337,7 +367,17 @@
             selectedPrice.style.display = 'none';
         }
 
+        if (rowId) {
+            // دواء مضاف مسبقًا لصيدليتك → رابط التعديل بدل الإضافة المكررة
+            selectedEditLink.href = editUrl.replace('ROWIDPH', rowId);
+            selectedEditLink.style.display = '';
+        } else {
+            selectedEditLink.style.display = 'none';
+        }
+
         resultsBox.style.display = 'none';
+        manualCta.style.display = 'none';
+        manualBox.style.display = 'none';
         selectedBox.style.display = 'flex';
         searchInput.disabled = true;
         searchInput.value = name;
