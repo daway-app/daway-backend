@@ -397,4 +397,36 @@ class PharmacyMedicineCatalogSearchTest extends TestCase
             ->assertRedirect(route('pharmacy.medicines.index'));
         $this->assertSame(5.0, (float) $row->fresh()->price);
     }
+
+    // ── JS guard (regrasi) ───────────────────────────────────────────
+
+    /**
+     * السبب الجذري لـ "البحث لا يظهر نتائج" على البيئة الحية:
+     * العدّاد التسلسلي كان ++window._catalogSearchSeq غير المهيّئ → NaN،
+     * وشُروط (seq !== window._catalogSearchSeq) تصبح NaN !== NaN = true دائمًا،
+     * فيُتجاهَل كل استجابة ولا تُعرض أي نتيجة. هذا الاختبار يمنع عودتها.
+     */
+    public function test_create_page_search_script_uses_valid_sequence_guard(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->pharmacy()->create();
+        Pharmacy::factory()->create(['user_id' => $user->id, 'is_active' => true]);
+
+        $html = $this->actingAs($user)->get(route('pharmacy.medicines.create'))->assertOk()->getContent();
+
+        // الـ endpoint الصحيح هو catalog-search (وليست المسار القديم search)
+        // ملاحظة: @json() يهرس شرطات مسار URL بالـ backslash (\/)، لذلك نتحقق من
+        // الجزء الثابت «catalog-search» بدل المسار الكامل.
+        $this->assertStringContainsString('catalog-search', $html);
+
+        // نمط الخلل القديم (increment على خاصية window غير مهيأة → NaN) ممنوع
+        $this->assertDoesNotMatchRegularExpression('/\+\+\s*window\./', $html,
+            'sequence guard must not use ++window.<uninitialized> (NaN breaks every render)');
+        $this->assertStringNotContainsString('window._catalogSearchSeq', $html);
+        $this->assertStringNotContainsString('window._catalogSearchAbort', $html);
+
+        // الهيكل المتوقع حاضر
+        $this->assertStringContainsString('let searchSeq = 0;', $html);
+        $this->assertStringContainsString('if (seq !== searchSeq) return;', $html);
+    }
 }

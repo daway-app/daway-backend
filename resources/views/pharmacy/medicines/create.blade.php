@@ -229,6 +229,10 @@
     }
 
     let debounceTimer = null;
+    // عدّاد التسلسل محلي ومُهيّئ بـ 0: استخدام ++ على خاصية window غير مُعرّفة
+    // ينتج NaN، فيصبح الشرط (seq !== window._x) حقيقيًا دائمًا ولا تُعرض أي نتائج.
+    let searchSeq = 0;
+    let searchAbort = null;
 
     function clearSelection() {
         medId.value = '';
@@ -291,10 +295,11 @@
 
     function runSearch(q) {
         const url = searchUrl + '?q=' + encodeURIComponent(q);
-        if (window._catalogSearchAbort) window._catalogSearchAbort.abort();
+        // إلغاء الطلب السابق (إن وُجد) حتى لا تتغلب استجابة قديمة على الأحدث
+        if (searchAbort) searchAbort.abort();
         const controller = new AbortController();
-        window._catalogSearchAbort = controller;
-        const seq = ++window._catalogSearchSeq;
+        searchAbort = controller;
+        const seq = ++searchSeq;
 
         fetch(url, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -302,12 +307,12 @@
         })
             .then(function (r) { return r.json(); })
             .then(function (res) {
-                if (seq !== window._catalogSearchSeq) return;
+                if (seq !== searchSeq) return; // وصلت متأخرة — تجاهُل
                 renderResults(res.items || []);
             })
             .catch(function (err) {
                 if (err && err.name === 'AbortError') return;
-                if (seq !== window._catalogSearchSeq) return;
+                if (seq !== searchSeq) return;
                 resultsBox.innerHTML = '<div class="moh-search-empty">' + i18n.search_error + '</div>';
                 resultsBox.style.display = 'block';
             });
