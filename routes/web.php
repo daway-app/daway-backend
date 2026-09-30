@@ -368,6 +368,11 @@ Route::middleware(['auth', 'role:pharmacy', 'password.changed', 'profile.complet
         'sendMessage',
     ])->name('pharmacy.inquiries.chat.send');
 
+    Route::get('/pharmacy/inquiries/{inquiry}/messages', [
+        PharmacyInquiryController::class,
+        'messagesJson',
+    ])->name('pharmacy.inquiries.messages');
+
     // ==================== PHARMACY MEDICINES ====================
 
     Route::get('/pharmacy/medicines/search', [

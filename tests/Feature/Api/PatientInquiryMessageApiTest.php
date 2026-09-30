@@ -7,6 +7,7 @@ use App\Models\PatientInquiryMessage;
 use App\Models\Pharmacy;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -114,15 +115,15 @@ class PatientInquiryMessageApiTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_patient_message_validation_requires_message(): void
+    public function test_patient_message_validation_requires_message_or_media(): void
     {
         [$patient, $pharmacyUser, $pharmacy, $inquiry] = $this->patientAndPharmacy();
 
         Sanctum::actingAs($patient);
 
         $this->postJson("/api/patient/inquiries/{$inquiry->id}/messages", [
-            // no message field
-        ])->assertStatus(422)->assertJsonValidationErrors('message');
+            // no message field, no media
+        ])->assertStatus(422);
     }
 
     public function test_patient_can_mark_messages_as_read(): void
@@ -146,5 +147,47 @@ class PatientInquiryMessageApiTest extends TestCase
 
         $msg = PatientInquiryMessage::where('patient_inquiry_id', $inquiry->id)->first();
         $this->assertNotNull($msg->read_at);
+    }
+
+    public function test_patient_can_send_message_with_image(): void
+    {
+        [$patient, $pharmacyUser, $pharmacy, $inquiry] = $this->patientAndPharmacy();
+
+        Sanctum::actingAs($patient);
+
+        $image = UploadedFile::fake()->image('test.png');
+
+        $response = $this->post("/api/patient/inquiries/{$inquiry->id}/messages", [
+            'media' => $image,
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.media_type', 'image');
+
+        $this->assertDatabaseHas('patient_inquiry_messages', [
+            'patient_inquiry_id' => $inquiry->id,
+            'sender_user_id' => $patient->id,
+            'media_type' => 'image',
+        ]);
+
+        $msg = PatientInquiryMessage::where('patient_inquiry_id', $inquiry->id)->first();
+        $this->assertNotNull($msg->media_path);
+        $this->assertStringContainsString('/storage/', $response->json()['data']['media_url']);
+    }
+
+    public function test_patient_message_rejects_non_image_file(): void
+    {
+        [$patient, $pharmacyUser, $pharmacy, $inquiry] = $this->patientAndPharmacy();
+
+        Sanctum::actingAs($patient);
+
+        $file = UploadedFile::fake()->create('test.txt', 10, 'text/plain');
+
+        $response = $this->post("/api/patient/inquiries/{$inquiry->id}/messages", [
+            'media' => $file,
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(422);
     }
 }

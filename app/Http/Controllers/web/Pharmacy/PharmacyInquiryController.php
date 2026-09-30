@@ -9,6 +9,7 @@ use App\Models\Pharmacy;
 use App\Services\InquiryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PharmacyInquiryController extends Controller
 {
@@ -106,18 +107,74 @@ class PharmacyInquiryController extends Controller
             return redirect()->route('pharmacy.inquiries.index')->with('error', 'لا يمكنك الرد على هذا الاستفسار');
         }
 
-        $message = $request->validate([
-            'message' => 'required|string|max:1000',
+        $validated = $request->validate([
+            'message' => 'nullable|string|max:1000',
+            'media' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
-        $patientInquiryMessage = PatientInquiryMessage::create([
+        if (! $request->hasFile('media') && ! $validated['message']) {
+            return back()->with('error', 'يجب إرسال رسالة نصية أو صورة واحدة على الأقل.');
+        }
+
+        $mediaPath = null;
+        $mediaType = null;
+
+        if ($request->hasFile('media')) {
+            $mediaPath = $request->file('media')->store('patient_inquiry_media', 'public');
+            $mediaType = 'image';
+        }
+
+        PatientInquiryMessage::create([
             'patient_inquiry_id' => $inquiry->id,
             'sender_user_id' => $user->id,
-            'message' => $message['message'],
+            'message' => $validated['message'] ?? '',
+            'media_path' => $mediaPath,
+            'media_type' => $mediaType,
         ]);
 
-        $this->inquiries->answer($inquiry, $pharmacy, ['status' => 'answered', 'reply' => $message['message']]);
+        $this->inquiries->answer($inquiry, $pharmacy, ['status' => 'answered', 'reply' => $validated['message'] ?? null]);
 
         return redirect()->route('pharmacy.inquiries.chat', $inquiry)->with('success', 'تم إرسال الرسالة');
+    }
+
+    public function messagesJson(Request $request, PatientInquiry $inquiry)
+    {
+        $user = Auth::user();
+        $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+
+        if ($inquiry->pharmacy_id !== $pharmacy->id) {
+            abort(403);
+        }
+
+        if ($request->boolean('mark_read')) {
+            PatientInquiryMessage::where('patient_inquiry_id', $inquiry->id)
+                ->where('sender_user_id', '!=', $user->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+        }
+
+        $messages = PatientInquiryMessage::where('patient_inquiry_id', $inquiry->id)
+            ->with('sender')
+            ->oldest('created_at')
+            ->get();
+
+        $data = $messages->map(function ($msg) {
+            return [
+                'id' => $msg->id,
+                'inquiry_id' => $msg->patient_inquiry_id,
+                'sender_user_id' => $msg->sender_user_id,
+                'message' => $msg->message,
+                'media_url' => $msg->media_path ? Storage::url($msg->media_path) : null,
+                'media_type' => $msg->media_type,
+                'is_read' => $msg->read_at !== null,
+                'read_at' => $msg->read_at?->toDateTimeString(),
+                'created_at' => $msg->created_at?->toDateTimeString(),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
     }
 }

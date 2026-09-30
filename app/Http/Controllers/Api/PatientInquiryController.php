@@ -14,6 +14,7 @@ use App\Models\PatientInquiryMessage;
 use App\Models\Pharmacy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PatientInquiryController extends Controller
 {
@@ -106,10 +107,23 @@ class PatientInquiryController extends Controller
     {
         abort_unless($inquiry->user_id === $request->user()->id, 403);
 
+        $data = $request->validated();
+        $mediaPath = null;
+        $mediaType = null;
+
+        if ($request->hasFile('media')) {
+            $file = $request->file('media');
+            $path = $file->store('patient_inquiry_media', 'public');
+            $mediaPath = $path;
+            $mediaType = 'image';
+        }
+
         $message = PatientInquiryMessage::create([
             'patient_inquiry_id' => $inquiry->id,
             'sender_user_id' => $request->user()->id,
-            'message' => $request->validated()['message'],
+            'message' => $data['message'] ?? '',
+            'media_path' => $mediaPath,
+            'media_type' => $mediaType,
         ]);
 
         $pharmacy = Pharmacy::find($inquiry->pharmacy_id);

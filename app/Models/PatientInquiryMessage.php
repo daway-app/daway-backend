@@ -16,6 +16,8 @@ class PatientInquiryMessage extends Model
         'patient_inquiry_id',
         'sender_user_id',
         'message',
+        'media_path',
+        'media_type',
         'read_at',
     ];
 

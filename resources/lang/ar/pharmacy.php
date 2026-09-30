@@ -356,6 +356,9 @@ return [
         'chat_no_messages' => 'لا توجد رسائل بعد',
         'chat_send_placeholder' => 'اكتب ردّك هنا...',
         'msg_read' => 'تمت القراءة',
+        'attach_photo' => 'إرفاق صورة',
+        'media_required' => 'يجب إرسال رسالة نصية أو صورة واحدة على الأقل.',
+        'patient_phone' => 'هاتف المريض',
     ],
 
     'profile' => [

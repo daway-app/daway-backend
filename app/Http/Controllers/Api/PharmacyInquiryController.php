@@ -14,6 +14,7 @@ use App\Services\InquiryService;
 use App\Services\PharmacyContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 use App\Contracts\FcmSender;
 
@@ -138,10 +139,23 @@ class PharmacyInquiryController extends Controller
         $pharmacy = PharmacyContext::forUser($user);
         abort_unless($pharmacy && $inquiry->pharmacy_id === $pharmacy->id, 403);
 
+        $data = $request->validated();
+        $mediaPath = null;
+        $mediaType = null;
+
+        if ($request->hasFile('media')) {
+            $file = $request->file('media');
+            $path = $file->store('patient_inquiry_media', 'public');
+            $mediaPath = $path;
+            $mediaType = 'image';
+        }
+
         $message = PatientInquiryMessage::create([
             'patient_inquiry_id' => $inquiry->id,
             'sender_user_id' => $user->id,
-            'message' => $request->validated()['message'],
+            'message' => $data['message'] ?? '',
+            'media_path' => $mediaPath,
+            'media_type' => $mediaType,
         ]);
 
         $notification = Notification::create([

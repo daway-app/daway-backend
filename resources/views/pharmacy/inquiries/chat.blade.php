@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@php
+    use Illuminate\Support\Facades\Storage;
+@endphp
+
 @section('title', __('pharmacy.inquiries.chat_title'))
 
 @section('content')
@@ -32,12 +36,17 @@
                         <i class='fas fa-user' style='color:var(--ph-teal-text);'></i>
                         <strong style='font-size:1rem;'>{{ $inquiry->user->name ?? __('pharmacy.inquiries.patient_fallback') }}</strong>
                     </div>
+                    @if($inquiry->user && $inquiry->user->phone)
+                        <span style='font-size:.85rem;color:var(--ph-ink-faint);'>
+                            <i class='fas fa-phone' style='margin-inline-end:4px;'></i>{{ $inquiry->user->phone }}
+                        </span>
+                    @endif
                     <span class='ph-badge {{ ($inquiry->status === 'new') ? 'new' : (($inquiry->status === 'answered') ? 'ans' : 'closed') }}' style='text-transform:capitalize;'>
                         {{ $inquiry->status }}
                     </span>
                 </div>
                 @if($inquiry->medicine)
-                    <div style='font-size:.85rem;color:var(--ph-ink-faint);'>
+                    <div style='font-size:.85rem;color:var(--ph-ink-faint);margin-block-start:4px;'>
                         <i class='fas fa-pills' style='margin-inline-end:6px;'></i>
                         {{ $inquiry->medicine->trade_name }}
                         @if($inquiry->medicine->strength) <small style='color:var(--ph-ink-faint);'>{{ $inquiry->medicine->strength }}</small>@endif
@@ -55,7 +64,16 @@
                     @endphp
                     <div class='ph-chat-bubble {{ $isPharmacy ? "ph-chat-mine" : "ph-chat-other" }}' data-msg-id='{{ $msg->id }}'>
                         <div class='ph-chat-text'>
-                            {{ $msg->message }}
+                            @if($msg->media_path)
+                                <a href='{{ Storage::url($msg->media_path) }}' target='_blank'>
+                                    <img src='{{ Storage::url($msg->media_path) }}' style='max-width:200px;max-height:200px;border-radius:8px;'>
+                                </a>
+                                @if($msg->message)
+                                    <div style='margin-block-start:8px;'>{{ $msg->message }}</div>
+                                @endif
+                            @else
+                                {{ $msg->message }}
+                            @endif
                         </div>
                         <div class='ph-chat-meta'>
                             <span class='ph-chat-time'>{{ $msg->created_at->format('h:i A') }}</span>
@@ -74,22 +92,102 @@
         </div>
 
         {{-- Reply form --}}
-        <form action='{{ route("pharmacy.inquiries.chat.send", $inquiry) }}' method='POST' class='ph-chat-input-wrap'>
+        <form action='{{ route("pharmacy.inquiries.chat.send", $inquiry) }}' method='POST' enctype='multipart/form-data' class='ph-chat-input-wrap'>
             @csrf
             <div class='ph-chat-input-row'>
                 <input type='text' name='message' value='{{ old('message') }}'
                        placeholder='@lang("pharmacy.inquiries.chat_send_placeholder")'
-                       maxlength='1000' autocomplete='off' required
+                       maxlength='1000' autocomplete='off'
                        style='flex:1;background:var(--ph-paper);border:1px solid var(--ph-line-soft);border-radius:var(--ph-r-md);padding:12px 16px;font-size:.95rem;color:var(--ph-ink);outline:none;transition:var(--ph-tr);'>
+                <label for='ph-chat-media' class='ph-btn ghost' style='border-radius:var(--ph-r-md);padding:12px 16px;cursor:pointer;'>
+                    <i class='fas fa-paperclip'></i>
+                </label>
+                <input type='file' id='ph-chat-media' name='media' accept='image/*' style='display:none;'>
                 <button type='submit' class='ph-btn primary' style='border-radius:var(--ph-r-md);padding:12px 20px;font-size:.95rem;'>
                     <i class='fas fa-paper-plane'></i>
                 </button>
             </div>
         </form>
     </div>
+
 @endsection
 
-@push('styles')
+    @push('scripts')
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const messagesContainer = document.querySelector('#ph-chat-messages .ph-card-body');
+        const inquiryId = {{ $inquiry->id }};
+        const pharmacyUserId = {{ $pharmacy->user_id ?? 'null' }};
+
+        function fetchMessages() {
+            fetch('/pharmacy/inquiries/' + inquiryId + '/messages', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            })
+            .then(r => r.ok ? r.json() : Promise.reject(r))
+            .then(data => {
+                const existingIds = new Set(
+                    Array.from(messagesContainer.querySelectorAll('[data-msg-id]')).map(el => parseInt(el.dataset.msgId))
+                );
+                data.data.forEach(msg => {
+                    if (!existingIds.has(msg.id)) {
+                        const isPharmacy = msg.sender_user_id === pharmacyUserId;
+                        const bubble = document.createElement('div');
+                        bubble.className = 'ph-chat-bubble ' + (isPharmacy ? 'ph-chat-mine' : 'ph-chat-other');
+                        bubble.dataset.msgId = msg.id;
+
+                        let content = '<div class="ph-chat-text">';
+                        if (msg.media_url) {
+                            content += '<a href="' + msg.media_url + '" target="_blank"><img src="' + msg.media_url + '" style="max-width:200px;max-height:200px;border-radius:8px;"></a>';
+                            if (msg.message) content += '<br><br>' + escapeHtml(msg.message);
+                        } else {
+                            content += escapeHtml(msg.message);
+                        }
+                        content += '</div>';
+
+                        const time = new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                        content += '<div class="ph-chat-meta"><span class="ph-chat-time">' + time + '</span></div>';
+
+                        bubble.innerHTML = content;
+                        messagesContainer.appendChild(bubble);
+                    }
+                });
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            })
+            .catch(err => console.error('Polling error:', err));
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        const pollInterval = setInterval(fetchMessages, 4000);
+
+        // Mark messages as read when page becomes visible
+        function markRead() {
+            fetch('/pharmacy/inquiries/' + inquiryId + '/messages?mark_read=1', {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            }).then(() => {
+                // After marking, fetch messages to update read states
+                fetchMessages();
+            }).catch(() => {});
+        }
+        markRead();
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) markRead();
+        });
+    });
+    </script>
+    @endpush
+
+    @push('styles')
 <style>
 .ph-chat-messages .ph-chat-bubble {
     display: inline-block;

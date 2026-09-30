@@ -6,6 +6,8 @@ use App\Models\PatientInquiry;
 use App\Models\PatientInquiryMessage;
 use App\Models\Pharmacy;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PharmacyInquiryChatWebTest extends TestCase
@@ -51,6 +53,8 @@ class PharmacyInquiryChatWebTest extends TestCase
 
     public function test_pharmacy_can_send_chat_message(): void
     {
+        Storage::fake('public');
+
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
         $patient = User::factory()->patient()->create();
         $inquiry = PatientInquiry::factory()->create([
@@ -106,5 +110,83 @@ class PharmacyInquiryChatWebTest extends TestCase
             ->assertOk()
             ->assertSee('هل الدواء متوفر؟')
             ->assertSee('نعم متوفر');
+    }
+
+    public function test_pharmacy_can_send_message_with_image(): void
+    {
+        Storage::fake('public');
+
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $patient = User::factory()->patient()->create();
+        $inquiry = PatientInquiry::factory()->create([
+            'user_id' => $patient->id,
+            'pharmacy_id' => $pharmacy->id,
+            'status' => 'new',
+        ]);
+
+        $this->actingAs($user);
+
+        $image = UploadedFile::fake()->image('test.png');
+
+        $response = $this->post(route('pharmacy.inquiries.chat.send', $inquiry), [
+            'media' => $image,
+        ]);
+
+        $response->assertRedirect(route('pharmacy.inquiries.chat', $inquiry));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('patient_inquiry_messages', [
+            'patient_inquiry_id' => $inquiry->id,
+            'sender_user_id' => $user->id,
+            'media_type' => 'image',
+        ]);
+    }
+
+    public function test_pharmacy_can_fetch_messages_as_json(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $patient = User::factory()->patient()->create();
+        $inquiry = PatientInquiry::factory()->create([
+            'user_id' => $patient->id,
+            'pharmacy_id' => $pharmacy->id,
+        ]);
+
+        PatientInquiryMessage::factory()->create([
+            'patient_inquiry_id' => $inquiry->id,
+            'sender_user_id' => $patient->id,
+            'message' => 'هل الدواء متوفر؟',
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->get(route('pharmacy.inquiries.messages', $inquiry));
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(1, 'data');
+    }
+
+    public function test_pharmacy_messages_json_marks_unread_as_read(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $patient = User::factory()->patient()->create();
+        $inquiry = PatientInquiry::factory()->create([
+            'user_id' => $patient->id,
+            'pharmacy_id' => $pharmacy->id,
+        ]);
+
+        $msg = PatientInquiryMessage::factory()->create([
+            'patient_inquiry_id' => $inquiry->id,
+            'sender_user_id' => $patient->id,
+            'message' => 'هل الدواء متوفر؟',
+            'read_at' => null,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->get(route('pharmacy.inquiries.messages', $inquiry) . '?mark_read=1');
+
+        $msg->refresh();
+        $this->assertNotNull($msg->read_at);
     }
 }

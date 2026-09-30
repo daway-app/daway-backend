@@ -357,6 +357,9 @@ return [
         'chat_no_messages' => 'No messages yet',
         'chat_send_placeholder' => 'Write your reply here...',
         'msg_read' => 'Read',
+        'attach_photo' => 'Attach Photo',
+        'media_required' => 'Please send at least a text message or one photo.',
+        'patient_phone' => 'Patient Phone',
     ],
 
     'profile' => [
