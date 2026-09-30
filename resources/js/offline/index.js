@@ -20,11 +20,21 @@ function seedFromPage() {
         if (!el) return;
         try {
             const rows = JSON.parse(el.textContent);
-            if (Array.isArray(rows) && rows.length) {
-                // دمج دائم: يُحدّث صفوف الصفحة الحالية في الكاش ويُعيد بناء
-                // أي صفوف فقدوها سابقاً (delta-bulkReplace القديم) — بلا حذف.
-                db.putAll(store, rows).catch(() => {});
+            if (!Array.isArray(rows) || !rows.length) return;
+
+            if (store === 'medicines') {
+                // 🛡️ الصفحة هي المصدر الموثوق لمخزن الأدوية: استبدال مُحدَّد النطاق
+                // بدل الدمج التراكمي (putAll بمفتاح id كان يُبقي صفوفاً بائتة/جزئية
+                // للأبد). نُبقي صفوف local-* التي لم تُثبَّت على السيرفر بعد.
+                db.getAll('medicines').then((cached) => {
+                    const localOnly = cached.filter((r) => String(r.id).startsWith('local-'));
+                    db.bulkReplace('medicines', [...rows, ...localOnly]).catch(() => {});
+                }).catch(() => {});
+                return;
             }
+
+            // مخزنا المخزون والاستفسارات: دمج (يُحدّث صفوف الصفحة الحالية بلا حذف).
+            db.putAll(store, rows).catch(() => {});
         } catch (e) { /* invalid payload — ignore */ }
     });
 }

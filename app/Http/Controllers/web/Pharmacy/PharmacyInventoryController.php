@@ -25,7 +25,11 @@ class PharmacyInventoryController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+        // ⚡ أداء: نفس إصلاح PharmacyMedicineController — إعادة استخدام العلاقة
+        // التي ثبّتها وسيط profile.complete بدل استعلام صيدلية مكرر.
+        $pharmacy = $user->relationLoaded('pharmacy') && $user->pharmacy
+            ? $user->pharmacy
+            : Pharmacy::where('user_id', $user->id)->firstOrFail();
         $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
 
         $q = trim((string) $request->query('q', ''));
@@ -63,10 +67,14 @@ class PharmacyInventoryController extends Controller
         }
 
         if ($q !== '') {
+            // 🔴 شروط الـ OR داخل closure متداخل — نفس إصلاح PharmacyMedicineController:
+            // بدون التجميع تفلت شروط الـ OR من نطاق مرشّح pharmacy_id.
             $rows->whereHas('medicine', function ($mq) use ($q) {
-                $mq->where('trade_name', 'like', "%{$q}%")
-                    ->orWhere('active_ingredient', 'like', "%{$q}%")
-                    ->orWhere('trade_name_ar', 'like', "%{$q}%");
+                $mq->where(function ($inner) use ($q) {
+                    $inner->where('trade_name', 'like', "%{$q}%")
+                        ->orWhere('active_ingredient', 'like', "%{$q}%")
+                        ->orWhere('trade_name_ar', 'like', "%{$q}%");
+                });
             });
         }
 

@@ -91,7 +91,6 @@
                                         </div>
                                         <div class='med-cell-text'>
                                             <strong title='{{ $pm->medicine->trade_name }}'>{{ $pm->medicine->trade_name }}</strong>
-                                            <small style='color:var(--ph-ink-faint);' title='{{ $pm->medicine->strength ?? '' }}'>{{ $pm->medicine->strength ?? '' }}</small>
                                         </div>
                                     </div>
                                 </td>
@@ -137,7 +136,6 @@
                 'trade_name' => $pm->medicine->trade_name ?? '',
                 'trade_name_ar' => $pm->medicine->trade_name_ar ?? '',
                 'active_ingredient' => $pm->medicine->active_ingredient ?? '',
-                'strength' => $pm->medicine->strength ?? '',
             ],
         ])->values()->all();
     @endphp

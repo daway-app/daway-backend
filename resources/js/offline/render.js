@@ -38,28 +38,6 @@ function renderInventory(items) {
     }).join('');
 }
 
-function renderMedicines(items) {
-    const tbody = document.querySelector('[data-offline-page="medicines"] tbody');
-    if (!tbody) return;
-    const statusText = { ok: 'متوفر', low: 'منخفض', out: 'غير متوفر' };
-    tbody.innerHTML = items.map((item) => {
-        const qty = Number(item.quantity) || 0;
-        const status = statusFor(qty);
-        const med = item.medicine || {};
-        const tradeName = med.trade_name || item.trade_name || '';
-        const ingredient = med.active_ingredient || item.active_ingredient || '';
-        return '<tr data-status=\'' + status + '\' data-min=\'10\'>' +
-            '<td><div style=\'display:flex;align-items:center;gap:12px;\'><div class=\'ph-med-thumb\'><i class=\'fas fa-pills\'></i></div>' +
-                '<div><strong>' + escapeHtml(tradeName) + '</strong><br><small style=\'color:var(--ph-ink-faint);\'>' + escapeHtml(med.strength || item.strength || '') + '</small></div></div></td>' +
-            '<td>' + escapeHtml(ingredient) + '</td>' +
-            '<td>' + Number(item.price || 0).toFixed(2) + ' شيكل</td>' +
-            '<td>' + qty + '</td>' +
-            '<td>' + badge(status, statusText[status]) + '</td>' +
-            '<td></td>' +
-        '</tr>';
-    }).join('');
-}
-
 function renderInquiries(items) {
     const tbody = document.querySelector('[data-offline-page="inquiries"] tbody');
     if (!tbody) return;
@@ -117,7 +95,12 @@ export const render = {
     renderFromCache() {
         return Promise.all([
             db.getAll('inventory').then((rows) => { renderInventory(rows); attachSteppers(document); }),
-            db.getAll('medicines').then((rows) => renderMedicines(rows)),
+            // 🔴 جدول الأدوية (/pharmacy/medicines) لا يُعاد بناؤه من الكاش إطلاقًا.
+            // السبب: sw.js يجعل التنقّل network-only، فإن وصل هذا الـHTML فهو مأخوذ
+            // من السيرفر ومكتمل أصلاً (صورة حقيقية + زرّا تعديل/حذف + عملة مترجمة).
+            // إعادة بنائه من الكاش كانت تهدم الصفوف الكاملة وتستبدلها بقالب ناقص
+            // (أيقونة بديلة دائمًا، خلية إجراءات فارغة) ⇒ خسارة صافية بلا أي مكسب.
+            // عند انقطاع الاتصال يُخدَم هيكل /offline العام الذي لا يحتوي هذا الجدول.
             db.getAll('inquiries').then((rows) => renderInquiries(rows)),
         ]);
     },

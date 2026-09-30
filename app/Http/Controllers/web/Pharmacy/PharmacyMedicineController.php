@@ -43,7 +43,12 @@ class PharmacyMedicineController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+        // ⚡ أداء: وسيط profile.complete حمّل العلاقة مسبقًا عبر setRelation
+        // (EnsureProfileComplete.php:33-40) ونختار منه `id` فقط — وهو كل ما نحتاج
+        // هنا. إعادة الاستعلام كانت رحلة DB زائدة على كل تحميل صفحة.
+        $pharmacy = $user->relationLoaded('pharmacy') && $user->pharmacy
+            ? $user->pharmacy
+            : Pharmacy::where('user_id', $user->id)->firstOrFail();
         $threshold = PharmacyMedicine::LOW_STOCK_THRESHOLD;
 
         $q = trim((string) $request->query('q', ''));
@@ -61,10 +66,16 @@ class PharmacyMedicineController extends Controller
             ->with('medicine');
 
         if ($q !== '') {
+            // 🔴 شروط الـ OR داخل closure متداخل: بدون التجميع يصبح المنطق
+            // `trade_name LIKE ? OR active_ingredient LIKE ? OR ...` مباشرةً في
+            // الـ EXISTS، فيُطابق دواءً لا تملكه هذه الصيدلية قد يمرّ عبر أي صف
+            // آخر. التجميع يجعلها `(A OR B OR C)` داخل نطاق العلاقة فقط.
             $query->whereHas('medicine', function ($mq) use ($q) {
-                $mq->where('trade_name', 'like', "%{$q}%")
-                    ->orWhere('active_ingredient', 'like', "%{$q}%")
-                    ->orWhere('trade_name_ar', 'like', "%{$q}%");
+                $mq->where(function ($inner) use ($q) {
+                    $inner->where('trade_name', 'like', "%{$q}%")
+                        ->orWhere('active_ingredient', 'like', "%{$q}%")
+                        ->orWhere('trade_name_ar', 'like', "%{$q}%");
+                });
             });
         }
 

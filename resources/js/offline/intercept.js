@@ -91,7 +91,6 @@ function handleMedicineCreate(form) {
                     trade_name: payload.trade_name || '',
                     trade_name_ar: payload.trade_name_ar || '',
                     active_ingredient: payload.active_ingredient || '',
-                    strength: '',
                 },
             }).catch(() => {});
         } catch (e) { /* non-fatal */ }
