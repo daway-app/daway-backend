@@ -4,9 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetAppLocale
@@ -32,13 +30,7 @@ class SetAppLocale
         }
 
         if (! $locale) {
-            try {
-                // بلا كاش هنا: CACHE_STORE=file على الإنتاج ليس آمناً للكتابات
-                // المتزامنة (فساد الملف → 500 شامل). الاستعلام رخيص.
-                $locale = DB::table('settings')->where('key', 'default_language')->value('value');
-            } catch (\Throwable) {
-                $locale = null;
-            }
+            $locale = $this->defaultLocaleFromSettings();
         }
 
         if (! $locale) {
@@ -52,6 +44,36 @@ class SetAppLocale
         app()->setLocale($locale);
 
         return $next($request);
+    }
+
+    /**
+     * اللغة الافتراضية من جدول `settings` (default_language).
+     *
+     * 🔴 أداء (Phase 2): الحل السابق كان استعلامًا خامًا في `handle()` يُنفَّذ في
+     * كل طلب لا يملك `session('locale')` — أي كل طلب زائر (الصفحات العامة
+     * /login و/register وصفحات الأوفلاين…). كل استعلام = ذهاب-وإياب على Aiven.
+     *
+     * الآن: `once()` يحصر القراءة في **مرة واحدة لكل طلب** مهما استُدعي الوسيط
+     * (وسيطان: web + api، وكلاهما يشير إلى هذه الدالة). هذا Laravel-native:
+     * لا كاش جديد، ولا مخزن، ولا كاش-إنفاليديشن.
+     *
+     * ⚠️ لماذا لا نستخدم Cache::remember؟ لأن `CACHE_STORE=file` على الإنتاج
+     *    (render.yaml) ليس آمنًا للكتابات المتزامنة من عمّال متعددين — فساد
+     *    الملف ⇒ 500 شامل. و`Cache::tags` غير مدعوم على file/database أصلًا.
+     *    القرار المعماري القائم: لا كاش لهذا المفتاح. (التقرير: MEMORY.md §9)
+     *
+     * ⚠️ جدول `settings` يُحدَّث من لوحة الأدمن (SettingController::update).
+     *    لا كاش ⇒ القيمة الجديدة تُقرأ فورًا. وهذا سلوك مقصود ومحفوظ هنا.
+     */
+    private function defaultLocaleFromSettings(): ?string
+    {
+        return once(function (): ?string {
+            try {
+                return DB::table('settings')->where('key', 'default_language')->value('value');
+            } catch (\Throwable) {
+                return null;
+            }
+        });
     }
 
     /**

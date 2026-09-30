@@ -16,9 +16,15 @@ return [
     | Supported: "file", "cookie", "database", "memcached",
     |            "redis", "dynamodb", "array"
     |
+    | 🔴 Phase 2: الافتراضي هنا `file` لا `database`.
+    | السبب: كانت هذه القيمة الاحتياطية تُفعَّل في الإنتاج (render.yaml لم يكن
+    | يضبط SESSION_DRIVER) ⇒ كل طلب ويب = قراءة + كتابة على جدول sessions في
+    | Aiven عبر الشبكة العامة. `file` يقرأ/يكتب داخل الحاوية بلا شبكة.
+    | ⚠️ أي بيئة متعددة النسخ (multi-instance) تحتاج Redis للجلسات.
+    |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    'driver' => env('SESSION_DRIVER', 'file'),
 
     /*
     |--------------------------------------------------------------------------

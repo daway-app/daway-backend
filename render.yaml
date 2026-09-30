@@ -30,6 +30,17 @@ services:
         value: "3"
       - key: CACHE_STORE
         value: file
+      # 🔴 أداء (Phase 2): كانت غير مضبوطة ⇒ الإنتاج يورث الافتراضي في
+      # config/session.php وهو `database` ⇒ كل طلب ويب = قراءة + كتابة على
+      # جدول sessions في Aiven (ذهاب-وإياب WAN ×2 لكل صفحة، مع قفل صف).
+      # `file` يقرأ/يكتب داخل الحاوية (storage/framework/sessions — موجود
+      # ومنشأ في Dockerfile) بلا أي شبكة. الجلسات تبقى صالحة طوال عمر الحاوية.
+      #
+      # ⚠️ ملاحظة نشر: على Render free بحاوية واحدة هذا آمن تمامًا. لو رُقّيت
+      #    الخطة لاحقًا إلى أكثر من نسخة، `file` لن يشترك بينها ⇒ يلزم Redis
+      #    (مستبعَد حاليًا بقرار عبود) أو العودة إلى database.
+      - key: SESSION_DRIVER
+        value: file
       - key: SESSION_SECURE_COOKIE
         value: "true"
       # سجل الأخطاء على stderr حتى يظهر في لوحة تحكم Render (ملفات السجل غير مرئية)
