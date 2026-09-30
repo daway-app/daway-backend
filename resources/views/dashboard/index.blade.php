@@ -408,25 +408,15 @@
             }
         });
 
-        // ===== التحميل المسبق: عند مرور المؤشر/التركيز على رابط تنقّل =====
-        // كان: 6 صفحات كاملة + API تُطلب تلقائياً بعد الدخول (كل 400ms) — 6 عمليات render كاملة
-        // على السيرفر. الآن: تُسخَّن الصفحة فقط عندما يُبدي المستخدم نية الانتقال إليها.
-        (function () {
-            if (typeof fetch !== 'function') return;
-            var warmed = Object.create(null);
-            function warm(url) {
-                if (!url || warmed[url]) return;
-                warmed[url] = true;
-                try {
-                    fetch(url, { credentials: 'same-origin', cache: 'force-cache' });
-                } catch (e) { /* ignore */ }
-            }
-            document.querySelectorAll('.nav-item[href]').forEach(function (link) {
-                var url = link.getAttribute('href');
-                if (!url || url.charAt(0) !== '/' || url.indexOf('//') === 0) return;
-                link.addEventListener('mouseenter', function () { warm(url); }, { once: true });
-                link.addEventListener('focus', function () { warm(url); }, { once: true });
-            });
-        })();
+        // ===== Phase 6: أُزيل «التحميل المسبق» (كان بلا فائدة ومُكلفًا) =====
+        // كان: عند مرور المؤشر على رابط تنقّل يُنفَّذ fetch(url, {cache:'force-cache'})
+        //       لتسخين الكاش قبل النقر. لكنه **لا يعمل** على الإطلاق:
+        //   1) طلب التسخين mode='cors' لا 'navigate'، بينما sw.js يُعيد التنقّل
+        //      من فرع `request.mode === 'navigate'` (network-only) ⇒ لا يتقاطعان.
+        //   2) التنقّل في sw.js = network-only دائمًا (v6 أمني)، ولا توجد أي
+        //      headers كاش على HTML ⇒ لا نسخة مخزّنة يُعاد استخدامها أصلًا.
+        //   3) لذلك كل تسخين = render كامل مصادَق على السيرفر (استعلامات paginate)
+        //      بلا أي تسريع للنقر ⇒ traffic إضافي فقط.
+        // النتيجة: حذفه لا يغيّر أي سلوك مرئي — يمنع فقط طلبات زائدة بلا نفع.
     </script>
 @endsection
