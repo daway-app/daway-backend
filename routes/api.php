@@ -94,6 +94,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ط¨ط¯ظˆظ† ط£ط³ظ…ط§ط، طµط±ظٹط­ط© â€” ط§ظ„ظ…ط³ط§ط± ط§ظ„ظˆظٹط¨ ظٹط­ظ…ظ„ ط§ظ„ط§ط³ظ… ظ†ظپط³ظ‡ (route('patient.inquiries.store'))
     Route::get('patient/inquiries', [PatientInquiryController::class, 'index']);
     Route::post('patient/inquiries', [PatientInquiryController::class, 'store'])->middleware('throttle:writes');
+    Route::get('patient/inquiries/{inquiry}/messages', [PatientInquiryController::class, 'messages']);
+    Route::post('patient/inquiries/{inquiry}/messages', [PatientInquiryController::class, 'sendMessage'])->middleware('throttle:writes');
 
     // Patient-scoped routes (Phase 9 â€” SRS endpoints).
     // ظ…ظ„ط§ط­ط¸ط© ط¹ظ„ظ‰ طھط±طھظٹط¨ ط§ظ„ظ…ط³ط§ط±ط§طھ: `medicines/search` ظٹط¬ط¨ ط£ظ† ظٹط³ط¨ظ‚ `medicines/{medicine}`
@@ -156,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('inquiries', [PharmacyInquiryController::class, 'index']);
         Route::get('inquiries/{inquiry}', [PharmacyInquiryController::class, 'show']);
         Route::put('inquiries/{inquiry}', [PharmacyInquiryController::class, 'update']);
+        Route::get('inquiries/{inquiry}/messages', [PharmacyInquiryController::class, 'messages']);
+        Route::post('inquiries/{inquiry}/messages', [PharmacyInquiryController::class, 'sendMessage'])->middleware('throttle:writes');
         Route::get('ratings', [PharmacyRatingController::class, 'index']);
 
         Route::get('medicines/search', [PharmacyMedicineController::class, 'search']);

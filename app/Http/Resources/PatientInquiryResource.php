@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\PatientInquiry;
+use App\Models\PatientInquiryMessage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -32,6 +33,18 @@ class PatientInquiryResource extends JsonResource
                 'trade_name' => $this->medicine->trade_name,
                 'active_ingredient' => $this->medicine->active_ingredient,
             ] : null),
+            'last_message' => $this->whenLoaded('messages', function () {
+                $last = $this->messages->last();
+                return $last ? [
+                    'id' => $last->id,
+                    'sender_user_id' => $last->sender_user_id,
+                    'message' => $last->message,
+                    'created_at' => $last->created_at?->toDateTimeString(),
+                ] : null;
+            }),
+            'unread_messages_count' => $this->whenLoaded('messages', function () {
+                return $this->messages->whereNull('read_at')->count();
+            }),
         ];
     }
 }

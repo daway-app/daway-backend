@@ -22,6 +22,8 @@ class FcmPushService implements FcmSender
         'low_stock' => 'تنبيه: مخزون منخفض',
         'out_of_stock' => 'تنبيه: نفد المخزون',
         'new_inquiry' => 'استفسار جديد من مريض',
+        'inquiry_answered' => 'رد الصيدلية',
+        'chat_message' => 'رسالة جديدة',
         'reminder' => 'تذكير بتناول الدواء',
     ];
 

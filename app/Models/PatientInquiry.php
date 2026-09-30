@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class PatientInquiry extends Model
 {
@@ -29,6 +31,13 @@ class PatientInquiry extends Model
         'replied_at',
     ];
 
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['status', 'reply', 'availability_status'])
+            ->logOnlyDirty();
+    }
+
     protected function casts(): array
     {
         return [
@@ -49,5 +58,20 @@ class PatientInquiry extends Model
     public function medicine(): BelongsTo
     {
         return $this->belongsTo(Medicine::class);
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(PatientInquiryMessage::class, 'patient_inquiry_id')->oldest('created_at');
+    }
+
+    public function lastMessage(): ?PatientInquiryMessage
+    {
+        return $this->hasOne(PatientInquiryMessage::class, 'patient_inquiry_id')->latest('created_at')->first();
+    }
+
+    public function unreadMessagesCount(): int
+    {
+        return $this->messages()->whereNull('read_at')->count();
     }
 }
