@@ -21,13 +21,15 @@ final class FreeProvidersTest extends TestCase
 {
     private function moh(): MohMedicine
     {
-        return MohMedicine::create([
-            'trade_name' => 'PANADOL EXTRA 1',
-            'generic_name' => null,
-            'manufacturer' => 'GSK',
-            'dosage_form' => 'Tablet',
-            'moh_product_id' => 81001,
-        ]);
+        return MohMedicine::firstOrCreate(
+            ['moh_product_id' => 81001],
+            [
+                'trade_name' => 'PANADOL EXTRA 1',
+                'generic_name' => null,
+                'manufacturer' => 'GSK',
+                'dosage_form' => 'Tablet',
+            ]
+        );
     }
 
     private function medicineQuery(): MedicineQuery

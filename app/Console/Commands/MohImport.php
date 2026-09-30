@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 
 class MohImport extends Command
 {
-    protected $signature = 'moh:import {--file=database/data/moh_medicines.json}';
+    protected $signature = 'moh:import {--file=database/data/moh_medicines.json} {--report-conflicts : Report cross-field conflicts without merging}';
 
     protected $description = 'استيراد كتالوج أدوية وزارة الصحة من ملف ثابت محلي (بدون الحاجة للإنترنت)';
 
@@ -71,13 +71,50 @@ class MohImport extends Command
         $this->info("جاري استيراد {$count} دواء...");
         Log::info('moh:import بدأ الاستيراد', ['rows' => $count]);
 
-        DB::transaction(function () use ($rows) {
-            MohMedicine::query()->delete();
-            $chunks = array_chunk($rows, 500);
-            foreach ($chunks as $index => $chunk) {
-                MohMedicine::insert($chunk);
-                Log::info('moh:import تم إدخال مجموعة', ['chunk' => $index + 1, 'rows' => count($chunk)]);
+        $reportConflicts = (bool) $this->option('report-conflicts');
+        $conflictCount = 0;
+
+        DB::transaction(function () use ($rows, $reportConflicts, &$conflictCount) {
+            $created = 0;
+            $updated = 0;
+            $skipped = 0;
+
+            foreach ($rows as $row) {
+                $productId = $row['moh_product_id'] ?? null;
+                $drugId = $row['moh_drug_id'] ?? null;
+
+                if (! $productId && ! $drugId) {
+                    $skipped++;
+                    continue;
+                }
+
+                if ($reportConflicts && $productId && $drugId) {
+                    $existingByProduct = MohMedicine::where('moh_product_id', $productId)->first();
+                    $existingByDrug = MohMedicine::where('moh_drug_id', $drugId)->first();
+                    if ($existingByProduct && $existingByDrug && $existingByProduct->id !== $existingByDrug->id) {
+                        $this->warn("CONFLICT: moh_product_id {$productId} and moh_drug_id {$drugId} point to different rows");
+                        $conflictCount++;
+                        $skipped++;
+                        continue;
+                    }
+                }
+
+                if ($productId) {
+                    $existing = MohMedicine::where('moh_product_id', $productId)->first();
+                } elseif ($drugId) {
+                    $existing = MohMedicine::where('moh_drug_id', $drugId)->first();
+                }
+
+                if (isset($existing)) {
+                    $existing->update($row);
+                    $updated++;
+                } else {
+                    MohMedicine::create($row);
+                    $created++;
+                }
             }
+
+            $this->info("تم الاستيراد: {$created} جديد، {$updated} محدّث، {$skipped} تخطيت.");
         });
 
         // إبطال الكاش المرتبط بكتالوج الوزارة بعد نجاح الاستيراد
@@ -89,6 +126,11 @@ class MohImport extends Command
         $finalCount = MohMedicine::count();
         $this->info('تم الاستيراد بنجاح: '.$finalCount.' دواء.');
         Log::info('moh:import انتهى', ['final_count' => $finalCount]);
+
+        if ($reportConflicts && $conflictCount > 0) {
+            $this->error("تم العثور على {$conflictCount} تعارض(ات) — لم يتم الدمج أي إنشاء صفوف جديدة.");
+            return self::FAILURE;
+        }
 
         return self::SUCCESS;
     }
