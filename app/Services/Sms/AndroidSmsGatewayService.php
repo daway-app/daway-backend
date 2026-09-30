@@ -65,6 +65,16 @@ final class AndroidSmsGatewayService implements SmsProvider
 
         try {
             $startedAt = microtime(true);
+
+            Log::info('android_sms_gateway_debug_before', [
+                'base_url' => rtrim($this->baseUrl, '/'),
+                'endpoint' => self::ENDPOINT,
+                'timeout' => $this->timeout,
+                'has_username' => ! empty($this->username),
+                'has_password' => ! empty($this->password),
+                'has_device_id' => $this->deviceId !== '',
+            ]);
+
             $payload = [
                 'textMessage' => [
                     'text' => $message,
@@ -88,6 +98,12 @@ final class AndroidSmsGatewayService implements SmsProvider
                 'success' => $response->successful(),
             ]);
 
+            Log::info('android_sms_gateway_debug_after', [
+                'status' => $response->status(),
+                'successful' => $response->successful(),
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+            ]);
+
             if ($response->successful()) {
                 $data = $response->json();
                 // Android SMS Gateway يُرجع معرف الرسالة أو ببساطة 200 OK
@@ -103,12 +119,24 @@ final class AndroidSmsGatewayService implements SmsProvider
 
             return $this->result(false, null, 'فشل إرسال الرسالة: '.$response->status());
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::info('android_sms_gateway_debug_exception', [
+                'exception_class' => get_class($e),
+                'message' => $e->getMessage(),
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+            ]);
+
             Log::warning('android_sms_gateway_connection_failed', [
                 'phone' => self::maskPhone($phone),
             ]);
 
             return $this->result(false, null, 'لا يمكن الاتصال بـ Android SMS Gateway');
         } catch (\Throwable $e) {
+            Log::info('android_sms_gateway_debug_exception', [
+                'exception_class' => get_class($e),
+                'message' => $e->getMessage(),
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+            ]);
+
             Log::warning('android_sms_gateway_unexpected_error', [
                 'phone' => self::maskPhone($phone),
                 'error' => $e->getMessage(),

@@ -148,7 +148,7 @@ class AuthController extends Controller
     public function sendOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'phone' => 'required|string|max:20',
+            'phone' => ['required', 'string', 'max:20', 'digits:10'],
         ]);
 
         if ($validator->fails()) {
@@ -196,7 +196,7 @@ class AuthController extends Controller
         // المرحلة 1: صحة صيغة الهاتف وOTP — عقد OTP القديم (400) للمستخدم الموجود،
         // و422 بعلامة registration_required للرقم الجديد
         $validator = Validator::make($request->all(), [
-            'phone' => 'required|string|max:20',
+            'phone' => ['required', 'string', 'max:20', 'digits:10'],
             'otp' => 'required|digits:6',
         ]);
 
@@ -244,14 +244,24 @@ class AuthController extends Controller
         }
 
         // المرحلة 2: بعد نجاح OTP فقط — بيانات التسجيل مطلوبة لإنشاء حساب جديد
-        // الموقع إجباري (إحداثيات GPS من Flutter)
+        // الموقع اختياري (قد يرفض المستخدم منحه، أو قد لا يكون GPS متاحاً)
+        // العمر إجباري — إما كعمر عدد صحيح أو كتاريخ ميلاد
         if (! $userExists) {
             $regValidator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
-                'birth_date' => 'required|date|before_or_equal:today',
-                'latitude' => 'required|numeric|between:-90,90',
-                'longitude' => 'required|numeric|between:-180,180',
+                'age' => 'required|integer|min:1|max:120',
+                'birth_date' => 'nullable|date|before_or_equal:today',
+                'latitude' => 'nullable|numeric|between:-90,90',
+                'longitude' => 'nullable|numeric|between:-180,180',
                 'notifications_enabled' => 'nullable|boolean',
+                'terms_accepted' => 'required|boolean|accepted',
+            ], [
+                'age.required' => 'العمر مطلوب',
+                'age.integer' => 'العمر يجب أن يكون رقمًا صحيحًا',
+                'age.min' => 'العمر غير صالح',
+                'age.max' => 'العمر غير صالح',
+                'terms_accepted.required' => 'يجب قبول الشروط والأحكام',
+                'terms_accepted.accepted' => 'يجب قبول الشروط والأحكام',
             ]);
 
             if ($regValidator->fails()) {
@@ -275,15 +285,23 @@ class AuthController extends Controller
                 // M-12: سباق أول دخول متزامن لنفس الرقم — users.phone unique يرفض الخاسر
                 // بـ 500؛ نلتقطها ونعيد الجلب ونكمل كدخول مستخدم موجود
                 try {
+                    // إذا أرسل العمر كرقم، احوّله إلى birth_date
+                    $birthDate = $request->input('birth_date');
+                    if (! $birthDate && $request->filled('age')) {
+                        $birthDate = now()->subYears((int) $request->input('age'))->toDateString();
+                    }
+
                     $user = User::create([
                         'name' => $request->string('name')->trim()->toString(),
                         'email' => null,
                         'phone' => $request->phone,
                         'password' => Hash::make(Str::random(32)),
-                        'birth_date' => $request->birth_date,
-                        'latitude' => $request->latitude,
-                        'longitude' => $request->longitude,
+                        'birth_date' => $birthDate,
+                        'latitude' => $request->input('latitude'),
+                        'longitude' => $request->input('longitude'),
                         'notifications_enabled' => $request->boolean('notifications_enabled'),
+                        'terms_accepted' => true,
+                        'terms_accepted_at' => now(),
                     ]);
                 } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
                     $user = User::where('phone', $request->phone)->first();
@@ -336,6 +354,9 @@ class AuthController extends Controller
                     'phone' => $user->phone,
                     'role' => $user->role,
                     'is_new' => $isNew,
+                    'age' => $user->birth_date ? $user->birth_date->age : null,
+                    'terms_accepted' => (bool) $user->terms_accepted,
+                    'notifications_enabled' => (bool) $user->notifications_enabled,
                 ],
                 'token' => $token,
             ],
@@ -385,6 +406,11 @@ class AuthController extends Controller
     {
         try {
             $sms = app(SmsProvider::class);
+
+            Log::info('android_sms_gateway_debug_dispatch', [
+                'provider_class' => get_class($sms),
+                'provider_enabled' => $sms->enabled(),
+            ]);
 
             if (! $sms->enabled()) {
                 return; // SMSGate غير مهيأ — no-op (نفس سلوك OTP الناتج في الاستجابة)
