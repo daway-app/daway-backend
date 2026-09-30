@@ -63,16 +63,10 @@ class PharmacyDashboardController extends Controller
         // 3. حالة الصيدلية (مفتوحة/مغلقة)
         $isPharmacyOpen = \App\Support\PharmacyAvailability::isOpenNow($pharmacy);
 
-        // 4. جدول أدوية صيدليته
-        $pharmacyMedicines = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
-            ->with('medicine')
-            ->latest()
-            ->paginate(5); // Paginate for the dashboard table
-
-        // 5. آخر التقييمات الواردة لصيدليته
+        // 4. آخر التقييمات الواردة لصيدليته
         $latestRatings = $pharmacy->ratings()->with('user')->latest()->take(5)->get();
 
-        // 6. بيانات مخطط النشاط الأسبوعي (آخر 7 أيام) — M-24: استعلامان GROUP BY
+        // 5. بيانات مخطط النشاط الأسبوعي (آخر 7 أيام) — M-24: استعلامان GROUP BY
         //    بدل 14 whereDate (غير sargable، لا يستفيدان من أي فهرس)
         $arabicDays = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
         $weekStart = now()->subDays(6)->startOfDay();
@@ -123,7 +117,6 @@ class PharmacyDashboardController extends Controller
             'outOfStockCount',
             'averageRating',
             'isPharmacyOpen',
-            'pharmacyMedicines',
             'latestRatings',
             'chartData',
             'newInquiries',
