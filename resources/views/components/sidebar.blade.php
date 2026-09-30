@@ -106,11 +106,10 @@
                         <span class='nav-icon'><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/><polyline points='3.27 6.96 12 12.01 20.73 6.96'/><line x1='12' y1='22.08' x2='12' y2='12'/></svg></span>
                         <span class='nav-text'>@lang('pharmacy.sidebar.inventory')</span>
                     </a>
-                    @php $isPharmacyBulkImport = request()->routeIs('pharmacy.inventory.import.*'); @endphp
-                    <a href='{{ route("pharmacy.inventory.import.index") }}' class='nav-item {{ $isPharmacyBulkImport ? "active" : "" }}'>
-                        <span class='nav-icon'><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg></span>
-                        <span class='nav-text'>@lang('pharmacy.sidebar.bulk_import')</span>
-                    </a>
+                    <button type="button" class="nav-item nav-toggle" id="widget_trigger" aria-expanded="false" aria-controls="addMedicineWidgetSection">
+                        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>
+                        <span class="nav-text">@lang('pharmacy.sidebar_widget.add_medicine_card')</span>
+                    </button>
                     @php $isPharmacyInquiries = request()->routeIs('pharmacy.inquiries.*'); @endphp
                     <a href='{{ route("pharmacy.inquiries.index") }}' class='nav-item {{ $isPharmacyInquiries ? "active" : "" }}'>
                         <span class='nav-icon'><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg></span>
@@ -135,7 +134,7 @@
 
                 <!-- Section: Add Medicine Widget (only for pharmacy role) -->
                 @if(auth()->user()->role === 'pharmacy')
-                    <div class="sidebar-widget-section">
+                    <div class="sidebar-widget-section" id="addMedicineWidgetSection" style="display:none;">
                         <div class="sidebar-widget-card" id="addMedicineWidget">
                             <div class="widget-header">
                                 <h3 class="widget-title">@lang('pharmacy.sidebar_widget.add_medicine_card')</h3>
@@ -178,9 +177,6 @@
                                     </div>
                                 </div>
                             </form>
-                            <div id="widget_trigger" class="widget-trigger">
-                                <button type="button" class="btn-primary btn-block">@lang('pharmacy.sidebar_widget.add_medicine_card')</button>
-                            </div>
                         </div>
                     </div>
                 @endif
@@ -268,8 +264,8 @@
     if (!widget) return;
 
     var form = document.getElementById('addMedicineForm');
-    var triggerWrap = document.getElementById('widget_trigger');
-    var triggerBtn = triggerWrap ? triggerWrap.querySelector('button') : null;
+    var triggerBtn = document.getElementById('widget_trigger');
+    var widgetSection = document.getElementById('addMedicineWidgetSection');
     var searchInput = document.getElementById('widget_search');
     var resultsBox = document.getElementById('widget_search_results');
     var medId = document.getElementById('widget_medicine_id');
@@ -325,12 +321,22 @@
         barcodeStatus.style.color = ok ? '#15803d' : '#b91c1c';
     }
 
-    // a. Trigger button click → show form, hide trigger, focus search.
-    if (triggerBtn && triggerWrap) {
+    // a. Trigger nav-item click → toggle the quick-add card, focus search when opening.
+    if (triggerBtn) {
         triggerBtn.addEventListener('click', function () {
-            form.style.display = '';
-            triggerWrap.style.display = 'none';
-            if (searchInput) searchInput.focus();
+            var isOpen = widgetSection && widgetSection.style.display !== 'none';
+            if (isOpen) {
+                if (widgetSection) widgetSection.style.display = 'none';
+                form.style.display = 'none';
+                triggerBtn.setAttribute('aria-expanded', 'false');
+                triggerBtn.classList.remove('active');
+            } else {
+                if (widgetSection) widgetSection.style.display = '';
+                form.style.display = '';
+                triggerBtn.setAttribute('aria-expanded', 'true');
+                triggerBtn.classList.add('active');
+                if (searchInput) searchInput.focus();
+            }
         });
     }
 
@@ -528,7 +534,11 @@
             }
             hideActionButtons();
             form.style.display = 'none';
-            if (triggerWrap) triggerWrap.style.display = '';
+            if (widgetSection) widgetSection.style.display = 'none';
+            if (triggerBtn) {
+                triggerBtn.setAttribute('aria-expanded', 'false');
+                triggerBtn.classList.remove('active');
+            }
         });
     }
 })();
