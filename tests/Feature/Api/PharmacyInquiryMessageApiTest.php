@@ -51,9 +51,14 @@ class PharmacyInquiryMessageApiTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonCount(2, 'data')
             ->assertJsonStructure([
-                'data' => [['id', 'inquiry_id', 'sender_user_id', 'message', 'is_read', 'created_at']],
+                'data' => [['id', 'inquiry_id', 'sender_user_id', 'message', 'is_read', 'created_at', 'is_mine']],
                 'pagination' => ['total', 'per_page', 'current_page', 'last_page'],
             ]);
+
+        $patientMsg = $response->json('data.0');
+        $pharmacyMsg = $response->json('data.1');
+        $this->assertFalse($patientMsg['is_mine']);
+        $this->assertTrue($pharmacyMsg['is_mine']);
     }
 
     public function test_pharmacy_can_send_message_to_inquiry(): void

@@ -22,6 +22,9 @@ class PatientInquiryMessageResource extends JsonResource
             'is_read' => $this->read_at !== null,
             'read_at' => $this->read_at?->toDateTimeString(),
             'created_at' => $this->created_at?->toDateTimeString(),
+            'is_mine' => isset($this->sender_user_id)
+                ? $this->sender_user_id === optional(request()->user())->id
+                : false,
         ];
     }
 }

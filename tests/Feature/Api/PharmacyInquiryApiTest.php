@@ -37,11 +37,41 @@ class PharmacyInquiryApiTest extends TestCase
             ->assertJsonPath('counts.answered', 1)
             ->assertJsonPath('counts.closed', 1)
             ->assertJsonStructure([
-                'data',
+                'data' => [['id', 'status', 'user' => ['id', 'name']]],
                 'counts' => ['new', 'answered', 'closed'],
                 'pagination' => ['total', 'per_page', 'current_page', 'last_page'],
             ])
             ->assertJsonPath('pagination.total', 3);
+    }
+
+    public function test_pharmacy_inquiries_return_distinct_user_ids_for_same_name_patients(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+
+        // مريضان بنفس الاسم لكن مع user.id مختلف — يجب أن يُرجع التطبيق معرفيهما الحقيقيين
+        $patientA = User::factory()->patient()->create(['name' => 'محمد أحمد']);
+        $patientB = User::factory()->patient()->create(['name' => 'محمد أحمد']);
+
+        $inquiryA = PatientInquiry::factory()->create(['pharmacy_id' => $pharmacy->id, 'user_id' => $patientA->id]);
+        $inquiryB = PatientInquiry::factory()->create(['pharmacy_id' => $pharmacy->id, 'user_id' => $patientB->id]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/pharmacy/inquiries');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(2, 'data');
+
+        $ids = [];
+        foreach ($response->json('data') as $item) {
+            $this->assertSame('محمد أحمد', $item['user']['name']);
+            $ids[] = $item['user']['id'];
+        }
+
+        $this->assertSame($inquiryA->user_id, $ids[0]);
+        $this->assertSame($inquiryB->user_id, $ids[1]);
+        $this->assertCount(2, array_unique($ids), 'Same-name patients must not collapse into one user id');
     }
 
     public function test_pharmacy_can_show_inquiry(): void

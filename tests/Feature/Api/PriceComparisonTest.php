@@ -72,10 +72,9 @@ class PriceComparisonTest extends TestCase
         $med = $this->makeMedicine();
 
         $near = $this->makePharmacy(['latitude' => 31.5, 'longitude' => 34.47]);
+        $nearPm = $this->makePharmacyMedicine($med, $near, ['price' => 15.00, 'quantity' => 10]);
         $far = $this->makePharmacy(['latitude' => 31.3, 'longitude' => 34.2]);
-
-        $this->makePharmacyMedicine($med, $near, ['price' => 15.00, 'quantity' => 10]);
-        $this->makePharmacyMedicine($med, $far, ['price' => 20.00, 'quantity' => 10]);
+        $farPm = $this->makePharmacyMedicine($med, $far, ['price' => 20.00, 'quantity' => 10]);
 
         $response = $this->getJson(
             "/api/medicines/{$med->id}/pharmacies?latitude=31.5&longitude=34.47&radius_km=50"
@@ -84,7 +83,9 @@ class PriceComparisonTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonCount(2, 'data')
             ->assertJsonPath('data.0.pharmacy_id', $near->id)
-            ->assertJsonPath('data.1.pharmacy_id', $far->id);
+            ->assertJsonPath('data.0.pharmacy_medicine_id', $nearPm->id)
+            ->assertJsonPath('data.1.pharmacy_id', $far->id)
+            ->assertJsonPath('data.1.pharmacy_medicine_id', $farPm->id);
     }
 
     public function test_distance_is_null_when_no_coordinates(): void

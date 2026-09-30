@@ -49,6 +49,9 @@ class CartApiTest extends TestCase
 
         $response->assertStatus(201)
             ->assertJsonFragment(['success' => true]);
+
+        $this->assertNotEmpty($response->json('data'));
+        $this->assertSame($this->pharmacyMedicine->id, $response->json('data.pharmacy_medicine_id'));
     }
 
     public function test_server_uses_database_price_not_client_provided(): void

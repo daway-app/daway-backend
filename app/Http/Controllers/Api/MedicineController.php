@@ -771,6 +771,7 @@ class MedicineController extends Controller
 
         return [
             'pharmacy_id' => $pharmacy->id,
+            'pharmacy_medicine_id' => $pm->id,
             'name' => $pharmacy->pharmacy_name,
             'price' => (float) $pm->price,
             'quantity' => (int) $pm->quantity,
