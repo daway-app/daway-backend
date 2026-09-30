@@ -253,6 +253,13 @@
         const form = pendingLogoutForm;
         closeLogoutConfirm();
         if (form) {
+            // v6 أمني: اطلب من الـ Service Worker مسح كل كاشات Daway قبل الخروج —
+            // لا يجوز أن يبقى أي أثر (أصول/قشرة) لجلسة المستخدم الحالي.
+            try {
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage('DAWAY_PURGE');
+                }
+            } catch (e) { /* SW غير مسجَّل — لا شيء لمسحه */ }
             form.submit();
         }
     }

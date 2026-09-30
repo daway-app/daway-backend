@@ -135,14 +135,6 @@ export const sync = {
         });
     },
 
-    // يطلب من الـ SW تخزين صفحات الصيدلية المتبقية (يحل مشكلة "الزيارة الأولى")
-    requestPrefetch() {
-        if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
-        try {
-            navigator.serviceWorker.controller.postMessage('DAWAY_PREFETCH');
-        } catch (e) { /* SW not controlling yet */ }
-    },
-
     push(token, queue) {
         const batch = queue.slice(0, PUSH_BATCH);
         if (!batch.length) return Promise.resolve();
@@ -231,7 +223,6 @@ export const sync = {
                 db.metaGet('sync_had_pending').then((had) => {
                     if (had) setBanner('synced');
                     emit('daway:synced', data);
-                    this.requestPrefetch();
                 });
             });
         });

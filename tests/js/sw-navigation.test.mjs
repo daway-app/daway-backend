@@ -4,10 +4,10 @@
  * يُحمَّل public/sw.js داخل vm sandbox مع بدائل لـself/caches/fetch،
  * ثم يُستدعى معالج حدث fetch مباشرةً ويُتحقق من سلوك التنقّل.
  *
- * السبب: التعديل الأخطر في إصلاح الأداء كان استبدال AbortController(3000ms)
- * بسباق مهلة (1200ms مع كاش / 8000ms بدونه) مع عدم إلغاء الطلب أبداً.
- * هذا الاختبار يُثبّت أن الكاش يُحدَّث في الخلفية حتى عندما يُخدَم الكاش أولاً —
- * وهو بالضبط ما كان مكسوراً سابقاً (الطلب المُلغى لا يُحدِّث الكاش أبداً).
+ * v6 (أمني): الغرض الآن إثبات أن أي HTML مصادَق لا يُخزَّن ولا يُعاد تقديمه
+ * إطلاقاً — لا قراءة من الكاش ولا كتابة إليه في مسار التنقّل. هذا يمنع تسرّب
+ * صفحة مستخدم A إلى مستخدم B على نفس المتصفح. الأوفلاين الحقيقي مبنيّ على
+ * IndexedDB (resources/js/offline/*) لا على HTML مخزَّن.
  *
  * التشغيل:  node tests/js/sw-navigation.test.mjs
  */
@@ -65,9 +65,10 @@ function keyOf(req) {
 function loadServiceWorker(fetchImpl, seed = {}, opts = {}) {
     const handlers = {};
     const store = new Map();
+    const deleted = [];
 
     for (const [url, body] of Object.entries(seed)) {
-        store.set(url, makeResponse(body));
+        store.set(keyOf(url), makeResponse(body));
     }
 
     const cache = {
@@ -83,9 +84,10 @@ function loadServiceWorker(fetchImpl, seed = {}, opts = {}) {
 
     const cachesStub = {
         open: async () => cache,
-        match: async (req) => cache.match(req),
-        keys: async () => ['daway-v4'],
-        delete: async () => true,
+        match: async (req, o) => cache.match(req, o),
+        // كاشات: نسختان من التطبيق + كاش تطبيق آخر (للتأكد أننا لا نمسّه)
+        keys: async () => ['daway-v5', 'daway-v6', 'unrelated-app-cache'],
+        delete: async (name) => { deleted.push(name); return true; },
     };
 
     const sandbox = {
@@ -110,7 +112,7 @@ function loadServiceWorker(fetchImpl, seed = {}, opts = {}) {
     vm.createContext(sandbox);
     vm.runInContext(SW_SOURCE, sandbox);
 
-    return { handlers, store, cache };
+    return { handlers, store, cache, deleted };
 }
 
 function navigate(handlers, url, { mode = 'navigate' } = {}) {
@@ -122,133 +124,125 @@ function navigate(handlers, url, { mode = 'navigate' } = {}) {
     return captured;
 }
 
+function postMessage(handlers, data) {
+    let captured = null;
+    handlers.message({ data, waitUntil: (p) => { captured = p; } });
+    return captured;
+}
+
 /* ---------------- tests ---------------- */
 
 const URL_INVENTORY = `${ORIGIN}/pharmacy/inventory`;
+const URL_MEDICINES = `${ORIGIN}/pharmacy/medicines`;
+const URL_PROFILE = `${ORIGIN}/profile`;
 
-async function testFastNetworkWithCache() {
-    console.log('\n1) شبكة سريعة + يوجد كاش -> يجب أن تُخدَم النسخة الطازجة ويُحدَّث الكاش');
+async function testPrivateNavigationNeverReadsCache() {
+    console.log('\n1) تنقّل خاص (مصادَق) + HTML مستخدم سابق مخزَّن -> يجب ألا يُقدَّم الكاش');
 
-    const { handlers, store } = loadServiceWorker(
-        async () => makeResponse('FRESH'),
-        { [URL_INVENTORY]: 'STALE' }
+    const { handlers } = loadServiceWorker(
+        async () => makeResponse('FRESH-A'),
+        { [URL_INVENTORY]: 'STALE-USER-A' }
     );
 
     const res = await navigate(handlers, URL_INVENTORY);
     const body = await res.text();
 
-    ok('يُعيد المحتوى الطازج', body === 'FRESH', `got: ${body}`);
-    await sleep(10);
-    ok('الكاش صار يحتوي الطازج', (await cachedBody(store, URL_INVENTORY)) === 'FRESH');
+    ok('يُخدَم محتوى الشبكة لا الكاش', body === 'FRESH-A', `got: ${body}`);
+    ok('لم يُقدَّم HTML المستخدم السابق', body !== 'STALE-USER-A');
 }
 
-async function testSlowNetworkWithCacheServesCacheButStillUpdates() {
-    console.log('\n2) شبكة بطيئة (>1200ms) + يوجد كاش -> كاش فوراً + تحديث خلفي (الإصلاح الأساسي)');
+async function testPrivateNavigationNeverWritesCache() {
+    console.log('\n2) تنقّل خاص -> يجب ألا يُكتب HTML في الكاش');
 
-    let resolveSlow;
-    const slow = new Promise((r) => { resolveSlow = r; });
+    const { handlers, store } = loadServiceWorker(async () => makeResponse('FRESH-A'));
 
-    const { handlers, store } = loadServiceWorker(
-        async () => {
-            await slow;
-            return makeResponse('FRESH-SLOW');
-        },
-        { [URL_INVENTORY]: 'STALE' }
+    await navigate(handlers, URL_INVENTORY);
+    await sleep(20);
+
+    ok('كاش /pharmacy/inventory بقي فارغاً (لا كتابة)',
+        (await cachedBody(store, URL_INVENTORY)) === null,
+        `got: ${await cachedBody(store, URL_INVENTORY)}`);
+}
+
+async function testUserBDoesNotReceiveUserAWhenNetworkSlow() {
+    console.log('\n3) 🔴 الأمني: صفحة A مخزَّنة → مستخدم B يدخل وشبكته بطيئة → لا يحصل على صفحة A');
+
+    // صفحات A مخزَّنة (كما كان يحدث سابقاً عبر precachePharmacyPages).
+    const seed = {
+        [URL_INVENTORY]: 'USER-A-PRIVATE-HTML',
+        [URL_MEDICINES]: 'USER-A-PRIVATE-HTML',
+        [URL_PROFILE]: 'USER-A-PRIVATE-HTML',
+    };
+
+    // شبكة B بطيئة (2000ms) — كانت تتجاوز مهلة السباق 1200ms فتُخدم صفحة A.
+    const { handlers } = loadServiceWorker(
+        async () => { await sleep(2000); return makeResponse('USER-B-FRESH'); },
+        seed
     );
 
     const started = Date.now();
     const res = await navigate(handlers, URL_INVENTORY);
+    const body = await res.text();
     const elapsed = Date.now() - started;
-    const body = await res.text();
 
-    ok('يُخدَم الكاش بسرعة (< 1600ms)', elapsed < 1600, `${elapsed}ms`);
-    ok('المحتوى هو الكاش القديم', body === 'STALE', `got: ${body}`);
-    ok('الكاش لم يُحدَّث بعد (الطلب ما زال جارياً)',
-        (await cachedBody(store, URL_INVENTORY)) === 'STALE');
-
-    // الآن نكمل الطلب البطيء — الأهم: هل يُحدَّث الكاش؟
-    resolveSlow();
-    await sleep(80);
-
-    ok('الكاش تحدّث في الخلفية بعد اكتمال الطلب',
-        (await cachedBody(store, URL_INVENTORY)) === 'FRESH-SLOW',
-        'هذا هو الإصلاح: كان AbortController يمنع أي تحديث للكاش');
+    ok('B لا يستلم HTML الخاص بـ A', body !== 'USER-A-PRIVATE-HTML', `got: ${body}`);
+    ok('B ينتظر الشبكة كاملة (لا اختصار للكاش)', elapsed >= 1900, `${elapsed}ms`);
+    ok('المحتوى النهائي هو محتوى B', body === 'USER-B-FRESH', `got: ${body}`);
 }
 
-async function testSlowNetworkNoCacheWaitsForNetwork() {
-    console.log('\n3) شبكة بطيئة + لا يوجد كاش -> ينتظر الشبكة (ضمن مهلة 8s) ولا يعرض /offline');
-
-    const { handlers } = loadServiceWorker(
-        async () => {
-            await sleep(1500);
-            return makeResponse('FRESH-AFTER-1500');
-        },
-        {}
-    );
-
-    const res = await navigate(handlers, URL_INVENTORY);
-    const body = await res.text();
-
-    ok('ينتظر الشبكة ويُعيد المحتوى الطازج', body === 'FRESH-AFTER-1500', `got: ${body}`);
-}
-
-async function testOfflineWithCache() {
-    console.log('\n4) الشبكة فاشلة + يوجد كاش -> كاش');
+async function testOfflineFallsBackToOfflineShellNotPrivateHtml() {
+    console.log('\n4) الشبكة فاشلة + يوجد HTML خاص مخزَّن -> /offline (لا HTML خاص)');
 
     const { handlers } = loadServiceWorker(
         async () => { throw new Error('offline'); },
-        { [URL_INVENTORY]: 'CACHED-OFFLINE' }
+        {
+            [URL_INVENTORY]: 'USER-A-PRIVATE-HTML',
+            [`${ORIGIN}/offline`]: 'OFFLINE-SHELL',
+        }
     );
 
     const res = await navigate(handlers, URL_INVENTORY);
-    ok('يُعيد الكاش', (await res.text()) === 'CACHED-OFFLINE');
+    const body = await res.text();
+
+    ok('يُعيد قشرة /offline', body === 'OFFLINE-SHELL', `got: ${body}`);
+    ok('لا يُعيد HTML المستخدم المخزَّن', body !== 'USER-A-PRIVATE-HTML');
 }
 
-async function testOfflineNoCacheFallsBackToOfflinePage() {
-    console.log('\n5) الشبكة فاشلة + لا كاش -> صفحة /offline');
+async function testOfflineNoCacheStillResponds() {
+    console.log('\n5) الشبكة فاشلة + لا يوجد قشرة /offline -> استجابة 503 لا رفض');
 
-    const { handlers } = loadServiceWorker(
-        async (req) => {
-            const url = typeof req === 'string' ? req : req.url;
-            if (url.endsWith('/offline')) return makeResponse('OFFLINE-PAGE');
-            throw new Error('offline');
-        },
-        { [`${ORIGIN}/offline`]: 'OFFLINE-PAGE' }
-    );
+    const { handlers } = loadServiceWorker(async () => { throw new Error('offline'); }, {});
 
     const res = await navigate(handlers, URL_INVENTORY);
-    ok('يُعيد صفحة /offline', (await res.text()) === 'OFFLINE-PAGE');
+    ok('يُعيد استجابة', res instanceof Response, `got: ${res}`);
+    ok('الحالة 503', res && res.status === 503, `status=${res && res.status}`);
 }
 
 async function testPaginatedNavigationIsNetworkOnly() {
-    console.log('\n6) تنقّل ?page= -> network-only بلا كاش (يُحفظ سلوك عدم تقديم صفحات قديمة)');
+    console.log('\n6) تنقّل ?page= -> network-only بلا كاش');
 
-    const seen = [];
     const { handlers, store } = loadServiceWorker(
-        async (req, opts) => {
-            seen.push(opts && opts.cache);
-            return makeResponse('PAGE2');
-        },
-        { [`${URL_INVENTORY}?page=2`]: 'STALE-PAGE2' }
+        async () => makeResponse('PAGE2'),
+        { [`${URL_INVENTORY}?page=2`]: 'STALE-USER-A' }
     );
 
     const res = await navigate(handlers, `${URL_INVENTORY}?page=2`);
     ok('يُعيد الشبكة لا الكاش', (await res.text()) === 'PAGE2');
-    ok("fetch نُفِّذ بـ cache: 'no-store'", seen[0] === 'no-store', `got: ${seen[0]}`);
     ok('الكاش لم يُستبدل (بقيت النسخة القديمة)',
-        (await cachedBody(store, `${URL_INVENTORY}?page=2`)) === 'STALE-PAGE2');
+        (await cachedBody(store, `${URL_INVENTORY}?page=2`)) === 'STALE-USER-A');
 }
 
-async function testNonOfflineScopeNavigationUntouched() {
-    console.log('\n7) صفحة أدمن (خارج نطاق offline) -> لا يمسّها الـSW (fetch عادي)');
+async function testAdminNavigationIsNetworkOnly() {
+    console.log('\n7) صفحة أدمن -> network-only (لا إعادة تقديم قديمة)');
 
-    let touched = false;
-    const { handlers } = loadServiceWorker(async () => { touched = true; return makeResponse('ADMIN'); });
+    const { handlers, store } = loadServiceWorker(
+        async () => makeResponse('ADMIN-FRESH'),
+        { [`${ORIGIN}/users`]: 'STALE-ADMIN' }
+    );
 
-    const captured = navigate(handlers, `${ORIGIN}/users`);
-    ok('الـSW لا يعترض التنقّل (respondWith غير مُستدعى)', captured !== null);
-    await sleep(20);
-    ok('الطلب مرّ إلى الشبكة', touched);
+    const res = await navigate(handlers, `${ORIGIN}/users`);
+    ok('يُعيد الشبكة', (await res.text()) === 'ADMIN-FRESH');
+    ok('لم يُقدَّم HTML أدمن قديم', (await cachedBody(store, `${ORIGIN}/users`)) === 'STALE-ADMIN');
 }
 
 async function testApiAndPostAreIgnored() {
@@ -269,48 +263,79 @@ async function testApiAndPostAreIgnored() {
     ok('طلب POST غير معترَض', captured === null);
 }
 
-async function testCacheLookupErrorDoesNotBreakNavigation() {
-    console.log('\n9) خطأ في Cache API + شبكة سليمة -> التنقّل يكمل (لا رفض)');
+async function testStaticAssetsStillCached() {
+    console.log('\n9) الأصول الثابتة -> cache-first (الكاش الآمن يبقى يعمل)');
 
+    const cssUrl = `${ORIGIN}/build/assets/app-abc.css`;
     const { handlers } = loadServiceWorker(
-        async () => makeResponse('NETWORK-OK'),
-        {},
-        { matchThrows: true }
+        async () => makeResponse('body { color: red }'),
+        { [cssUrl]: 'CACHED-CSS' }
     );
 
-    const res = await navigate(handlers, URL_INVENTORY);
-    ok('يُعيد استجابة ولا يرفض', res instanceof Response, `got: ${res}`);
-    ok('المحتوى من الشبكة', res && (await res.text()) === 'NETWORK-OK');
+    const req = new Request(cssUrl, { method: 'GET' });
+    Object.defineProperty(req, 'mode', { value: 'no-cors' });
+    let captured = null;
+    handlers.fetch({ request: req, respondWith: (p) => { captured = p; } });
+
+    ok('الأصل الثابت مُعترَض (يُخدَم من الكاش)', captured !== null);
+    const body = await (await captured).text();
+    ok('يُخدَم من الكاش', body === 'CACHED-CSS', `got: ${body}`);
 }
 
-async function testCacheLookupErrorAndNetworkFailureStillResponds() {
-    console.log('\n10) خطأ Cache + فشل الشبكة -> استجابة 503 لا رفض');
+async function testPurgeDeletesOnlyDawayCaches() {
+    console.log('\n10) DAWAY_PURGE -> يحذف كاشات Daway فقط ولا يمسّ كاش تطبيق آخر');
 
-    const { handlers } = loadServiceWorker(
-        async () => { throw new Error('offline'); },
-        {},
-        { matchThrows: true }
-    );
+    const { handlers, deleted } = loadServiceWorker(async () => makeResponse('X'));
 
-    const res = await navigate(handlers, URL_INVENTORY);
-    ok('يُعيد استجابة', res instanceof Response, `got: ${res}`);
-    ok('الحالة 503', res && res.status === 503, `status=${res && res.status}`);
+    await postMessage(handlers, 'DAWAY_PURGE');
+    await sleep(20);
+
+    ok('حُذف كاش daway-v5', deleted.includes('daway-v5'), JSON.stringify(deleted));
+    ok('حُذف كاش daway-v6', deleted.includes('daway-v6'), JSON.stringify(deleted));
+    ok('لم يُحذف كاش تطبيق آخر', !deleted.includes('unrelated-app-cache'), JSON.stringify(deleted));
+}
+
+async function testVersionWasBumpedAndOldCacheSwept() {
+    console.log('\n11) رفع الإصدار -> activate ينظّف الإصدارات القديمة فقط');
+
+    ok("الإصدار أصبح daway-v6", /const VERSION = 'daway-v6'/.test(SW_SOURCE), 'VERSION غير متوقع');
+
+    const { handlers, deleted } = loadServiceWorker(async () => makeResponse('X'));
+    let captured = null;
+    handlers.activate({ waitUntil: (p) => { captured = p; } });
+    await captured;
+    await sleep(20);
+
+    ok('حُذف daway-v5 عند activate', deleted.includes('daway-v5'), JSON.stringify(deleted));
+    ok('لم يُحذف الكاش الحالي daway-v6', !deleted.includes('daway-v6'), JSON.stringify(deleted));
+    ok('لم يُحذف كاش تطبيق آخر', !deleted.includes('unrelated-app-cache'), JSON.stringify(deleted));
+}
+
+async function testNoPrivatePagePrecachingRemains() {
+    console.log('\n12) لا يوجد بعد الآن تخزين مسبق لصفحات مصادَقة (PHARMACY_PAGES / DAWAY_PREFETCH)');
+
+    ok('لا توجد قائمة PHARMACY_PAGES', !/PHARMACY_PAGES/.test(SW_SOURCE));
+    ok('لا توجد دالة precachePharmacyPages', !/precachePharmacyPages/.test(SW_SOURCE));
+    ok('لا توجد معالجة DAWAY_PREFETCH', !/DAWAY_PREFETCH/.test(SW_SOURCE));
+    ok('لا توجد OFFLINE_NAV_PREFIXES', !/OFFLINE_NAV_PREFIXES/.test(SW_SOURCE));
 }
 
 /* ---------------- run ---------------- */
 
-console.log('اختبار منطق تنقّل الـService Worker (public/sw.js)');
+console.log('اختبار منطق تنقّل الـService Worker (public/sw.js) — v6 أمني');
 
-await testFastNetworkWithCache();
-await testSlowNetworkWithCacheServesCacheButStillUpdates();
-await testSlowNetworkNoCacheWaitsForNetwork();
-await testOfflineWithCache();
-await testOfflineNoCacheFallsBackToOfflinePage();
+await testPrivateNavigationNeverReadsCache();
+await testPrivateNavigationNeverWritesCache();
+await testUserBDoesNotReceiveUserAWhenNetworkSlow();
+await testOfflineFallsBackToOfflineShellNotPrivateHtml();
+await testOfflineNoCacheStillResponds();
 await testPaginatedNavigationIsNetworkOnly();
-await testNonOfflineScopeNavigationUntouched();
+await testAdminNavigationIsNetworkOnly();
 await testApiAndPostAreIgnored();
-await testCacheLookupErrorDoesNotBreakNavigation();
-await testCacheLookupErrorAndNetworkFailureStillResponds();
+await testStaticAssetsStillCached();
+await testPurgeDeletesOnlyDawayCaches();
+await testVersionWasBumpedAndOldCacheSwept();
+await testNoPrivatePagePrecachingRemains();
 
 console.log(`\nالنتيجة: ${passed} نجح · ${failures.length} فشل`);
 if (failures.length) {
