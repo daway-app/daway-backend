@@ -67,6 +67,15 @@
         @include('partials.sync-banner')
 
         {{-- الشريط العلوي --}}
+        {{-- Phase 4: عدّ الإشعارات غير المقروءة يُحسب مرة واحدة هنا (استعلام
+             مفهرس واحد على user_id + is_read) ويُرسَم في الشارة، بدل طلب XHR
+             منفصل إلى /api/notifications/count على كل تحميل صفحة.
+             مقيّد دائمًا بالمستخدم الحالي — لا كاش مشترك. --}}
+        @php
+            $unreadNotificationCount = \App\Models\Notification::where('user_id', auth()->id())
+                ->where('is_read', false)
+                ->count();
+        @endphp
         @include('components.topbar')
 
         {{-- المحتوى الرئيسي --}}

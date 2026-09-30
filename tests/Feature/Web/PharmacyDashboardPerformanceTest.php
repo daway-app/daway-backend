@@ -72,11 +72,12 @@ class PharmacyDashboardPerformanceTest extends TestCase
                 .implode(' | ', $countQueries)
         );
 
-        // حدّ أعلى واضح: لا يجوز أن يتجاوز عدد استعلامات اللوحة 12.
+        // حدّ أعلى واضح: لا يجوز أن يتجاوز عدد استعلامات اللوحة 13.
+        // (12 بعد Phase 3 + 1 استعلام عدّ الإشعارات من Phase 4 في الـlayout.)
         $this->assertLessThanOrEqual(
-            12,
+            13,
             count($sql),
-            'عدد استعلامات لوحة الصيدلية يجب أن يبقى ≤ 12. الفعلي: '.count($sql)
+            'عدد استعلامات لوحة الصيدلية يجب أن يبقى ≤ 13. الفعلي: '.count($sql)
         );
     }
 
