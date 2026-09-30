@@ -350,6 +350,13 @@ return [
         'answer_button' => 'Mark Answered',
         'close_button' => 'Close',
         'empty' => 'No inquiries',
+        'open_chat' => 'Chat',
+        'chat_title' => 'Conversation',
+        'chat_subtitle' => 'View messages and reply to the patient',
+        'back_to_inquiries' => 'Back to inquiries',
+        'chat_no_messages' => 'No messages yet',
+        'chat_send_placeholder' => 'Write your reply here...',
+        'msg_read' => 'Read',
     ],
 
     'profile' => [

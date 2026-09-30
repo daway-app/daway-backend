@@ -37,7 +37,7 @@ class LogController extends Controller
         }
 
         // Fetch logs using the Activity model, ordered by the most recent, and load the user
-        $query = Activity::with('causer')
+        $query = Activity::with(['causer', 'subject'])
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($w) use ($q) {
                     $w->where('description', 'like', "%{$q}%")
@@ -54,9 +54,26 @@ class LogController extends Controller
         }
 
         if ($date !== '') {
-            $query->whereDate('created_at', $date);
+            // P3: `whereDate('created_at', …)` تُغلّف العمود بدالة `date()` ⇒ تُبطل
+            // فهرس `created_at` (الخطة كانت `type=index` = مسح كل الصفوف).
+            // البديل: مقارنة نطاق قابلة للفهرسة (`type=range`) بنفس الدلالة تمامًا:
+            // [بداية اليوم، بداية اليوم التالي) — تغطي اليوم كاملًا بما فيه الكسور
+            // الثانية، ولا تتأثر بأي تحويل منطقة زمنية لأن التخزين datetime بلا tz.
+            $start = Carbon::createFromFormat('Y-m-d', $date);
+            if ($start !== false && $start->format('Y-m-d') === $date) {
+                $query->where('created_at', '>=', $start->copy()->startOfDay())
+                    ->where('created_at', '<', $start->copy()->startOfDay()->addDay());
+            } else {
+                // تاريخ مطابق للـregex لكنه غير صالح تقويميًا (مثل 2026-13-45) —
+                // نُبقي المسار الأصلي حرفيًا حتى لا تتغيّر دلالة الحالة الحدّية.
+                $query->whereDate('created_at', $date);
+            }
         }
 
+        // P3: `subject` كان يُحمَّل كسولًا لكل صف (morphTo) ⇒ 50 استعلامًا إضافيًا
+        // لكل صفحة (logs/index.blade.php يستخدم `$log->subject`). تحميله مسبقًا
+        // يجعل Eloquent يجلب كل نوع morph باستعلام واحد (≤ عدد الأنواع).
+        // `causer` فارغ في معظم الصفوف — Eloquent يتجاهل النوع الفارغ بأمان.
         $logs = $query->latest()->paginate(50)->withQueryString();
 
         return view('logs.index', compact('logs', 'q', 'event', 'date'));

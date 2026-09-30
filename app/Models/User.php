@@ -36,12 +36,14 @@ class User extends Authenticatable
         'latitude',
         'longitude',
         'emergency_contact',
+        'terms_accepted',
+        'terms_accepted_at',
     ];
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'role', 'is_active', 'phone']);
+            ->logOnly(['name', 'email', 'role', 'is_active', 'phone', 'terms_accepted']);
     }
 
     protected $hidden = [
@@ -57,6 +59,8 @@ class User extends Authenticatable
             'must_change_password' => 'boolean',
             'notifications_enabled' => 'boolean',
             'birth_date' => 'date',
+            'terms_accepted' => 'boolean',
+            'terms_accepted_at' => 'datetime',
         ];
     }
 

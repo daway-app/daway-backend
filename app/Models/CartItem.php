@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class CartItem extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     protected $fillable = [
         'cart_id',
@@ -18,6 +21,13 @@ class CartItem extends Model
         'quantity',
         'price',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['pharmacy_id', 'pharmacy_medicine_id', 'quantity', 'price'])
+            ->logOnlyDirty();
+    }
 
     protected function casts(): array
     {

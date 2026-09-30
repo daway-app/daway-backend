@@ -30,7 +30,7 @@ class AdminTokenTest extends TestCase
         $patient = User::create([
             'name' => 'Patient User',
             'email' => 'patient@test.com',
-            'phone' => '05910000001',
+            'phone' => '0591000001',
             'password' => Hash::make('password'),
         ]);
         $patient->role = 'patient';
@@ -51,7 +51,7 @@ class AdminTokenTest extends TestCase
         $pharmacyUser = User::create([
             'name' => 'Pharmacy User',
             'email' => 'pharmacy@test.com',
-            'phone' => '05910000002',
+            'phone' => '0591000002',
             'password' => Hash::make('password'),
         ]);
         $pharmacyUser->role = 'pharmacy';
@@ -72,7 +72,7 @@ class AdminTokenTest extends TestCase
         $admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin@test.com',
-            'phone' => '05910000003',
+            'phone' => '0591000003',
             'password' => Hash::make('password'),
         ]);
         $admin->role = 'admin';
@@ -100,7 +100,7 @@ class AdminTokenTest extends TestCase
         $admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin2@test.com',
-            'phone' => '05910000004',
+            'phone' => '0591000004',
             'password' => Hash::make('password'),
         ]);
         $admin->role = 'admin';
@@ -131,7 +131,7 @@ class AdminTokenTest extends TestCase
         $admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin3@test.com',
-            'phone' => '05910000005',
+            'phone' => '0591000005',
             'password' => Hash::make('password'),
         ]);
         $admin->role = 'admin';

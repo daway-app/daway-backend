@@ -4,6 +4,7 @@ namespace App\Http\Controllers\web\Pharmacy;
 
 use App\Http\Controllers\Controller;
 use App\Models\PatientInquiry;
+use App\Models\PatientInquiryMessage;
 use App\Models\Pharmacy;
 use App\Services\InquiryService;
 use Illuminate\Http\Request;
@@ -75,5 +76,48 @@ class PharmacyInquiryController extends Controller
         $this->inquiries->answer($inquiry, $pharmacy, ['status' => $data['status']]);
 
         return redirect()->route('pharmacy.inquiries.index')->with('success', 'تم تحديث حالة الاستفسار');
+    }
+
+    public function chat(Request $request, PatientInquiry $inquiry)
+    {
+        $user = Auth::user();
+        $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+
+        if ($inquiry->pharmacy_id !== $pharmacy->id) {
+            return redirect()->route('pharmacy.inquiries.index')->with('error', 'لا يمكنك فتح هذه المحادثة');
+        }
+
+        $messages = PatientInquiryMessage::where('patient_inquiry_id', $inquiry->id)
+            ->with('sender')
+            ->oldest('created_at')
+            ->get();
+
+        $inquiry->load(['user', 'medicine', 'pharmacy']);
+
+        return view('pharmacy.inquiries.chat', compact('inquiry', 'messages', 'pharmacy'));
+    }
+
+    public function sendMessage(Request $request, PatientInquiry $inquiry)
+    {
+        $user = Auth::user();
+        $pharmacy = Pharmacy::where('user_id', $user->id)->firstOrFail();
+
+        if ($inquiry->pharmacy_id !== $pharmacy->id) {
+            return redirect()->route('pharmacy.inquiries.index')->with('error', 'لا يمكنك الرد على هذا الاستفسار');
+        }
+
+        $message = $request->validate([
+            'message' => 'required|string|max:1000',
+        ]);
+
+        $patientInquiryMessage = PatientInquiryMessage::create([
+            'patient_inquiry_id' => $inquiry->id,
+            'sender_user_id' => $user->id,
+            'message' => $message['message'],
+        ]);
+
+        $this->inquiries->answer($inquiry, $pharmacy, ['status' => 'answered', 'reply' => $message['message']]);
+
+        return redirect()->route('pharmacy.inquiries.chat', $inquiry)->with('success', 'تم إرسال الرسالة');
     }
 }

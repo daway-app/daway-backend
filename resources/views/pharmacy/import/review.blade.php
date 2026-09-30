@@ -24,7 +24,7 @@
         };
 
         $statusLabel = function (string $status): string {
-            $key = 'pharmacy_import.status_'.$status;
+            $key = 'pharmacy_import.status_' . $status;
 
             return __($key) === $key ? $status : __($key);
         };
@@ -66,13 +66,13 @@
             }
 
             foreach ((array) ($row['suggestions'] ?? []) as $suggestion) {
-                if (! empty($suggestion['medicine_id'])) {
+                if (!empty($suggestion['medicine_id'])) {
                     return \App\Models\InventoryImport::DECISION_LINK;
                 }
             }
 
             foreach ((array) ($row['suggestions'] ?? []) as $suggestion) {
-                if (! empty($suggestion['moh_id'])) {
+                if (!empty($suggestion['moh_id'])) {
                     return \App\Models\InventoryImport::DECISION_CREATE;
                 }
             }
@@ -87,7 +87,7 @@
             }
 
             foreach ((array) ($row['suggestions'] ?? []) as $suggestion) {
-                if (! empty($suggestion['medicine_id'])) {
+                if (!empty($suggestion['medicine_id'])) {
                     return ['id' => $suggestion['medicine_id'], 'name' => $suggestion['name'] ?? '', 'sub' => $suggestion['name_ar'] ?? ''];
                 }
             }
@@ -102,7 +102,7 @@
             }
 
             foreach ((array) ($row['suggestions'] ?? []) as $suggestion) {
-                if (! empty($suggestion['moh_id'])) {
+                if (!empty($suggestion['moh_id'])) {
                     return ['moh_id' => $suggestion['moh_id'], 'name' => $suggestion['name'] ?? ''];
                 }
             }
@@ -118,7 +118,8 @@
                 <p>{{ $import->original_filename }}</p>
             </div>
             <div class='ph-actions'>
-                <a href='{{ route('pharmacy.inventory.import.errors', ['import' => $import->uuid]) }}' class='ph-btn outline'>
+                <a href='{{ route('pharmacy.inventory.import.errors', ['import' => $import->uuid]) }}'
+                    class='ph-btn outline'>
                     <i class='fas fa-file-csv'></i> @lang('pharmacy_import.download_errors')
                 </a>
                 <a href='{{ route('pharmacy.inventory.import.index') }}' class='ph-btn outline'>
@@ -195,15 +196,14 @@
                             </div>
                             <div class='pi-merge-options'>
                                 @foreach ([
-                                    \App\Models\InventoryImport::MERGE_KEEP_LAST => 'merge_keep_last',
-                                    \App\Models\InventoryImport::MERGE_KEEP_FIRST => 'merge_keep_first',
-                                    \App\Models\InventoryImport::MERGE_SKIP_ALL => 'merge_skip_all',
-                                ] as $value => $labelKey)
+                                        \App\Models\InventoryImport::MERGE_KEEP_LAST => 'merge_keep_last',
+                                        \App\Models\InventoryImport::MERGE_KEEP_FIRST => 'merge_keep_first',
+                                        \App\Models\InventoryImport::MERGE_SKIP_ALL => 'merge_skip_all',
+                                    ] as $value => $labelKey)
                                     <label>
-                                        <input type='radio' name='merge_{{ $groupKey }}' value='{{ $value }}'
-                                               data-pi-merge-input
-                                               @checked(($merges[$groupKey] ?? null) === $value)>
-                                        @lang('pharmacy_import.'.$labelKey)
+                                        <input type='radio' name='merge_{{ $groupKey }}' value='{{ $value }}' data-pi-merge-input
+                                            @checked(($merges[$groupKey] ?? null) === $value)>
+                                        @lang('pharmacy_import.' . $labelKey)
                                     </label>
                                 @endforeach
                             </div>
@@ -221,9 +221,12 @@
 
             <div style='padding:16px 22px 0;'>
                 <div class='pi-filters'>
-                    <button type='button' class='pi-chip active' data-pi-filter='all'>@lang('pharmacy_import.filter_all')</button>
-                    <button type='button' class='pi-chip' data-pi-filter='decision'>@lang('pharmacy_import.filter_needs_decision')</button>
-                    <button type='button' class='pi-chip' data-pi-filter='errors'>@lang('pharmacy_import.filter_errors')</button>
+                    <button type='button' class='pi-chip active'
+                        data-pi-filter='all'>@lang('pharmacy_import.filter_all')</button>
+                    <button type='button' class='pi-chip'
+                        data-pi-filter='decision'>@lang('pharmacy_import.filter_needs_decision')</button>
+                    <button type='button' class='pi-chip'
+                        data-pi-filter='errors'>@lang('pharmacy_import.filter_errors')</button>
                     <span class='pi-inline-note' id='pi-pending-count'></span>
                 </div>
             </div>
@@ -260,18 +263,16 @@
                                 // فئة الفلتر: هل يحتاج قراراً؟ (لا قرار افتراضي موجود)
                                 $filterClass = $needsDecision ? 'decision' : ($hasErrors ? 'errors' : '');
                             @endphp
-                            <tr data-pi-row='{{ $rowNumber }}'
-                                data-pi-filter-class='{{ $filterClass }}'
+                            <tr data-pi-row='{{ $rowNumber }}' data-pi-filter-class='{{ $filterClass }}'
                                 data-pi-has-errors='{{ $hasErrors ? '1' : '0' }}'
                                 data-pi-needs-decision='{{ $needsDecision ? '1' : '0' }}'
-                                data-pi-medicine-id='{{ $link['id'] ?? '' }}'
-                                data-pi-moh-id='{{ $create['moh_id'] ?? '' }}'>
+                                data-pi-medicine-id='{{ $link['id'] ?? '' }}' data-pi-moh-id='{{ $create['moh_id'] ?? '' }}'>
                                 <td><strong>{{ $rowNumber }}</strong></td>
 
                                 <td>
                                     <span class='pi-row-input'>
                                         {{ $input['trade_name'] ?? '' }}
-                                        @if (! empty($input['trade_name_ar']))
+                                        @if (!empty($input['trade_name_ar']))
                                             <small>{{ $input['trade_name_ar'] }}</small>
                                         @endif
                                     </span>
@@ -282,9 +283,9 @@
                                 </td>
 
                                 <td>
-                                    @if (! empty($row['resolved_name']))
+                                    @if (!empty($row['resolved_name']))
                                         <span class='pi-resolved'><b>{{ $row['resolved_name'] }}</b>
-                                            @if (! empty($row['resolved_name_ar']))
+                                            @if (!empty($row['resolved_name_ar']))
                                                 <br><small>{{ $row['resolved_name_ar'] }}</small>
                                             @endif
                                         </span>
@@ -298,10 +299,10 @@
                                                 <li>
                                                     <i class='fas fa-lightbulb'></i>
                                                     {{ $suggestion['name'] ?? '' }}
-                                                    @if (! empty($suggestion['name_ar']))
+                                                    @if (!empty($suggestion['name_ar']))
                                                         ({{ $suggestion['name_ar'] }})
                                                     @endif
-                                                    @if (! empty($suggestion['official_price']))
+                                                    @if (!empty($suggestion['official_price']))
                                                         — {{ $suggestion['official_price'] }}
                                                     @endif
                                                 </li>
@@ -314,7 +315,7 @@
                                             @foreach ($row['warnings'] as $warning)
                                                 <li>
                                                     <i class='fas fa-triangle-exclamation' style='color:var(--ph-orange);'></i>
-                                                    @lang('pharmacy_import.warn_'.$warning)
+                                                    @lang('pharmacy_import.warn_' . $warning)
                                                 </li>
                                             @endforeach
                                         </ul>
@@ -334,35 +335,36 @@
                                     @if ($hasErrors)
                                         <ul class='pi-suggestions' style='margin:0;'>
                                             @foreach ($row['errors'] as $error)
-                                                <li style='color:var(--ph-red);'>@lang('pharmacy_import.err_'.$error)</li>
+                                                <li style='color:var(--ph-red);'>@lang('pharmacy_import.err_' . $error)</li>
                                             @endforeach
                                         </ul>
-                                        <p class='pi-inline-note' style='margin-block-start:6px;'>@lang('pharmacy_import.decision_skip')</p>
+                                        <p class='pi-inline-note' style='margin-block-start:6px;'>
+                                            @lang('pharmacy_import.decision_skip')</p>
                                     @else
                                         <div class='pi-decide'>
                                             <label>
-                                                <input type='radio' name='decision_{{ $rowNumber }}' value='{{ \App\Models\InventoryImport::DECISION_LINK }}'
-                                                       data-pi-decision
-                                                       @checked($decision === \App\Models\InventoryImport::DECISION_LINK)>
+                                                <input type='radio' name='decision_{{ $rowNumber }}'
+                                                    value='{{ \App\Models\InventoryImport::DECISION_LINK }}' data-pi-decision
+                                                    @checked($decision === \App\Models\InventoryImport::DECISION_LINK)>
                                                 @lang('pharmacy_import.decision_link')
                                             </label>
                                             <label>
-                                                <input type='radio' name='decision_{{ $rowNumber }}' value='{{ \App\Models\InventoryImport::DECISION_CREATE }}'
-                                                       data-pi-decision
-                                                       @checked($decision === \App\Models\InventoryImport::DECISION_CREATE)>
+                                                <input type='radio' name='decision_{{ $rowNumber }}'
+                                                    value='{{ \App\Models\InventoryImport::DECISION_CREATE }}' data-pi-decision
+                                                    @checked($decision === \App\Models\InventoryImport::DECISION_CREATE)>
                                                 @lang('pharmacy_import.decision_create')
                                             </label>
                                             <label>
-                                                <input type='radio' name='decision_{{ $rowNumber }}' value='{{ \App\Models\InventoryImport::DECISION_SKIP }}'
-                                                       data-pi-decision
-                                                       @checked($decision === \App\Models\InventoryImport::DECISION_SKIP)>
+                                                <input type='radio' name='decision_{{ $rowNumber }}'
+                                                    value='{{ \App\Models\InventoryImport::DECISION_SKIP }}' data-pi-decision
+                                                    @checked($decision === \App\Models\InventoryImport::DECISION_SKIP)>
                                                 @lang('pharmacy_import.decision_skip')
                                             </label>
 
                                             <div class='pi-search-box' data-pi-search-wrap>
                                                 <input type='text' data-pi-search
-                                                       placeholder='@lang('pharmacy_import.decision_search_placeholder')'
-                                                       value='{{ $link['name'] ?? '' }}' autocomplete='off'>
+                                                    placeholder='@lang('pharmacy_import.decision_search_placeholder')'
+                                                    value='{{ $link['name'] ?? '' }}' autocomplete='off'>
                                                 <div class='pi-search-results' data-pi-search-results></div>
                                             </div>
                                         </div>
@@ -389,8 +391,9 @@
                     <button type='button' class='ph-btn primary' id='pi-commit'>
                         <i class='fas fa-check-double'></i> @lang('pharmacy_import.confirm_commit')
                     </button>
-                    <form method='POST' action='{{ route('pharmacy.inventory.import.cancel', ['import' => $import->uuid]) }}'
-                          onsubmit="return confirm('@lang('pharmacy_import.cancel_confirm')');">
+                    <form method='POST'
+                        action='{{ route('pharmacy.inventory.import.cancel', ['import' => $import->uuid]) }}'
+                        onsubmit="return confirm('@lang('pharmacy_import.cancel_confirm')');">
                         @csrf
                         <button type='submit' class='ph-btn danger'>
                             <i class='fas fa-xmark'></i> @lang('pharmacy_import.cancel_import')
@@ -402,15 +405,13 @@
     </div>
 
     {{-- نموذج التنفيذ: يُرسَل بعد نجاح حفظ القرارات --}}
-    <form method='POST' action='{{ route('pharmacy.inventory.import.commit', ['import' => $import->uuid]) }}' id='pi-commit-form' class='pi-hidden'>
+    <form method='POST' action='{{ route('pharmacy.inventory.import.commit', ['import' => $import->uuid]) }}'
+        id='pi-commit-form' class='pi-hidden'>
         @csrf
     </form>
 
     @php
-        // ⚠️ لا تستخدم @json([...]) مباشرةً هنا: توجيه @json يقسم التعبير على
-        // أول فاصلة (explode(',', ...)) ويأخذ الجزء الأول فقط — فأي مصفوفة
-        // متعددة المفاتيح تُقصّ بصمت وتُنتج PHP غير صالح. نبني المصفوفة أولاً
-        // ثم نمرّرها كمتغيّر واحد بلا فواصل.
+
         $piConfig = [
             'decideUrl' => route('pharmacy.inventory.import.decide', ['import' => $import->uuid]),
             'searchUrl' => route('pharmacy.medicines.search'),
@@ -429,8 +430,8 @@
     @endphp
 
     <script id='pi-config' type='application/json'>
-        @json($piConfig)
-    </script>
+            @json($piConfig)
+        </script>
 
     @push('scripts')
         @include('pharmacy.import._rate_limit')

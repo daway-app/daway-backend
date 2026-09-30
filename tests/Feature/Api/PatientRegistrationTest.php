@@ -18,10 +18,12 @@ class PatientRegistrationTest extends TestCase
         return array_merge([
             'phone' => $this->phone,
             'name' => 'عبدالرحمن',
+            'age' => 19,
             'birth_date' => '2005-08-15',
             'latitude' => 31.9522,
             'longitude' => 35.2332,
             'notifications_enabled' => true,
+            'terms_accepted' => true,
         ], $overrides);
     }
 
@@ -84,7 +86,7 @@ class PatientRegistrationTest extends TestCase
         $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
     }
 
-    public function test_new_user_without_birth_date_fails(): void
+    public function test_new_user_without_birth_date_succeeds_when_age_provided(): void
     {
         $otp = $this->sendOtpAndGetCode();
 
@@ -92,13 +94,12 @@ class PatientRegistrationTest extends TestCase
         unset($data['birth_date']);
 
         $this->postJson('/api/otp/verify', array_merge($data, ['otp' => $otp]))
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['birth_date']);
+            ->assertStatus(200);
 
-        $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
+        $this->assertDatabaseHas('users', ['phone' => $this->phone]);
     }
 
-    public function test_new_user_without_latitude_fails(): void
+    public function test_new_user_without_latitude_succeeds_location_optional(): void
     {
         $otp = $this->sendOtpAndGetCode();
 
@@ -106,13 +107,12 @@ class PatientRegistrationTest extends TestCase
         unset($data['latitude']);
 
         $this->postJson('/api/otp/verify', array_merge($data, ['otp' => $otp]))
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['latitude']);
+            ->assertStatus(200);
 
-        $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
+        $this->assertDatabaseHas('users', ['phone' => $this->phone]);
     }
 
-    public function test_new_user_without_longitude_fails(): void
+    public function test_new_user_without_longitude_succeeds_location_optional(): void
     {
         $otp = $this->sendOtpAndGetCode();
 
@@ -120,10 +120,9 @@ class PatientRegistrationTest extends TestCase
         unset($data['longitude']);
 
         $this->postJson('/api/otp/verify', array_merge($data, ['otp' => $otp]))
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['longitude']);
+            ->assertStatus(200);
 
-        $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
+        $this->assertDatabaseHas('users', ['phone' => $this->phone]);
     }
 
     public function test_new_user_latitude_out_of_range_fails(): void
@@ -169,6 +168,151 @@ class PatientRegistrationTest extends TestCase
     }
 
     // ------------------------------------------------------------------
+    // New user — phone validation (exactly 10 digits)
+    // ------------------------------------------------------------------
+
+    public function test_send_otp_rejects_phone_with_less_than_10_digits(): void
+    {
+        $response = $this->postJson('/api/otp/send', ['phone' => '0599123']);
+
+        $response->assertStatus(400);
+    }
+
+    public function test_send_otp_rejects_phone_with_more_than_10_digits(): void
+    {
+        $response = $this->postJson('/api/otp/send', ['phone' => '059912345678']);
+
+        $response->assertStatus(400);
+    }
+
+    public function test_send_otp_rejects_phone_with_non_digits(): void
+    {
+        $response = $this->postJson('/api/otp/send', ['phone' => '0599abcd56']);
+
+        $response->assertStatus(400);
+    }
+
+    public function test_send_otp_accepts_exactly_10_digits(): void
+    {
+        $response = $this->postJson('/api/otp/send', ['phone' => '0599123456']);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
+    }
+
+    // ------------------------------------------------------------------
+    // New user — terms acceptance
+    // ------------------------------------------------------------------
+
+    public function test_new_user_without_terms_accepted_fails(): void
+    {
+        $otp = $this->sendOtpAndGetCode();
+
+        $data = $this->validRegistrationData();
+        unset($data['terms_accepted']);
+
+        $this->postJson('/api/otp/verify', array_merge($data, ['otp' => $otp]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['terms_accepted']);
+
+        $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
+    }
+
+    public function test_new_user_with_terms_accepted_false_fails(): void
+    {
+        $otp = $this->sendOtpAndGetCode();
+
+        $data = $this->validRegistrationData();
+        $data['terms_accepted'] = false;
+
+        $this->postJson('/api/otp/verify', array_merge($data, ['otp' => $otp]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['terms_accepted']);
+
+        $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
+    }
+
+    // ------------------------------------------------------------------
+    // New user — age validation
+    // ------------------------------------------------------------------
+
+    public function test_new_user_without_age_fails(): void
+    {
+        $otp = $this->sendOtpAndGetCode();
+
+        $data = $this->validRegistrationData();
+        unset($data['age']);
+
+        $this->postJson('/api/otp/verify', array_merge($data, ['otp' => $otp]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['age']);
+
+        $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
+    }
+
+    public function test_new_user_with_string_age_fails(): void
+    {
+        $otp = $this->sendOtpAndGetCode();
+
+        $this->postJson('/api/otp/verify', $this->validRegistrationData([
+            'otp' => $otp,
+            'age' => 'nineteen',
+        ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['age']);
+
+        $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
+    }
+
+    public function test_new_user_with_age_zero_fails(): void
+    {
+        $otp = $this->sendOtpAndGetCode();
+
+        $this->postJson('/api/otp/verify', $this->validRegistrationData([
+            'otp' => $otp,
+            'age' => 0,
+        ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['age']);
+
+        $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
+    }
+
+    public function test_new_user_with_age_over_120_fails(): void
+    {
+        $otp = $this->sendOtpAndGetCode();
+
+        $this->postJson('/api/otp/verify', $this->validRegistrationData([
+            'otp' => $otp,
+            'age' => 150,
+        ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['age']);
+
+        $this->assertDatabaseMissing('users', ['phone' => $this->phone]);
+    }
+
+    public function test_new_user_registers_with_age_only_no_birth_date(): void
+    {
+        $otp = $this->sendOtpAndGetCode();
+
+        $data = $this->validRegistrationData();
+        unset($data['birth_date']);
+        $data['age'] = 19;
+
+        $response = $this->postJson('/api/otp/verify', array_merge($data, ['otp' => $otp]));
+
+        $response->assertStatus(200);
+
+        $user = User::where('phone', $this->phone)->first();
+        $this->assertNotNull($user);
+
+        // birth_date should be computed from age
+        $expectedBirthYear = now()->subYears(19)->year;
+        $this->assertEquals($expectedBirthYear, $user->birth_date->year);
+    }
+
+    // ------------------------------------------------------------------
     // New user — successful registration
     // ------------------------------------------------------------------
 
@@ -180,11 +324,12 @@ class PatientRegistrationTest extends TestCase
             'otp' => $otp,
         ]));
 
-        $response->assertStatus(200)
+         $response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.user.is_new', true)
             ->assertJsonPath('data.user.role', 'patient')
-            ->assertJsonPath('data.user.name', 'عبدالرحمن');
+            ->assertJsonPath('data.user.name', 'عبدالرحمن')
+            ->assertJsonPath('data.user.terms_accepted', true);
 
         $this->assertNotEmpty($response->json('data.token'));
 
@@ -196,6 +341,8 @@ class PatientRegistrationTest extends TestCase
         $this->assertSame(31.9522, (float) $user->latitude);
         $this->assertSame(35.2332, (float) $user->longitude);
         $this->assertTrue($user->notifications_enabled);
+        $this->assertTrue($user->terms_accepted);
+        $this->assertNotNull($user->terms_accepted_at);
         $this->assertNotNull($user->phone_verified_at);
         $this->assertSame('patient', $user->role);
 

@@ -15,7 +15,7 @@ class OtpRaceTest extends TestCase
 {
     public function test_send_otp_twice_same_phone_keeps_single_row(): void
     {
-        $phone = '05991111001';
+        $phone = '0599111101';
 
         $first = $this->postJson('/api/otp/send', ['phone' => $phone]);
         $first->assertStatus(200);
@@ -29,7 +29,7 @@ class OtpRaceTest extends TestCase
 
     public function test_verify_otp_registration_then_second_verify_is_login_path(): void
     {
-        $phone = '05991111002';
+        $phone = '0599111102';
 
         // سباق التسجيل: إرسال OTP ثم verify ببيانات تسجيل كاملة → إنشاء حساب
         $otp = $this->postJson('/api/otp/send', ['phone' => $phone])->json('otp');
@@ -39,9 +39,11 @@ class OtpRaceTest extends TestCase
             'phone' => $phone,
             'otp' => $otp,
             'name' => 'Race Patient',
+            'age' => 29,
             'birth_date' => '1995-05-05',
             'latitude' => 31.5,
             'longitude' => 34.4,
+            'terms_accepted' => true,
         ])->assertStatus(200)
             ->assertJsonPath('data.user.is_new', true);
 

@@ -5,6 +5,8 @@ namespace Tests\Feature\Api\Patient;
 use App\Models\Address;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
 class AddressApiTest extends TestCase
@@ -135,5 +137,34 @@ class AddressApiTest extends TestCase
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('addresses', ['id' => $address->id]);
+    }
+
+    public function test_address_operations_are_logged_in_activity_log(): void
+    {
+        $data = [
+            'recipient_name' => 'Activity Test',
+            'address' => 'Activity Address',
+        ];
+
+        $response = $this->postJson('/api/patient/addresses', $data);
+        $address = Address::where('user_id', $this->patient->id)->first();
+
+        $this->assertNotNull($address);
+        $activity = Activity::where('subject_id', $address->id)
+            ->where('subject_type', Address::class)
+            ->where('event', 'created')
+            ->first();
+        $this->assertNotNull($activity, 'Address creation should be logged');
+        $this->assertSame($this->patient->id, $activity->causer_id);
+
+        $this->putJson("/api/patient/addresses/{$address->id}", [
+            'recipient_name' => 'Updated Activity',
+            'address' => 'Updated Address',
+        ]);
+
+        $updateActivity = Activity::where('subject_id', $address->id)
+            ->where('event', 'updated')
+            ->first();
+        $this->assertNotNull($updateActivity, 'Address update should be logged');
     }
 }

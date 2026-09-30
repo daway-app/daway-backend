@@ -75,7 +75,17 @@
                         <button type="button" id="open_manual" class="btn-cancel">@lang('pharmacy.medicines.create.manual_button')</button>
                     </div>
 
-                    <div id="manual_box" style="display:none;margin-top:14px;">
+                    @php
+                        // الوضع اليدوي يُفتح تلقائيًا عند رجوع النموذج بخطأ (back()->withInput())
+                        // حتى لا تختفي حقول الإدخال اليدوي ورسائل الخطأ داخل صندوق مخفي.
+                        $manualOpen = old('trade_name') !== null
+                            || old('active_ingredient') !== null
+                            || $errors->has('trade_name')
+                            || $errors->has('active_ingredient')
+                            || $errors->has('category_id')
+                            || $errors->has('subcategory_id');
+                    @endphp
+                    <div id="manual_box" style="{{ $manualOpen ? 'margin-top:14px;' : 'display:none;margin-top:14px;' }}">
                         <div class="form-row">
                             <div class="fg">
                                 <label class="fl" for="trade_name">@lang('pharmacy.medicines.create.manual_trade_name') <span class="req">*</span></label>
@@ -96,7 +106,11 @@
                         <div class="form-row">
                             <div class="fg">
                                 <label class="fl" for="category_id">@lang('pharmacy.medicines.create.category') <span class="req">*</span></label>
-                                <select class="fc" id="category_id" name="category_id" required>
+                                {{-- category_id مطلوب في الوضع اليدوي فقط. وجود required هنا بينما
+                                     #manual_box مخفي (display:none) يجعل المتصفّح يفشل في
+                                     constraint validation على عنصر غير قابل للتركيز، فيُلغي
+                                     الإرسال بصمت ويبدو زر الحفظ ميتًا. --}}
+                                <select class="fc" id="category_id" name="category_id" @if($manualOpen) required @endif>
                                     <option value="">—</option>
                                     @foreach($categories as $cat)
                                         <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name_ar }}</option>
@@ -234,6 +248,19 @@
     let searchSeq = 0;
     let searchAbort = null;
 
+    // category_id مطلوب فقط داخل الوضع اليدوي. أي required على حقل مخفي
+    // (display:none) يجعل المتصفّح يُلغي إرسال النموذج بصمت.
+    function setManualRequired(on) {
+        if (!catSel) return;
+        if (on) {
+            catSel.setAttribute('required', 'required');
+        } else {
+            catSel.removeAttribute('required');
+        }
+    }
+    // حالة البداية تُشتق من الحالة المرسومة من السيرفر (قد يكون مفتوحًا بعد خطأ)
+    setManualRequired(manualBox.style.display !== 'none');
+
     function clearSelection() {
         medId.value = '';
         mohId.value = '';
@@ -241,6 +268,7 @@
         selectedEditLink.style.display = 'none';
         manualCta.style.display = 'none';
         manualBox.style.display = 'none';
+        setManualRequired(false);
         searchInput.value = '';
         searchInput.disabled = false;
         resultsBox.style.display = 'none';
@@ -252,6 +280,7 @@
     openManualBtn.addEventListener('click', function () {
         // وضع اليدوي: يخبّأ البحث ويُظهر نموذج البيانات — لا طريقتين متداخلتين
         manualBox.style.display = 'block';
+        setManualRequired(true);
         searchInput.value = '';
         resultsBox.style.display = 'none';
         manualCta.style.display = 'none';
@@ -383,6 +412,7 @@
         resultsBox.style.display = 'none';
         manualCta.style.display = 'none';
         manualBox.style.display = 'none';
+        setManualRequired(false);
         selectedBox.style.display = 'flex';
         searchInput.disabled = true;
         searchInput.value = name;

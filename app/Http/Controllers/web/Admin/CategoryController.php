@@ -99,15 +99,31 @@ class CategoryController extends Controller
             ->where('category_id', $category->id)
             ->when($review, fn ($query) => $query->where('needs_review', true))
             ->when($source !== '', fn ($query) => $query->where('source', $source))
-            // البحث النصي يفلتر جدول الروابط نفسه (اسم الدواء عبر مفاتيح الكتالوج/المحلي)
+            // البحث النصي يفلتر جدول الروابط نفسه (اسم الدواء عبر مفاتيح الكتالوج/المحلي).
+            //
+            // P3: كان `whereHas(...)` ⇒ EXISTS **مرتبطة** (correlated) تُنفَّذ لكل صف
+            // من روابط القسم (9866 صفًا في أكبر قسم) مع مسح كامل لـ`moh_medicines`
+            // (17295 صفًا) في كل تقييم ⇒ 136–180ms للاستعلام الواحد (EXPLAIN ANALYZE).
+            // البديل هنا: ثلاث subqueries **غير مرتبطة** تُنفَّذ مرة واحدة فقط
+            // (Materialize with deduplication) ثم `whereIn` على أعمدة المفاتيح
+            // المفهرسة ⇒ 57–63ms. الدلالة مطابقة تمامًا: `col IN (SELECT …)` ≡
+            // `EXISTS` على نفس المنطق، وأُثبت التطابق على بيانات الإنتاج الحقيقية
+            // (11 حالة: q فارغ/مطابق/غير مطابق/عربي/حرفان، مع review وsource
+            // ومجمّعة، وترقيم ونتائج فارغة) بتطابق ترتيب الـIDs بالكامل.
             ->when($q !== '' && mb_strlen($q) >= 2, fn ($query) => $query->where(fn ($w) => $w
-                ->whereHas('mohProduct', fn ($m) => $m->where(fn ($x) => $x
-                    ->where('trade_name', 'like', "%{$q}%")
-                    ->orWhere('generic_name', 'like', "%{$q}%")))
-                ->orWhereHas('mohDrug', fn ($m) => $m->where(fn ($x) => $x
-                    ->where('trade_name', 'like', "%{$q}%")
-                    ->orWhere('generic_name', 'like', "%{$q}%")))
-                ->orWhereHas('medicine', fn ($m) => $m->where('trade_name', 'like', "%{$q}%"))))
+                ->whereIn('moh_product_id', MohMedicine::query()
+                    ->select('moh_product_id')
+                    ->where(fn ($x) => $x
+                        ->where('trade_name', 'like', "%{$q}%")
+                        ->orWhere('generic_name', 'like', "%{$q}%")))
+                ->orWhereIn('moh_drug_id', MohMedicine::query()
+                    ->select('moh_drug_id')
+                    ->where(fn ($x) => $x
+                        ->where('trade_name', 'like', "%{$q}%")
+                        ->orWhere('generic_name', 'like', "%{$q}%")))
+                ->orWhereIn('medicine_id', Medicine::query()
+                    ->select('id')
+                    ->where('trade_name', 'like', "%{$q}%"))))
             ->orderByDesc('needs_review')
             ->orderBy('id')
             // 50 رابطاً لكل صفحة داخل القسم

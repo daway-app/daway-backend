@@ -53,8 +53,6 @@ class AccountingOverviewController extends Controller
             'data' => [
                 'kpis' => AccountingReports::kpis($pharmacy->id),
 
-                // السلاسل كلها تُرسل مرة واحدة: تبديل الفترة في الواجهة
-                // يصير فوريًا بلا طلب جديد (البيانات صغيرة: 7-30 نقطة).
                 'series' => AccountingReports::salesSeries($pharmacy->id),
                 'range' => $range,
 
@@ -67,38 +65,18 @@ class AccountingOverviewController extends Controller
                     AccountingReports::inventoryAlerts($pharmacy->id, 2)
                 ),
 
-                // مؤشر السيولة للفترة المختارة (مبيعات − مشتريات − مصروفات).
                 'profit_indicator' => AccountingReports::profitIndicator($pharmacy->id, $from, $to),
                 'comparison' => AccountingReports::compareSales($pharmacy->id, $from, $to),
 
-                // الأرقام الحقيقية للذمم — تُعرض في البطاقات التفصيلية.
                 'receivables' => AccountingReports::receivablesAudit($pharmacy->id),
 
-                // تغطية الباركود: كم صنف في المخزون له باركود فعلاً.
-                // هذا الرقم حقيقي من المخزون، لا مفترض.
+
                 'barcode_coverage' => $this->barcodeCoverage($pharmacy->id),
             ],
         ]);
     }
 
-    /**
-     * تغطية الباركود في مخزون هذه الصيدلية — المصدر الحقيقي للتغطية.
-     *
-     * ⚠️ **الباركود لا يسكن في `pharmacy_medicines`** — لا يوجد عمود barcode
-     * هناك إطلاقًا. الباركود في جدول `medicine_barcodes` (فريد عالميًا، مربوط
-     * بـ`local_medicine_id` → `medicines.id`). أي محاولة لقراءة
-     * `pharmacy_medicines.barcode` تفشل بـ`Unknown column`.
-     *
-     * لذا التغطية تُحسب بـ JOIN حقيقي:
-     *   pharmacy_medicines.medicine_id → medicine_barcodes.local_medicine_id
-     *
-     * والحالات مشتقّة من أعمدة `medicine_barcodes` الفعلية:
-     *   · `is_verified = 1` → VERIFIED
-     *   · `is_verified = 0` → PENDING (مرتبط لكن بانتظار توثيق)
-     *   · لا سطر مطابق    → UNKNOWN (حالة طبيعية، ليست خطأ)
-     *
-     * @return array{total:int,with_barcode:int,without_barcode:int,percent:float,by_status:array<string,int>}
-     */
+
     private function barcodeCoverage(int $pharmacyId): array
     {
         $total = (int) PharmacyMedicine::query()

@@ -1,13 +1,5 @@
 @php
-    /**
-     * جسر i18n لطبقة JS المحاسبية.
-     *
-     * ⚠️ المصفوفة تُبنى في @php ثم تُمرَّر كمتغيّر واحد إلى @json.
-     * السبب: compileJson() في Blade تقصّ التعبير على أول فاصلة، فـ
-     * `@json(['a' => __('k', ['x' => 1])])` تُصرَّف لـ PHP تالف بصمت.
-     *
-     * المفاتيح هنا = بالضبط كل ما يقرأه resources/js/accounting/*.js.
-     */
+
     $acCommonI18n = [
         'currency' => __('accounting.common.currency'),
         'demo_notice' => __('accounting.common.mock_notice'),

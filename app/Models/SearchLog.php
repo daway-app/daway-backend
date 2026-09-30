@@ -6,10 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class SearchLog extends Model
 {
+ use LogsActivity;
+
     protected $fillable = ['user_id', 'query', 'source'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['query', 'source'])
+            ->logOnlyDirty();
+    }
 
     public function user(): BelongsTo
     {

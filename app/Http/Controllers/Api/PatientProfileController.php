@@ -37,6 +37,9 @@ class PatientProfileController extends Controller
 
         $data = $request->validated();
 
+        // registration-only: أي أثر لهذين الحقلين يُتجاهل هنا دفاعاً عن العقد
+        unset($data['terms_accepted'], $data['terms_accepted_at']);
+
         if (array_key_exists('avatar_url', $data)) {
             $data['avatar'] = $data['avatar_url'];
             unset($data['avatar_url']);
@@ -58,8 +61,10 @@ class PatientProfileController extends Controller
             'name' => $user->name,
             'phone' => $user->phone,
             'avatar_url' => Image::url($user->avatar),
+            'age' => $user->birth_date ? $user->birth_date->age : null,
             'birth_date' => $user->birth_date ? Carbon::parse($user->birth_date)->toDateString() : null,
             'notifications_enabled' => (bool) $user->notifications_enabled,
+            'terms_accepted' => (bool) $user->terms_accepted,
             'latitude' => $user->latitude !== null ? (float) $user->latitude : null,
             'longitude' => $user->longitude !== null ? (float) $user->longitude : null,
             'address' => $user->address,

@@ -349,6 +349,13 @@ return [
         'answer_button' => 'تم الرد',
         'close_button' => 'إغلاق',
         'empty' => 'لا توجد استفسارات',
+        'open_chat' => 'المحادثة',
+        'chat_title' => 'المحادثة',
+        'chat_subtitle' => 'عرض الرسائل والرد على المريض',
+        'back_to_inquiries' => 'العودة إلى الاستفسارات',
+        'chat_no_messages' => 'لا توجد رسائل بعد',
+        'chat_send_placeholder' => 'اكتب ردّك هنا...',
+        'msg_read' => 'تمت القراءة',
     ],
 
     'profile' => [

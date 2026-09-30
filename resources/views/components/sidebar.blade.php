@@ -134,7 +134,11 @@
                 </div>
 
                 <!-- Section: Accounting (قسم قابل للطيّ) -->
-                @include('components.sidebar-accounting')
+                {{-- مُخفى حاليًا عن الصيدلية عبر flag قابل للرجوع (config/features.php).
+                     المكوّنات لم تُحذف، والأدمن لا يصل لهذا الفرع أصلًا. --}}
+                @if(config('features.pharmacy_accounting_ui'))
+                    @include('components.sidebar-accounting')
+                @endif
             @endif
         @endauth
     </div>

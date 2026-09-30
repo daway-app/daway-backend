@@ -625,9 +625,25 @@ class AccountingPagesTest extends TestCase
        الشريط الجانبي
        ========================================================== */
 
+    public function test_sidebar_hides_accounting_section_for_pharmacy_by_default(): void
+    {
+        [$user] = $this->pharmacyUser();
+
+        // الافتراضي الآن: قسم المحاسبة مخفي عن الصيدلية (config/features.php)
+        // نتحقّق من غياب عناصر الشريط الجانبي تحديدًا — لا من كلمة «المحاسبة»
+        // (الصفحة نفسها تحمل الاسم في عنوانها).
+        $this->actingAs($user)->get('/pharmacy/accounting')
+            ->assertOk()
+            ->assertDontSee('data-nav-toggle="ac-sidebar-menu"', false)
+            ->assertDontSee('nav-subitem', false);
+    }
+
     public function test_sidebar_shows_accounting_section_for_pharmacy(): void
     {
         [$user] = $this->pharmacyUser();
+
+        // عند تفعيل الـflag صراحةً يعود القسم للظهور كما كان
+        config(['features.pharmacy_accounting_ui' => true]);
 
         $this->actingAs($user)->get('/pharmacy/accounting')
             ->assertOk()
@@ -638,6 +654,8 @@ class AccountingPagesTest extends TestCase
     public function test_sidebar_accounting_has_no_dead_links(): void
     {
         [$user] = $this->pharmacyUser();
+
+        config(['features.pharmacy_accounting_ui' => true]);
 
         $html = $this->actingAs($user)->get('/pharmacy/accounting')->getContent();
 
@@ -670,6 +688,8 @@ class AccountingPagesTest extends TestCase
     public function test_accounting_section_is_expanded_when_on_an_accounting_page(): void
     {
         [$user] = $this->pharmacyUser();
+
+        config(['features.pharmacy_accounting_ui' => true]);
 
         $this->actingAs($user)->get('/pharmacy/accounting')
             ->assertOk()

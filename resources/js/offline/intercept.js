@@ -181,8 +181,19 @@ function shouldQueue() {
     return probeOnce().then((up) => up ? Promise.resolve(false) : probeOnce().then((up2) => !up2));
 }
 
+/* نماذج حسّاسة لا يجوز ابتلاع إرسالها: إن كان المتصفّح online تُرسل أصليًا
+   بلا اعتراض إطلاقًا. السبب: probe الـ /healthz قد يتأخّر أو يفشل على سيرفر
+   بطيء، فيُصنَّف «غير مؤكّد» كـ offline ⇒ queue + تفريغ النموذج بلا حفظ فعلي.
+   عند offline المؤكّد (navigator.onLine === false) يبقى سلوك الـ queue كما هو. */
+const SAFE_SUBMIT_KINDS = {
+    'medicine-create': true,
+};
+
 function interceptForm(form, kind) {
     form.addEventListener('submit', (event) => {
+        if (SAFE_SUBMIT_KINDS[kind] && navigator.onLine) {
+            return; // إرسال أصلي — لا preventDefault، لا probe، لا تفريغ للنموذج
+        }
         event.preventDefault(); // القرار أولاً — ثم إما queue أو إرسال أصلي
         shouldQueue().then((queue) => {
             if (!queue) {
@@ -199,7 +210,9 @@ function interceptForm(form, kind) {
                         bannerSet('queued', { count: 1 });
                     }
                 } else {
+                    // لا شيء يستحق الـqueue (مثلاً: لا تغييرات فعلية) ⇒ لا نبتلع الإرسال
                     bannerSet('online');
+                    form.submit();
                 }
             }).catch(() => bannerSet('failed', { count: 1 }));
         }).catch(() => bannerSet('failed', { count: 1 }));

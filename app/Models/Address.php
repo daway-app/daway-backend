@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class Address extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     protected $fillable = [
         'user_id',
@@ -20,6 +23,13 @@ class Address extends Model
         'longitude',
         'is_default',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['recipient_name', 'address', 'is_default', 'label'])
+            ->logOnlyDirty();
+    }
 
     protected function casts(): array
     {

@@ -61,6 +61,31 @@
       "key": "notification_id",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "address_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "cart_item_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "reminder_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "alert_id",
+      "value": "1",
+      "type": "string"
     }
   ],
   "item": [
@@ -288,6 +313,470 @@
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/profile/pharmacy", "host": ["{{base_url}}"], "path": ["api", "profile", "pharmacy"] },
             "body": { "mode": "raw", "raw": "{\n  \"name\": \"صيدلية الأمل\",\n  \"phone\": \"+970591234567\",\n  \"logo_url\": \"https://example.com/logo.jpg\",\n  \"address\": \"غزة، شارع الوحدة\",\n  \"latitude\": 31.5016,\n  \"longitude\": 34.4668,\n  \"working_hours\": {\n    \"sat\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"sun\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"mon\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"tue\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"wed\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"thu\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"fri\": null\n  }\n}", "options": { "raw": { "language": "json" } } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "Public catalog metadata — no auth required. Available-only by default for patient endpoints.",
+      "item": [
+        {
+          "name": "Categories — List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/categories", "host": ["{{base_url}}"], "path": ["api", "categories"] },
+            "description": "All active categories with subcategories and available-medicines counts."
+          }
+        },
+        {
+          "name": "Category — Show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/categories/medicines", "host": ["{{base_url}}"], "path": ["api", "categories", "medicines"] },
+            "description": "Single category by slug or ID."
+          }
+        },
+        {
+          "name": "Category Medicines (available only)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/categories/medicines/medicines?per_page=20&page=1", "host": ["{{base_url}}"], "path": ["api", "categories", "medicines", "medicines"], "query": [{ "key": "per_page", "value": "20" }, { "key": "page", "value": "1" }] },
+            "description": "MOH medicines in a category — patient default: available-only (active pharmacy + in stock). Admin: use `/api/admin/categories/{slug}/medicines` for full catalog."
+          }
+        },
+        {
+          "name": "Dosage Forms",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/dosage-forms", "host": ["{{base_url}}"], "path": ["api", "dosage-forms"] },
+            "description": "Canonical dosage form list for filter UI."
+          }
+        },
+        {
+          "name": "Medicine Filters (all options in one call)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/medicine-filters", "host": ["{{base_url}}"], "path": ["api", "medicine-filters"] },
+            "description": "All filter options (categories + subcategories + dosage forms) with available-medicines counts for each."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Addresses",
+      "description": "CRUD for patient delivery addresses. Role: patient.",
+      "item": [
+        {
+          "name": "List My Addresses",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/addresses", "host": ["{{base_url}}"], "path": ["api", "patient", "addresses"] }
+          }
+        },
+        {
+          "name": "Create Address",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/addresses", "host": ["{{base_url}}"], "path": ["api", "patient", "addresses"] },
+            "body": { "mode": "raw", "raw": "{\n  \"label\": \"البيت\",\n  \"recipient_name\": \"محمد أحمد\",\n  \"phone\": \"0591234567\",\n  \"address\": \"غزة - حي الرمال، شارع 8\",\n  \"latitude\": 31.5,\n  \"longitude\": 34.47,\n  \"is_default\": true\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Validations: `recipient_name` required, `address` required, `latitude` -90..90, `longitude` -180..180. Setting `is_default: true` unsets other default addresses."
+          }
+        },
+        {
+          "name": "Show Address",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/addresses/{{address_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "addresses", "{{address_id}}"] }
+          }
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/addresses/{{address_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "addresses", "{{address_id}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"label\": \"العمل\",\n  \"recipient_name\": \"محمد أحمد\",\n  \"phone\": \"0591234567\",\n  \"address\": \"غزة - حي الشجاعية\",\n  \"latitude\": 31.49,\n  \"longitude\": 34.45,\n  \"is_default\": false\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/addresses/{{address_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "addresses", "{{address_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Medicines",
+      "description": "Patient-scoped medicine endpoints: search, detail, alternatives, availability.",
+      "item": [
+        {
+          "name": "Search Medicines",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/medicines/search?q=panadol", "host": ["{{base_url}}"], "path": ["api", "patient", "medicines", "search"], "query": [{ "key": "q", "value": "panadol" }] },
+            "description": "Patient-scoped search (tracks SearchLog with 60s dedup)."
+          }
+        },
+        {
+          "name": "Medicine Detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/medicines/{{medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "medicines", "{{medicine_id}}"] }
+          }
+        },
+        {
+          "name": "Medicine Alternatives",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/medicines/{{medicine_id}}/alternatives", "host": ["{{base_url}}"], "path": ["api", "patient", "medicines", "{{medicine_id}}", "alternatives"] }
+          }
+        },
+        {
+          "name": "Medicine Availability (pharmacies)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/medicines/{{medicine_id}}/availability", "host": ["{{base_url}}"], "path": ["api", "patient", "medicines", "{{medicine_id}}", "availability"] },
+            "description": "Active pharmacies carrying this medicine with stock. Same as `/api/medicines/{id}/pharmacies` but patient-scoped."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Favorites",
+      "description": "Favorite medicines and pharmacies. Role: patient.",
+      "item": [
+        {
+          "name": "List Favorite Medicines",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/favorites/medicines", "host": ["{{base_url}}"], "path": ["api", "patient", "favorites", "medicines"] }
+          }
+        },
+        {
+          "name": "Add Medicine to Favorites",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/favorites/medicines/{{medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "favorites", "medicines", "{{medicine_id}}"] },
+            "description": "201 if new, 200 if already favorited."
+          }
+        },
+        {
+          "name": "Remove Medicine from Favorites",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/favorites/medicines/{{medicine_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "favorites", "medicines", "{{medicine_id}}"] }
+          }
+        },
+        {
+          "name": "List Favorite Pharmacies",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/favorites/pharmacies", "host": ["{{base_url}}"], "path": ["api", "patient", "favorites", "pharmacies"] }
+          }
+        },
+        {
+          "name": "Add Pharmacy to Favorites",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/favorites/pharmacies/{{pharmacy_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "favorites", "pharmacies", "{{pharmacy_id}}"] }
+          }
+        },
+        {
+          "name": "Remove Pharmacy from Favorites",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/favorites/pharmacies/{{pharmacy_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "favorites", "pharmacies", "{{pharmacy_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Health Profile",
+      "description": "Medical profile: allergies, chronic diseases, blood type, notes. Role: patient.",
+      "item": [
+        {
+          "name": "Show Health Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/health-profile", "host": ["{{base_url}}"], "path": ["api", "patient", "health-profile"] },
+            "description": "Returns `allergies` (array), `chronic_diseases` (array), `blood_type`, `notes`."
+          }
+        },
+        {
+          "name": "Update Health Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/health-profile", "host": ["{{base_url}}"], "path": ["api", "patient", "health-profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"allergies\": [\"Penicillin\", \"Aspirin\"],\n  \"chronic_diseases\": [\"Diabetes\"],\n  \"blood_type\": \"A+\",\n  \"notes\": \"حساسية من الدخان\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Reminders",
+      "description": "Medicine reminders with scheduled FCM push. Role: patient.",
+      "item": [
+        {
+          "name": "List Reminders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/reminders", "host": ["{{base_url}}"], "path": ["api", "reminders"] }
+          }
+        },
+        {
+          "name": "Create Reminder",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/reminders", "host": ["{{base_url}}"], "path": ["api", "reminders"] },
+            "body": { "mode": "raw", "raw": "{\n  \"medicine_name\": \"Paracetamol 500\",\n  \"dosage\": \"1 حبة مرتين يومياً\",\n  \"reminder_date\": \"2026-10-01\",\n  \"reminder_time\": \"08:00\",\n  \"frequency\": \"daily\",\n  \"quantity_remaining\": 10,\n  \"is_active\": true\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Show Reminder",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/reminders/{{reminder_id}}", "host": ["{{base_url}}"], "path": ["api", "reminders", "{{reminder_id}}"] }
+          }
+        },
+        {
+          "name": "Update Reminder",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/reminders/{{reminder_id}}", "host": ["{{base_url}}"], "path": ["api", "reminders", "{{reminder_id}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"medicine_name\": \"Amoxil 500\",\n  \"dosage\": \"1 كبسولة 3 مرات\",\n  \"reminder_time\": \"09:00\",\n  \"quantity_remaining\": 5\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Delete Reminder",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/reminders/{{reminder_id}}", "host": ["{{base_url}}"], "path": ["api", "reminders", "{{reminder_id}}"] }
+          }
+        },
+        {
+          "name": "Mark Dose as Taken",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/reminders/{{reminder_id}}/taken", "host": ["{{base_url}}"], "path": ["api", "reminders", "{{reminder_id}}", "taken"] },
+            "description": "Atomically decrements `quantity_remaining` by 1. When 0 → `is_active` becomes false."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Cart",
+      "description": "Shopping cart for patient checkout. Role: patient.",
+      "item": [
+        {
+          "name": "View Cart",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/cart", "host": ["{{base_url}}"], "path": ["api", "patient", "cart"] }
+          }
+        },
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/cart/items", "host": ["{{base_url}}"], "path": ["api", "patient", "cart", "items"] },
+            "body": { "mode": "raw", "raw": "{\n  \"pharmacy_medicine_id\": {{pharmacy_medicine_id}},\n  \"quantity\": 2\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Price is always taken from DB (not client). 422 if out of stock, inactive pharmacy, or quantity exceeds available stock. Duplicate medicine merges quantity instead of creating a new item."
+          }
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/cart/items/{{cart_item_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "cart", "items", "{{cart_item_id}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 5\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Delete Cart Item",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/cart/items/{{cart_item_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "cart", "items", "{{cart_item_id}}"] }
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/cart", "host": ["{{base_url}}"], "path": ["api", "patient", "cart"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Orders",
+      "description": "Checkout, order history, tracking, cancel. Role: patient.",
+      "item": [
+        {
+          "name": "Checkout (Create Order)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/checkout", "host": ["{{base_url}}"], "path": ["api", "patient", "checkout"] },
+            "body": { "mode": "raw", "raw": "{\n  \"address_id\": {{address_id}},\n  \"coupon_code\": \"SAVE20\",\n  \"notes\": \"تصلي بالرجاء\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Creates an order from the current cart. Server-side price calculation (ignores client prices). 422 if cart is empty, address is not yours, or any item is out of stock / unavailable. Cart is cleared on success. `coupon_code` is optional."
+          }
+        },
+        {
+          "name": "List My Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/orders", "host": ["{{base_url}}"], "path": ["api", "patient", "orders"] }
+          }
+        },
+        {
+          "name": "Show Order Detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/orders/{{order_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "orders", "{{order_id}}"] }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/orders/{{order_id}}/cancel", "host": ["{{base_url}}"], "path": ["api", "patient", "orders", "{{order_id}}", "cancel"] },
+            "description": "Only pending/confirmed/preparing orders can be cancelled. 422 if already delivered/cancelled. Inventory is NOT restored on cancel."
+          }
+        },
+        {
+          "name": "Order Tracking (status history)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/orders/{{order_id}}/tracking", "host": ["{{base_url}}"], "path": ["api", "patient", "orders", "{{order_id}}", "tracking"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Availability Alerts",
+      "description": "Subscribe to be notified when a medicine becomes available (optionally at a specific pharmacy). Role: patient.",
+      "item": [
+        {
+          "name": "List My Alerts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/availability-alerts", "host": ["{{base_url}}"], "path": ["api", "patient", "availability-alerts"] }
+          }
+        },
+        {
+          "name": "Create Alert",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/availability-alerts", "host": ["{{base_url}}"], "path": ["api", "patient", "availability-alerts"] },
+            "body": { "mode": "raw", "raw": "{\n  \"medicine_id\": {{medicine_id}},\n  \"pharmacy_id\": {{pharmacy_id}}\n}", "options": { "raw": { "language": "json" } } },
+            "description": "201 if new, 200 if already subscribed. `pharmacy_id` is optional (null = any pharmacy). 422 if medicine or pharmacy doesn't exist."
+          }
+        },
+        {
+          "name": "Delete Alert",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/availability-alerts/{{alert_id}}", "host": ["{{base_url}}"], "path": ["api", "patient", "availability-alerts", "{{alert_id}}"] },
+            "description": "403 if the alert belongs to another user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Coupons",
+      "description": "Validate a coupon code before checkout. Role: patient.",
+      "item": [
+        {
+          "name": "Validate Coupon",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/coupons/validate", "host": ["{{base_url}}"], "path": ["api", "patient", "coupons", "validate"] },
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"SAVE20\",\n  \"order_total\": 100\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Checks if the coupon is valid for the given order total. 404 if coupon doesn't exist, 422 if order total is below minimum."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Assistant Chat",
+      "description": "AI chat: describe what you need, get medicine + available pharmacies. Rate-limited.",
+      "item": [
+        {
+          "name": "Send Chat Message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patient/assistant/chat", "host": ["{{base_url}}"], "path": ["api", "patient", "assistant", "chat"] },
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"أحتاج مسكن صداع\",\n  \"latitude\": 31.5,\n  \"longitude\": 34.47\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Returns resolved medicine + nearest active pharmacies. `latitude`/`longitude` are optional (enables distance sorting). Logged in SearchLog with 60s dedup."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device Tokens",
+      "description": "Register FCM device tokens for push notifications. Works for patient and pharmacy roles.",
+      "item": [
+        {
+          "name": "Register Device Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/device-tokens", "host": ["{{base_url}}"], "path": ["api", "device-tokens"] },
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"fcm_token_abc123\",\n  \"platform\": \"android\",\n  \"device_id\": \"device_001\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "201 if new, 200 if updated. 422 if token belongs to another user. Idempotent for same (user_id, device_id)."
+          }
+        },
+        {
+          "name": "Delete Current Device Token",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/device-tokens/current", "host": ["{{base_url}}"], "path": ["api", "device-tokens", "current"] },
+            "body": { "mode": "raw", "raw": "{\n  \"device_id\": \"device_001\"\n}", "options": { "raw": { "language": "json" } } }
           }
         }
       ]
