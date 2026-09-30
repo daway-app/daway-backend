@@ -87,7 +87,7 @@
                                 <td style='max-width:280px;'>{{ $inquiry->message ?? __('pharmacy.inquiries.message_fallback') }}</td>
                                 <td>{{ $inquiry->created_at->format('Y-m-d') }}<br><small style='color:var(--ph-ink-faint);'>{{ $inquiry->created_at->format('h:i A') }}</small></td>
                                 <td><span class='ph-badge {{ $badgeClass }}'>{{ $statusText($status) }}</span></td>
-                                        <td>
+                                <td>
                                     <div style='display:flex;gap:8px;'>
                                         <a href='{{ route("pharmacy.inquiries.chat", $inquiry) }}' class='ph-btn sm' style='background:var(--ph-teal-mist);color:var(--ph-teal-text);border-color:var(--ph-teal-mist);'>
                                             <i class='fas fa-comment'></i> @lang('pharmacy.inquiries.open_chat')
