@@ -8,8 +8,10 @@ use App\Models\Pharmacy;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Contracts\SmsProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -173,6 +175,10 @@ class AuthController extends Controller
             OtpCode::where('phone', $request->phone)
                 ->update(['otp' => Hash::make($otp), 'expires_at' => now()->addMinutes(10)]);
         }
+
+        // M-12: محاولة إرسال OTP عبر SMS — الفشل غير مسموح به لا يوقف العملية.
+        // لا يتم تسجيل الـ OTP بشكل نصّي أبداً. الفشل يُسجّل كـ warning مع رقم هاتف مُخفّف.
+        $this->dispatchOtpSms($request->phone, $otp);
 
         return response()->json([
             'success' => true,
@@ -365,5 +371,79 @@ class AuthController extends Controller
             'success' => true,
             'token' => $token,
         ]);
+    }
+
+    /**
+     * M-12: إرسال OTP عبر SMS باستخدام SMSGate.
+     *
+     * - الفشل غير مسموح به لا يوقف العملية (fire-and-forget)
+     * - لا يتم تسجيل الـ OTP بشكل نصّي أبداً
+     * - يُستخدم SmsGateService إذا كان مهيأ (SMSGATE_USERNAME/PASSWORD غير فارغة)
+     * - في الوضع التطويري (بدون إعداد SMS) يُتخطّى الإرسال تماماً
+     */
+    private function dispatchOtpSms(string $phone, string $otp): void
+    {
+        try {
+            $sms = app(SmsProvider::class);
+
+            if (! $sms->enabled()) {
+                return; // SMSGate غير مهيأ — no-op (نفس سلوك OTP الناتج في الاستجابة)
+            }
+
+            // تحويل الرقم المحلي إلى صيغة E.164 قبل الإرسال
+            $e164Phone = $this->normalizePhoneToE164($phone);
+
+            if ($e164Phone === null) {
+                Log::warning('otp_sms_invalid_phone', [
+                    'phone' => substr($phone, 0, 3).'***'.substr($phone, -2),
+                ]);
+
+                return;
+            }
+
+            $result = $sms->sendSms($e164Phone, __('otp.sms_message', ['code' => $otp]));
+
+            if (! $result['success']) {
+                Log::warning('otp_sms_failed', [
+                    'phone' => substr($e164Phone, 0, 3).'***'.substr($e164Phone, -2),
+                    'error' => $result['error'],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // لا نوقف العملية أبداً بسبب فشل SMS — نسجل فقط
+            Log::warning('otp_sms_dispatch_error', [
+                'phone' => substr($phone, 0, 3).'***'.substr($phone, -2),
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * تحويل رقم الهاتف المحلي (10 أرقام، يبدأ بـ 05) إلى صيغة E.164 (+970...).
+     * يمرر أرقام E.164 كما هي. يرجع null للأرقام غير الصالحة.
+     */
+    private function normalizePhoneToE164(string $phone): ?string
+    {
+        $phone = trim($phone);
+
+        // إذا كان الرقم يبدأ بـ + فهو بالفعل E.164
+        if (str_starts_with($phone, '+')) {
+            $digits = preg_replace('/[^0-9]/', '', $phone);
+
+            if (strlen($digits) >= 9 && strlen($digits) <= 15) {
+                return '+'.$digits;
+            }
+
+            return null;
+        }
+
+        // رقم محلي فلسطيني: 10 أرقام، يبدأ بـ 059 أو 056
+        $digits = preg_replace('/[^0-9]/', '', $phone);
+
+        if (strlen($digits) === 10 && preg_match('/^05[6-9]/', $digits)) {
+            return '+970'.ltrim($digits, '0');
+        }
+
+        return null;
     }
 }

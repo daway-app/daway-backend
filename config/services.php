@@ -84,4 +84,29 @@ return [
         'prices_url'   => env('MOH_PRICES_URL', 'https://pharmacy.moh.ps/service/getDrugsPublic'),
     ],
 
+    // SMSGate — مزوّد رسائل SMS للـ OTP والتنبيهات (https://sms-gate.app)
+    // التوثيق: POST /3rdparty/v1/messages باستخدام Basic Auth
+    // حالياً يُستخدم لإرسال OTP فقط — الفشل غير مسموح به للـ OTP delivery يُسجّل فقط.
+    // C-1: القيم الفارغة = SMSGate غير مفعّل (no-op)
+    'smsgate' => [
+        'base_url'    => env('SMSGATE_BASE_URL'),
+        'username'    => env('SMSGATE_USERNAME'),
+        'password'    => env('SMSGATE_PASSWORD'),
+        'sender'      => env('SMSGATE_SENDER', 'Daway'),
+        'country_code' => env('SMSGATE_COUNTRY_CODE', '+970'),
+    ],
+
+    // Android SMS Gateway — يحوّل هاتف Android + SIM إلى SMS Gateway محلي.
+    // يستخدم تطبيق: https://github.com/capcom6/android-sms-gateway
+    // يُرسل OTP مباشرة عبر SIM بدلاً من SMSGate Cloud.
+    // Priority: Android إذا enabled → SMSGate إذا enabled → no-op
+    'android_sms_gateway' => [
+        'enabled'  => env('ANDROID_SMS_GATEWAY_ENABLED', false),
+        'base_url' => env('ANDROID_SMS_GATEWAY_BASE_URL'),
+        'username' => env('ANDROID_SMS_GATEWAY_USERNAME'),
+        'password' => env('ANDROID_SMS_GATEWAY_PASSWORD'),
+        'timeout'  => (int) env('ANDROID_SMS_GATEWAY_TIMEOUT', 10),
+        'country_code' => env('ANDROID_SMS_GATEWAY_COUNTRY_CODE', '+970'),
+    ],
+
 ];
