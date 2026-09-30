@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Contracts\SmsProvider;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -135,6 +136,96 @@ class AuthController extends Controller
         ], 201);
     }
 
+    /**
+     * إنشاء حساب مريض — الخطوة 1 من تدفق (تسجيل ثم OTP).
+     *
+     * يستقبل بيانات التسجيل الأساسية فقط (phone/name/age/birth_date/terms)،
+     * يخزّنها مؤقتاً في الـ Cache لمدة 10 دقائق، ثم يرسل OTP بنفس سلوك
+     * POST /api/otp/send (ويرجع الـ OTP في JSON مؤقتاً مثل الحالي).
+     * الخطوة 2: POST /api/otp/verify بـ phone+otp فقط ينشئ الحساب.
+     * الموقع والإشعارات اختيارية لاحقاً عبر POST /api/profile/patient.
+     */
+    public function patientRegister(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => ['required', 'string', 'digits:10', 'regex:/^05[6-9]/', 'unique:users,phone'],
+            'name' => 'required|string|max:255',
+            'age' => 'required|integer|min:1|max:120',
+            'birth_date' => 'nullable|date|before_or_equal:today',
+            'terms_accepted' => 'required|boolean|accepted',
+        ], [
+            'phone.required' => 'رقم الهاتف مطلوب',
+            'phone.digits' => 'رقم الهاتف يجب أن يكون 10 خانات',
+            'phone.regex' => 'رقم الهاتف يجب أن يبدأ بـ 05',
+            'phone.unique' => 'رقم الهاتف مسجّل مسبقاً، سجّل الدخول بدلاً من إنشاء حساب جديد.',
+            'name.required' => 'الاسم مطلوب',
+            'age.required' => 'العمر مطلوب',
+            'age.integer' => 'العمر يجب أن يكون رقمًا صحيحًا',
+            'age.min' => 'العمر غير صالح',
+            'age.max' => 'العمر غير صالح',
+            'terms_accepted.required' => 'يجب قبول الشروط والأحكام',
+            'terms_accepted.accepted' => 'يجب قبول الشروط والأحكام',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'بيانات التسجيل مطلوبة لإنشاء حساب جديد',
+                'errors' => $validator->errors(),
+                'registration_required' => true,
+            ], 422);
+        }
+
+        $phone = $request->string('phone')->toString();
+
+        if (User::where('phone', $phone)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'رقم الهاتف مسجّل مسبقاً، سجّل الدخول بدلاً من إنشاء حساب جديد.',
+                'errors' => ['phone' => ['رقم الهاتف مسجّل مسبقاً، سجّل الدخول بدلاً من إنشاء حساب جديد.']],
+                'is_registered' => true,
+            ], 422);
+        }
+
+        Cache::put(
+            'patient_reg:'.$phone,
+            [
+                'name' => $request->string('name')->trim()->toString(),
+                'age' => (int) $request->input('age'),
+                'birth_date' => $request->input('birth_date'),
+            ],
+            now()->addMinutes(10)
+        );
+
+        OtpCode::where('phone', $phone)
+            ->where('expires_at', '<', now())
+            ->delete();
+
+        $otp = (string) random_int(100000, 999999);
+
+        try {
+            OtpCode::updateOrCreate(
+                ['phone' => $phone],
+                [
+                    'otp' => Hash::make($otp),
+                    'expires_at' => now()->addMinutes(10),
+                ]
+            );
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            OtpCode::where('phone', $phone)
+                ->update(['otp' => Hash::make($otp), 'expires_at' => now()->addMinutes(10)]);
+        }
+
+        $this->dispatchOtpSms($phone, $otp);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP sent successfully',
+            'otp' => $otp,
+            'is_registered' => false,
+        ]);
+    }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()?->delete();
@@ -246,8 +337,21 @@ class AuthController extends Controller
         // المرحلة 2: بعد نجاح OTP فقط — بيانات التسجيل مطلوبة لإنشاء حساب جديد
         // الموقع اختياري (قد يرفض المستخدم منحه، أو قد لا يكون GPS متاحاً)
         // العمر إجباري — إما كعمر عدد صحيح أو كتاريخ ميلاد
+        // تدفق (تسجيل ثم OTP): بيانات POST /api/register/patient مخزنة بالـ Cache —
+        // ندمجها مع الطلب حتى يكفي إرسال phone+otp فقط في verify (توافق خلفي: إن لم
+        // توجد بيانات مخزنة تُستخدم البيانات المرسلة بالطلب مثل السلوك السابق).
         if (! $userExists) {
-            $regValidator = Validator::make($request->all(), [
+            $regInput = $request->all();
+            $pending = Cache::get('patient_reg:'.$request->phone);
+            if (is_array($pending)) {
+                foreach (['name', 'age', 'birth_date'] as $key) {
+                    if (array_key_exists($key, $pending) && $pending[$key] !== null && $pending[$key] !== '') {
+                        $regInput[$key] = $pending[$key];
+                    }
+                }
+                $regInput['terms_accepted'] = true;
+            }
+            $regValidator = Validator::make($regInput, [
                 'name' => 'required|string|max:255',
                 'age' => 'required|integer|min:1|max:120',
                 'birth_date' => 'nullable|date|before_or_equal:today',
@@ -285,14 +389,26 @@ class AuthController extends Controller
                 // M-12: سباق أول دخول متزامن لنفس الرقم — users.phone unique يرفض الخاسر
                 // بـ 500؛ نلتقطها ونعيد الجلب ونكمل كدخول مستخدم موجود
                 try {
-                    // إذا أرسل العمر كرقم، احوّله إلى birth_date
+                    // مصدر بيانات التسجيل: الـ Cache من POST /api/register/patient أولاً،
+                    // ثم البيانات المرسلة بالطلب (توافق خلفي مع التدفق القديم).
+                    $pending = Cache::get('patient_reg:'.$request->phone);
+                    $regName = is_array($pending) && ! empty($pending['name'])
+                        ? $pending['name']
+                        : $request->string('name')->trim()->toString();
+                    $regAge = is_array($pending) && array_key_exists('age', $pending)
+                        ? $pending['age']
+                        : $request->input('age');
                     $birthDate = $request->input('birth_date');
-                    if (! $birthDate && $request->filled('age')) {
-                        $birthDate = now()->subYears((int) $request->input('age'))->toDateString();
+                    if (is_array($pending) && ! empty($pending['birth_date'])) {
+                        $birthDate = $pending['birth_date'];
+                    }
+                    // إذا أرسل العمر كرقم، احوّله إلى birth_date
+                    if (! $birthDate && $regAge !== null && $regAge !== '') {
+                        $birthDate = now()->subYears((int) $regAge)->toDateString();
                     }
 
                     $user = User::create([
-                        'name' => $request->string('name')->trim()->toString(),
+                        'name' => trim((string) $regName),
                         'email' => null,
                         'phone' => $request->phone,
                         'password' => Hash::make(Str::random(32)),
@@ -303,6 +419,7 @@ class AuthController extends Controller
                         'terms_accepted' => true,
                         'terms_accepted_at' => now(),
                     ]);
+                    Cache::forget('patient_reg:'.$request->phone);
                 } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
                     $user = User::where('phone', $request->phone)->first();
 

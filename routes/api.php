@@ -44,6 +44,8 @@ Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middle
 
 Route::post('/register/pharmacy', [AuthController::class, 'pharmacyRegister'])->middleware('throttle:register');
 
+Route::post('/register/patient', [AuthController::class, 'patientRegister'])->middleware('throttle:register');
+
 Route::get('/medicines', [MedicineController::class, 'index']);
 Route::get('/medicines/search', [MedicineController::class, 'search']);
 Route::get('/medicines/active-ingredient/{ingredient}', [MedicineController::class, 'byActiveIngredient']);
