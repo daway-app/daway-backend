@@ -107,6 +107,7 @@ return [
         'password' => env('ANDROID_SMS_GATEWAY_PASSWORD'),
         'timeout'  => (int) env('ANDROID_SMS_GATEWAY_TIMEOUT', 10),
         'country_code' => env('ANDROID_SMS_GATEWAY_COUNTRY_CODE', '+970'),
+        'device_id' => env('ANDROID_SMS_GATEWAY_DEVICE_ID'),
     ],
 
 ];

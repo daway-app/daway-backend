@@ -17,6 +17,8 @@ class AndroidSmsGatewayServiceTest extends TestCase
 
     private const PASSWORD = 'gateway_pass';
 
+    private const DEVICE_ID = 'device-abc-123';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -87,7 +89,7 @@ class AndroidSmsGatewayServiceTest extends TestCase
     public function test_send_sms_success_returns_message_id(): void
     {
         Http::fake([
-            self::BASE_URL.'/message' => Http::response([
+            self::BASE_URL.'/messages' => Http::response([
                 'smsId' => 'sms_12345',
                 'status' => 'sent',
             ], 200),
@@ -103,13 +105,13 @@ class AndroidSmsGatewayServiceTest extends TestCase
     public function test_send_sms_sends_correct_payload_with_basic_auth(): void
     {
         Http::fake([
-            self::BASE_URL.'/message' => Http::response(['smsId' => 'sms_1'], 200),
+            self::BASE_URL.'/messages' => Http::response(['smsId' => 'sms_1'], 200),
         ]);
 
         $this->service->sendSms('+970599000001', 'Your code is 123456');
 
         Http::assertSent(function ($request) {
-            return $request->url() === self::BASE_URL.'/message'
+            return $request->url() === self::BASE_URL.'/messages'
                 && $request->method() === 'POST'
                 && $request['textMessage']['text'] === 'Your code is 123456'
                 && $request['phoneNumbers'] === ['+970599000001']
@@ -121,7 +123,7 @@ class AndroidSmsGatewayServiceTest extends TestCase
     public function test_send_sms_local_palestinian_phone_normalizes_to_e164(): void
     {
         Http::fake([
-            self::BASE_URL.'/message' => Http::response(['smsId' => 'sms_1'], 200),
+            self::BASE_URL.'/messages' => Http::response(['smsId' => 'sms_1'], 200),
         ]);
 
         $this->service->sendSms('0599000001', 'Test');
@@ -135,7 +137,7 @@ class AndroidSmsGatewayServiceTest extends TestCase
     public function test_send_sms_e164_phone_preserved(): void
     {
         Http::fake([
-            self::BASE_URL.'/message' => Http::response(['smsId' => 'sms_1'], 200),
+            self::BASE_URL.'/messages' => Http::response(['smsId' => 'sms_1'], 200),
         ]);
 
         $this->service->sendSms('+970599000001', 'Test');
@@ -148,7 +150,7 @@ class AndroidSmsGatewayServiceTest extends TestCase
     public function test_send_sms_returns_error_on_http_failure(): void
     {
         Http::fake([
-            self::BASE_URL.'/message' => Http::response([
+            self::BASE_URL.'/messages' => Http::response([
                 'error' => 'bad_request',
                 'message' => 'Invalid phone number',
             ], 400),
@@ -193,7 +195,7 @@ class AndroidSmsGatewayServiceTest extends TestCase
     public function test_send_sms_returns_error_on_5xx_server_error(): void
     {
         Http::fake([
-            self::BASE_URL.'/message' => Http::response(['error' => 'internal'], 500),
+            self::BASE_URL.'/messages' => Http::response(['error' => 'internal'], 500),
         ]);
 
         $result = $this->service->sendSms('+970599000001', 'Test');
@@ -205,7 +207,7 @@ class AndroidSmsGatewayServiceTest extends TestCase
     public function test_send_sms_returns_error_on_401_unauthorized(): void
     {
         Http::fake([
-            self::BASE_URL.'/message' => Http::response(['error' => 'unauthorized'], 401),
+            self::BASE_URL.'/messages' => Http::response(['error' => 'unauthorized'], 401),
         ]);
 
         $result = $this->service->sendSms('+970599000001', 'Test');
@@ -217,7 +219,7 @@ class AndroidSmsGatewayServiceTest extends TestCase
     public function test_send_sms_returns_error_on_429_rate_limit(): void
     {
         Http::fake([
-            self::BASE_URL.'/message' => Http::response(['error' => 'rate_limit'], 429),
+            self::BASE_URL.'/messages' => Http::response(['error' => 'rate_limit'], 429),
         ]);
 
         $result = $this->service->sendSms('+970599000001', 'Test');
@@ -230,7 +232,7 @@ class AndroidSmsGatewayServiceTest extends TestCase
     {
         Http::fake([
             self::BASE_URL.'/3rdparty/v1/messages' => Http::response(['message_id' => 'should_not_be_called'], 200),
-            self::BASE_URL.'/message' => Http::response(['smsId' => 'sms_1'], 200),
+            self::BASE_URL.'/messages' => Http::response(['smsId' => 'sms_1'], 200),
         ]);
 
         $result = $this->service->sendSms('+970599000001', 'Test');
@@ -238,8 +240,8 @@ class AndroidSmsGatewayServiceTest extends TestCase
         $this->assertTrue($result['success']);
 
         Http::assertSent(function ($request) {
-            // يجب أن يستخدم /message وليس /3rdparty/v1/messages
-            return $request->url() === self::BASE_URL.'/message';
+            // يجب أن يستخدم /messages وليس /3rdparty/v1/messages
+            return $request->url() === self::BASE_URL.'/messages';
         });
     }
 
@@ -253,5 +255,79 @@ class AndroidSmsGatewayServiceTest extends TestCase
 
         $this->assertFalse($result['success']);
         $this->assertNotNull($result['error']);
+    }
+
+    public function test_send_sms_includes_device_id_when_configured(): void
+    {
+        $service = new AndroidSmsGatewayService(
+            baseUrl: self::BASE_URL,
+            username: self::USERNAME,
+            password: self::PASSWORD,
+            timeout: 10,
+            enabled: true,
+            countryCode: '+970',
+            deviceId: self::DEVICE_ID,
+        );
+
+        Http::fake([
+            self::BASE_URL.'/messages' => Http::response(['smsId' => 'sms_1'], 200),
+        ]);
+
+        $service->sendSms('+970599000001', 'Test');
+
+        Http::assertSent(function ($request) {
+            return $request->url() === self::BASE_URL.'/messages'
+                && $request['phoneNumbers'] === ['+970599000001']
+                && $request['textMessage']['text'] === 'Test'
+                && $request['deviceId'] === self::DEVICE_ID;
+        });
+    }
+
+    public function test_send_sms_omits_device_id_when_not_configured(): void
+    {
+        Http::fake([
+            self::BASE_URL.'/messages' => Http::response(['smsId' => 'sms_1'], 200),
+        ]);
+
+        $this->service->sendSms('+970599000001', 'Test');
+
+        Http::assertSent(function ($request) {
+            return $request->url() === self::BASE_URL.'/messages'
+                && $request['phoneNumbers'] === ['+970599000001']
+                && $request['textMessage']['text'] === 'Test'
+                && ! array_key_exists('deviceId', $request->data());
+        });
+    }
+
+    public function test_send_sms_payload_contains_textMessage_and_phoneNumbers(): void
+    {
+        Http::fake([
+            self::BASE_URL.'/messages' => Http::response(['smsId' => 'sms_1'], 200),
+        ]);
+
+        $this->service->sendSms('+970599000001', 'Test message');
+
+        Http::assertSent(function ($request) {
+            return $request->url() === self::BASE_URL.'/messages'
+                && $request->method() === 'POST'
+                && isset($request['textMessage']['text'])
+                && isset($request['phoneNumbers'])
+                && is_array($request['phoneNumbers'])
+                && $request['phoneNumbers'] === ['+970599000001'];
+        });
+    }
+
+    public function test_send_sms_uses_messages_endpoint(): void
+    {
+        Http::fake([
+            self::BASE_URL.'/messages' => Http::response(['smsId' => 'sms_1'], 200),
+        ]);
+
+        $this->service->sendSms('+970599000001', 'Test');
+
+        Http::assertSent(function ($request) {
+            return $request->url() === self::BASE_URL.'/messages'
+                && $request->method() === 'POST';
+        });
     }
 }

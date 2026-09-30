@@ -70,7 +70,7 @@ class SmsProviderSelectionTest extends TestCase
         ]);
 
         Http::fake([
-            'http://192.168.1.50:8080/message' => Http::response(['smsId' => 'android_sent'], 200),
+            'http://192.168.1.50:8080/messages' => Http::response(['smsId' => 'android_sent'], 200),
             'https://sms-gate.app/api/3rdparty/v1/messages' => Http::response(['message_id' => 'smsgate_should_not_be_called'], 200),
         ]);
 

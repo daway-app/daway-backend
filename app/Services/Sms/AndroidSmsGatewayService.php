@@ -10,18 +10,19 @@ use Illuminate\Support\Facades\Log;
  * عميل Android SMS Gateway (https://github.com/capcom6/android-sms-gateway)
  *
  * يحوّل هاتف Android + SIM إلى SMS Gateway عبر HTTP API في Local Server mode.
- * يستقبل طلبات POST /message بصيغة JSON مع Basic Auth.
+ * يستقبل طلبات POST /messages بصيغة JSON مع Basic Auth.
  *
  * الفرق عن SMSGate:
- * - Endpoint: POST /message (ليس /3rdparty/v1/messages)
+ * - Endpoint: POST /messages (ليس /3rdparty/v1/messages)
  * - Payload: { "textMessage": { "text": "..." }, "phoneNumbers": ["+970..."] }
+ * - deviceId اختياري — يستهدف جهاز SMS Gateway محدد في Local Server mode
  * - لا يدعم sender — الرسالة تُرسل من رقم الهاتف المرتبط بالسيم
  *
  * الفشل لا يوقف العملية الأساسية — يُسجّل فقط كـ warning.
  */
 final class AndroidSmsGatewayService implements SmsProvider
 {
-    private const ENDPOINT = '/message';
+    private const ENDPOINT = '/messages';
 
     private const DEFAULT_TIMEOUT = 10;
 
@@ -32,6 +33,7 @@ final class AndroidSmsGatewayService implements SmsProvider
         private readonly int $timeout = self::DEFAULT_TIMEOUT,
         private readonly bool $enabled = false,
         private readonly ?string $countryCode = '+970',
+        private readonly ?string $deviceId = null,
     ) {}
 
     /**
@@ -63,16 +65,22 @@ final class AndroidSmsGatewayService implements SmsProvider
 
         try {
             $startedAt = microtime(true);
+            $payload = [
+                'textMessage' => [
+                    'text' => $message,
+                ],
+                'phoneNumbers' => [$phone],
+            ];
+
+            if ($this->deviceId !== null && $this->deviceId !== '') {
+                $payload['deviceId'] = $this->deviceId;
+            }
+
             $response = Http::timeout($this->timeout)
                 ->withBasicAuth($this->username, $this->password)
                 ->acceptJson()
                 ->asJson()
-                ->post(rtrim($this->baseUrl, '/').self::ENDPOINT, [
-                    'textMessage' => [
-                        'text' => $message,
-                    ],
-                    'phoneNumbers' => [$phone],
-                ]);
+                ->post(rtrim($this->baseUrl, '/').self::ENDPOINT, $payload);
 
             Log::info('android_sms_gateway_send', [
                 'latency_ms' => (int) ((microtime(true) - $startedAt) * 1000),

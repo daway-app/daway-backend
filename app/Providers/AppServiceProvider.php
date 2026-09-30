@@ -65,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
                     timeout: (int) $androidConfig['timeout'],
                     enabled: true,
                     countryCode: $androidConfig['country_code'] ?? '+970',
+                    deviceId: $androidConfig['device_id'] ?? null,
                 );
             }
 
