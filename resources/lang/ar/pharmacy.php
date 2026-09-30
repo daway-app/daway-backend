@@ -167,6 +167,24 @@ return [
         ],
     ],
 
+    'sidebar_widget' => [
+        'add_medicine_card' => 'إضافة دواء جديد للصيدلية',
+        'search_label' => 'ابحث عن الدواء *',
+        'search_placeholder' => 'اكتب اسم الدواء أو المادة الفعالة أو الشركة المصنعة...',
+        'search_hint' => 'متوفر بحث في أكثر من 17,000 مستحضر مسجل لدى وزارة الصحة.',
+        'price_label' => 'السعر (شيكل) *',
+        'quantity_label' => 'المخزون *',
+        'available_now' => 'متوفر حالياً',
+        'barcode_label' => 'الباركود (اختياري)',
+        'barcode_placeholder' => 'أو الصق الباركود هنا...',
+        'barcode_lookup_error' => 'خطأ في البحث بالباركود',
+        'barcode_not_found' => 'لا يوجد دواء بهذا الباركود',
+        'add_button' => 'إضافة الدواء',
+        'reset_button' => 'إلغاء',
+        'medicine_added' => 'تم إضافة الدواء بنجاح',
+        'medicine_already_exists' => 'هذا الدواء موجود في مخزونك بالفعل',
+    ],
+
     'dashboard' => [
         'title' => 'لوحة تحكم الصيدلية',
         'heading' => 'لوحة الصيدلية',

@@ -167,6 +167,24 @@ return [
         ],
     ],
 
+    'sidebar_widget' => [
+        'add_medicine_card' => 'Add New Medicine to Pharmacy',
+        'search_label' => 'Search Medicine *',
+        'search_placeholder' => 'Type medicine name, active ingredient, or manufacturer...',
+        'search_hint' => 'Search across 17,000+ registered MOH medicines.',
+        'price_label' => 'Price (NIS) *',
+        'quantity_label' => 'Stock *',
+        'available_now' => 'Available now',
+        'barcode_label' => 'Barcode (optional)',
+        'barcode_placeholder' => 'Or paste barcode here...',
+        'barcode_lookup_error' => 'Barcode lookup error',
+        'barcode_not_found' => 'No medicine found with this barcode',
+        'add_button' => 'Add Medicine',
+        'reset_button' => 'Reset',
+        'medicine_added' => 'Medicine added successfully',
+        'medicine_already_exists' => 'This medicine already exists in your inventory',
+    ],
+
     'dashboard' => [
         'title' => 'Pharmacy Dashboard',
         'heading' => 'Pharmacy Dashboard',

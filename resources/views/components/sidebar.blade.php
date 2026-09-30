@@ -133,6 +133,58 @@
                     </a>
                 </div>
 
+                <!-- Section: Add Medicine Widget (only for pharmacy role) -->
+                @if(auth()->user()->role === 'pharmacy')
+                    <div class="sidebar-widget-section">
+                        <div class="sidebar-widget-card" id="addMedicineWidget">
+                            <div class="widget-header">
+                                <h3 class="widget-title">@lang('pharmacy.sidebar_widget.add_medicine_card')</h3>
+                            </div>
+                            <form id="addMedicineForm" method="POST" action="{{ route('pharmacy.medicines.store') }}" enctype="multipart/form-data" data-offline-form="medicine-create" style="display:none;">
+                                @csrf
+                                <input type="hidden" name="medicine_id" id="widget_medicine_id">
+                                <input type="hidden" name="moh_medicine_id" id="widget_moh_medicine_id">
+                                <div class="widget-form">
+                                    <div class="form-group">
+                                        <label for="widget_search" class="form-label">@lang('pharmacy.sidebar_widget.search_label')</label>
+                                        <input type="text" id="widget_search" class="form-input" placeholder="@lang('pharmacy.sidebar_widget.search_placeholder')" autocomplete="off">
+                                        <div id="widget_search_results" class="search-results" style="display:none;"></div>
+                                        <small class="form-hint">@lang('pharmacy.sidebar_widget.search_hint')</small>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="widget_price" class="form-label">@lang('pharmacy.sidebar_widget.price_label')</label>
+                                            <input type="number" id="widget_price" name="price" class="form-input" step="0.01" min="0" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="widget_quantity" class="form-label">@lang('pharmacy.sidebar_widget.quantity_label')</label>
+                                            <input type="number" id="widget_quantity" name="quantity" class="form-input" min="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-check">
+                                            <input type="checkbox" name="is_available" value="1" checked>
+                                            <span>@lang('pharmacy.sidebar_widget.available_now')</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="widget_barcode" class="form-label">@lang('pharmacy.sidebar_widget.barcode_label')</label>
+                                        <input type="text" id="widget_barcode" class="form-input" placeholder="@lang('pharmacy.sidebar_widget.barcode_placeholder')" autocomplete="off">
+                                        <div id="barcode_status" class="barcode-status" style="display:none;"></div>
+                                    </div>
+                                    <div class="widget-actions">
+                                        <button type="button" id="widget_add_btn" class="btn-primary" style="display:none;">@lang('pharmacy.sidebar_widget.add_button')</button>
+                                        <button type="button" id="widget_reset_btn" class="btn-secondary" style="display:none;">@lang('pharmacy.sidebar_widget.reset_button')</button>
+                                    </div>
+                                </div>
+                            </form>
+                            <div id="widget_trigger" class="widget-trigger">
+                                <button type="button" class="btn-primary btn-block">@lang('pharmacy.sidebar_widget.add_medicine_card')</button>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Section: Accounting (قسم قابل للطيّ) -->
                 {{-- مُخفى حاليًا عن الصيدلية عبر flag قابل للرجوع (config/features.php).
                      المكوّنات لم تُحذف، والأدمن لا يصل لهذا الفرع أصلًا. --}}
@@ -181,6 +233,7 @@
     </div>
 </div>
 
+
 <script>
     let pendingLogoutForm = null;
 
@@ -207,4 +260,276 @@
             form.submit();
         }
     }
+</script>
+
+<script>
+(function () {
+    var widget = document.getElementById('addMedicineWidget');
+    if (!widget) return;
+
+    var form = document.getElementById('addMedicineForm');
+    var triggerWrap = document.getElementById('widget_trigger');
+    var triggerBtn = triggerWrap ? triggerWrap.querySelector('button') : null;
+    var searchInput = document.getElementById('widget_search');
+    var resultsBox = document.getElementById('widget_search_results');
+    var medId = document.getElementById('widget_medicine_id');
+    var mohId = document.getElementById('widget_moh_medicine_id');
+    var priceInput = document.getElementById('widget_price');
+    var qtyInput = document.getElementById('widget_quantity');
+    var barcodeInput = document.getElementById('widget_barcode');
+    var barcodeStatus = document.getElementById('barcode_status');
+    var addBtn = document.getElementById('widget_add_btn');
+    var resetBtn = document.getElementById('widget_reset_btn');
+    if (!form || !searchInput) return;
+
+    var searchUrl = @json(route('pharmacy.medicines.catalog-search'));
+    var editUrlTpl = @json(route('pharmacy.medicines.edit', '__ROWID__'));
+
+    var debounceTimer = null;
+    var barcodeTimer = null;
+    var searchSeq = 0;
+    var searchAbort = null;
+    var barcodeAbort = null;
+    var barcodeSeq = 0;
+    var lastBarcodeMohId = null;
+
+    function esc(str) {
+        var div = document.createElement('div');
+        div.textContent = str == null ? '' : String(str);
+        return div.innerHTML;
+    }
+
+    function hasSelection() {
+        return !!((medId && medId.value) || (mohId && mohId.value));
+    }
+
+    function showActionButtons() {
+        if (addBtn) addBtn.style.display = '';
+        if (resetBtn) resetBtn.style.display = '';
+    }
+
+    function hideActionButtons() {
+        if (addBtn) addBtn.style.display = 'none';
+        if (resetBtn) resetBtn.style.display = 'none';
+    }
+
+    function setStatus(msg, ok) {
+        if (!barcodeStatus) return;
+        if (!msg) {
+            barcodeStatus.style.display = 'none';
+            barcodeStatus.textContent = '';
+            return;
+        }
+        barcodeStatus.style.display = 'block';
+        barcodeStatus.textContent = msg;
+        barcodeStatus.style.color = ok ? '#15803d' : '#b91c1c';
+    }
+
+    // a. Trigger button click → show form, hide trigger, focus search.
+    if (triggerBtn && triggerWrap) {
+        triggerBtn.addEventListener('click', function () {
+            form.style.display = '';
+            triggerWrap.style.display = 'none';
+            if (searchInput) searchInput.focus();
+        });
+    }
+
+    // b. Catalog search: debounce, min 2 chars, AbortController + seq-guard.
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        var q = searchInput.value.trim();
+        if (q.length < 2) {
+            if (resultsBox) resultsBox.style.display = 'none';
+            return;
+        }
+        debounceTimer = setTimeout(function () { runSearch(q); }, 350);
+    });
+
+    searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && resultsBox) resultsBox.style.display = 'none';
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!resultsBox || resultsBox.style.display === 'none') return;
+        if (resultsBox.contains(e.target) || e.target === searchInput) return;
+        resultsBox.style.display = 'none';
+    });
+
+    function runSearch(q) {
+        if (searchAbort) searchAbort.abort();
+        var controller = new AbortController();
+        searchAbort = controller;
+        var seq = ++searchSeq;
+
+        fetch(searchUrl + '?q=' + encodeURIComponent(q), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            signal: controller.signal
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (seq !== searchSeq) return;
+                renderResults(res.items || []);
+            })
+            .catch(function (err) {
+                if (err && err.name === 'AbortError') return;
+                if (seq !== searchSeq || !resultsBox) return;
+                resultsBox.innerHTML = '<div class="widget-search-empty">\u062d\u062f\u062b \u062e\u0637\u0623 \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u0628\u062d\u062b\u060c \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649</div>';
+                resultsBox.style.display = 'block';
+            });
+    }
+
+    function renderResults(items) {
+        if (!resultsBox) return;
+        if (!items.length) {
+            resultsBox.innerHTML = '<div class="widget-search-empty">\u0644\u0627 \u062a\u0648\u062c\u062f \u0646\u062a\u0627\u0626\u062c \u0645\u0637\u0627\u0628\u0642\u0629</div>';
+            resultsBox.style.display = 'block';
+            return;
+        }
+        var html = items.map(function (item) {
+            var priceBadge = item.official_price != null
+                ? '<span class="widget-result-price">' + esc(item.official_price) + '</span>'
+                : '';
+            var mohBadge = (item.moh_product_id || item.moh_drug_id)
+                ? '<span class="widget-result-badge">MOH #' + esc(item.moh_product_id || item.moh_drug_id) + '</span>'
+                : '';
+            var addedBadge = item.already_added
+                ? '<span class="widget-result-badge" style="color:#c2611c;">\u0645\u0636\u0627\u0641 \u0645\u0633\u0628\u0642\u064b\u0627</span>'
+                : '';
+            return '<div class="widget-search-item" data-id="' + esc(item.id) + '"' +
+                ' data-name="' + esc(item.name) + '"' +
+                ' data-price="' + (item.official_price != null ? esc(item.official_price) : '') + '"' +
+                ' data-added="' + (item.already_added ? '1' : '') + '"' +
+                ' data-row="' + esc(item.existing_row_id || '') + '">' +
+                '<div><strong>' + esc(item.name) + '</strong>' +
+                (item.sub ? '<small>' + esc(item.sub) + '</small>' : '') + '</div>' +
+                '<div class="widget-result-meta">' + mohBadge + priceBadge + addedBadge + '</div>' +
+                '</div>';
+        }).join('');
+        resultsBox.innerHTML = html;
+        resultsBox.style.display = 'block';
+
+        resultsBox.querySelectorAll('.widget-search-item').forEach(function (el) {
+            el.addEventListener('click', function () { selectItem(el); });
+        });
+    }
+
+    function selectItem(el) {
+        var id = el.getAttribute('data-id');
+        var name = el.getAttribute('data-name');
+        var price = el.getAttribute('data-price');
+        var alreadyAdded = el.getAttribute('data-added') === '1';
+        var rowId = el.getAttribute('data-row');
+
+        // Already-added items: show a notice, keep the add button disabled.
+        if (alreadyAdded) {
+            var editLink = rowId
+                ? '<a href="' + esc(editUrlTpl.replace('__ROWID__', rowId)) + '">\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0635\u0646\u0641 \u0645\u0646 \u0627\u0644\u0635\u0641\u062d\u0629 \u0627\u0644\u0643\u0627\u0645\u0644\u0629</a>'
+                : '<a href="{{ route('pharmacy.medicines.index') }}">\u0639\u0631\u0636 \u0623\u062f\u0648\u064a\u062a\u064a</a>';
+            if (resultsBox) {
+                resultsBox.innerHTML = '<div class="widget-search-empty">\u0647\u0630\u0627 \u0627\u0644\u062f\u0648\u0627\u0621 \u0645\u0636\u0627\u0641 \u0645\u0633\u0628\u0642\u064b\u0627 \u0644\u0635\u064a\u062f\u0644\u064a\u062a\u0643 \u2014 ' + editLink + '</div>';
+                resultsBox.style.display = 'block';
+            }
+            if (medId) medId.value = '';
+            if (mohId) mohId.value = '';
+            lastBarcodeMohId = null;
+            hideActionButtons();
+            if (resetBtn) resetBtn.style.display = '';
+            return;
+        }
+
+        if (mohId) mohId.value = id || '';
+        if (medId) medId.value = '';
+        lastBarcodeMohId = null;
+        searchInput.value = name || '';
+        if (priceInput && price !== '') priceInput.value = price;
+        if (resultsBox) resultsBox.style.display = 'none';
+        showActionButtons();
+    }
+
+    // c. Barcode lookup (lookup only — the field has no name attribute, never submitted).
+    if (barcodeInput) {
+        barcodeInput.addEventListener('input', function () {
+            clearTimeout(barcodeTimer);
+            var code = barcodeInput.value.trim();
+            if (!code) {
+                setStatus('');
+                return;
+            }
+            barcodeTimer = setTimeout(function () { runBarcodeLookup(code); }, 350);
+        });
+    }
+
+    function runBarcodeLookup(code) {
+        if (barcodeAbort) barcodeAbort.abort();
+        var controller = new AbortController();
+        barcodeAbort = controller;
+        var seq = ++barcodeSeq;
+
+        fetch('/api/medicines/barcode/' + encodeURIComponent(code), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            signal: controller.signal
+        })
+            .then(function (r) {
+                return r.json().then(function (body) {
+                    return { status: r.status, ok: r.ok, body: body };
+                });
+            })
+            .then(function (res) {
+                if (seq !== barcodeSeq) return;
+                var med = res.body && res.body.data && res.body.data.medicine;
+                if (res.ok && res.body && res.body.success && med) {
+                    if (mohId) mohId.value = med.id != null ? med.id : '';
+                    if (medId) medId.value = '';
+                    lastBarcodeMohId = med.id != null ? String(med.id) : null;
+                    if (searchInput && med.name_en) searchInput.value = med.name_en;
+                    if (priceInput && med.official_price != null) priceInput.value = med.official_price;
+                    setStatus('\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649: ' + (med.name_en || ''), true);
+                    showActionButtons();
+                } else {
+                    // 404/422 — not found: clear any barcode-derived selection only.
+                    if (mohId && lastBarcodeMohId !== null && mohId.value === lastBarcodeMohId) {
+                        mohId.value = '';
+                    }
+                    lastBarcodeMohId = null;
+                    var msg = (res.body && res.body.message) || '\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u062f\u0648\u0627\u0621 \u0628\u0647\u0630\u0627 \u0627\u0644\u0628\u0627\u0631\u0643\u0648\u062f';
+                    setStatus(msg, false);
+                    if (!hasSelection()) hideActionButtons();
+                    else if (resetBtn) resetBtn.style.display = '';
+                }
+            })
+            .catch(function (err) {
+                if (err && err.name === 'AbortError') return;
+                if (seq !== barcodeSeq) return;
+                setStatus('\u062d\u062f\u062b \u062e\u0637\u0623 \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u0628\u062d\u062b \u0628\u0627\u0644\u0628\u0627\u0631\u0643\u0648\u062f', false);
+            });
+    }
+
+    // d. Add → submit only when a medicine is selected; Reset → clear + collapse.
+    if (addBtn) {
+        addBtn.addEventListener('click', function () {
+            if (!hasSelection()) return;
+            form.submit();
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            searchInput.value = '';
+            if (priceInput) priceInput.value = '';
+            if (qtyInput) qtyInput.value = '';
+            if (barcodeInput) barcodeInput.value = '';
+            if (medId) medId.value = '';
+            if (mohId) mohId.value = '';
+            lastBarcodeMohId = null;
+            setStatus('');
+            if (resultsBox) {
+                resultsBox.innerHTML = '';
+                resultsBox.style.display = 'none';
+            }
+            hideActionButtons();
+            form.style.display = 'none';
+            if (triggerWrap) triggerWrap.style.display = '';
+        });
+    }
+})();
 </script>
