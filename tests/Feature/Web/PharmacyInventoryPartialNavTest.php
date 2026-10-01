@@ -89,14 +89,21 @@ class PharmacyInventoryPartialNavTest extends TestCase
 
     public function test_search_filter_is_preserved_in_pagination_links(): void
     {
-        [$user] = $this->seedInventory(60);
+        // 120 صفًا: فلتر "INV-MED" يطابقها كلها (60 > 50) ⇒ أكثر من صفحة
+        // ⇒ روابط الترقيم موجودة فعلًا. (لو كان الفلتر يطابق ≤50 صفًا لما
+        // رُسمت روابط أصلًا — ومن ثمّ لا يمكن تأكيد حفظه عبر الصفحات.)
+        [$user] = $this->seedInventory(120);
 
-        $html = $this->actingAs($user)->get('/pharmacy/inventory?q=INV-MED-1')->assertOk()->getContent();
+        $html = $this->actingAs($user)->get('/pharmacy/inventory?q=INV-MED')->assertOk()->getContent();
 
-        // مع فلتر يطابق أكثر من 50 صفًا، يجب أن تحمل روابط الترقيم q=
-        $this->assertStringContainsString('INV-MED-1', $html);
+        // الصفحة الأولى يجب أن تعرض 50 صفًا (حجم الصفحة) ⇒ ما زال هناك صفحة تالية.
+        $this->assertSame(50, substr_count($html, 'data-status='));
+        $this->assertStringContainsString('pagination-wrapper', $html);
+
+        // روابط الترقيم تحفظ q عبر withQueryString. الـ`&` يُهرَّب في HTML كـ`&amp;`
+        // لذا نطابق `page=` في نفس الوسم ونتأكد أن الفلتر سبقه.
         $this->assertMatchesRegularExpression(
-            '/href="[^"]*inventory[^"]*q=INV-MED-1[^"]*"/',
+            '/href="[^"]*inventory\?q=INV-MED&amp;page=\d+"/',
             $html,
             'روابط الترقيم يجب أن تحفظ فلتر البحث (withQueryString).'
         );
