@@ -20,6 +20,16 @@
             'label' => __('accounting.sidebar.sales'),
             'active' => request()->routeIs('pharmacy.accounting.sales.*'),
         ],
+        [
+            'route' => 'pharmacy.accounting.refunds.index',
+            'label' => __('accounting.sidebar.refunds'),
+            'active' => request()->routeIs('pharmacy.accounting.refunds.*'),
+        ],
+        [
+            'route' => 'pharmacy.accounting.cash.index',
+            'label' => __('accounting.sidebar.cash_register'),
+            'active' => request()->routeIs('pharmacy.accounting.cash.*'),
+        ],
     ];
 
     // الصفحات القادمة (بلا مسار بعد)
@@ -28,10 +38,10 @@
         __('accounting.sidebar.expenses'),
         __('accounting.sidebar.suppliers'),
         __('accounting.sidebar.customers'),
-        __('accounting.sidebar.cash_register'),
         __('accounting.sidebar.payments'),
         __('accounting.sidebar.profit_loss'),
         __('accounting.sidebar.reports'),
+        __('accounting.sidebar.settings'),
     ];
 
     $acSectionId = 'ac-sidebar-menu';

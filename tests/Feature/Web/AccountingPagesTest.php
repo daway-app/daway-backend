@@ -668,7 +668,7 @@ class AccountingPagesTest extends TestCase
             $path = parse_url($href, PHP_URL_PATH);
             $this->assertContains(
                 $path,
-                ['/pharmacy/accounting', '/pharmacy/accounting/sales'],
+                ['/pharmacy/accounting', '/pharmacy/accounting/sales', '/pharmacy/accounting/refunds', '/pharmacy/accounting/cash'],
                 "رابط غير متوقّع في الشريط: {$path}"
             );
         }
