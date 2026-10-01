@@ -99,3 +99,6 @@ services:
         sync: false
       - key: DAWAY_OCR_TIMEOUT
         value: "8"
+      # واجهة محاسبة الصيدلية — مُفعّلة للإنتاج (تُظهر روابط المبيعات/الإرجاعات/الصندوق في السايد بار)
+      - key: PHARMACY_ACCOUNTING_UI
+        value: "true"
