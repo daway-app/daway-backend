@@ -58,6 +58,7 @@
 </script>
 {{-- خلفية ثابتة هادئة (التنسيق في app_layout.css) --}}
 <div class="bg-anim-layer" aria-hidden="true"></div>
+{{-- Accounting Sidebar: rendered inline in layout so it appears on /pharmacy/accounting/* --}}
 <div class="app-layout">
     {{-- الشريط الجانبي --}}
     @include('components.sidebar')
