@@ -61,6 +61,11 @@
 <div class="app-layout">
     {{-- الشريط الجانبي --}}
     @include('components.sidebar')
+    @auth
+        @if(request()->routeIs('pharmacy.accounting.*') && config('features.pharmacy_accounting_ui'))
+            @include('components.sidebar-accounting')
+        @endif
+    @endauth
 
     <div class="main-wrapper">
         {{-- شريط حالة المزامنة — فوق الشريط العلوي في تدفق الصفحة (يدفعه للأسفل عند العرض) --}}
