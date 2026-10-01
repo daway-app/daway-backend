@@ -3,7 +3,8 @@
 @section('title', __('pharmacy.inventory.title'))
 
 @section('content')
-    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js'])
+    {{-- Phase 9: inventory-nav.js يتدخّل في روابط الترقيم فقط (partial navigation) --}}
+    @vite(['resources/css/pages/pharmacy_hub.css', 'resources/js/pharmacy_hub.js', 'resources/js/pharmacy/inventory-nav.js'])
     @include('partials.pharmacy-hub-i18n')
 
     @push('scripts')
@@ -28,7 +29,8 @@
         ]);
     @endphp
 
-    <div class='ph-page'>
+    {{-- Phase 9: هذا الحاوي هو ما يُستبدَل وحده عند التنقّل بين الصفحات (لا layout). --}}
+    <div class='ph-page' id="inventory-content">
         <div class='ph-head'>
             <div class='ph-page-title'>
                 <h1>@lang('pharmacy.inventory.heading')</h1>

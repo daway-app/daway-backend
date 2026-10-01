@@ -315,7 +315,7 @@
     "isEntry": true
   },
   "resources/js/accounting/accounting-barcode.js": {
-    "file": "assets/accounting-barcode-DnnTfIWw.js",
+    "file": "assets/accounting-barcode-DyHDf-Dt.js",
     "name": "accounting-barcode",
     "src": "resources/js/accounting/accounting-barcode.js",
     "isEntry": true
@@ -333,7 +333,7 @@
     "isEntry": true
   },
   "resources/js/accounting/accounting-phone-scanner.js": {
-    "file": "assets/accounting-phone-scanner-BS6DIn7C.js",
+    "file": "assets/accounting-phone-scanner-Cy-uUdRG.js",
     "name": "accounting-phone-scanner",
     "src": "resources/js/accounting/accounting-phone-scanner.js",
     "isEntry": true
@@ -363,7 +363,7 @@
     "isEntry": true
   },
   "resources/js/offline/index.js": {
-    "file": "assets/index-VrtmJoWC.js",
+    "file": "assets/index-DjRK37j9.js",
     "name": "index",
     "src": "resources/js/offline/index.js",
     "isEntry": true,
@@ -371,6 +371,12 @@
       "node_modules/firebase/app/dist/esm/index.esm.js",
       "node_modules/firebase/messaging/dist/esm/index.esm.js"
     ]
+  },
+  "resources/js/pharmacy/inventory-nav.js": {
+    "file": "assets/inventory-nav-CyHtIlQT.js",
+    "name": "inventory-nav",
+    "src": "resources/js/pharmacy/inventory-nav.js",
+    "isEntry": true
   },
   "resources/js/pharmacy_dashboard.js": {
     "file": "assets/pharmacy_dashboard-z53SdBqG.js",

@@ -41,6 +41,8 @@ export default defineConfig({
                 'resources/css/pages/pharmacy_import.css',
                 'resources/css/pages/pharmacy_accounting.css',
                 'resources/js/pharmacy_hub.js',
+                // Phase 9: partial navigation لترقيم صفحات مخزون الصيدلية فقط.
+                'resources/js/pharmacy/inventory-nav.js',
                 'resources/js/accounting/accounting-shared.js',
                 'resources/js/accounting/accounting-barcode.js',
                 'resources/js/accounting/accounting-scanner-session.js',
