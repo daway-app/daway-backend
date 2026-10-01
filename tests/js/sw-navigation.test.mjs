@@ -21,6 +21,12 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SW_SOURCE = readFileSync(join(ROOT, 'public', 'sw.js'), 'utf8');
 const ORIGIN = 'https://daway.test';
 
+/* الإصدار الحالي يُقرأ من المصدر بدل تثبيته — رفع VERSION (مثل v6→v7)
+   كان يكسر هذه الاختبارات بلا سبب. الهدف الحقيقي: إثبات أن activate ينظّف
+   الإصدارات الأقدم ويُبقي الإصدار الحالي. */
+const SW_VERSION = (SW_SOURCE.match(/const VERSION = '([^']+)'/) || [])[1];
+if (!SW_VERSION) throw new Error('لم يُعثر على VERSION في public/sw.js');
+
 /* ---------------- harness ---------------- */
 
 let passed = 0;
@@ -86,7 +92,7 @@ function loadServiceWorker(fetchImpl, seed = {}, opts = {}) {
         open: async () => cache,
         match: async (req, o) => cache.match(req, o),
         // كاشات: نسختان من التطبيق + كاش تطبيق آخر (للتأكد أننا لا نمسّه)
-        keys: async () => ['daway-v5', 'daway-v6', 'unrelated-app-cache'],
+        keys: async () => ['daway-v5', SW_VERSION, 'unrelated-app-cache'],
         delete: async (name) => { deleted.push(name); return true; },
     };
 
@@ -291,14 +297,14 @@ async function testPurgeDeletesOnlyDawayCaches() {
     await sleep(20);
 
     ok('حُذف كاش daway-v5', deleted.includes('daway-v5'), JSON.stringify(deleted));
-    ok('حُذف كاش daway-v6', deleted.includes('daway-v6'), JSON.stringify(deleted));
+    ok(`حُذف كاش ${SW_VERSION}`, deleted.includes(SW_VERSION), JSON.stringify(deleted));
     ok('لم يُحذف كاش تطبيق آخر', !deleted.includes('unrelated-app-cache'), JSON.stringify(deleted));
 }
 
 async function testVersionWasBumpedAndOldCacheSwept() {
     console.log('\n11) رفع الإصدار -> activate ينظّف الإصدارات القديمة فقط');
 
-    ok("الإصدار أصبح daway-v6", /const VERSION = 'daway-v6'/.test(SW_SOURCE), 'VERSION غير متوقع');
+    ok(`الإصدار مُعرَّف بصيغة daway-v<N>`, /const VERSION = 'daway-v\d+'/.test(SW_SOURCE), `VERSION الحالي: ${SW_VERSION}`);
 
     const { handlers, deleted } = loadServiceWorker(async () => makeResponse('X'));
     let captured = null;
@@ -307,7 +313,7 @@ async function testVersionWasBumpedAndOldCacheSwept() {
     await sleep(20);
 
     ok('حُذف daway-v5 عند activate', deleted.includes('daway-v5'), JSON.stringify(deleted));
-    ok('لم يُحذف الكاش الحالي daway-v6', !deleted.includes('daway-v6'), JSON.stringify(deleted));
+    ok(`لم يُحذف الكاش الحالي ${SW_VERSION}`, !deleted.includes(SW_VERSION), JSON.stringify(deleted));
     ok('لم يُحذف كاش تطبيق آخر', !deleted.includes('unrelated-app-cache'), JSON.stringify(deleted));
 }
 
