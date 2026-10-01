@@ -125,15 +125,21 @@ final class BarcodeStatus
      *
      * القاعدة في هذا المشروع: كل نص يراه المستخدم يأتي من `lang/`، ليبقى
      * تبديل اللغة والمراجعة اللغوية ممكنًا بلا لمس PHP.
+     *
+     * ⚠️ لا تسبق المفتاح بـ`accounting::`: هذا الـnamespace **غير مسجَّل**
+     * (لا `loadTranslationsFrom` في أي مزوّد)، والقوالب تقرأ من الـnamespace
+     * الافتراضي. إضافة البادئة كانت تُرجع المفتاح الخام كما هو في الواجهة
+     * (شارة الباركود في نقطة البيع). الملف الحقيقي:
+     * `resources/lang/{ar,en}/accounting.php`.
      */
     public static function labelKey(string $status): string
     {
-        return 'accounting::accounting.barcode.status.' . self::normalize($status);
+        return 'accounting.barcode.status.' . self::normalize($status);
     }
 
     public static function hintKey(string $status): string
     {
-        return 'accounting::accounting.barcode.status_hint.' . self::normalize($status);
+        return 'accounting.barcode.status_hint.' . self::normalize($status);
     }
 
     /**

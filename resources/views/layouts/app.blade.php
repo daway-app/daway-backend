@@ -58,15 +58,10 @@
 </script>
 {{-- خلفية ثابتة هادئة (التنسيق في app_layout.css) --}}
 <div class="bg-anim-layer" aria-hidden="true"></div>
-{{-- Accounting Sidebar: rendered inline in layout so it appears on /pharmacy/accounting/* --}}
 <div class="app-layout">
-    {{-- الشريط الجانبي --}}
+    {{-- الشريط الجانبي — يتضمّن قسم المحاسبة داخله (components.sidebar ← sidebar-accounting).
+         ⚠️ لا تُضِف `sidebar-accounting` هنا مرة أخرى: ذلك يُرسَم القسم مرّتين. --}}
     @include('components.sidebar')
-    @auth
-        @if(request()->routeIs('pharmacy.accounting.*') && config('features.pharmacy_accounting_ui'))
-            @include('components.sidebar-accounting')
-        @endif
-    @endauth
 
     <div class="main-wrapper">
         {{-- شريط حالة المزامنة — فوق الشريط العلوي في تدفق الصفحة (يدفعه للأسفل عند العرض) --}}

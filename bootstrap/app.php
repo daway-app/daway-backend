@@ -21,6 +21,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 Request::enableHttpMethodParameterOverride();
 
+// دوال مساعدة عامة (مثل `account_money`) — تُحمَّل هنا لضمان توفّرها على كل
+// بيئة بلا الاعتماد على تعديل `composer.json` أو إعادة توليد الـautoloader.
+require_once __DIR__.'/../app/helpers.php';
+
 /**
  * هل الطلب على مسارات الاستيراد الجماعي؟
  *

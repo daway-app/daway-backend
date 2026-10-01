@@ -506,8 +506,16 @@ final class AccountingLedger
         }
     }
 
-    /** إضافة حركة صندوق. */
-    private static function recordCash(
+    /**
+     * إضافة حركة صندوق.
+     *
+     * ⚠️ `public` لا `private`: `RefundService` يستدعيها لتسجيل حركة
+     * الإرجاع (`out`). إبقاؤها خاصة يكسر الإرجاع بـ
+     * «Call to private method … from scope RefundService».
+     * هذا هو نفس التعديل المقصود في `0cca38d` — أُعيد بعد أن ضاع عند
+     * استعادة الملف من نسخة أحدث.
+     */
+    public static function recordCash(
         int $pharmacyId,
         string $direction,
         float $amount,
@@ -563,8 +571,13 @@ final class AccountingLedger
         }
     }
 
-    /** تعديل رصيد العميل — يمرّ من هنا فقط ليبقى متسقًا مع الدفتر. */
-    private static function adjustCustomerBalance(Customer $customer, float $delta): void
+    /**
+     * تعديل رصيد العميل — يمرّ من هنا فقط ليبقى متسقًا مع الدفتر.
+     *
+     * ⚠️ `public` لا `private`: `RefundService` يستدعيها لتخفيض رصيد
+     * العميل عند إرجاع بيع آجل. نفس مبرّر `recordCash` أعلاه.
+     */
+    public static function adjustCustomerBalance(Customer $customer, float $delta): void
     {
         DB::table('customers')
             ->where('id', $customer->id)

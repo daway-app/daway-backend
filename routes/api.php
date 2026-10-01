@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AccountingCashController;
 use App\Http\Controllers\Api\AccountingExpenseController;
 use App\Http\Controllers\Api\AccountingOverviewController;
 use App\Http\Controllers\Api\AccountingPartiesController;
+use App\Http\Controllers\Api\AccountingRefundController;
 use App\Http\Controllers\Api\AccountingSalesController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\AdminPharmacyMohDryRunController;
@@ -229,6 +230,20 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('sales/{number}', [AccountingSalesController::class, 'show'])
                 ->name('api.pharmacy.accounting.sales.show');
 
+            // الإرجاعات — قراءة. مسارات `sales/{number}/refunds*` تُعلَن
+            // هنا (لا بعد `sales/{number}` أعلاه) مع أنّ Laravel يحلّ
+            // الأطول أولًا — لكن الإعلان الصريح يجعل النية واضحة ويحمي من
+            // أي إعادة ترتيب لاحقة.
+            Route::get('refunds', [AccountingRefundController::class, 'index'])
+                ->name('api.pharmacy.accounting.refunds.index');
+            Route::get('refunds/{refund}', [AccountingRefundController::class, 'show'])
+                ->where('refund', '[0-9]+')
+                ->name('api.pharmacy.accounting.refunds.show');
+            Route::get('sales/{number}/refunds', [AccountingRefundController::class, 'indexForSale'])
+                ->name('api.pharmacy.accounting.sales.refunds');
+            Route::get('sales/{number}/refund-items', [AccountingRefundController::class, 'availableItems'])
+                ->name('api.pharmacy.accounting.sales.refund-items');
+
             Route::get('expense-categories', [AccountingExpenseController::class, 'categories'])
                 ->name('api.pharmacy.accounting.expense-categories');
             Route::get('expenses', [AccountingExpenseController::class, 'index'])
@@ -269,6 +284,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
                 Route::post('cash/adjustments', [AccountingCashController::class, 'storeAdjustment'])
                     ->name('api.pharmacy.accounting.cash.adjustments');
+
+                // الإرجاعات — كتابة (تُنشئ قيدًا في الدفتر وتُعيد المخزون).
+                Route::post('refunds', [AccountingRefundController::class, 'store'])
+                    ->name('api.pharmacy.accounting.refunds.store');
             });
         });
     });

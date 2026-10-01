@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\web\Pharmacy;
 
 use App\Http\Controllers\Controller;
+use App\Models\CashMovement;
 use App\Models\Pharmacy;
+use App\Models\Refund;
 use App\Models\Sale;
 use App\Services\Accounting\AccountingReports;
 use Illuminate\Http\Request;
@@ -206,9 +208,158 @@ class AccountingController extends Controller
 
         abort_if($sale === null, 404, __('accounting.invoice.not_found'));
 
-        return view('pharmacy.accounting.invoice', [
+        return view('pharmacy.accounting.sales.show', [
             'pharmacy' => $pharmacy,
             'sale' => self::presentInvoice($sale),
+            'isDemo' => false,
+        ]);
+    }
+
+    /** /pharmacy/accounting/refunds — قائمة الإرجاعات */
+    public function refundsIndex(Request $request): View
+    {
+        $pharmacy = $this->pharmacy();
+        $id = (int) $pharmacy->id;
+
+        $q = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', 'all');
+
+        // قيم غير معروفة تُتجاهل بصمت — نفس سلوك الـAPI حرفيًا.
+        $allowedStatus = ['all', Refund::STATUS_COMPLETED, Refund::STATUS_PENDING, Refund::STATUS_CANCELLED];
+        if (! in_array($status, $allowedStatus, true)) {
+            $status = 'all';
+        }
+
+        $query = Refund::query()
+            ->forPharmacy($id)
+            ->with(['sale:id,number', 'createdBy:id,name'])
+            ->orderByDesc('refunded_at')
+            ->orderByDesc('id');
+
+        if ($q !== '') {
+            // البحث في رقم الإرجاع أو رقم الفاتورة — لا في نص حر بلا فهرس.
+            $query->where(function ($w) use ($q) {
+                $w->where('id', 'like', "%{$q}%")
+                    ->orWhereHas('sale', fn ($s) => $s->where('number', 'like', "%{$q}%"));
+            });
+        }
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $refunds = $query->paginate(15)->withQueryString();
+
+        return view('pharmacy.accounting.refunds.index', [
+            'pharmacy' => $pharmacy,
+            'refunds' => $refunds,
+            'isDemo' => false,
+        ]);
+    }
+
+    /** /pharmacy/accounting/refunds/create/{saleNumber} — إنشاء إرجاع */
+    public function refundsCreate(string $saleNumber): View
+    {
+        $pharmacy = $this->pharmacy();
+
+        $sale = Sale::query()
+            ->forPharmacy((int) $pharmacy->id)
+            ->where('number', $saleNumber)
+            ->with(['items' => fn ($q) => $q->select(
+                'id', 'sale_id', 'medicine_name', 'barcode',
+                'quantity', 'unit_price', 'line_discount', 'line_total'
+            )])
+            ->first();
+
+        abort_if($sale === null, 404, __('accounting.invoice.not_found'));
+
+        // لا إرجاع لفاتورة ملغاة أو مُرجَعة بالكامل.
+        abort_if(
+            in_array($sale->status, [Sale::STATUS_CANCELLED, Sale::STATUS_REFUNDED], true),
+            422,
+            __('accounting.common.refund_forbidden')
+        );
+
+        return view('pharmacy.accounting.refunds.create', [
+            'pharmacy' => $pharmacy,
+            // ⚠️ `presentInvoice` لا `presentSaleRow`: الـview يمرّ على
+            // `$sale['items']` كـ**مصفوفة بنود**، بينما `presentSaleRow`
+            // يجعل `items` عددًا صحيحًا ⇒ `foreach` على int = خطأ 500.
+            'sale' => self::presentInvoice($sale),
+            'isDemo' => false,
+        ]);
+    }
+
+    /** /pharmacy/accounting/refunds/{refund} — تفاصيل الإرجاع */
+    public function refundShow(int $refund): View
+    {
+        $pharmacy = $this->pharmacy();
+
+        // القيد بـpharmacy_id داخل الاستعلام — لا مقارنة لاحقة (IDOR-safe).
+        // نُحمّل `sale.items` و`sale.customer` أيضًا لأن `presentInvoice`
+        // يقرأهما (وإلا N+1 أو خطأ على علاقة غير محمّلة).
+        $refundModel = Refund::query()
+            ->forPharmacy((int) $pharmacy->id)
+            ->with(['sale.items', 'sale.customer:id,name', 'items.saleItem', 'createdBy:id,name'])
+            ->where('id', $refund)
+            ->first();
+
+        abort_if($refundModel === null, 404, __('accounting.refunds.not_found'));
+
+        return view('pharmacy.accounting.refunds.show', [
+            'pharmacy' => $pharmacy,
+            'refund' => $refundModel,
+            'sale' => self::presentInvoice($refundModel->sale),
+            'isDemo' => false,
+        ]);
+    }
+
+    /**
+     * /pharmacy/accounting/cash — حركات الصندوق.
+     *
+     * ⚠️ مطابقة السكيما الفعلية لـ`CashMovement` — وهي تختلف عن الأسماء
+     * البديهية:
+     *   • العمود هو `source_type` (لا `type`).
+     *   • الاتجاه `in`/`out` (لا `incoming`/`outgoing`).
+     *   • العلاقة `creator` (لا `user`).
+     *   • التاريخ `moved_at` (لا `created_at`).
+     *   • لا يوجد مصدر باسم `refund` — الإرجاع يُقيَّد كحركة `out`.
+     */
+    public function cashMovements(Request $request): View
+    {
+        $pharmacy = $this->pharmacy();
+        $id = (int) $pharmacy->id;
+
+        $sourceType = (string) $request->query('source_type', 'all');
+        $direction = (string) $request->query('direction', 'all');
+
+        $query = CashMovement::query()
+            ->forPharmacy($id)
+            ->with('creator:id,name')
+            ->orderByDesc('moved_at')
+            ->orderByDesc('id');
+
+        // قيم غير معروفة تُتجاهل بصمت (لا 422) — نفس سلوك الـAPI.
+        if ($sourceType !== 'all' && in_array($sourceType, CashMovement::sources(), true)) {
+            $query->where('source_type', $sourceType);
+        } else {
+            $sourceType = 'all';
+        }
+
+        if (in_array($direction, [CashMovement::DIRECTION_IN, CashMovement::DIRECTION_OUT], true)) {
+            $query->where('direction', $direction);
+        } else {
+            $direction = 'all';
+        }
+
+        $movements = $query->paginate(20)->withQueryString();
+
+        return view('pharmacy.accounting.cash.index', [
+            'pharmacy' => $pharmacy,
+            'movements' => $movements,
+            'sourceType' => $sourceType,
+            'direction' => $direction,
+            'balance' => \App\Services\Accounting\AccountingReports::cashBalance($id),
             'isDemo' => false,
         ]);
     }

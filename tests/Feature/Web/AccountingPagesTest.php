@@ -718,4 +718,215 @@ class AccountingPagesTest extends TestCase
         // /pharmacy/accounting محجوب عن الأدمن (role:pharmacy)
         $this->get('/pharmacy/accounting')->assertRedirect();
     }
+
+    /* ==========================================================
+       🔴 حارس الانحدار — صفحات الإرجاعات والصندوق
+       ==========================================================
+
+       سبب وجود هذا القسم: كوميت fe07a05 سجّل 4 مسارات (الإرجاعات ×3 +
+       الصندوق) في routes/web.php لكنه لم يُضِف دوالها إلى
+       `web\Pharmacy\AccountingController` ⇒ كل نقرة على «الإرجاعات» أو
+       «الصندوق» في الشريط الجانبي كانت **500** (Method does not exist).
+       الاختبار القديم كان يقول «كل صفحة مبنية تُرسم» وهو يغطّي 3 من 8 فقط
+       — لذا لم يُكشف العطل لأيام. هذا الحارس يغطّي **كل** صفحات المحاسبة.
+    */
+
+    public function test_every_accounting_route_renders_and_never_500s(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        $this->makeSale($pharmacy->id, 'INV-9001');
+
+        $this->actingAs($user);
+
+        // كل مسار في مجموعة pharmacy.accounting.* يجب أن يُرسم فعلًا.
+        foreach ([
+            '/pharmacy/accounting',
+            '/pharmacy/accounting/sales',
+            '/pharmacy/accounting/sales/create',
+            '/pharmacy/accounting/sales/INV-9001',
+            '/pharmacy/accounting/refunds',
+            '/pharmacy/accounting/refunds/create/INV-9001',
+            '/pharmacy/accounting/cash',
+        ] as $uri) {
+            $this->get($uri)->assertOk();
+        }
+    }
+
+    public function test_refunds_index_renders_its_own_columns_and_empty_state(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        // (أ) بلا إرجاعات ⇒ حالة فراغ، لا جدول.
+        $this->actingAs($user);
+        $empty = $this->get('/pharmacy/accounting/refunds')->assertOk()->getContent();
+        $this->assertStringContainsString(__('accounting.refunds.empty'), $empty);
+        $this->assertStringNotContainsString('accounting.refunds.', $empty);
+
+        // (ب) مع إرجاع ⇒ كل الأعمدة تظهر بنصوص مترجمة (لا مفاتيح مكشوفة).
+        $sale = $this->makeSale($pharmacy->id, 'INV-9200');
+        \App\Models\Refund::create([
+            'pharmacy_id' => $pharmacy->id,
+            'sale_id' => $sale->id,
+            'created_by' => $user->id,
+            'refunded_at' => now(),
+            'amount' => 7.50,
+            'reason' => 'خطأ في الصنف',
+            'status' => \App\Models\Refund::STATUS_COMPLETED,
+        ]);
+
+        $html = $this->get('/pharmacy/accounting/refunds')->assertOk()->getContent();
+
+        foreach ([
+            __('accounting.refunds.col_refund_id'),
+            __('accounting.refunds.col_sale'),
+            __('accounting.refunds.col_amount'),
+            __('accounting.refunds.col_status'),
+        ] as $text) {
+            $this->assertStringContainsString($text, $html);
+        }
+
+        // الـ«&» في مسار الـstore يُهرَّب في HTML — لذا نبحث عن الاسم لا الرابط.
+        $this->assertStringNotContainsString('accounting.refunds.', $html);
+    }
+
+    public function test_cash_page_renders_balance_and_source_filter(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+
+        // حركة صندوق حقيقية — الرصيد يجب أن يعكسها.
+        \App\Models\CashMovement::create([
+            'pharmacy_id' => $pharmacy->id,
+            'direction' => \App\Models\CashMovement::DIRECTION_IN,
+            'amount' => 250.00,
+            'source_type' => \App\Models\CashMovement::SOURCE_SALE,
+            'description' => 'بيع نقدي',
+            'moved_at' => now(),
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        $html = $this->get('/pharmacy/accounting/cash')->assertOk()->getContent();
+
+        // الرصيد الحقيقي يظهر، والمصادر تُرسَم من CashMovement::sources() لا من قائمة يدوية.
+        $this->assertStringContainsString(__('accounting.cash_registers.balance_now'), $html);
+        $this->assertStringContainsString('250.00', $html);
+        $this->assertStringContainsString(__('accounting.cash_registers.types.sale'), $html);
+
+        // لا مفاتيح ترجمة مكشوفة (عطل cash_registers block الغائب سابقًا).
+        $this->assertStringNotContainsString('accounting.cash_registers.', $html);
+    }
+
+    public function test_refund_show_page_renders_creator_and_items(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        $sale = $this->makeSale($pharmacy->id, 'INV-9100');
+
+        $item = \App\Models\SaleItem::create([
+            'sale_id' => $sale->id,
+            'medicine_name' => 'باراسيتامول 500',
+            'quantity' => 2,
+            'unit_price' => 5.00,
+            'line_discount' => 0,
+            'line_total' => 10.00,
+        ]);
+
+        $refund = \App\Models\Refund::create([
+            'pharmacy_id' => $pharmacy->id,
+            'sale_id' => $sale->id,
+            'created_by' => $user->id,
+            'refunded_at' => now(),
+            'amount' => 10.00,
+            'reason' => 'منتج تالف',
+            'status' => \App\Models\Refund::STATUS_COMPLETED,
+        ]);
+
+        \App\Models\RefundItem::create([
+            'refund_id' => $refund->id,
+            'sale_item_id' => $item->id,
+            'quantity' => 2,
+            'amount' => 10.00,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->get('/pharmacy/accounting/refunds/'.$refund->id)
+            ->assertOk()
+            ->assertSee('باراسيتامول 500')
+            ->assertSee('منتج تالف')
+            ->assertSee(__('accounting.refunds.status.completed'));
+    }
+
+    public function test_refunds_and_cash_are_isolated_per_pharmacy(): void
+    {
+        [$userA, $pharmacyA] = $this->pharmacyUser();
+        [, $pharmacyB] = $this->pharmacyUser();
+
+        $saleB = $this->makeSale($pharmacyB->id, 'INV-9500');
+        $refundB = \App\Models\Refund::create([
+            'pharmacy_id' => $pharmacyB->id,
+            'sale_id' => $saleB->id,
+            'created_by' => $userA->id,
+            'refunded_at' => now(),
+            'amount' => 5.00,
+            'status' => \App\Models\Refund::STATUS_COMPLETED,
+        ]);
+
+        \App\Models\CashMovement::create([
+            'pharmacy_id' => $pharmacyB->id,
+            'direction' => \App\Models\CashMovement::DIRECTION_IN,
+            'amount' => 999.00,
+            'source_type' => \App\Models\CashMovement::SOURCE_SALE,
+            'moved_at' => now(),
+            'created_by' => $userA->id,
+        ]);
+
+        $this->actingAs($userA);
+
+        // إرجاع صيدلية أخرى: 404 لا 200 (IDOR-safe).
+        $this->get('/pharmacy/accounting/refunds/'.$refundB->id)->assertNotFound();
+
+        // رصيد صيدلية A لا يتضمّن حركة صيدلية B.
+        $html = $this->get('/pharmacy/accounting/cash')->assertOk()->getContent();
+        $this->assertStringNotContainsString('999.00', $html);
+
+        // فهرس الإرجاعات لا يعرض إرجاعات صيدلية B.
+        // نتحقّق من غياب رابط «عرض» لرقم إرجاع B تحديدًا — أدقّ من '#id'
+        // الذي قد يظهر صدفةً في محتوى آخر.
+        $listHtml = $this->get('/pharmacy/accounting/refunds')->assertOk()->getContent();
+        $this->assertStringNotContainsString(
+            route('pharmacy.accounting.refunds.show', $refundB->id),
+            $listHtml
+        );
+    }
+
+    public function test_sidebar_accounting_section_is_not_rendered_twice(): void
+    {
+        [$user] = $this->pharmacyUser();
+        config(['features.pharmacy_accounting_ui' => true]);
+
+        $this->actingAs($user);
+        $html = $this->get('/pharmacy/accounting')->assertOk()->getContent();
+
+        // القسم يُضمَّن مرة واحدة فقط (كان مُضمَّنًا في sidebar.blade.php
+        // وlayouts/app.blade.php معًا ⇒ رابط «الإرجاعات» و«الصندوق» مكرّران
+        // في الشريط الجانبي). المعرّف الفريد للقسم هو `ac-sidebar-menu`.
+        $this->assertSame(
+            1,
+            substr_count($html, 'data-nav-toggle="ac-sidebar-menu"'),
+            'قسم المحاسبة في الشريط الجانبي مُرسَم أكثر من مرة'
+        );
+
+        // كل رابط فرعي في القسم يجب أن يظهر مرة واحدة بالضبط.
+        foreach ([
+            route('pharmacy.accounting.refunds.index'),
+            route('pharmacy.accounting.cash.index'),
+        ] as $href) {
+            $this->assertSame(
+                1,
+                substr_count($html, 'href="'.$href.'"'),
+                "الرابط {$href} مُرسَم أكثر من مرة في الشريط الجانبي"
+            );
+        }
+    }
 }

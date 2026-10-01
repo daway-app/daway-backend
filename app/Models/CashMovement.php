@@ -31,6 +31,9 @@ class CashMovement extends Model
     public const SOURCE_WITHDRAWAL = 'withdrawal';
     public const SOURCE_DEPOSIT = 'deposit';
     public const SOURCE_ADJUSTMENT = 'adjustment';
+    // الإرجاع يُقيَّد كحركة `out` — مصدره منفصل عن `sale` ليظهر في التقارير
+    // وفي فلتر الصندوق بتمييز واضح.
+    public const SOURCE_REFUND = 'refund';
 
     protected $fillable = [
         'pharmacy_id',
@@ -84,6 +87,7 @@ class CashMovement extends Model
             self::SOURCE_WITHDRAWAL,
             self::SOURCE_DEPOSIT,
             self::SOURCE_ADJUSTMENT,
+            self::SOURCE_REFUND,
         ];
     }
 
