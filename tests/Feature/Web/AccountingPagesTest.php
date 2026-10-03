@@ -629,7 +629,12 @@ class AccountingPagesTest extends TestCase
     {
         [$user] = $this->pharmacyUser();
 
-        // الافتراضي الآن: قسم المحاسبة مخفي عن الصيدلية (config/features.php)
+        // نثبّت الـflag على false صراحةً: الاختبار يتحقّق من سلوك الإخفاء، لا من
+        // قيمة البيئة الحالية. بدون هذا التثبيت يصبح الاختبار اعتماديًا على .env
+        // (كان يمرّ فقط لأن PHARMACY_ACCOUNTING_UI غائب محليًا) — قنبلة موقوتة
+        // تنفجر في أي بيئة تُفعَّل فيها المحاسبة (مثل الإنتاج: render.yaml=true).
+        config(['features.pharmacy_accounting_ui' => false]);
+
         // نتحقّق من غياب عناصر الشريط الجانبي تحديدًا — لا من كلمة «المحاسبة»
         // (الصفحة نفسها تحمل الاسم في عنوانها).
         $this->actingAs($user)->get('/pharmacy/accounting')
