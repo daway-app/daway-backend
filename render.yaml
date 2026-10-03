@@ -52,7 +52,8 @@ services:
       # المعالجة: إضافة تحديد معدل لكل حساب (rate limiting per-account) — مهمة لوكيل الأمان/الـ API.
       - key: TRUSTED_PROXIES
         value: ""
-      # عيّن القيمة من Render Dashboard (مثل https://daway-backend.onrender.com)
+      # عيّن القيمة من Render Dashboard — الرابط الفعلي للخدمة هو daway-backend-zlh2.onrender.com
+      # (⚠️ daway-backend.onrender.com اسم مهجور يرد 404 مع x-render-routing: no-server)
       - key: APP_URL
       # Sanctum: النطاق الذي تُقبل منه كوكيز الجلسة على /api/*
       # مطلوب لـ /api/sync/token (إصدار توكن المزامنة من جلسة الويب)
