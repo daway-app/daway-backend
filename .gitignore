@@ -46,3 +46,6 @@ postman/
 # بيانات أدوات محلية (ذاكرة الجلسات) — لا تُرفع للمستودع
 /.workbuddy-ai/
 .git.corrupted/
+
+# Swagger/OpenAPI — مخرجات مُولَّدة (أعد توليدها بـ: php artisan l5-swagger:generate)
+/storage/api-docs/
