@@ -222,7 +222,10 @@ class CategoryController extends Controller
         // تظهر في القسم عبر category_medicine_links.medicine_id + مخزون متوفر.
         $localRows = $this->availableLocalMedicines($model->id, $subcategoryId, $q);
 
-        $mohData = $pageItems->map(fn (MohMedicine $m) => $this->mohPayload($m)
+        // صور أدوية MOH للصفحة الحالية — نداء واحد (لا N+1).
+        $mohImages = $this->mohImages($pageItems);
+
+        $mohData = $pageItems->map(fn (MohMedicine $m) => $this->mohPayload($m, $mohImages[$m->id] ?? null)
             + ['medicine_id' => $localMedicineIds[$m->trade_name] ?? null]
             + ($linkMeta[$m->moh_product_id] ?? $linkMeta['d:'.$m->moh_drug_id] ?? [
                 'source' => null,
@@ -508,6 +511,9 @@ class CategoryController extends Controller
             'company' => null,
             'availability' => null,
             'price_updated_at' => null,
+            // مصدر الصور المعتمد محليًا = عمود medicines.image (نفس ما تستخدمه
+            // PharmacyMedicineResource/MedicineController) — لا روابط وهمية.
+            'image_url' => Image::url($m->image),
             'source' => CategoryMedicineLink::SOURCE_ADMIN,
             'confidence' => 100,
             'needs_review' => false,
@@ -760,8 +766,10 @@ class CategoryController extends Controller
      * medicine_id (nullable) يُضاف من المتصل عبر Medicine::idsByTradeName()
      * = معرّف الدواء في الكتالوج المحلي حين يوجد مطابق بالاسم، حتى يستطيع
      * العميل إكمال مسار التفاصيل/التوفر بدل الاعتماد على moh_medicines.id.
+     *
+     * image_url يُمرَّر من المتصل (محسوب دفعة واحدة لصفحة النتائج — لا N+1).
      */
-    private function mohPayload(MohMedicine $m): array
+    private function mohPayload(MohMedicine $m, ?string $imageUrl = null): array
     {
         return [
             'id' => $m->id,
@@ -776,7 +784,43 @@ class CategoryController extends Controller
             'company' => $m->company,
             'availability' => $m->availability,
             'price_updated_at' => $m->price_updated_at?->toDateString(),
+            'image_url' => $imageUrl,
         ];
+    }
+
+    /**
+     * صور أدوية صفحة MOH الحالية — دفعة واحدة (استعلام واحد مهما بلغ حجم الصفحة).
+     *
+     * المصدر المعتمد = جدول medicine_images (نفس مصدر BarcodeLookupController)،
+     * يُفضَّل is_verified ثم الأقدم. لا تنزيل ولا base64 ولا روابط وهمية:
+     * نُعيد القيمة المخزَّنة كما هي، أو null إن لم توجد صورة.
+     *
+     * @param  \Illuminate\Support\Collection<int, MohMedicine>  $pageItems
+     * @return array<int, string>  مفاتيحه moh_medicines.id → image_url
+     */
+    private function mohImages($pageItems): array
+    {
+        $ids = $pageItems->pluck('id')->filter()->unique()->values()->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $map = [];
+
+        // orderByDesc(is_verified) ثم id: أول صف لكل دواء هو «الأفضل» — نفس
+        // دلالة BarcodeLookupController::image() لكن لصفحة كاملة في نداء واحد.
+        $rows = DB::table('medicine_images')
+            ->whereIn('moh_medicine_id', $ids)
+            ->orderByDesc('is_verified')
+            ->orderBy('id')
+            ->get(['moh_medicine_id', 'image_url']);
+
+        foreach ($rows as $row) {
+            $map[(int) $row->moh_medicine_id] ??= $row->image_url;
+        }
+
+        return $map;
     }
 
     /**

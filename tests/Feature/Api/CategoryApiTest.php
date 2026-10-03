@@ -612,4 +612,143 @@ class CategoryApiTest extends TestCase
         $coughSub = collect($data['categories'][0]['subcategories'])->firstWhere('slug', 'cough-sore-throat');
         $this->assertSame(1, $coughSub['medicines_count']);
     }
+
+    /* ==========================================================
+       image_url في أدوية القسم
+       ========================================================== */
+
+    /** دواء MOH له صورة في medicine_images ⇒ image_url يظهر كما هو. */
+    public function test_category_medicines_expose_image_url_for_moh_drug_with_image(): void
+    {
+        $category = $this->categoryId('medicines');
+        $moh = $this->createMohMedicine(['trade_name' => 'IMG MED 5mg', 'moh_product_id' => 3001]);
+        $this->stockMoh($moh);
+        CategoryMedicineLink::create([
+            'category_id' => $category, 'moh_product_id' => 3001,
+            'source' => 'admin', 'confidence' => 100, 'needs_review' => false,
+        ]);
+
+        \App\Models\MedicineImage::create([
+            'moh_medicine_id' => $moh->id,
+            'image_url' => 'https://cdn.example.com/img-med.png',
+            'image_type' => 'packshot',
+            'source' => 'enrichment',
+            'is_verified' => true,
+        ]);
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+        $row = collect($rows)->firstWhere('trade_name', 'IMG MED 5mg');
+
+        $this->assertNotNull($row, 'MOH drug row should be present');
+        $this->assertArrayHasKey('image_url', $row);
+        $this->assertSame('https://cdn.example.com/img-med.png', $row['image_url']);
+    }
+
+    /** دواء MOH بلا صورة ⇒ image_url = null (لا رابط وهمي). */
+    public function test_category_medicines_return_null_image_url_when_no_image(): void
+    {
+        $category = $this->categoryId('medicines');
+        $moh = $this->createMohMedicine(['trade_name' => 'NOIMG MED 5mg', 'moh_product_id' => 3002]);
+        $this->stockMoh($moh);
+        CategoryMedicineLink::create([
+            'category_id' => $category, 'moh_product_id' => 3002,
+            'source' => 'admin', 'confidence' => 100, 'needs_review' => false,
+        ]);
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+        $row = collect($rows)->firstWhere('trade_name', 'NOIMG MED 5mg');
+
+        $this->assertNotNull($row);
+        $this->assertArrayHasKey('image_url', $row);
+        $this->assertNull($row['image_url']);
+    }
+
+    /** الدواء المحلي يأخذ صورته من medicines.image (نفس مصدر PharmacyMedicineResource). */
+    public function test_category_medicines_expose_local_medicine_image_url(): void
+    {
+        $category = $this->categoryId('medicines');
+        $user = User::factory()->create();
+        $pharmacy = Pharmacy::unguarded(fn () => Pharmacy::create([
+            'user_id' => $user->id,
+            'pharmacy_custom_id' => 'LOC-'.uniqid(),
+            'pharmacy_name' => 'Local Pharmacy '.uniqid(),
+            'address' => 'Addr',
+            'phone_number' => '0590000000',
+            'region' => 'Region',
+            'is_active' => true,
+            'avg_rating' => 0,
+        ]));
+        $medicine = Medicine::factory()->create([
+            'trade_name' => 'LOCAL IMG MED',
+            'image' => 'https://cdn.example.com/local-img.png',
+        ]);
+        PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'price' => 5,
+            'quantity' => 10,
+            'is_available' => true,
+        ]);
+        CategoryMedicineLink::create([
+            'category_id' => $category, 'medicine_id' => $medicine->id,
+            'source' => 'admin', 'confidence' => 100, 'needs_review' => false,
+        ]);
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+        $row = collect($rows)->firstWhere('trade_name', 'LOCAL IMG MED');
+
+        $this->assertNotNull($row, 'Local drug row should be present');
+        $this->assertSame('https://cdn.example.com/local-img.png', $row['image_url']);
+    }
+
+    /** الحقل موجود في كل صفحات النتائج (pagination) — لا يقتصر على الصفحة الأولى. */
+    public function test_image_url_present_across_pagination_pages(): void
+    {
+        $category = $this->categoryId('medicines');
+
+        foreach ([1, 2, 3] as $i) {
+            $moh = $this->createMohMedicine([
+                'trade_name' => 'PAGED IMG '.$i,
+                'moh_product_id' => 4000 + $i,
+            ]);
+            $this->stockMoh($moh);
+            CategoryMedicineLink::create([
+                'category_id' => $category, 'moh_product_id' => 4000 + $i,
+                'source' => 'admin', 'confidence' => 100, 'needs_review' => false,
+            ]);
+        }
+
+        // صفحة 1 (عنصر واحد)
+        $page1 = $this->getJson("/api/categories/{$category}/medicines?per_page=1&page=1")->assertOk()->json('data');
+        $this->assertArrayHasKey('image_url', $page1[0]);
+
+        // صفحة 2 (عنصر واحد) — يجب أن تحمل الحقل أيضاً.
+        $page2 = $this->getJson("/api/categories/{$category}/medicines?per_page=1&page=2")->assertOk()->json('data');
+        $this->assertArrayHasKey('image_url', $page2[0]);
+    }
+
+    /** الحقل موجود في *كل* صف من صفوف الصفحة — لا في صف واحد فقط. */
+    public function test_image_url_present_on_every_row_of_a_page(): void
+    {
+        $category = $this->categoryId('medicines');
+
+        foreach ([1, 2, 3, 4] as $i) {
+            $moh = $this->createMohMedicine([
+                'trade_name' => 'ROW IMG '.$i,
+                'moh_product_id' => 5000 + $i,
+            ]);
+            $this->stockMoh($moh);
+            CategoryMedicineLink::create([
+                'category_id' => $category, 'moh_product_id' => 5000 + $i,
+                'source' => 'admin', 'confidence' => 100, 'needs_review' => false,
+            ]);
+        }
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+
+        $this->assertNotEmpty($rows);
+        foreach ($rows as $row) {
+            $this->assertArrayHasKey('image_url', $row, 'every row must expose image_url');
+        }
+    }
 }
