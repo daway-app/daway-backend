@@ -751,4 +751,317 @@ class CategoryApiTest extends TestCase
             $this->assertArrayHasKey('image_url', $row, 'every row must expose image_url');
         }
     }
+
+    /* ==========================================================
+       pharmacies_count — عدد الصيدليات المتوفر لديها الدواء
+       ========================================================== */
+
+    /**
+     * ينشئ صيدلية بمخزون لدواء MOH معيّن بمعايير قابلة للتحكم.
+     * is_active = نشاط الصيدلية · available/quantity = حالة المخزون.
+     */
+    private function addMohStock(MohMedicine $moh, bool $isActive = true, bool $available = true, int $quantity = 10): Pharmacy
+    {
+        $medicine = Medicine::factory()->create(['trade_name' => $moh->trade_name.' #'.uniqid()]);
+        $user = User::factory()->create();
+        $pharmacy = Pharmacy::unguarded(fn () => Pharmacy::create([
+            'user_id' => $user->id,
+            'pharmacy_custom_id' => 'PC-'.uniqid(),
+            'pharmacy_name' => 'PC Pharmacy '.uniqid(),
+            'address' => 'Addr',
+            'phone_number' => '0590000000',
+            'region' => 'Region',
+            'is_active' => $isActive,
+            'avg_rating' => 0,
+        ]));
+        PharmacyMedicine::create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'moh_medicine_id' => $moh->id,
+            'price' => 5,
+            'quantity' => $quantity,
+            'is_available' => $available,
+        ]);
+
+        return $pharmacy;
+    }
+
+    private function linkMoh(int $categoryId, MohMedicine $moh): void
+    {
+        CategoryMedicineLink::create([
+            'category_id' => $categoryId,
+            'moh_product_id' => $moh->moh_product_id,
+            'source' => 'admin',
+            'confidence' => 100,
+            'needs_review' => false,
+        ]);
+    }
+
+    /** دواء متوفر في صيدلية نشطة واحدة ⇒ pharmacies_count = 1. */
+    public function test_pharmacies_count_is_one_for_single_pharmacy(): void
+    {
+        $category = $this->categoryId('medicines');
+        $moh = $this->createMohMedicine(['trade_name' => 'PC ONE 5mg', 'moh_product_id' => 6001]);
+        $this->addMohStock($moh);
+        $this->linkMoh($category, $moh);
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+        $row = collect($rows)->firstWhere('trade_name', 'PC ONE 5mg');
+
+        $this->assertNotNull($row);
+        $this->assertArrayHasKey('pharmacies_count', $row);
+        $this->assertSame(1, $row['pharmacies_count']);
+    }
+
+    /** دواء متوفر في 3 صيدليات نشطة ⇒ pharmacies_count = 3. */
+    public function test_pharmacies_count_counts_multiple_pharmacies(): void
+    {
+        $category = $this->categoryId('medicines');
+        $moh = $this->createMohMedicine(['trade_name' => 'PC MANY 5mg', 'moh_product_id' => 6002]);
+
+        foreach ([1, 2, 3] as $_) {
+            $this->addMohStock($moh);
+        }
+        $this->linkMoh($category, $moh);
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+        $row = collect($rows)->firstWhere('trade_name', 'PC MANY 5mg');
+
+        $this->assertNotNull($row);
+        $this->assertSame(3, $row['pharmacies_count']);
+    }
+
+    /** صيدلية غير نشطة لا تُحتسب في العدد (2 نشطة من 3). */
+    public function test_pharmacies_count_excludes_inactive_pharmacies(): void
+    {
+        $category = $this->categoryId('medicines');
+        $moh = $this->createMohMedicine(['trade_name' => 'PC INACTIVE 5mg', 'moh_product_id' => 6003]);
+
+        $this->addMohStock($moh);                        // نشطة
+        $this->addMohStock($moh);                        // نشطة
+        $this->addMohStock($moh, isActive: false);       // غير نشطة — مستبعدة
+        $this->linkMoh($category, $moh);
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+        $row = collect($rows)->firstWhere('trade_name', 'PC INACTIVE 5mg');
+
+        $this->assertNotNull($row);
+        $this->assertSame(2, $row['pharmacies_count'], 'inactive pharmacy must not be counted');
+    }
+
+    /** is_available=false أو quantity=0 لا تُحتسب ⇒ 1 فقط. */
+    public function test_pharmacies_count_excludes_unavailable_or_zero_quantity(): void
+    {
+        $category = $this->categoryId('medicines');
+        $moh = $this->createMohMedicine(['trade_name' => 'PC STOCK 5mg', 'moh_product_id' => 6004]);
+
+        $this->addMohStock($moh);                                     // تُحتسب
+        $this->addMohStock($moh, available: false);                   // is_available=false — مستبعدة
+        $this->addMohStock($moh, quantity: 0);                        // كمية صفر — مستبعدة
+        $this->linkMoh($category, $moh);
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+        $row = collect($rows)->firstWhere('trade_name', 'PC STOCK 5mg');
+
+        $this->assertNotNull($row);
+        $this->assertSame(1, $row['pharmacies_count']);
+    }
+
+    /**
+     * صيدلية واحدة بصفَّين لنفس الدواء (medicine_id مختلف) لا تُحتسب مرتين:
+     * COUNT(DISTINCT pharmacy_id) لازم. UNIQUE(pharmacy_id, medicine_id) يسمح
+     * بصفّين مختلفين لنفس صيدلية/دواء MOH عبر medicine_id مختلف.
+     */
+    public function test_pharmacies_count_does_not_double_count_same_pharmacy(): void
+    {
+        $category = $this->categoryId('medicines');
+        $moh = $this->createMohMedicine(['trade_name' => 'PC DUP 5mg', 'moh_product_id' => 6005]);
+
+        $user = User::factory()->create();
+        $pharmacy = Pharmacy::unguarded(fn () => Pharmacy::create([
+            'user_id' => $user->id,
+            'pharmacy_custom_id' => 'DUP-'.uniqid(),
+            'pharmacy_name' => 'Dup Pharmacy '.uniqid(),
+            'address' => 'Addr',
+            'phone_number' => '0590000000',
+            'region' => 'Region',
+            'is_active' => true,
+            'avg_rating' => 0,
+        ]));
+
+        // صفّان لنفس الصيدلية ونفس دواء MOH لكن medicine_id مختلف.
+        foreach ([1, 2] as $_) {
+            $medicine = Medicine::factory()->create(['trade_name' => 'PC DUP local '.uniqid()]);
+            PharmacyMedicine::create([
+                'pharmacy_id' => $pharmacy->id,
+                'medicine_id' => $medicine->id,
+                'moh_medicine_id' => $moh->id,
+                'price' => 5,
+                'quantity' => 10,
+                'is_available' => true,
+            ]);
+        }
+
+        $this->linkMoh($category, $moh);
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+        $row = collect($rows)->firstWhere('trade_name', 'PC DUP 5mg');
+
+        $this->assertNotNull($row);
+        $this->assertSame(1, $row['pharmacies_count'], 'same pharmacy must be counted once');
+    }
+
+    /** الدواء المحلي يحمل pharmacies_count أيضاً (نفس تعريف MOH). */
+    public function test_pharmacies_count_present_for_local_medicine(): void
+    {
+        $category = $this->categoryId('medicines');
+
+        $medicine = Medicine::factory()->create(['trade_name' => 'PC LOCAL 5mg']);
+
+        foreach ([1, 2] as $_) {
+            $user = User::factory()->create();
+            $pharmacy = Pharmacy::unguarded(fn () => Pharmacy::create([
+                'user_id' => $user->id,
+                'pharmacy_custom_id' => 'LOCPC-'.uniqid(),
+                'pharmacy_name' => 'Local PC '.uniqid(),
+                'address' => 'Addr',
+                'phone_number' => '0590000000',
+                'region' => 'Region',
+                'is_active' => true,
+                'avg_rating' => 0,
+            ]));
+            PharmacyMedicine::create([
+                'pharmacy_id' => $pharmacy->id,
+                'medicine_id' => $medicine->id,
+                'price' => 5,
+                'quantity' => 10,
+                'is_available' => true,
+            ]);
+        }
+
+        CategoryMedicineLink::create([
+            'category_id' => $category, 'medicine_id' => $medicine->id,
+            'source' => 'admin', 'confidence' => 100, 'needs_review' => false,
+        ]);
+
+        $rows = $this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data');
+        $row = collect($rows)->firstWhere('trade_name', 'PC LOCAL 5mg');
+
+        $this->assertNotNull($row);
+        $this->assertArrayHasKey('pharmacies_count', $row);
+        $this->assertSame(2, $row['pharmacies_count']);
+    }
+
+    /** الحقل موجود في كل صف من الصفحة وفي كل صفحات النتائج. */
+    public function test_pharmacies_count_present_on_every_row_across_pages(): void
+    {
+        $category = $this->categoryId('medicines');
+
+        foreach ([1, 2, 3] as $i) {
+            $moh = $this->createMohMedicine([
+                'trade_name' => 'PC PAGED '.$i,
+                'moh_product_id' => 6100 + $i,
+            ]);
+            $this->addMohStock($moh, quantity: $i * 5);
+            $this->linkMoh($category, $moh);
+        }
+
+        foreach ([1, 2] as $page) {
+            $rows = $this->getJson("/api/categories/{$category}/medicines?per_page=2&page={$page}")
+                ->assertOk()->json('data');
+
+            $this->assertNotEmpty($rows);
+            foreach ($rows as $row) {
+                $this->assertArrayHasKey('pharmacies_count', $row, "page {$page}: every row must expose pharmacies_count");
+                $this->assertIsInt($row['pharmacies_count']);
+            }
+        }
+    }
+
+    /**
+     * العدّ يُحسب خارج كاش القائمة: إضافة صيدلية جديدة تظهر فورًا في
+     * pharmacies_count دون انتظار انتهاء صلاحية الكاش.
+     */
+    public function test_pharmacies_count_reflects_new_stock_without_cache_expiry(): void
+    {
+        $category = $this->categoryId('medicines');
+        $moh = $this->createMohMedicine(['trade_name' => 'PC LIVE 5mg', 'moh_product_id' => 6401]);
+        $this->addMohStock($moh);
+        $this->linkMoh($category, $moh);
+
+        $first = collect($this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data'))
+            ->firstWhere('trade_name', 'PC LIVE 5mg');
+        $this->assertSame(1, $first['pharmacies_count']);
+
+        // صيدلية ثانية تضيف نفس الدواء — بلا تصفير الكاش.
+        $this->addMohStock($moh);
+
+        $second = collect($this->getJson("/api/categories/{$category}/medicines")->assertOk()->json('data'))
+            ->firstWhere('trade_name', 'PC LIVE 5mg');
+        $this->assertSame(2, $second['pharmacies_count'], 'count must be computed outside the list cache');
+    }
+
+    /**
+     * حارس N+1: استعلامات جدول pharmacy_medicines اللازمة لعدّ الصيدليات ثابتة
+     * مهما كبرت الصفحة (استعلام واحد لكل مصدر: MOH + محلي). لو عاد أحدهم
+     * لتنفيذ استعلام لكل صف لصارت الكمية خطية مع عدد صفوف الصفحة.
+     *
+     * نُسخّن الـcache أولاً لكل طلب حتى لا يُحسب استعلام بناء القائمة، ونستهدف
+     * فقط استعلام COUNT(DISTINCT ...) الذي يشغّله عدّاد الصيدليات.
+     */
+    public function test_pharmacies_count_uses_batched_query_not_n_plus_one(): void
+    {
+        $category = $this->categoryId('medicines');
+
+        $countDistinctQueries = function () {
+            return collect(\Illuminate\Support\Facades\DB::getQueryLog())
+                ->filter(fn ($q) => str_contains($q['query'], 'COUNT(DISTINCT pm.pharmacy_id)'))
+                ->count();
+        };
+
+        // دواء واحد على الأقل في كل الحالتين.
+        $base = $this->createMohMedicine(['trade_name' => 'PC N+1 BASE', 'moh_product_id' => 6201]);
+        $this->addMohStock($base);
+        $this->linkMoh($category, $base);
+
+        // نسخّن الكاش لكل حجم صفحة قبل القياس.
+        $this->getJson("/api/categories/{$category}/medicines?per_page=1")->assertOk();
+        $this->getJson("/api/categories/{$category}/medicines?per_page=10")->assertOk();
+
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+        \Illuminate\Support\Facades\DB::flushQueryLog();
+        $small = $this->getJson("/api/categories/{$category}/medicines?per_page=1")->assertOk()->json('data');
+        $smallDistinct = $countDistinctQueries();
+
+        foreach ([1, 2, 3, 4, 5, 6, 7, 8] as $i) {
+            $moh = $this->createMohMedicine([
+                'trade_name' => 'PC N+1 B'.$i,
+                'moh_product_id' => 6300 + $i,
+            ]);
+            $this->addMohStock($moh);
+            $this->linkMoh($category, $moh);
+        }
+        // الكاش يشمل عدد صفوف الصفحة ⇒ لكل حجم صفحة مفتاح مستقل؛ نصفّره بعد
+        // إضافة الصفوف حتى تُبنى صفحة per_page=10 من جديد بالعدد الصحيح.
+        Cache::flush();
+        $this->getJson("/api/categories/{$category}/medicines?per_page=10")->assertOk();
+
+        \Illuminate\Support\Facades\DB::flushQueryLog();
+        $big = $this->getJson("/api/categories/{$category}/medicines?per_page=10")->assertOk()->json('data');
+        $bigDistinct = $countDistinctQueries();
+        \Illuminate\Support\Facades\DB::flushQueryLog();
+        \Illuminate\Support\Facades\DB::disableQueryLog();
+
+        $this->assertCount(1, $small);
+        $this->assertGreaterThanOrEqual(9, count($big), 'big page should hold 9 rows');
+
+        // استعلام واحد لعدّاد MOH (الاستعلامان MOH+محلي هما السقف الثابت)،
+        // مستقل تمامًا عن عدد صفوف الصفحة.
+        $this->assertSame(1, $smallDistinct, 'one batched MOH count query per request');
+        $this->assertSame(
+            $smallDistinct,
+            $bigDistinct,
+            'batched count queries must not grow with row count (no N+1)'
+        );
+    }
 }

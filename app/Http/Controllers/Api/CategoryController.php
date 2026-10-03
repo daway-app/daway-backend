@@ -225,7 +225,15 @@ class CategoryController extends Controller
         // صور أدوية MOH للصفحة الحالية — نداء واحد (لا N+1).
         $mohImages = $this->mohImages($pageItems);
 
-        $mohData = $pageItems->map(fn (MohMedicine $m) => $this->mohPayload($m, $mohImages[$m->id] ?? null)
+        // عدد الصيدليات المتوفر لديها كل دواء — نداء واحد لكل مصدر (لا N+1).
+        $mohPharmacyCounts = $this->mohPharmacyCounts($pageItems);
+        $localPharmacyCounts = $this->localPharmacyCounts($localRows);
+
+        $mohData = $pageItems->map(fn (MohMedicine $m) => $this->mohPayload(
+            $m,
+            $mohImages[$m->id] ?? null,
+            $mohPharmacyCounts[$m->id] ?? 0
+        )
             + ['medicine_id' => $localMedicineIds[$m->trade_name] ?? null]
             + ($linkMeta[$m->moh_product_id] ?? $linkMeta['d:'.$m->moh_drug_id] ?? [
                 'source' => null,
@@ -236,7 +244,7 @@ class CategoryController extends Controller
         // دمج المحلي مع حذف المكرر (دواء محلي بنفس اسم دواء MOH موجود لا يُعاد)
         $mohNames = $mohData->pluck('trade_name')->all();
         $localData = collect($localRows)
-            ->map(fn (Medicine $m) => $this->localPayload($m))
+            ->map(fn (Medicine $m) => $this->localPayload($m, $localPharmacyCounts[$m->id] ?? 0))
             ->filter(fn ($row) => ! in_array($row['trade_name'], $mohNames, true))
             ->values();
 
@@ -495,7 +503,7 @@ class CategoryController extends Controller
     }
 
     /** شكل صف الدواء المحلي بنفس مفاتيح mohPayload + medicine_id (توافق العقد). */
-    private function localPayload(Medicine $m): array
+    private function localPayload(Medicine $m, int $pharmaciesCount = 0): array
     {
         return [
             'id' => $m->id,
@@ -514,6 +522,7 @@ class CategoryController extends Controller
             // مصدر الصور المعتمد محليًا = عمود medicines.image (نفس ما تستخدمه
             // PharmacyMedicineResource/MedicineController) — لا روابط وهمية.
             'image_url' => Image::url($m->image),
+            'pharmacies_count' => $pharmaciesCount,
             'source' => CategoryMedicineLink::SOURCE_ADMIN,
             'confidence' => 100,
             'needs_review' => false,
@@ -768,8 +777,9 @@ class CategoryController extends Controller
      * العميل إكمال مسار التفاصيل/التوفر بدل الاعتماد على moh_medicines.id.
      *
      * image_url يُمرَّر من المتصل (محسوب دفعة واحدة لصفحة النتائج — لا N+1).
+     * pharmacies_count كذلك: عدد الصيدليات النشطة المتوفر لديها الدواء فعلياً.
      */
-    private function mohPayload(MohMedicine $m, ?string $imageUrl = null): array
+    private function mohPayload(MohMedicine $m, ?string $imageUrl = null, int $pharmaciesCount = 0): array
     {
         return [
             'id' => $m->id,
@@ -785,6 +795,7 @@ class CategoryController extends Controller
             'availability' => $m->availability,
             'price_updated_at' => $m->price_updated_at?->toDateString(),
             'image_url' => $imageUrl,
+            'pharmacies_count' => $pharmaciesCount,
         ];
     }
 
@@ -821,6 +832,66 @@ class CategoryController extends Controller
         }
 
         return $map;
+    }
+
+    /**
+     * عدد الصيدليات *المختلفة* التي يتوفر لديها كل دواء MOH في الصفحة —
+     * دفعة واحدة (استعلام واحد مهما بلغ حجم الصفحة ⇒ لا N+1).
+     *
+     * نفس تعريف whereAvailable حرفياً: is_available=true + quantity>0 +
+     * pharmacies.is_active=true — لكن بصيغة COUNT(DISTINCT pm.pharmacy_id)
+     * مجموعة على moh_medicine_id، فيظهر للدواء المتوفر لدى عدة صيدليات
+     * عدد صحيح بلا تكرار أي صيدلية (UNIQUE(pharmacy_id, medicine_id) في
+     * الجدول يمنع التكرار أصلاً، و COUNT DISTINCT يحسم الاحتياط).
+     *
+     * @param  \Illuminate\Support\Collection<int, MohMedicine>  $pageItems
+     * @return array<int, int>  مفاتيحه moh_medicines.id → عدد الصيدليات
+     */
+    private function mohPharmacyCounts($pageItems): array
+    {
+        $ids = $pageItems->pluck('id')->filter()->unique()->values()->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        return DB::table('pharmacy_medicines as pm')
+            ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
+            ->whereIn('pm.moh_medicine_id', $ids)
+            ->where('pm.is_available', true)
+            ->where('pm.quantity', '>', 0)
+            ->where('p.is_active', true)
+            ->groupBy('pm.moh_medicine_id')
+            ->pluck(DB::raw('COUNT(DISTINCT pm.pharmacy_id) as cnt'), 'pm.moh_medicine_id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+    }
+
+    /**
+     * عدد الصيدليات *المختلفة* المتوفر لديها كل دواء محلي في الصفحة —
+     * دفعة واحدة بنفس منطق mohPharmacyCounts لكن على pm.medicine_id.
+     *
+     * @param  array<int, Medicine>|\Illuminate\Support\Collection<int, Medicine>  $rows
+     * @return array<int, int>  مفاتيحه medicines.id → عدد الصيدليات
+     */
+    private function localPharmacyCounts($rows): array
+    {
+        $ids = collect($rows)->pluck('id')->filter()->unique()->values()->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        return DB::table('pharmacy_medicines as pm')
+            ->join('pharmacies as p', 'p.id', '=', 'pm.pharmacy_id')
+            ->whereIn('pm.medicine_id', $ids)
+            ->where('pm.is_available', true)
+            ->where('pm.quantity', '>', 0)
+            ->where('p.is_active', true)
+            ->groupBy('pm.medicine_id')
+            ->pluck(DB::raw('COUNT(DISTINCT pm.pharmacy_id) as cnt'), 'pm.medicine_id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
     }
 
     /**
