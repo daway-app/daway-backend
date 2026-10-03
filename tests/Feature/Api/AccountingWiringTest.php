@@ -289,4 +289,108 @@ class AccountingWiringTest extends TestCase
         $this->assertSame($this->pmId, (int) $matchedPm->id);
         $this->assertSame(20, (int) $matchedPm->quantity);
     }
+
+    /* ══════════════════════════════════════════════════════════════════
+       تدقيق «هل المحاسبة مكشوفة فعلًا للموبايل؟»
+
+       الشكوى كانت: «نظام المحاسبة مخفي في التطبيق». هذا الاختبار يحسم
+       السؤال من جهة الـBackend: كل نقطة قراءة يجب أن تُردّ 200 لصيدلية
+       مخوّلة — لا 404 (مسار غير مسجّل) ولا 403 (حاجز صلاحيات) ولا 500.
+       ══════════════════════════════════════════════════════════════════ */
+
+    /**
+     * كل نقاط قراءة المحاسبة موجودة ومسجّلة وتعمل لصيدلية مخوّلة.
+     *
+     * نقطة 404 = المسار غير مسجّل (إخفاء بنيوي) · 403 = حاجز صلاحيات ·
+     * 500 = عطل داخلي. أي واحدة منها = «النظام مخفي» فعلًا من الـBackend.
+     */
+    public function test_every_accounting_read_endpoint_is_reachable_for_authorized_pharmacy(): void
+    {
+        $endpoints = [
+            'overview' => '/api/pharmacy/accounting/overview',
+            'sales-summary' => '/api/pharmacy/accounting/sales-summary',
+            'sales index' => '/api/pharmacy/accounting/sales',
+            'refunds index' => '/api/pharmacy/accounting/refunds',
+            'expense-categories' => '/api/pharmacy/accounting/expense-categories',
+            'expenses index' => '/api/pharmacy/accounting/expenses',
+            'customers index' => '/api/pharmacy/accounting/customers',
+            'suppliers index' => '/api/pharmacy/accounting/suppliers',
+            'cash' => '/api/pharmacy/accounting/cash',
+        ];
+
+        foreach ($endpoints as $label => $url) {
+            $res = $this->getJson($url);
+
+            $this->assertNotSame(404, $res->status(), "{$label} ({$url}) غير مسجّل — 404");
+            $this->assertNotSame(403, $res->status(), "{$label} ({$url}) محجوب بالصلاحيات — 403");
+            $this->assertNotSame(500, $res->status(), "{$label} ({$url}) عطل داخلي — 500");
+            $res->assertOk();
+        }
+    }
+
+    /**
+     * نفس النقاط ترفض غير المخوّلين — «إظهارها للمخوّلين فقط» يعني أن
+     * الكشف لم يُحقَّق بإزالة الحماية.
+     */
+    public function test_accounting_endpoints_reject_unauthorized_callers(): void
+    {
+        $urls = [
+            '/api/pharmacy/accounting/overview',
+            '/api/pharmacy/accounting/sales',
+            '/api/pharmacy/accounting/cash',
+            '/api/pharmacy/accounting/customers',
+        ];
+
+        // صيدلية مخوّلة (من setUp: لها سجل Pharmacy وطابور مخزون): 200
+        foreach ($urls as $url) {
+            $this->getJson($url)->assertOk();
+        }
+
+        // زائر بلا توكن: 401
+        $this->app['auth']->forgetGuards();
+        foreach ($urls as $url) {
+            $this->getJson($url)->assertUnauthorized();
+        }
+
+        // مريض: 403
+        $patient = User::factory()->create(['role' => 'patient']);
+        Sanctum::actingAs($patient);
+        foreach ($urls as $url) {
+            $this->getJson($url)->assertForbidden();
+        }
+    }
+
+    /**
+     * لا Feature Flag ولا شرط بيئة يخفي المحاسبة:
+     * مسارات المحاسبة مسجّلة بلا middleware خاص يمنع الظهور، والمجموعة
+     * الحاوية `role:pharmacy` فقط.
+     */
+    public function test_accounting_routes_have_no_visibility_gate_beyond_pharmacy_role(): void
+    {
+        $routes = collect(app('router')->getRoutes()->getRoutes())
+            ->filter(fn ($r) => str_starts_with($r->uri(), 'api/pharmacy/accounting'));
+
+        $this->assertNotEmpty($routes, 'يجب أن تكون مسارات المحاسبة مسجّلة');
+
+        foreach ($routes as $route) {
+            $middleware = $route->gatherMiddleware();
+
+            $this->assertContains(
+                'role:pharmacy',
+                $middleware,
+                $route->uri().' بلا حارس role:pharmacy'
+            );
+
+            // لا حارس إخفاء مبني على ميزة/بيئة.
+            foreach (['feature:', 'can:', 'module:', 'flag:'] as $forbidden) {
+                foreach ($middleware as $mw) {
+                    $this->assertStringNotContainsString(
+                        $forbidden,
+                        (string) $mw,
+                        $route->uri().' يحمل حارس إخفاء: '.$mw
+                    );
+                }
+            }
+        }
+    }
 }
