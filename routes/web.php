@@ -156,6 +156,28 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         'classifySubcategories',
     ])->name('categories.classify');
 
+    // ==================== MEDICINE REQUESTS (Approval) ====================
+
+    Route::get('/medicine-requests', [
+        \App\Http\Controllers\web\Admin\MedicineRequestController::class,
+        'index',
+    ])->name('medicine_requests.index');
+
+    Route::get('/medicine-requests/{medicineRequest}', [
+        \App\Http\Controllers\web\Admin\MedicineRequestController::class,
+        'show',
+    ])->name('medicine_requests.show');
+
+    Route::post('/medicine-requests/{medicineRequest}/approve', [
+        \App\Http\Controllers\web\Admin\MedicineRequestController::class,
+        'approve',
+    ])->name('medicine_requests.approve');
+
+    Route::post('/medicine-requests/{medicineRequest}/reject', [
+        \App\Http\Controllers\web\Admin\MedicineRequestController::class,
+        'reject',
+    ])->name('medicine_requests.reject');
+
     // ==================== USERS ====================
 
     Route::patch('/users/{user}/toggle-status', [
@@ -212,6 +234,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         LogController::class,
         'exportExcel',
     ])->name('logs.export.excel');
+
+    // ==================== TEMP: ADMIN MAINTENANCE TOKEN ====================
+    // مؤقت — يصدر Sanctum token من جلسة ويب أدمن للوصول إلى admin API maintenance endpoints.
+    Route::get('/admin/maintenance/token', [\App\Http\Controllers\Api\AdminTokenController::class, 'issue'])
+        ->name('admin.maintenance.token');
 });
 
 // ==================== PHARMACY ONLY ====================
@@ -358,12 +385,29 @@ Route::middleware(['auth', 'role:pharmacy', 'password.changed', 'profile.complet
         'search',
     ])->name('pharmacy.medicines.search');
 
+    // بحث الكتالوج الموحّد (صفحة إضافة الدواء): يقرأ من الكتالوج المحلي فقط
+    Route::get('/pharmacy/medicines/catalog-search', [
+        PharmacyMedicineController::class,
+        'catalogSearch',
+    ])->name('pharmacy.medicines.catalog-search');
+
     Route::resource(
         'pharmacy/medicines',
         PharmacyMedicineController::class
     )->except(['show'])
         ->parameters(['medicines' => 'pharmacyMedicine'])
         ->names('pharmacy.medicines');
+
+    // طلب دواء جديد (غير موجود بالكتالوج) → مراجعة الإدارة
+    Route::get('/pharmacy/medicines/request', [
+        PharmacyMedicineController::class,
+        'createRequest',
+    ])->name('pharmacy.medicines.request.create');
+
+    Route::post('/pharmacy/medicines/request', [
+        PharmacyMedicineController::class,
+        'storeRequest',
+    ])->name('pharmacy.medicines.request.store');
 
     // ==================== PHARMACY ALTERNATIVES ====================
 
