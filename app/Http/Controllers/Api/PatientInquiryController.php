@@ -42,11 +42,13 @@ class PatientInquiryController extends Controller
     {
         $data = $request->validated();
         $pharmacy = Pharmacy::findOrFail($data['pharmacy_id']);
+        // medicine_id اختياري — المراسلة المباشرة من الخريطة بلا دواء.
+        $medicineId = $data['medicine_id'] ?? null;
 
         $inquiry = PatientInquiry::create([
             'user_id' => $request->user()->id,
             'pharmacy_id' => $data['pharmacy_id'],
-            'medicine_id' => $data['medicine_id'],
+            'medicine_id' => $medicineId,
             'message' => $data['message'] ?? null,
             'status' => 'new',
         ]);
@@ -54,7 +56,7 @@ class PatientInquiryController extends Controller
         if ($pharmacy->user) {
             $notification = Notification::create([
                 'user_id' => $pharmacy->user->id,
-                'medicine_id' => $data['medicine_id'],
+                'medicine_id' => $medicineId,
                 'type' => 'new_inquiry',
                 'message' => __('layout.notif_new_inquiry', ['name' => $pharmacy->pharmacy_name]),
                 'is_read' => false,

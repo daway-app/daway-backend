@@ -73,4 +73,46 @@ class PatientInquiryTest extends TestCase
             'status' => 'answered',
         ]);
     }
+
+    /** المراسلة المباشرة من الخريطة (ويب): بلا دواء — لازم تنجح. */
+    public function test_patient_can_create_inquiry_without_medicine(): void
+    {
+        [$pharmacyUser, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $patient = User::factory()->patient()->create();
+
+        $this->actingAs($patient);
+
+        $this->post(route('patient.inquiries.store'), [
+            'pharmacy_id' => $pharmacy->id,
+            'message' => 'مرحبا، بدي أسأل',
+        ])->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('patient_inquiries', [
+            'user_id' => $patient->id,
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => null,
+            'status' => 'new',
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $pharmacyUser->id,
+            'medicine_id' => null,
+            'type' => 'new_inquiry',
+        ]);
+    }
+
+    /** pharmacy_id يبقى إلزاميًا (ويب). */
+    public function test_web_creation_rejects_missing_pharmacy(): void
+    {
+        $patient = User::factory()->patient()->create();
+
+        $this->actingAs($patient);
+
+        $this->post(route('patient.inquiries.store'), [
+            'message' => 'بلا صيدلية',
+        ])->assertSessionHasErrors('pharmacy_id');
+
+        $this->assertDatabaseCount('patient_inquiries', 0);
+    }
 }

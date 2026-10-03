@@ -15,7 +15,9 @@ class PatientInquiryRequest extends FormRequest
     {
         return [
             'pharmacy_id' => 'required|exists:pharmacies,id',
-            'medicine_id' => 'required|exists:medicines,id',
+            // medicine_id اختياري: المريض يقدر يراسل الصيدلية مباشرة من الخريطة
+            // بلا اختيار دواء. الصيدلية تبقى إلزامية — لا معنى لمحادثة بلا طرف.
+            'medicine_id' => 'nullable|exists:medicines,id',
             'message' => 'nullable|string|max:1000',
         ];
     }
