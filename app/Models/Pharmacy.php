@@ -90,10 +90,41 @@ class Pharmacy extends Model
 
     /**
      * هل أكمل الصيدلي تعبئة بياناته عند أول دخول؟
+     *
+     * ⚠️ يقرأ **العلم** فقط، ولا يفحص البيانات. الفرق مهم:
+     *   · `profileCompleted()`      → هل أكملوا مرة؟ (العلم — يُضبط مرة ولا يُصفَّر)
+     *   · `hasCompleteProfileData()` → هل البيانات مكتملة الآن؟ (الفحص الفعلي)
+     * الاثنان قد يختلفان، والدليل صيدلية `region = null` وعلمها مضبوط.
      */
     public function profileCompleted(): bool
     {
         return $this->profile_completed_at !== null;
+    }
+
+    /**
+     * القاعدة الوحيدة لـ«هل بيانات الصيدلية كاملة؟».
+     *
+     * كانت مكرّرة كدالة خاصة داخل `PharmacyProfileController` بينما كونترولر
+     * الإكمال على الويب يضبط العلم **بلا أي فحص** — أي أن نفس الإجراء يعطي
+     * نتيجتين مختلفتين حسب الشاشة المستخدمة. الآن القاعدة هنا، وكل من يضبط
+     * العلم يستدعيها.
+     *
+     * الشروط الخمسة (تطابق `PharmacyProfileCompletionController` على الويب):
+     * الهاتف · العنوان · المنطقة · الإحداثيات · يوم دوام مفتوح واحد على الأقل.
+     */
+    public function hasCompleteProfileData(): bool
+    {
+        if (empty($this->phone_number) || empty($this->address) || empty($this->region)) {
+            return false;
+        }
+
+        if ($this->latitude === null || $this->longitude === null) {
+            return false;
+        }
+
+        return $this->hours->contains(
+            fn ($hour) => ! $hour->is_closed && $hour->open_time && $hour->close_time
+        );
     }
 
     /**

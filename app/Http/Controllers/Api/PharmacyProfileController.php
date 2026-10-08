@@ -107,12 +107,15 @@ class PharmacyProfileController extends Controller
             }
         });
 
-        // توحيد مع الويب: حين تكتمل بيانات الصيدلية (هاتف + عنوان + منطقة + موقع
-        // + يوم دوام مفتوح واحد على الأقل) نضبط profile_completed_at مرة واحدة —
-        // حتى لا تنحبس الصيدلية المسجّلة من الموبايل بصفحة الإكمال عند دخولها الويب.
+        // ضبط `profile_completed_at` مرة واحدة حين تكتمل البيانات — حتى لا تنحبس
+        // الصيدلية المسجّلة من الموبايل بصفحة الإكمال عند دخولها الويب.
+        //
+        // القاعدة صارت في `Pharmacy::hasCompleteProfileData()` بدل نسخة خاصة هنا،
+        // لأن كونترولر الإكمال على الويب كان يضبط العلم **بلا أي فحص** ⇒ نفس
+        // الإجراء يعطي نتيجتين مختلفتين حسب الشاشة. الآن كلاهما يستدعي القاعدة.
         // C1: الحقل الحساس يُضبط صراحةً (خارج $fillable).
         $fresh = $pharmacy->fresh(['hours']);
-        if ($fresh->profile_completed_at === null && $this->isProfileComplete($fresh)) {
+        if ($fresh->profile_completed_at === null && $fresh->hasCompleteProfileData()) {
             $fresh->profile_completed_at = now();
             $fresh->save();
         }
@@ -124,23 +127,19 @@ class PharmacyProfileController extends Controller
         ]);
     }
 
-    /**
-     * هل اكتملت بيانات الصيدلية؟ نفس شروط صفحة الإكمال على الويب
-     * (بدون كلمة المرور — يديرها must_change_password عبر change-password).
+    /*
+     * REMOVED — the private `isProfileComplete()` that used to live here.
+     *
+     * It was a DUPLICATE of the completeness rule, and keeping a private copy is
+     * exactly how the two profile flows drifted apart: this controller checked
+     * five conditions while the web completion controller set the same flag with
+     * no check at all.
+     *
+     * The rule now lives in one place, `Pharmacy::hasCompleteProfileData()`, and
+     * both flows call it. It sits on the model rather than here because the
+     * model outlives any single controller — including the web one, which is
+     * being retired.
      */
-    private function isProfileComplete(Pharmacy $pharmacy): bool
-    {
-        if (empty($pharmacy->phone_number) || empty($pharmacy->address) || empty($pharmacy->region)) {
-            return false;
-        }
-
-        if ($pharmacy->latitude === null || $pharmacy->longitude === null) {
-            return false;
-        }
-
-        // يوم دوام مفتوح واحد على الأقل
-        return $pharmacy->hours->contains(fn ($hour) => ! $hour->is_closed && $hour->open_time && $hour->close_time);
-    }
 
     /**
      * تغيير كلمة المرور للصيدلية وإلغاء إجبارية التغيير.
@@ -223,8 +222,9 @@ class PharmacyProfileController extends Controller
             /*
              * ADDED — the client could not tell whether the profile was complete.
              *
-             * `isProfileComplete()` below requires FIVE things: phone, address,
-             * `region`, coordinates, and at least one open working-hours day.
+             * `Pharmacy::hasCompleteProfileData()` requires FIVE things: phone,
+             * address, `region`, coordinates, and at least one open
+             * working-hours day.
              * But `region` and `profile_completed_at` were never returned, so no
              * client could evaluate that rule. The React dashboard's first-run
              * checklist therefore guessed from a smaller set (name + phone +

@@ -157,11 +157,6 @@ class PharmacyProfileCompletionController extends Controller
                 $pharmacy->user->save();
             }
         }
-        // C1: profile_completed_at يُضبط صراحة (الحقول الحساسة تُدار عبر direct assignment
-        // حتى لو بقيت في $fillable — لمنع الـ user من التلاعب بها عبر payload).
-        $pharmacy->profile_completed_at = now();
-        $pharmacy->save();
-
         // حفظ ساعات العمل
         foreach ($hoursData as $dayOfWeek => $hourData) {
             $isClosed = ! empty($hourData['is_closed']);
@@ -174,6 +169,29 @@ class PharmacyProfileCompletionController extends Controller
                     'close_time' => $isClosed ? null : ($hourData['close_time'] ?? null),
                 ]
             );
+        }
+
+        // C1: profile_completed_at يُضبط صراحة (الحقول الحساسة تُدار عبر direct
+        // assignment حتى لو بقيت في $fillable — لمنع الـ user من التلاعب بها).
+        //
+        // 🔴 كان يُضبط **بلا أي فحص** بينما الـAPI يفحص خمسة شروط ⇒ نفس الإجراء
+        // يعطي نتيجتين مختلفتين حسب الشاشة، وهو سبب الحالة الشاذّة في الإنتاج
+        // (صيدلية `region = null` وعلمها مضبوط). الآن يستدعي نفس القاعدة الوحيدة.
+        //
+        // ⚠️ وموقعه **بعد** حفظ ساعات العمل إلزامي: القاعدة تفحص «يوم دوام مفتوح
+        // واحد على الأقل»، فلو فُحص قبل الحفظ لرجع false دائمًا ⇒ العلم لا يُضبط
+        // ⇒ **حلقة إعادة توجيه تحبس الصيدلية للأبد**. هذا بالضبط الانحدار الذي
+        // يحرسه `test_completion_succeeds_without_coordinates_as_the_browser_submits`
+        // — وقد كسره نقل الفحص قبل الحفظ فعلاً ثم أُعيد مكانه.
+        //
+        // ⚠️ ولا يُصفَّر عند النقص — فقط لا يُضبط. تصفير العلم يسحب الوصول من
+        // صيدلية تعمل حاليًا، وهذا قرار سياسة منفصل لم يُطلب. العلم يبقى بمعنى
+        // «أكملوا مرة واحدة على الأقل»، و`hasCompleteProfileData()` تجيب عن
+        // «هل مكتمل الآن».
+        if ($pharmacy->profile_completed_at === null
+            && $pharmacy->fresh(['hours'])->hasCompleteProfileData()) {
+            $pharmacy->profile_completed_at = now();
+            $pharmacy->save();
         }
 
         return redirect()->route('pharmacy.dashboard.index')->with('success', __('pharmacy.profile.complete.success'));
