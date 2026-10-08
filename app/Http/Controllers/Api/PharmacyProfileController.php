@@ -220,6 +220,29 @@ class PharmacyProfileController extends Controller
             'latitude' => $pharmacy->latitude !== null ? (float) $pharmacy->latitude : null,
             'longitude' => $pharmacy->longitude !== null ? (float) $pharmacy->longitude : null,
             'address' => $pharmacy->address,
+            /*
+             * ADDED — the client could not tell whether the profile was complete.
+             *
+             * `isProfileComplete()` below requires FIVE things: phone, address,
+             * `region`, coordinates, and at least one open working-hours day.
+             * But `region` and `profile_completed_at` were never returned, so no
+             * client could evaluate that rule. The React dashboard's first-run
+             * checklist therefore guessed from a smaller set (name + phone +
+             * address/coords) and could report "profile complete" for a pharmacy
+             * the backend still considered incomplete.
+             *
+             * Both fields serve BOTH profile screens — completion and edit — which
+             * share this endpoint and this payload (`GET /api/profile/pharmacy`).
+             *
+             * Additive only: no existing key changes shape or meaning.
+             *
+             * ⚠️ `profile_completed_at` is set ONCE and never cleared
+             * (see `update()`: the guard is `=== null`). It answers "did this
+             * pharmacy ever complete setup", NOT "is it complete right now".
+             * A client that needs the CURRENT state must still check the fields.
+             */
+            'region' => $pharmacy->region,
+            'profile_completed_at' => $pharmacy->profile_completed_at?->toDateTimeString(),
             'working_hours' => $hours,
         ];
     }
