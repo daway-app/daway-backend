@@ -583,8 +583,6 @@
      * @returns {object} payload جاهز لـPOST
      */
     function buildSalePayload(paid) {
-        var t = computeTotals(state.lines);
-
         var items = state.lines.map(function (l) {
             var row = {
                 medicine_name: String(l.name || ''),
@@ -609,9 +607,34 @@
         var payload = {
             items: items,
             payment_method: state.payment || 'cash',
-            // الخصم الكلي على الفاتورة = مجموع خصومات الأسطر (الواجهة لا
-            // تفرّق بينهما)، والـBackend يحسب total = subtotal − discount.
-            discount: U.round2(t.discount),
+            /*
+             * 🔴 `discount` MUST BE 0 — sending the sum here double-charged it.
+             *
+             * Every discount in this till is PER LINE (`line.discount`), and it
+             * is already sent on each item as `line_discount`. The backend
+             * applies it there:
+             *
+             *     SaleItem::computeLineTotal()  → ($unitPrice × $quantity) − $lineDiscount
+             *     AccountingLedger::recordSale() → $subtotal − $invoiceDiscount
+             *
+             * So the line discount is inside `$subtotal`, and sending the same
+             * total as `discount` subtracted it a SECOND time. Measured on the
+             * real backend before this fix:
+             *
+             *     item 100, line_discount 10, discount 10
+             *       → total = 80   ← saved
+             *       while the screen above displayed 90 (its subtotal is the
+             *       GROSS sum, see computeTotals). The cashier collected 90 and
+             *       the ledger recorded 80.
+             *
+             * With `discount: 0` the backend total is 90, matching the screen.
+             * The React till sends 0 for the same reason — see
+             * daway-web/src/features/pharmacy/accounting/salePayload.ts.
+             *
+             * If an INVOICE-level discount is ever added to this UI, it must be
+             * a separate field from the per-line ones, not their sum.
+             */
+            discount: 0,
             paid: U.round2(paid)
         };
 
