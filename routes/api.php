@@ -7,6 +7,15 @@ use App\Http\Controllers\Api\AccountingPartiesController;
 use App\Http\Controllers\Api\AccountingRefundController;
 use App\Http\Controllers\Api\AccountingSalesController;
 use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\LogSettingController as AdminLogSettingController;
+use App\Http\Controllers\Api\Admin\MedicineController as AdminMedicineController;
+use App\Http\Controllers\Api\Admin\MedicineRequestController as AdminMedicineRequestController;
+use App\Http\Controllers\Api\Admin\PatientInventoryController as AdminPatientInventoryController;
+use App\Http\Controllers\Api\Admin\PharmacyController as AdminPharmacyController;
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AdminPharmacyMohDryRunController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvailabilityAlertController;
@@ -42,6 +51,11 @@ use Illuminate\Support\Facades\Route;
 Route::post('/otp/send', [AuthController::class, 'sendOtp'])->middleware('throttle:otp');
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:otp-verify');
 Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middleware(['throttle:login', 'throttle:login-account']);
+
+// لوحة الأدمن (React): دخول بالبريد الإلكتروني + كلمة المرور، ثم توكن Sanctum.
+// نفس حدود الويب (throttle:login لكل IP + throttle:login-account لكل بريد)،
+// لأن هذا مسار مصادقة حساس تماماً كدخول الصيدلية.
+Route::post('/login/admin', [AdminAuthController::class, 'login'])->middleware(['throttle:login', 'throttle:login-account']);
 
 Route::post('/register/pharmacy', [AuthController::class, 'pharmacyRegister'])->middleware('throttle:register');
 
@@ -330,3 +344,66 @@ Route::get('/dosage-forms', [CategoryController::class, 'dosageForms']);
 // كل خيارات فلاتر الكتالوج في نداء واحد (أقسام + أقسام فرعية + أشكال دوائية +
 // فئات عمرية) مع عدد الأدوية لكل خيار — تبني منه الواجهة شاشة "تصفية النتائج".
 Route::get('/medicine-filters', [CategoryController::class, 'filters']);
+
+// =============================================================================
+// لوحة الأدمن (React) — Admin API
+// =============================================================================
+// لماذا مجموعة مستقلة بدل توسيع المسارات الموجودة؟
+//   · المسارات الحالية للصيدلية/المريض وواجهتها عقد مُثبَّت — لا نلمسه.
+//   · كل مسار هنا `auth:sanctum` + `role:admin` صراحةً. لا استثناء.
+//   · المسارات الويب (Blade) تبقى تعمل بالتوازي — هذه إضافة لا استبدال،
+//     فيمكن النشر والتراجع بلا كسر لوحة الأدمن الحالية.
+//
+// ملاحظة تسمية: `/api/admin/categories/{category}/medicines` مأخوذ أعلاه
+// (كتالوج كامل بلا فلتر توفّر) — لذلك لا أُعيد تعريفه هنا، ومسار الروابط
+// اسمه `/links` صراحةً لتفادي الغموض.
+// =============================================================================
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+
+    // Pharmacies
+    Route::get('/pharmacies', [AdminPharmacyController::class, 'index']);
+    Route::post('/pharmacies', [AdminPharmacyController::class, 'store']);
+    Route::get('/pharmacies/{pharmacy}', [AdminPharmacyController::class, 'show']);
+    Route::match(['put', 'patch'], '/pharmacies/{pharmacy}', [AdminPharmacyController::class, 'update']);
+    Route::delete('/pharmacies/{pharmacy}', [AdminPharmacyController::class, 'destroy']);
+    Route::patch('/pharmacies/{pharmacy}/toggle-status', [AdminPharmacyController::class, 'toggleStatus']);
+    Route::patch('/pharmacies/{pharmacy}/reset-credentials', [AdminPharmacyController::class, 'resetCredentials']);
+
+    // Medicines (catalog)
+    Route::get('/medicines', [AdminMedicineController::class, 'index']);
+    Route::post('/medicines', [AdminMedicineController::class, 'store']);
+
+    // Medicine requests
+    Route::get('/medicine-requests', [AdminMedicineRequestController::class, 'index']);
+    Route::get('/medicine-requests/{medicineRequest}', [AdminMedicineRequestController::class, 'show']);
+    Route::post('/medicine-requests/{medicineRequest}/approve', [AdminMedicineRequestController::class, 'approve']);
+    Route::post('/medicine-requests/{medicineRequest}/reject', [AdminMedicineRequestController::class, 'reject']);
+
+    // Users
+    Route::get('/users', [AdminUserController::class, 'index']);
+    Route::post('/users', [AdminUserController::class, 'store']);
+    Route::get('/users/{user}', [AdminUserController::class, 'show']);
+    Route::match(['put', 'patch'], '/users/{user}', [AdminUserController::class, 'update']);
+    Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
+    Route::patch('/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus']);
+
+    // Patients + Inventory (read-only)
+    Route::get('/patients', [AdminPatientInventoryController::class, 'patients']);
+    Route::get('/inventory', [AdminPatientInventoryController::class, 'inventory']);
+
+    // Categories
+    Route::get('/categories', [AdminCategoryController::class, 'index']);
+    Route::patch('/categories/{category}/toggle-status', [AdminCategoryController::class, 'toggleStatus']);
+    Route::get('/categories/{category}/links', [AdminCategoryController::class, 'links']);
+    Route::post('/categories/{category}/medicines', [AdminCategoryController::class, 'attachMedicine']);
+    Route::delete('/categories/{category}/medicines/{link}', [AdminCategoryController::class, 'detachMedicine']);
+    Route::post('/categories/{category}/review/{link}', [AdminCategoryController::class, 'approveReview']);
+
+    // Activity log + settings
+    Route::get('/logs', [AdminLogSettingController::class, 'logs']);
+    Route::get('/settings', [AdminLogSettingController::class, 'settings']);
+    Route::post('/settings', [AdminLogSettingController::class, 'updateSettings']);
+});
+
