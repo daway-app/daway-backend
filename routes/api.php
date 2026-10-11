@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Admin\MedicineController as AdminMedicineController
 use App\Http\Controllers\Api\Admin\MedicineRequestController as AdminMedicineRequestController;
 use App\Http\Controllers\Api\Admin\PatientInventoryController as AdminPatientInventoryController;
 use App\Http\Controllers\Api\Admin\PharmacyController as AdminPharmacyController;
+use App\Http\Controllers\Api\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AdminPharmacyMohDryRunController;
@@ -405,5 +406,13 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/logs', [AdminLogSettingController::class, 'logs']);
     Route::get('/settings', [AdminLogSettingController::class, 'settings']);
     Route::post('/settings', [AdminLogSettingController::class, 'updateSettings']);
+
+    // Own profile — display + password change.
+    // NOTE: named `change-password` to mirror the pharmacy route's shape, but a
+    // SEPARATE endpoint on purpose: the pharmacy one aborts unless
+    // `role === 'pharmacy'`, so it can never serve an admin.
+    Route::get('/profile', [AdminProfileController::class, 'show']);
+    Route::post('/change-password', [AdminProfileController::class, 'changePassword'])
+        ->middleware('throttle:6,1');
 });
 
