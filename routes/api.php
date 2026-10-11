@@ -375,6 +375,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // Medicines (catalog)
     Route::get('/medicines', [AdminMedicineController::class, 'index']);
     Route::post('/medicines', [AdminMedicineController::class, 'store']);
+    Route::get('/medicines/{medicine}', [AdminMedicineController::class, 'show']);
+    Route::match(['put', 'patch'], '/medicines/{medicine}', [AdminMedicineController::class, 'update']);
+    Route::delete('/medicines/{medicine}', [AdminMedicineController::class, 'destroy']);
 
     // Medicine requests
     Route::get('/medicine-requests', [AdminMedicineRequestController::class, 'index']);

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Favorite;
 use App\Models\Medicine;
+use App\Support\Cloudinary;
 use App\Support\Image;
+use App\Support\MedicineCatalogCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,32 +111,165 @@ class MedicineController extends Controller
     /** POST /api/admin/medicines */
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'name_ar' => ['required', 'string', 'max:255'],
-            'active_ingredient' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'string'],
-            'alternatives' => ['nullable', 'array'],
-            'alternatives.*' => ['integer', 'exists:medicines,id'],
-        ]);
+        $data = $this->validated($request);
 
         $medicine = Medicine::create([
-            'trade_name' => $request->name_ar,
-            'active_ingredient' => $request->active_ingredient,
-            'description' => $request->description,
-            'image' => $request->image,
+            'trade_name' => $data['name_ar'],
+            'active_ingredient' => $data['active_ingredient'],
+            'description' => $data['description'] ?? null,
         ]);
 
-        if ($request->filled('alternatives')) {
-            $medicine->alternatives()->sync($request->alternatives);
+        /*
+         * The Blade form uploads a FILE (`enctype=multipart/form-data` +
+         * `Cloudinary::upload`). The API accepts that same file when it is sent,
+         * and falls back to the pre-uploaded URL the client already has.
+         *
+         * WHY BOTH: the React app has no Cloudinary SDK, so it sends the URL a
+         * two-step upload produced. The web form still sends bytes. Accepting
+         * only one of the two would make this endpoint unusable from the other
+         * caller, so the file wins when present and the URL is the fallback —
+         * which is the same precedence the Blade controller uses implicitly.
+         */
+        if ($request->hasFile('image_file')) {
+            $medicine->image = Cloudinary::upload($request->file('image_file'), 'medicines');
+            $medicine->save();
+        } elseif (! empty($data['image'])) {
+            $medicine->image = $data['image'];
+            $medicine->save();
         }
 
-        \App\Support\MedicineCatalogCache::bump();
+        if (! empty($data['alternatives'])) {
+            $medicine->alternatives()->sync($data['alternatives']);
+        }
+
+        MedicineCatalogCache::bump();
 
         return response()->json([
             'success' => true,
             'message' => 'تمت إضافة الدواء بنجاح.',
             'data' => ['id' => $medicine->id],
         ], 201);
+    }
+
+    /** GET /api/admin/medicines/{medicine} */
+    public function show(Medicine $medicine): JsonResponse
+    {
+        $medicine->load('alternatives:id,trade_name,active_ingredient');
+
+        // Same rollup shape as `index`, scoped to one medicine, so the edit
+        // screen can show current stock without a second request.
+        $rollup = DB::table('pharmacy_medicines')
+            ->where('medicine_id', $medicine->id)
+            ->selectRaw('COALESCE(SUM(quantity), 0) as stock, COUNT(*) as pharmacy_count')
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $medicine->id,
+                'trade_name' => $medicine->trade_name,
+                'active_ingredient' => $medicine->active_ingredient,
+                'description' => $medicine->description,
+                'image_url' => Image::url($medicine->image),
+                'stock' => (int) ($rollup->stock ?? 0),
+                'pharmacy_count' => (int) ($rollup->pharmacy_count ?? 0),
+                'alternative_ids' => $medicine->alternatives->pluck('id')->all(),
+                'alternatives' => $medicine->alternatives->map(fn ($a) => [
+                    'id' => $a->id,
+                    'trade_name' => $a->trade_name,
+                ])->all(),
+            ],
+        ]);
+    }
+
+    /**
+     * PUT|PATCH /api/admin/medicines/{medicine}
+     *
+     * Mirrors `web\Admin\MedicineController@update` exactly, INCLUDING its
+     * destructive `detach()` when no alternatives are submitted — the Blade
+     * screen has always treated an absent `alternatives` key as "remove them
+     * all" (the TomSelect widget posts an empty list when cleared). Changing
+     * that would silently diverge from the page this replaces.
+     */
+    public function update(Request $request, Medicine $medicine): JsonResponse
+    {
+        $data = $this->validated($request);
+
+        $medicine->update([
+            'trade_name' => $data['name_ar'],
+            'active_ingredient' => $data['active_ingredient'],
+            'description' => $data['description'] ?? null,
+        ]);
+
+        if ($request->hasFile('image_file')) {
+            Cloudinary::deleteLocal($medicine->image);
+            $medicine->image = Cloudinary::upload($request->file('image_file'), 'medicines');
+            $medicine->save();
+        } elseif (! empty($data['image']) && $data['image'] !== $medicine->image) {
+            Cloudinary::deleteLocal($medicine->image);
+            $medicine->image = $data['image'];
+            $medicine->save();
+        }
+
+        if ($request->has('alternatives')) {
+            $medicine->alternatives()->sync($data['alternatives'] ?? []);
+        } else {
+            $medicine->alternatives()->detach();
+        }
+
+        MedicineCatalogCache::bump();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث الدواء بنجاح.',
+            'data' => ['id' => $medicine->id],
+        ]);
+    }
+
+    /**
+     * DELETE /api/admin/medicines/{medicine}
+     *
+     * The `favorites` cleanup is NOT optional: the relation is polymorphic
+     * (`favoritable_type`/`favoritable_id`) so no foreign key exists to cascade,
+     * and without it orphan rows make a patient's favourites list return a
+     * deleted medicine. Same ordering as the web controller (M-25).
+     */
+    public function destroy(Medicine $medicine): JsonResponse
+    {
+        $id = $medicine->id;
+
+        Favorite::where('favoritable_type', Medicine::class)
+            ->where('favoritable_id', $id)
+            ->delete();
+
+        $medicine->delete();
+        MedicineCatalogCache::bump();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حذف الدواء بنجاح.',
+        ]);
+    }
+
+    /**
+     * Shared validation — kept in one place so `store` and `update` can never
+     * drift apart on length limits or on what counts as an existing
+     * alternative.
+     *
+     * `image` is a URL string here (not `image|mimes:…` as in the web
+     * controller) because the API receives an already-uploaded Cloudinary URL;
+     * the byte-upload path validates the FILE instead.
+     */
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'name_ar' => ['required', 'string', 'max:255'],
+            'active_ingredient' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'string', 'max:2048'],
+            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'alternatives' => ['nullable', 'array'],
+            'alternatives.*' => ['integer', 'exists:medicines,id'],
+        ]);
     }
 }
