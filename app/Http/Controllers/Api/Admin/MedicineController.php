@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Medicine;
+use App\Support\Image;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class MedicineController extends Controller
             ->leftJoinSub($perMedicine, 'pm', 'pm.medicine_id', '=', 'm.id');
 
         $medicines = (clone $base)
-            ->selectRaw('m.id, m.trade_name, m.active_ingredient,
+            ->selectRaw('m.id, m.trade_name, m.active_ingredient, m.image,
                 COALESCE(pm.stock, 0) as stock,
                 COALESCE(pm.pharmacy_count, 0) as pharmacy_count,
                 pm.min_price')
@@ -66,10 +67,22 @@ class MedicineController extends Controller
         $inPharmacy = (int) ($statsRow->in_pharmacy ?? 0);
         $pct = fn ($count) => $total > 0 ? (int) round(($count / $total) * 100) : 0;
 
+        // `image` is a stored path, not a URL. Resolve it the same way the
+        // pharmacy API does (`Image::url`) so the client gets an absolute,
+        // Cloudinary-aware link — the React table then applies its own size
+        // transform client-side. The raw path is dropped from the payload.
+        $rows = collect($medicines->items())->map(function ($m) {
+            $row = (array) $m;
+            $row['image_url'] = Image::url($m->image);
+            unset($row['image']);
+
+            return $row;
+        })->all();
+
         return response()->json([
             'success' => true,
             'data' => [
-                'medicines' => $medicines->items(),
+                'medicines' => $rows,
                 'pagination' => [
                     'current_page' => $medicines->currentPage(),
                     'last_page' => $medicines->lastPage(),
