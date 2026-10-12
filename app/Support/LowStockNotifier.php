@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Contracts\FcmSender;
 use App\Models\Notification;
 use App\Models\PharmacyMedicine;
+use Throwable;
 
 /**
  * إشعار نقص/نفاد المخزون — منطق مشترك بين لوحة التحكم والـ API.
@@ -77,5 +78,43 @@ class LowStockNotifier
 
         // FCM push فقط عند إنشاء إشعار جديد — بعد نجاح الإنشاء
         app(FcmSender::class)->fromNotification($notification);
+    }
+
+    /**
+     * إشعار جماعي لمجموعة أصناف مخزون تغيّرت كمياتها — مُخصَّص لمسار
+     * المحاسبة (`AccountingLedger::recordSale`) بعد نجاح المعاملة.
+     *
+     * يعيد استخدام **نفس** منطق `notifyIfLowStock`/`upsertNotification`:
+     * نفس الحد (`LOW_STOCK_THRESHOLD`)، نفس تصنيف `low_stock`/`out_of_stock`
+     * (M-2.4)، ونفس التفريد C7 ⇒ لا صفوف مكررة ولا push مكرر لاستدعاءات
+     * متتالية على نفس الدواء.
+     *
+     * يُستدعى **بعد commit** دائمًا — فشل أي إشعار هنا يُسجَّل ولا يُسقط
+     * العملية المحاسبية التي تمت بالفعل.
+     *
+     * @param  array<int,int>  $pmIds  معرّفات `pharmacy_medicines` المتأثرة
+     */
+    public static function notifyForMany(int $pharmacyId, array $pmIds): void
+    {
+        $pmIds = array_values(array_unique(array_filter(array_map('intval', $pmIds))));
+
+        if ($pmIds === []) {
+            return;
+        }
+
+        $rows = PharmacyMedicine::query()
+            ->where('pharmacy_id', $pharmacyId)
+            ->whereIn('id', $pmIds)
+            ->with('medicine', 'pharmacy.user')
+            ->get();
+
+        foreach ($rows as $pm) {
+            try {
+                self::notifyIfLowStock($pm);
+            } catch (Throwable $e) {
+                // فشل إشعار صنف واحد لا يمنع إشعار الأصناف الأخرى
+                report($e);
+            }
+        }
     }
 }

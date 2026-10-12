@@ -11,8 +11,10 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Supplier;
 use App\Models\SupplierPayment;
+use App\Support\LowStockNotifier;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 /**
@@ -66,7 +68,11 @@ final class AccountingLedger
             throw new InvalidArgumentException('الفاتورة يجب أن تحتوي على صنف واحد على الأقل');
         }
 
-        return DB::transaction(function () use ($pharmacyId, $userId, $data, $items) {
+        // معرّفات أصناف المخزون التي خُصمت فعليًا — تُجمَّع داخل المعاملة
+        // ويُشعَر عنها **بعد** الـcommit فقط، حتى لا يُرسَل إشعار عن بيع تراجعت.
+        $affectedPmIds = [];
+
+        $sale = DB::transaction(function () use ($pharmacyId, $userId, $data, $items, &$affectedPmIds) {
             $soldAt = isset($data['sold_at'])
                 ? Carbon::parse($data['sold_at'])
                 : Carbon::now();
@@ -126,6 +132,8 @@ final class AccountingLedger
                 }
 
                 static::decrementStockOrFail($pharmacyId, (int) $pmId, $p['quantity']);
+
+                $affectedPmIds[] = (int) $pmId;
             }
 
             // ── 3) الفاتورة ──────────────────────────────────────────────
@@ -189,6 +197,22 @@ final class AccountingLedger
 
             return $sale->load('items');
         });
+
+        // ── إشعارات المخزون: **بعد الـcommit فقط** ─────────────────────────
+        // الموضع مقصود (M-2.5): أي إشعار داخل المعاملة كان قد يُرسَل عن بيع
+        // تراجعت. هنا البيع محسوم، وفشل الإشعار يُسجَّل ولا يُسقطه.
+        try {
+            LowStockNotifier::notifyForMany($pharmacyId, $affectedPmIds);
+        } catch (\Throwable $e) {
+            Log::error('sale stock notification failed', [
+                'pharmacy_id' => $pharmacyId,
+                'sale_id' => $sale->id,
+                'affected_count' => count($affectedPmIds),
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $sale;
     }
 
     /**
