@@ -79,7 +79,11 @@ return [
 
     // مزامنة كتالوج وزارة الصحة (moh:sync) — القيم الافتراضية هي العناوين الحالية المضمّنة في الأمر
     'moh' => [
-        'ssl_verify' => env('MOH_SSL_VERIFY', false),
+        // التحقق من شهادة SSL لمصدر وزارة الصحة — **مُفعَّل افتراضيًا** (M-3B.1).
+        // الاسم: MOH_SSL_VERIFY · الافتراضي الآمن: true.
+        // التعطيل الصريح فقط: 'false' / '0' / 'off' / 'no' (سلسلة فارغة = مُفعَّل).
+        // ⚠️ يُقرأ عبر config() وقت التشغيل — لا env() مباشرة (config:cache يجعل env() غير موثوق).
+        'ssl_verify' => env('MOH_SSL_VERIFY', true),
         'products_url' => env('MOH_PRODUCTS_URL', 'https://pharmacy.moh.ps/service/getRegisterProducts'),
         'prices_url'   => env('MOH_PRICES_URL', 'https://pharmacy.moh.ps/service/getDrugsPublic'),
     ],
