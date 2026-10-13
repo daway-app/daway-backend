@@ -877,6 +877,97 @@ class AssistantChatTest extends TestCase
             ->assertJsonPath('medicine.id', $medicine->id);
     }
 
+    public function test_ai_search_medicine_intent_is_normalized_to_medicine_search(): void
+    {
+        $medicine = Medicine::factory()->create(['trade_name' => 'ASPIRIN']);
+        $this->stockAt($medicine, 31.5016, 34.4668, 5.00, 50);
+
+        config(['services.daway_ai.base_url' => 'https://ai.test']);
+
+        // القيمة الفعلية لخدمة daway-ai-api v1.1 — تُطبَّع داخليًا إلى عقد Flutter.
+        Http::fake([
+            '*' => Http::response([
+                'source' => 'ai',
+                'intent' => 'search_medicine',
+                'drug_name' => 'Aspirin',
+            ], 200),
+        ]);
+
+        Sanctum::actingAs($this->patient());
+
+        $response = $this->postJson(self::ENDPOINT, [
+            'message' => 'Aspirin',
+            'latitude' => self::USER_LAT,
+            'longitude' => self::USER_LNG,
+        ]);
+
+        // القيمة الخارجية search_medicine لا تُمرَّر إلى العميل أبدًا.
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('medicine.id', $medicine->id)
+            ->assertJsonPath('analysis.intent', 'medicine_search');
+
+        $this->assertStringNotContainsString('search_medicine', $response->getContent());
+    }
+
+    public function test_ai_unrecognized_intents_fall_back_to_local_extractor(): void
+    {
+        $medicine = Medicine::factory()->create(['trade_name' => 'ASPIRIN']);
+        $this->stockAt($medicine, 31.5016, 34.4668, 5.00, 50);
+
+        config(['services.daway_ai.base_url' => 'https://ai.test']);
+
+        // نية غير مصمَّم سلوكها (drug_info من v1.1) — تُرفض وتُترك للمستخرج
+        // المحلي؛ لا تُحوَّل إلى بحث مخزون بقرار ضمني.
+        Http::fake([
+            '*' => Http::response([
+                'source' => 'ai',
+                'intent' => 'drug_info',
+                'drug_name' => 'Aspirin',
+                'requested_information' => ['medicine_details'],
+            ], 200),
+        ]);
+
+        Sanctum::actingAs($this->patient());
+
+        $this->postJson(self::ENDPOINT, [
+            'message' => 'Aspirin',
+            'latitude' => self::USER_LAT,
+            'longitude' => self::USER_LNG,
+        ])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            // النتيجة جاءت من المستخرج المحلي (heuristic) لا من نية الـAI
+            ->assertJsonPath('analysis.intent', 'medicine_search');
+    }
+
+    public function test_ai_intent_with_surrounding_whitespace_or_case_is_normalized(): void
+    {
+        $medicine = Medicine::factory()->create(['trade_name' => 'ASPIRIN']);
+        $this->stockAt($medicine, 31.5016, 34.4668, 5.00, 50);
+
+        config(['services.daway_ai.base_url' => 'https://ai.test']);
+
+        Http::fake([
+            '*' => Http::response([
+                'intent' => '  SEARCH_MEDICINE ',
+                'drug_name' => 'Aspirin',
+            ], 200),
+        ]);
+
+        Sanctum::actingAs($this->patient());
+
+        $this->postJson(self::ENDPOINT, [
+            'message' => 'Aspirin',
+            'latitude' => self::USER_LAT,
+            'longitude' => self::USER_LNG,
+        ])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('medicine.id', $medicine->id)
+            ->assertJsonPath('analysis.intent', 'medicine_search');
+    }
+
     // ==================== AI failure ====================
 
     public function test_ai_malformed_json_falls_back_to_local_extractor(): void

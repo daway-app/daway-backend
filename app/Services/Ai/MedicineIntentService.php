@@ -21,6 +21,13 @@ final class MedicineIntentService
 
     public const INTENT_UNKNOWN = 'unknown';
 
+    /**
+     * قيمة النية كما تُرجعها خدمة daway-ai-api فعليًا (v1.1) لطلب بحث دواء.
+     * تُطبَّع داخليًا إلى INTENT_MEDICINE_SEARCH حفاظًا على عقد الرد الذي يعتمده
+     * Flutter — القيمة الخارجية لا تُمرَّر إلى العميل أبدًا.
+     */
+    private const INTENT_EXTERNAL_MEDICINE_SEARCH = 'search_medicine';
+
     /** أقصى طول مقبول لاسم الدواء القادم من الـ LLM — يمنع تضخيم المدخلات. */
     private const MAX_DRUG_NAME_LENGTH = 120;
 
@@ -97,6 +104,16 @@ final class MedicineIntentService
     private function validate(array $raw): ?array
     {
         $intent = $raw['intent'] ?? null;
+
+        if (is_string($intent)) {
+            // الخدمة الخارجية قد تُرسل النية بأي حالة أحرف — المقارنة صارمة.
+            $intent = strtolower(trim($intent));
+
+            // تطبيع نية الخدمة الفعلية إلى قيمة العقد الداخلي (عقد Flutter).
+            if ($intent === self::INTENT_EXTERNAL_MEDICINE_SEARCH) {
+                $intent = self::INTENT_MEDICINE_SEARCH;
+            }
+        }
 
         if (! is_string($intent) || ! in_array($intent, self::ALLOWED_INTENTS, true)) {
             return null;
