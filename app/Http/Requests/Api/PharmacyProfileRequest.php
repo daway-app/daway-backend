@@ -22,6 +22,9 @@ class PharmacyProfileRequest extends FormRequest
             'phone' => 'sometimes|string|max:20|unique:users,phone,'.$userId,
             // C4: SecureImageUrl rule تستبعد javascript:/data: و http://
             'logo_url' => ['sometimes', 'nullable', 'string', 'max:2048', new \App\Rules\SecureImageUrl],
+            // رفع مباشر للشعار: بايتات الملف (multipart) تغلب رابط logo_url الجاهز —
+            // نفس تفريق Api\Admin\CategoryController (image/image_file).
+            'logo_file' => ['sometimes', 'nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'address' => 'sometimes|nullable|string|max:500',
             'region' => 'sometimes|nullable|string|max:150',
             'latitude' => 'sometimes|nullable|numeric|between:-90,90',

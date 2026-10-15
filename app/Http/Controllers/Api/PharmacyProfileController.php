@@ -8,6 +8,7 @@ use App\Http\Requests\Api\PharmacyProfileRequest;
 use App\Models\Pharmacy;
 use App\Models\PharmacyHour;
 use App\Services\PharmacyContext;
+use App\Support\Cloudinary;
 use App\Support\Image;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -65,10 +66,25 @@ class PharmacyProfileController extends Controller
         $data = $request->validated();
 
         // تحديث المستخدم + الصيدلية + ساعات العمل في معاملة واحدة
-        DB::transaction(function () use ($data, $user, $pharmacy) {
+        DB::transaction(function () use ($data, $request, $user, $pharmacy) {
             if (array_key_exists('logo_url', $data)) {
                 $data['logo'] = $data['logo_url'];
                 unset($data['logo_url']);
+            }
+
+            // رفع مباشر للشعار: بايتات الملف تغلب رابط logo_url الجاهز —
+            // نفس ترتيب Api\Admin\CategoryController::applyImage.
+            // logo_file ليس عمودًا فيحذف من $data قبل التحديث.
+            $logoFile = $request->file('logo_file');
+            unset($data['logo_file']);
+
+            if ($logoFile !== null) {
+                Cloudinary::deleteLocal($pharmacy->logo);
+                $uploaded = Cloudinary::upload($logoFile, 'pharmacy_logos');
+
+                if ($uploaded !== null) {
+                    $data['logo'] = $uploaded;
+                }
             }
 
             if (array_key_exists('name', $data)) {
@@ -83,7 +99,13 @@ class PharmacyProfileController extends Controller
                 $pharmacy->phone_number = $data['phone'];
             }
 
-            if ($user->isDirty(['name', 'phone'])) {
+            // مزامنة الصورة: شعار الصيدلية وصورة الحساب صورة وحدة
+            // (مطابقة كنترولر الويب web\Pharmacy\PharmacyProfileController).
+            if (array_key_exists('logo', $data)) {
+                $user->avatar = $data['logo'];
+            }
+
+            if ($user->isDirty(['name', 'phone', 'avatar'])) {
                 $user->save();
             }
 
