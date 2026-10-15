@@ -43,6 +43,7 @@ use App\Http\Controllers\Api\PharmacyInventoryController;
 use App\Http\Controllers\Api\PharmacyInventoryImportController;
 use App\Http\Controllers\Api\PharmacyMedicineController;
 use App\Http\Controllers\Api\PharmacyProfileController;
+use App\Http\Controllers\Api\PharmacyPasswordResetRequestController;
 use App\Http\Controllers\Api\PharmacyRatingController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\ReminderController;
@@ -59,6 +60,11 @@ Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middle
 Route::post('/login/admin', [AdminAuthController::class, 'login'])->middleware(['throttle:login', 'throttle:login-account']);
 
 Route::post('/register/pharmacy', [AuthController::class, 'pharmacyRegister'])->middleware('throttle:register');
+
+// طلب استعادة كلمة مرور صيدلية — عام، بلا مصادقة. لا يُنشئ كلمة مرور ولا يكشف
+// وجود الحساب: الردّ واحد سواء تطابقت البيانات أم لا. مراجعة الطلب من الأدمن
+// فقط (مسارات admin أدناه). حد الـthrottle نفس حد التسجيل لأنه مسار حساس مماثل.
+Route::post('/pharmacy/password-reset-requests', [PharmacyPasswordResetRequestController::class, 'store'])->middleware('throttle:register');
 
 Route::post('/register/patient', [AuthController::class, 'patientRegister'])->middleware('throttle:register');
 
@@ -362,6 +368,12 @@ Route::get('/medicine-filters', [CategoryController::class, 'filters']);
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+
+    // طلبات استعادة كلمة مرور الصيدليات — المراجعة فقط (موافقة تولّد كلمة
+    // مرور جديدة وتُلغي الجلسات القائمة، رفض يسجّل سبب الأدمن).
+    Route::get('/pharmacy-password-reset-requests', [PharmacyPasswordResetRequestController::class, 'index']);
+    Route::post('/pharmacy-password-reset-requests/{passwordResetRequest}/approve', [PharmacyPasswordResetRequestController::class, 'approve']);
+    Route::post('/pharmacy-password-reset-requests/{passwordResetRequest}/reject', [PharmacyPasswordResetRequestController::class, 'reject']);
 
     // Pharmacies
     Route::get('/pharmacies', [AdminPharmacyController::class, 'index']);
