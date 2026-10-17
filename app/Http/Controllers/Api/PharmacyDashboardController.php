@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\PatientInquiry;
 use App\Models\PharmacyMedicine;
 use App\Models\Rating;
 use App\Services\PharmacyContext;
@@ -53,6 +54,28 @@ class PharmacyDashboardController extends Controller
             ])
             ->values();
 
+        // DEFECT-2 fix: the dashboard's "آخر استفسارات المرضى" card was fed
+        // `latest_ratings` instead of inquiries (FRONTEND bug). This block ships
+        // the matching field the React `DashboardPage` already expects —
+        // `latest_inquiries` — so the card renders real inquiries and the
+        // i18n keys (`latest_inquiries`, `inquiry_q`, `no_inquiries_yet`) are
+        // no longer dead. Mirrors the Blade `$inquiriesList` contract
+        // (dashboard/index.blade.php:121+).
+        $latestInquiries = $pharmacy->patientInquiries()
+            ->with(['user', 'medicine'])
+            ->orderByDesc('created_at')
+            ->take(5)
+            ->get()
+            ->map(fn (PatientInquiry $inquiry) => [
+                'id' => $inquiry->id,
+                'user_name' => $inquiry->user?->name,
+                'medicine_trade_name' => $inquiry->medicine?->trade_name,
+                'message' => $inquiry->message,
+                'status' => (string) $inquiry->status,
+                'created_at' => $inquiry->created_at?->toDateTimeString(),
+            ])
+            ->values();
+
         $lowStockItems = (clone $base)
             ->where('quantity', '>', 0)
             ->where('quantity', '<=', 10)
@@ -81,6 +104,7 @@ class PharmacyDashboardController extends Controller
                 'total_inquiries' => $totalInquiries,
                 'new_ratings_this_week' => $newRatingsThisWeek,
                 'latest_ratings' => $latestRatings,
+                'latest_inquiries' => $latestInquiries,
                 'low_stock_items' => $lowStockItems,
             ],
         ]);
