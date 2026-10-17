@@ -1,0 +1,277 @@
+{
+  "info": {
+    "_postman_id": "scan-sessions-001",
+    "name": "Daway - Scan Sessions (Phone Barcode Scanner)",
+    "description": "Postman collection for the Scan Sessions feature - 'phone as a remote barcode scanner' paired with the pharmacy POS.\n\nSix requests, covering all five scan-session endpoints plus login:\n  1. Login (Bearer) - seed pharmacy_token\n  2. Create session (Bearer) - seeds session_id, pairing_token, pairing_qr_svg, pairing_code\n  3. Get session (Bearer) - poll every 2s; reads delivered barcode\n  4. Close session (Bearer) - idempotent\n  5. Pair device (X-Scan-Token) - issues ONE device_token (store securely)\n  6. Send barcode (X-Device-Token) - the mobile-only write path\n\nAUTH MODEL (verified from AuthorizeScanSession.php):\n  - store / show / destroy -> Bearer Pharmacy token (auth:sanctum + role:pharmacy)\n  - pair -> X-Scan-Token header (from the QR) OR Bearer Pharmacy (web approval)\n  - barcode -> X-Device-Token header ONLY (issued by pair; the scan token CANNOT barcode)\n\nThe pair and barcode routes are OUTSIDE auth:sanctum (declared directly on the router, not in the role:pharmacy group) - they use the scan.session middleware which reads the custom headers and never returns 401 to a valid scan-token.\n\nRate limits (verified from routes/api.php + ScanSessionThrottle.php):\n  - create / close -> throttle:writes (shared with all other writes)\n  - get -> no writes-throttle (polled every 2s)\n  - barcode -> throttle:scan-session = 60/min PER SESSION (not per user/IP), via ScanSessionThrottle\n\nThe web polls GET /{id} every 2s; a 5-minute session ~ 150 polls, while the global api limit is 60/min per user - two tabs on one account can 429 on the GET. Respect Retry-After when it happens.\n\nRun order: Login -> Create -> [Pair + barcode on the device side] -> poll (GET) -> Close.\nSource of truth: docs/SCAN-SESSION-API-CONTRACT.md (generated 2026-10-16). No secrets are stored in this file - tokens are fetched at runtime and saved to environment variables by the post-response scripts.",
+    "type": "object",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Login (pharmacy) -> Bearer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Extract the Bearer token from the envelope.",
+              "// Response shape (AuthController::pharmacyLogin):",
+              "//   { success, message, data: { user, token } }",
+              "if (pm.response.code === 200 && pm.response.json('success')) {",
+              "  pm.environment.set('pharmacy_token', pm.response.json('data.token'));",
+              "  pm.environment.set('pharmacy_id', pm.response.json('data.user.id'));",
+              "  console.log('Logged in as pharmacy #' + pm.environment.get('pharmacy_id'));",
+              "} else {",
+              "  console.warn('Login failed or unexpected envelope: ' + pm.response.text());",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pharmacy_id\": \"{{pharmacy_custom_id}}\",\n  \"password\": \"{{pharmacy_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/login/pharmacy",
+          "host": ["{{base_url}}"],
+          "path": ["api", "login", "pharmacy"],
+          "query": []
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Create scan session (Bearer) -> QR + tokens",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Create returns pairing_url, pairing_qr_svg, pairing_code ONCE.",
+              "// These are null on every subsequent GET - capture them now.",
+              "if (pm.response.code === 201) {",
+              "  const d = pm.response.json('data');",
+              "  pm.environment.set('session_id', d.id);",
+              "  pm.environment.set('pairing_url', d.pairing_url);",
+              "  pm.environment.set('pairing_qr_svg', d.pairing_qr_svg);",
+              "  pm.environment.set('pairing_code', d.pairing_code);",
+              "  console.log('Session ' + d.id + ' - state: ' + d.status + ' - expires in ' + d.seconds_remaining + 's');",
+              "} else {",
+              "  console.warn('Create failed: ' + pm.response.text());",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{pharmacy_token}}" }]
+        },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/pharmacy/scan-sessions",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pharmacy", "scan-sessions"],
+          "query": []
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Get session (Bearer) -> poll state",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Poll every 2s to drive the phone flow from the web side.",
+              "// 410 = expired (create a new session); 404 = not yours / gone.",
+              "if (pm.response.code === 410) {",
+              "  console.warn('Session expired - create a new one.');",
+              "} else if (pm.response.code === 200) {",
+              "  const d = pm.response.json('data');",
+              "  console.log('status=' + d.status + ' device=' + (d.device ? d.device.name : 'none') + ' barcode=' + (d.barcode ?? '(none)'));",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{pharmacy_token}}" }]
+        },
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/pharmacy/scan-sessions/{{session_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pharmacy", "scan-sessions", "{{session_id}}"],
+          "query": []
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Close session (Bearer) - idempotent",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{pharmacy_token}}" }]
+        },
+        "method": "DELETE",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/pharmacy/scan-sessions/{{session_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pharmacy", "scan-sessions", "{{session_id}}"],
+          "query": []
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Pair device (X-Scan-Token) -> device_token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// X-Scan-Token comes from the QR (pairing_url ?token=...).",
+              "// device_token is returned ONCE - save it to secure storage.",
+              "// 409 = another device is paired (web must Approve via 06 below).",
+              "if (pm.response.code === 200) {",
+              "  const device_token = pm.response.json('data.device_token');",
+              "  if (device_token) {",
+              "    pm.environment.set('device_token', device_token);",
+              "    console.log('Paired - device_token captured (store securely!)');",
+              "  } else {",
+              "    console.warn('pairDirect response had no device_token (web approval path).');",
+              "  }",
+              "} else if (pm.response.code === 409) {",
+              "  console.warn('Another device is already paired - waiting for web approval (06).');",
+              "} else {",
+              "  console.warn('Pair failed: ' + pm.response.code + ' ' + pm.response.text());",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Scan-Token", "value": "{{pairing_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_name\": \"Pixel 8 - Pharmacy A\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/pharmacy/scan-sessions/{{session_id}}/pair",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pharmacy", "scan-sessions", "{{session_id}}", "pair"],
+          "query": []
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Approve pending device (Bearer pair) - web takeover",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{pharmacy_token}}" }]
+        },
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_name\": \"{{pending_device_name}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/pharmacy/scan-sessions/{{session_id}}/pair",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pharmacy", "scan-sessions", "{{session_id}}", "pair"],
+          "query": []
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "07 - Send barcode (X-Device-Token) - mobile write path",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// X-Device-Token ONLY - the scan token CANNOT send a barcode.",
+              "// 401 = bad/missing token | 403 = token valid but not paired |",
+              "// 410 = session ended | 429 = 60/min per session (see Retry-After).",
+              "if (pm.response.code === 200) {",
+              "  console.log('Barcode received: ' + pm.response.json('data.barcode'));",
+              "} else {",
+              "  console.warn('Barcode send failed: ' + pm.response.code + ' - ' + pm.response.text());",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Device-Token", "value": "{{device_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"barcode\": \"6281000123456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/pharmacy/scan-sessions/{{session_id}}/barcode",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pharmacy", "scan-sessions", "{{session_id}}", "barcode"],
+          "query": []
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "id": "run-order-note",
+      "key": "__run_order_note",
+      "value": "Run 01-02 to start. On the DEVICE run 05 (or 06 if web approves), then 07 per scan, then 03 to poll from the web side, then 04 to close. pairing_token is the 'token' query param from pairing_url - extract it manually the first time; it is not auto-saved here."
+    }
+  ]
+}

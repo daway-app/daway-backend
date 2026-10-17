@@ -33,7 +33,9 @@ oracle_vm_setup.sh
 
 # Junk files
 langPath())
-postman/
+# مُثبَّت على الجذر (/postman/) حتى لا يبتلع النمط العاري مجلد docs/postman/
+# (توثيق Postman للتسليم — انظر docs/postman/). سابقة: إصلاح `logs` ← `/logs` (c007293).
+/postman/
 .playwright-mcp/
 
 # OpenCode local files (AGENTS.md, PROJECT_MAP.md, opencode.json, .opencode/)

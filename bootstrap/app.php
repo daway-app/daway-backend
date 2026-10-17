@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Middleware\AuthorizeScanSession;
 use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\EnsureProfileComplete;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\SetAppLocale;
 use App\Support\InventoryImportThrottle;
+use App\Support\ScanSessionThrottle;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
@@ -66,6 +68,10 @@ $app = Application::configure(basePath: dirname(__DIR__))
             'profile.complete' => EnsureProfileComplete::class,
             // إلزام تغيير كلمة المرور المؤقتة — يسبق profile.complete (إجراء أمني).
             'password.changed' => EnsurePasswordChanged::class,
+            // جلسات المسح بالهاتف: مسارات `pair`/`barcode` تقبل توكن اقتران
+            // مؤقت **أو** Bearer صيدلية، فلا تصلح معها `auth:sanctum` (ترمي
+            // 401 قبل أي منطق). الحارس نفسه يفحص المصدرين ويعزل الصيدلية.
+            'scan.session' => AuthorizeScanSession::class,
         ]);
 
         $middleware->web(append: [
@@ -189,6 +195,12 @@ $app->booted(function () {
 
     // M-9: حد مخصص لنقاط الكتابة المعرضة للإساءة (استفسارات، تقييمات، مزامنة، مخزون)
     RateLimiter::for('writes', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()));
+    // إرسال الباركود من الجوال: المفتاح هو **جلسة المسح** لا المستخدم ولا IP.
+    // السبب: تطبيق الجوال لا يسجّل دخولًا (يُفوَّض بتوكن الاقتران)، فلا user_id
+    // لبناء المفتاح عليه؛ والـIP مشترك بين أجهزة شبكة الصيدلية فيحجب أبرياء.
+    // بناء المفتاح والسقف في ScanSessionThrottle حتى لا يفترق الفرض عن العرض.
+    RateLimiter::for(ScanSessionThrottle::LIMITER, fn (Request $request) => Limit::perMinute(ScanSessionThrottle::limit())
+        ->by(ScanSessionThrottle::scopeKey($request->route('id'))));
 
     // مساعد المريض النصّي: حدّ مخصّص أضيق من 'api' العام.
     // السبب: كل طلب قد يستدعي خدمة AI خارجية (تكلفة tokens + زمن استجابة)،

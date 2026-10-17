@@ -47,6 +47,7 @@ use App\Http\Controllers\Api\PharmacyPasswordResetRequestController;
 use App\Http\Controllers\Api\PharmacyRatingController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\ReminderController;
+use App\Http\Controllers\Api\ScanSessionController;
 use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Route;
 
@@ -311,6 +312,33 @@ Route::middleware('auth:sanctum')->group(function () {
                     ->name('api.pharmacy.accounting.refunds.store');
             });
         });
+        // ==================== SCAN SESSIONS (المسح بالهاتف) ====================
+        // جلسة مؤقتة يربط فيها تطبيق الجوال نفسه بشاشة نقاط البيع، ويرسل
+        // **نصّ الباركود** فقط. لا منطق سلة ولا طلبات هنا — التكامل مع السلة
+        // يقع في الويب (انظر docs/SCAN-SESSION-API-CONTRACT.md).
+        //
+        // ⚠️ `pair` و`barcode` **ليسا** هنا: يحتاجان قبول توكن اقتران مؤقت
+        // (تطبيق الجوال بلا حساب) **أو** Bearer صيدلية — و`auth:sanctum` يرمي
+        // 401 قبل أي منطق فيستحيل معه ذلك. مُعلَنان خارج هذه المجموعة
+        // بـmiddleware `scan.session`.
+        //
+        // ⚠️ القراءة (`show`) هي قناة وصول الباركود في وضع polling (كل 2ث)
+        // ⇒ بلا `throttle:writes`؛ الكتابة (إنشاء/إغلاق) تحمله كبقية الكتابات.
+        Route::prefix('scan-sessions')->name('api.pharmacy.scan-sessions.')->group(function () {
+            Route::post('', [ScanSessionController::class, 'store'])
+                ->middleware('throttle:writes')
+                ->name('store');
+
+            Route::get('{id}', [ScanSessionController::class, 'show'])
+                ->whereUuid('id')
+                ->name('show');
+
+            Route::delete('{id}', [ScanSessionController::class, 'destroy'])
+                ->whereUuid('id')
+                ->middleware('throttle:writes')
+                ->name('destroy');
+        });
+
     });
 
     // Ratings
@@ -328,6 +356,31 @@ Route::middleware(['auth:sanctum', 'role:pharmacy'])->prefix('sync')->group(func
     Route::post('push', [SyncController::class, 'push'])->middleware('throttle:writes');
     Route::get('pull', [SyncController::class, 'pull']);
 });
+// ===== جلسات المسح: الاقتران وإرسال الباركود (مصادقة مزدوجة) =====
+// ⚠️ **خارج `auth:sanctum` عمدًا.** تطبيق الجوال لا يسجّل دخولًا — يُفوَّض
+// بتوكن مؤقت من الـQR. و`auth:sanctum` يرمي 401 قبل أي منطق، فيستحيل داخله
+// قبول مصدر تفويض آخر.
+//
+// ⚠️ وسيط الحارس يحدّد نوع الاعتماد المقبول — **فصل قدرات لا تجميل**:
+//   `:pairing` ⇒ Bearer صيدلية (قرار الويب) أو توكن الاقتران من الـQR.
+//   `:device`  ⇒ توكن الجهاز المقترن وحده. توكن الاقتران **لا يرسل باركود**.
+// لو أُعيد هذان المساران إلى المجموعة أعلاه لصار حامل توكن الجوال مرفوضًا
+// 401 بلا رسالة مفهومة — أسوأ عطل ممكن في هذا التدفق.
+Route::prefix('pharmacy/scan-sessions')->name('api.pharmacy.scan-sessions.')
+    ->group(function () {
+        Route::post('{id}/pair', [ScanSessionController::class, 'pair'])
+            ->whereUuid('id')
+            ->middleware('scan.session:pairing')
+            ->name('pair');
+
+        // إرسال الباركود: المفتاح هو الجلسة (لا المستخدم ولا IP) — انظر
+        // ScanSessionThrottle. 60/دقيقة لكل جلسة.
+        Route::post('{id}/barcode', [ScanSessionController::class, 'barcode'])
+            ->whereUuid('id')
+            ->middleware(['scan.session:device', 'throttle:scan-session'])
+            ->name('barcode');
+    });
+
 
 // ===== Admin-only: Dry-run للتحقق من ربط pharmacy_medicines ↔ moh_medicines =====
 // ⚠️ Read-Only: لا تنفذ أي تعديل بيانات. مؤقتة — تغريد بعد الاستخدام.
