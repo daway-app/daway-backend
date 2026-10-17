@@ -118,29 +118,17 @@ Daway uses a client-server architecture: client applications communicate with th
 
 ```mermaid
 flowchart TB
-    subgraph Clients["Client Applications"]
-        Patient["Patient App"]
-        Pharmacy["Pharmacy Dashboard"]
-        Admin["Admin Dashboard"]
+    Patient[Patient App] --> API
+    Pharmacy[Pharmacy Dashboard] --> API
+    Admin[Admin Dashboard] --> API
+
+    subgraph Backend [Daway Backend]
+        API[Laravel REST API] --> Auth[Authentication and Authorization]
+        Auth --> Services[Application Logic]
+        Services --> Models[Models and Data Access]
     end
 
-    subgraph Backend["Daway Backend"]
-        API["Laravel REST API"]
-        Auth["Authentication & Authorization"]
-        Services["Application Logic"]
-        Models["Models & Data Access"]
-    end
-
-    DB[("Application Database")]
-
-    Patient --> API
-    Pharmacy --> API
-    Admin --> API
-
-    API --> Auth
-    Auth --> Services
-    Services --> Models
-    Models --> DB
+    Models --> DB[(Application Database)]
 ```
 
 ### Request lifecycle
