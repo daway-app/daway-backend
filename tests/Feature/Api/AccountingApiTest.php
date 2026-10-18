@@ -775,6 +775,197 @@ class AccountingApiTest extends TestCase
         $this->assertSame(120.0, (float) $this->getJson('/api/pharmacy/accounting/cash')->json('stats.balance_now'));
     }
 
+
+    public function test_customer_payment_with_sale_id_updates_the_sale_itself(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        [$pm] = $this->stock($pharmacy, price: 100.00, qty: 10);
+
+        $customer = Customer::create([
+            'pharmacy_id' => $pharmacy->id,
+            'name' => 'مدين',
+            'phone' => '0599710000',
+            'current_balance' => 0,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $saleId = $this->postJson('/api/pharmacy/accounting/sales', [
+            'customer_id' => $customer->id,
+            'payment_method' => 'credit',
+            'items' => [[
+                'pharmacy_medicine_id' => $pm->id,
+                'medicine_name' => 'دواء',
+                'unit_price' => 100.00,
+                'quantity' => 2,
+            ]],
+        ])->assertCreated()->json('data.id');
+
+        // الفاتورة بدأت آجلة: بلا تحصيل
+        $sale = Sale::find($saleId);
+        $this->assertSame(0.0, (float) $sale->paid);
+        $this->assertSame(200.0, (float) $sale->remaining);
+        $this->assertSame(Sale::STATUS_UNPAID, $sale->status);
+
+        // يقبض 120 نقدًا *مرتبطة بالفاتورة*
+        $this->postJson("/api/pharmacy/accounting/customers/{$customer->id}/payments", [
+            'amount' => 120.00,
+            'payment_method' => 'cash',
+            'sale_id' => $saleId,
+        ])->assertCreated();
+
+        $sale->refresh();
+        $this->assertSame(120.0, (float) $sale->paid);
+        $this->assertSame(80.0, (float) $sale->remaining);
+        $this->assertSame(Sale::STATUS_PARTIALLY_PAID, $sale->status);
+
+        // يحصّل الباقي — الفاتورة تصير مدفوعة بالكامل
+        $this->postJson("/api/pharmacy/accounting/customers/{$customer->id}/payments", [
+            'amount' => 80.00,
+            'payment_method' => 'cash',
+            'sale_id' => $saleId,
+        ])->assertCreated();
+
+        $sale->refresh();
+        $this->assertSame(200.0, (float) $sale->paid);
+        $this->assertSame(0.0, (float) $sale->remaining);
+        $this->assertSame(Sale::STATUS_PAID, $sale->status);
+
+        // الديون تسير كما كانت — دفعة مرتبطة لا تغيّر دفتر العميل
+        $this->assertSame(0.0, (float) $customer->fresh()->current_balance);
+    }
+
+    public function test_customer_payment_with_sale_id_extra_amount_clamps_to_total(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        [$pm] = $this->stock($pharmacy, price: 100.00, qty: 10);
+
+        $customer = Customer::create([
+            'pharmacy_id' => $pharmacy->id,
+            'name' => 'مدين',
+            'phone' => '0599720000',
+            'current_balance' => 0,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $saleId = $this->postJson('/api/pharmacy/accounting/sales', [
+            'customer_id' => $customer->id,
+            'payment_method' => 'credit',
+            'items' => [[
+                'pharmacy_medicine_id' => $pm->id,
+                'medicine_name' => 'دواء',
+                'unit_price' => 100.00,
+                'quantity' => 2,
+            ]],
+        ])->assertCreated()->json('data.id');
+
+        // دفعة 300 على فاتورة 200: الدفعة تُسجَّل كاملة كدين مخفَّض،
+        // لكن الفاتورة لا تصير «مدفوعة أكثر من قيمتها» (نظير فرع الموردين).
+        $this->postJson("/api/pharmacy/accounting/customers/{$customer->id}/payments", [
+            'amount' => 300.00,
+            'payment_method' => 'cash',
+            'sale_id' => $saleId,
+        ])->assertCreated();
+
+        $sale = Sale::find($saleId);
+        $this->assertSame(200.0, (float) $sale->paid);
+        $this->assertSame(0.0, (float) $sale->remaining);
+        $this->assertSame(Sale::STATUS_PAID, $sale->status);
+
+        // الفائض (100) بقي لدى العميل كسلفة
+        $this->assertSame(-100.0, (float) $customer->fresh()->current_balance);
+    }
+
+    public function test_customer_payment_with_foreign_or_refunded_sale_is_rejected(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        [$pm] = $this->stock($pharmacy, price: 100.00, qty: 10);
+
+        $customerA = Customer::create([
+            'pharmacy_id' => $pharmacy->id,
+            'name' => 'عميل A',
+            'phone' => '0599730000',
+            'current_balance' => 0,
+            'is_active' => true,
+        ]);
+        $customerB = Customer::create([
+            'pharmacy_id' => $pharmacy->id,
+            'name' => 'عميل B',
+            'phone' => '0599740000',
+            'current_balance' => 0,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $payload = [
+            'payment_method' => 'credit',
+            'items' => [[
+                'pharmacy_medicine_id' => $pm->id,
+                'medicine_name' => 'دواء',
+                'unit_price' => 100.00,
+                'quantity' => 1,
+            ]],
+        ];
+
+        $foreignSaleId = $this->postJson('/api/pharmacy/accounting/sales', [
+            'customer_id' => $customerB->id, ...$payload,
+        ])->assertCreated()->json('data.id');
+
+        // دفعة B على فاتورة ب → 422 من الخادم (ترابط العميل/الفاتورة)
+        $this->postJson("/api/pharmacy/accounting/customers/{$customerA->id}/payments", [
+            'amount' => 50.00,
+            'payment_method' => 'cash',
+            'sale_id' => $foreignSaleId,
+        ])->assertStatus(422);
+
+        $saleB = Sale::find($foreignSaleId);
+        $this->assertSame(0.0, (float) $saleB->paid);
+        // رصيد A لم يُمسّ، ورصيد B (صاحب الفاتورة) يظل على دونه
+        $this->assertSame(0.0, (float) $customerA->fresh()->current_balance);
+        $this->assertSame(100.0, (float) $customerB->fresh()->current_balance);
+    }
+
+    public function test_customer_payment_with_sale_id_requires_positive_amount(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        [$pm] = $this->stock($pharmacy, price: 100.00, qty: 10);
+
+        $customer = Customer::create([
+            'pharmacy_id' => $pharmacy->id,
+            'name' => 'مدين',
+            'phone' => '0599750000',
+            'current_balance' => 0,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $saleId = $this->postJson('/api/pharmacy/accounting/sales', [
+            'customer_id' => $customer->id,
+            'payment_method' => 'credit',
+            'items' => [[
+                'pharmacy_medicine_id' => $pm->id,
+                'medicine_name' => 'دواء',
+                'unit_price' => 100.00,
+                'quantity' => 1,
+            ]],
+        ])->assertCreated()->json('data.id');
+
+        $this->postJson("/api/pharmacy/accounting/customers/{$customer->id}/payments", [
+            'amount' => 0.00,
+            'payment_method' => 'cash',
+            'sale_id' => $saleId,
+        ])->assertStatus(422);
+
+        $sale = Sale::find($saleId);
+        $this->assertSame(0.0, (float) $sale->paid);
+        $this->assertSame(100.0, (float) $sale->remaining);
+    }
+
     public function test_customer_payment_rejects_negative_amount(): void
     {
         [$user, $pharmacy] = $this->pharmacyUser();

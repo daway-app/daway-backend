@@ -357,6 +357,11 @@ final class AccountingLedger
 
     /**
      * تسجيل تحصيل من عميل: ينقص دينه ويزيد الصندوق.
+     *
+     * إن ارتبطت الدفعة بفاتورة بيع (`sale_id`) تُحدَّث الفاتورة نفسها
+     * (paid/remaining/status) داخل نفس المعاملة — نظير فرع الموردين أدناه —
+     * وإلا بقيت الفاتورة «غير مدفوعة» إلى الأبد رغم تحصيل المبلغ فعليًا
+     * (الصندوق ودَين العميل يتصرفان)، وهو انحراف صامت في التقارير.
      */
     public static function recordCustomerPayment(int $pharmacyId, int $userId, Customer $customer, array $data): CustomerPayment
     {
@@ -397,6 +402,41 @@ final class AccountingLedger
             );
 
             static::adjustCustomerBalance($customer, -1 * $amount);
+
+            // فاتورة البيع (إن أُرسلت) تُحدَّث كما يحصل مع فاتورة الشراء في
+            // `recordSupplierPayment`: لا دفعة على فاتورة لن تظهر في ميزانها.
+            if (! empty($data['sale_id'])) {
+                $sale = Sale::forPharmacy($pharmacyId)
+                    ->whereKey($data['sale_id'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($sale === null) {
+                    throw new InvalidArgumentException('الفاتورة لا تتبع هذه الصيدلية');
+                }
+
+                if ((int) $sale->customer_id !== (int) $customer->id) {
+                    throw new InvalidArgumentException('الفاتورة لا تتبع هذا العميل');
+                }
+
+                if ($sale->isCancelled() || $sale->status === Sale::STATUS_REFUNDED) {
+                    throw new InvalidArgumentException('لا يمكن تسجيل دفعة على فاتورة ملغاة أو مرجوعة');
+                }
+
+                $newPaid = round((float) $sale->paid + $amount, 2);
+
+                // لا تتجاوز الفاتورة إجماليها: دفعة زائدة تبقى في رصيد العميل
+                // (سلفة) لكنها لا تجعل الفاتورة «مدفوعة أكثر من قيمتها».
+                if ($newPaid > (float) $sale->total) {
+                    $newPaid = (float) $sale->total;
+                }
+
+                $sale->forceFill([
+                    'paid' => $newPaid,
+                    'remaining' => round((float) $sale->total - $newPaid, 2),
+                    'status' => Sale::deriveStatus((float) $sale->total, $newPaid),
+                ])->save();
+            }
 
             return $payment;
         });
