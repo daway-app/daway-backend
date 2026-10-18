@@ -140,4 +140,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Address::class);
     }
+
+    /** Rider Delivery — true عندما يكون هذا الحساب مندوب توصيل. */
+    public function isRider(): bool
+    {
+        return $this->role === 'rider';
+    }
+
+    /** Rider Delivery — الطلبات الأب المُسندة إلى هذا المندوب. */
+    public function assignedOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'rider_id');
+    }
 }

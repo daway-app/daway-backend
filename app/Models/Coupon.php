@@ -60,14 +60,25 @@ class Coupon extends Model
         return true;
     }
 
+    /**
+     * Discount this coupon grants on the given product subtotal.
+     *
+     * The result is always a non-negative amount that never exceeds the
+     * eligible base, so `total = subtotal - discount` can never go negative
+     * (parity with the POS guard in AccountingLedger::recordSale).
+     */
     public function calculateDiscount(float $orderTotal): float
     {
-        if ($orderTotal < $this->minimum_order_amount) {
-            return 0;
+        // The eligible base is the product subtotal. It is floored at zero so a
+        // negative base can never flip the sign of the discount or the total.
+        $eligibleBase = max(0.0, $orderTotal);
+
+        if ($eligibleBase < (float) $this->minimum_order_amount) {
+            return 0.0;
         }
 
         if ($this->type === 'percentage') {
-            $discount = $orderTotal * ($this->value / 100);
+            $discount = $eligibleBase * ((float) $this->value / 100);
         } else {
             $discount = (float) $this->value;
         }
@@ -76,7 +87,12 @@ class Coupon extends Model
             $discount = min($discount, (float) $this->maximum_discount);
         }
 
-        return round($discount, 2);
+        // Cap at the eligible subtotal. Without this, a fixed coupon worth more
+        // than the cart (or a percentage coupon above 100%) produced a discount
+        // larger than the subtotal and a negative payable total.
+        $discount = min($discount, $eligibleBase);
+
+        return round(max(0.0, $discount), 2);
     }
 
     public function canApplyToOrder(float $orderTotal): bool

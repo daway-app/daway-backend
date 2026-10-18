@@ -9,9 +9,12 @@ use App\Http\Controllers\Api\AccountingSalesController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\DeliveryFeeTierController as AdminDeliveryFeeTierController;
+use App\Http\Controllers\Api\Admin\DeliveryRiderController as AdminDeliveryRiderController;
 use App\Http\Controllers\Api\Admin\LogSettingController as AdminLogSettingController;
 use App\Http\Controllers\Api\Admin\MedicineController as AdminMedicineController;
 use App\Http\Controllers\Api\Admin\MedicineRequestController as AdminMedicineRequestController;
+use App\Http\Controllers\Api\Admin\OrderDispatchController as AdminOrderDispatchController;
 use App\Http\Controllers\Api\Admin\PatientInventoryController as AdminPatientInventoryController;
 use App\Http\Controllers\Api\Admin\PharmacyController as AdminPharmacyController;
 use App\Http\Controllers\Api\Admin\ProfileController as AdminProfileController;
@@ -47,6 +50,8 @@ use App\Http\Controllers\Api\PharmacyPasswordResetRequestController;
 use App\Http\Controllers\Api\PharmacyRatingController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\ReminderController;
+use App\Http\Controllers\Api\Rider\OrderController as RiderOrderController;
+use App\Http\Controllers\Api\RiderAuthController;
 use App\Http\Controllers\Api\ScanSessionController;
 use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +64,10 @@ Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middle
 // نفس حدود الويب (throttle:login لكل IP + throttle:login-account لكل بريد)،
 // لأن هذا مسار مصادقة حساس تماماً كدخول الصيدلية.
 Route::post('/login/admin', [AdminAuthController::class, 'login'])->middleware(['throttle:login', 'throttle:login-account']);
+
+// Rider Delivery — دخول المندوب (تطبيق الموبايل). نفس نمط وحدود دخول الأدمن:
+// بريد + كلمة مرور، ثم توكن Sanctum، مع فرض الدور `rider` في الخادم.
+Route::post('/login/rider', [RiderAuthController::class, 'login'])->middleware(['throttle:login', 'throttle:login-account']);
 
 Route::post('/register/pharmacy', [AuthController::class, 'pharmacyRegister'])->middleware('throttle:register');
 
@@ -226,6 +235,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('change-password', [PharmacyProfileController::class, 'changePassword']);
 
         Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('api.pharmacy.orders.status');
+
+        // Phase 1 — الطلبات الفرعية: كل صيدلية ترى وتحدّث طلباتها الفرعية فقط.
+        // مفتاح العزل هو `pharmacy_id` صاحب الطلب، لا الصيدلية المذكورة في الأصناف.
+        Route::get('sub-orders', [OrderController::class, 'pharmacySubOrders'])->name('api.pharmacy.sub-orders.index');
+        Route::post('sub-orders/{subOrder}/status', [OrderController::class, 'updateSubOrderStatus'])->name('api.pharmacy.sub-orders.status');
 
         // ==================== ACCOUNTING ====================
         // محاسبة الصيدلية: فواتير بيع · مصروفات · عملاء/موردون · صندوق.
@@ -475,6 +489,28 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/settings', [AdminLogSettingController::class, 'settings']);
     Route::post('/settings', [AdminLogSettingController::class, 'updateSettings']);
 
+    // Phase 1 — تسعير التوصيل: شرائح + مفتاح تفعيل.
+    Route::get('/delivery-pricing', [AdminDeliveryFeeTierController::class, 'index']);
+    Route::post('/delivery-pricing/status', [AdminDeliveryFeeTierController::class, 'setEnabled']);
+    Route::post('/delivery-pricing/tiers', [AdminDeliveryFeeTierController::class, 'store']);
+    Route::put('/delivery-pricing/tiers/{tier}', [AdminDeliveryFeeTierController::class, 'update']);
+    Route::patch('/delivery-pricing/tiers/{tier}/toggle-status', [AdminDeliveryFeeTierController::class, 'toggleStatus']);
+    Route::delete('/delivery-pricing/tiers/{tier}', [AdminDeliveryFeeTierController::class, 'destroy']);
+
+    // Rider Delivery — إدارة المندوبين (إنشاء/تعديل/تفعيل/تعطيل/حذف).
+    Route::get('/delivery-riders', [AdminDeliveryRiderController::class, 'index']);
+    Route::post('/delivery-riders', [AdminDeliveryRiderController::class, 'store']);
+    Route::get('/delivery-riders/{rider}', [AdminDeliveryRiderController::class, 'show']);
+    Route::match(['put', 'patch'], '/delivery-riders/{rider}', [AdminDeliveryRiderController::class, 'update']);
+    Route::patch('/delivery-riders/{rider}/toggle-status', [AdminDeliveryRiderController::class, 'toggleStatus']);
+    Route::delete('/delivery-riders/{rider}', [AdminDeliveryRiderController::class, 'destroy']);
+
+    // Rider Delivery — طلبات التوصيل: عرض + إسناد/فك إسناد مندوب.
+    Route::get('/orders', [AdminOrderDispatchController::class, 'index']);
+    Route::get('/orders/{order}', [AdminOrderDispatchController::class, 'show']);
+    Route::post('/orders/{order}/assign-rider', [AdminOrderDispatchController::class, 'assignRider']);
+    Route::delete('/orders/{order}/assign-rider', [AdminOrderDispatchController::class, 'unassignRider']);
+
     // Own profile — display + password change.
     // NOTE: named `change-password` to mirror the pharmacy route's shape, but a
     // SEPARATE endpoint on purpose: the pharmacy one aborts unless
@@ -484,3 +520,15 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
         ->middleware('throttle:6,1');
 });
 
+// =============================================================================
+// Rider Delivery — واجهة المندوب (تطبيق الموبايل)
+// =============================================================================
+// مجموعة مستقلة `auth:sanctum` + `role:rider` صراحةً. المندوب لا يرى ولا
+// يعدّل إلا الطلبات المُسندة إليه (يُفرض داخل الكنترولر على مستوى `rider_id`).
+// الكتابات تحت `throttle:writes` كبقية المسارات الحساسة في المشروع.
+Route::middleware(['auth:sanctum', 'role:rider'])->prefix('rider')->group(function () {
+    Route::get('/orders', [RiderOrderController::class, 'index']);
+    Route::get('/orders/{order}', [RiderOrderController::class, 'show']);
+    Route::post('/orders/{order}/pickup', [RiderOrderController::class, 'pickup'])->middleware('throttle:writes');
+    Route::post('/orders/{order}/status', [RiderOrderController::class, 'status'])->middleware('throttle:writes');
+});

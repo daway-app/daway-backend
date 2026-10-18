@@ -33,7 +33,7 @@ class CouponController extends Controller
             if ($data['order_total'] < $coupon->minimum_order_amount) {
                 return response()->json([
                     'success' => false,
-                    'message' => "الحد الأدنى للطلب هو {$coupon->minimum_order_amount} ريال",
+                    'message' => "الحد الأدنى للطلب هو {$coupon->minimum_order_amount} ₪",
                 ], 422);
             }
 

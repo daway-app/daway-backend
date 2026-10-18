@@ -12,9 +12,12 @@ class OrderStatusHistory extends Model
 
     protected $fillable = [
         'order_id',
+        'sub_order_id',
         'status',
         'note',
         'status_changed_at',
+        'actor_user_id',
+        'actor_role',
     ];
 
     protected function casts(): array
@@ -27,5 +30,21 @@ class OrderStatusHistory extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * Rider Delivery — من نفّذ هذا الانتقال (NULL للصفوف التاريخية).
+     */
+    public function actor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'actor_user_id');
+    }
+
+    /**
+     * Phase 1 — when set, this row belongs to a pharmacy sub-order timeline.
+     */
+    public function subOrder(): BelongsTo
+    {
+        return $this->belongsTo(SubOrder::class);
     }
 }

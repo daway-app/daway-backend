@@ -79,7 +79,7 @@ class CouponApiTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonFragment(['success' => false])
-            ->assertJsonFragment(['message' => 'الحد الأدنى للطلب هو 100.00 ريال']);
+            ->assertJsonFragment(['message' => 'الحد الأدنى للطلب هو 100.00 ₪']);
     }
 
     public function test_maximum_discount_applied_correctly(): void
@@ -254,6 +254,73 @@ class CouponApiTest extends TestCase
         ]);
 
         $response->assertStatus(403);
+    }
+
+    // ── Phase 0 — discount cap: never exceed the eligible subtotal ───────
+
+    public function test_fixed_coupon_larger_than_subtotal_is_capped_at_subtotal(): void
+    {
+        $coupon = Coupon::create([
+            'code' => 'HUGE500',
+            'type' => 'fixed',
+            'value' => 500,
+            'minimum_order_amount' => 0,
+            'is_active' => true,
+        ]);
+
+        $response = $this->postJson('/api/patient/coupons/validate', [
+            'code' => 'HUGE500',
+            'order_total' => 100,
+        ]);
+
+        // A 500.00 fixed coupon on a 100.00 cart may never discount more than 100.00.
+        $response->assertStatus(200)
+            ->assertJsonFragment(['success' => true])
+            ->assertJsonFragment(['discount' => 100.0]);
+    }
+
+    public function test_percentage_coupon_above_100_is_capped_at_subtotal(): void
+    {
+        // `value` is decimal(10,2) with no upper bound, so >100% is configurable.
+        $coupon = Coupon::create([
+            'code' => 'OVER150',
+            'type' => 'percentage',
+            'value' => 150,
+            'minimum_order_amount' => 0,
+            'is_active' => true,
+        ]);
+
+        $response = $this->postJson('/api/patient/coupons/validate', [
+            'code' => 'OVER150',
+            'order_total' => 80,
+        ]);
+
+        // 150% of 80.00 is 120.00 → capped at the eligible 80.00.
+        $response->assertStatus(200)
+            ->assertJsonFragment(['success' => true])
+            ->assertJsonFragment(['discount' => 80.0]);
+    }
+
+    public function test_applied_discount_never_exceeds_eligible_subtotal(): void
+    {
+        $coupon = Coupon::create([
+            'code' => 'CAPCHECK',
+            'type' => 'fixed',
+            'value' => 60,
+            'minimum_order_amount' => 0,
+            'is_active' => true,
+        ]);
+
+        foreach ([10, 30, 59.99, 60, 200] as $orderTotal) {
+            $discount = $coupon->calculateDiscount((float) $orderTotal);
+
+            $this->assertLessThanOrEqual(
+                (float) $orderTotal,
+                $discount,
+                "Discount {$discount} exceeded the eligible subtotal {$orderTotal}"
+            );
+            $this->assertGreaterThanOrEqual(0.0, $discount);
+        }
     }
 
     protected function tearDown(): void

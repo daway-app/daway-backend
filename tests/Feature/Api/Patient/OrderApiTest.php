@@ -368,7 +368,14 @@ class OrderApiTest extends TestCase
         ])->assertStatus(422);
     }
 
-    public function test_cancel_order_does_not_restore_inventory_for_cancelled_order(): void
+    /**
+     * Phase 0 — cancelling an order gives back exactly the stock it took, once.
+     *
+     * Replaces the previous expectation that cancellation left inventory
+     * deducted (the defect this task fixes). The status and idempotency
+     * guarantees are asserted alongside the quantity.
+     */
+    public function test_cancel_order_restores_inventory_exactly_once(): void
     {
         $this->seedCart(1, 4);
         $before = $this->pharmacyMedicine->quantity;
@@ -379,5 +386,12 @@ class OrderApiTest extends TestCase
 
         $this->postJson("/api/patient/orders/{$order->id}/cancel")->assertStatus(200);
         $this->assertSame(Order::STATUS_CANCELLED, $order->fresh()->status);
+
+        // The exact deducted quantity comes back.
+        $this->assertSame($before, $this->pharmacyMedicine->fresh()->quantity);
+
+        // A repeated cancellation is rejected and must not restock a second time.
+        $this->postJson("/api/patient/orders/{$order->id}/cancel")->assertStatus(422);
+        $this->assertSame($before, $this->pharmacyMedicine->fresh()->quantity);
     }
 }

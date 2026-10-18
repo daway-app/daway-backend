@@ -78,6 +78,16 @@ class UserFactory extends Factory
     }
 
     /**
+     * Rider Delivery — indicate that the model's role is a delivery rider.
+     */
+    public function rider(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'rider',
+        ]);
+    }
+
+    /**
      * Indicate that the user account is inactive.
      */
     public function inactive(): static
