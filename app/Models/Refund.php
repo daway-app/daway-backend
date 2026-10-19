@@ -7,10 +7,37 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class Refund extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    /**
+     * Phase 0 — a refund moves money out and puts stock back, so every field
+     * that describes it is audit-worthy. `created_by` is included so the log
+     * itself names the actor even when no authenticated causer is present
+     * (e.g. a console/backfill run).
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('refund')
+            ->logOnly([
+                'status',
+                'amount',
+                'cash_refunded',
+                'debt_cancelled',
+                'reason',
+                'sale_id',
+                'pharmacy_id',
+                'created_by',
+                'refunded_at',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     public const STATUS_PENDING = 'pending';
     public const STATUS_COMPLETED = 'completed';
@@ -22,12 +49,16 @@ class Refund extends Model
         'created_by',
         'refunded_at',
         'amount',
+        'cash_refunded',
+        'debt_cancelled',
         'reason',
         'status',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'cash_refunded' => 'decimal:2',
+        'debt_cancelled' => 'decimal:2',
         'refunded_at' => 'datetime',
     ];
 

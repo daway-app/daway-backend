@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Purchase;
+use App\Models\Refund;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Supplier;
@@ -75,7 +76,9 @@ final class AccountingReports
                 'format' => 'money',
                 'icon' => 'fas fa-cash-register',
                 'tone' => 'teal',
-                'href' => route('pharmacy.accounting.sales.index'),
+                // مسار نسبي محايد للعميل (SPA) — لا نستخدم دالة المسارات هنا:
+                // هذه خدمة مشتركة والـAPI يجب ألا يعتمد على جدول مسارات الويب.
+                'href' => '/accounting/sales',
             ],
             [
                 'key' => 'today_purchases',
@@ -457,6 +460,9 @@ final class AccountingReports
     public static function receivablesAudit(int $pharmacyId): array
     {
         $customerBalances = self::customerReceivablesTotal($pharmacyId);
+        // `active()` يستثني الملغاة. الفواتير المرجوعة كليًا صارت `remaining = 0`
+        // (الدَين الملغى يُخصم فعلاً عند الإرجاع) فلا تظهر كذمّة قائمة، بينما
+        // الإجمالي التاريخي (`total`) يبقى محفوظًا للسجل والتدقيق.
         $invoiceRemaining = round((float) Sale::query()
             ->forPharmacy($pharmacyId)
             ->active()
@@ -551,7 +557,9 @@ final class AccountingReports
                     'method' => $sale->payment_method,
                     'status' => $sale->status,
                     'date' => $sale->sold_at,
-                    'href' => route('pharmacy.accounting.sales.show', $sale->number),
+                    // لا `href` في صفوف المعاملات: لا مستهلك لهذا الحقل (لا React
+                    // ولا Blade)، واستدعاء دالة المسارات هنا كان يُفشل الـAPI
+                    // بعد حذف واجهة الويب.
                     '_ts' => $sale->sold_at?->getTimestamp() ?? 0,
                 ];
             });
@@ -574,7 +582,6 @@ final class AccountingReports
                 'method' => $expense->payment_method,
                 'status' => 'paid',
                 'date' => $expense->expense_date,
-                'href' => null,
                 '_ts' => $expense->expense_date?->getTimestamp() ?? 0,
             ]);
     }
@@ -596,7 +603,6 @@ final class AccountingReports
                 'method' => $purchase->payment_method,
                 'status' => $purchase->status,
                 'date' => $purchase->purchased_at,
-                'href' => null,
                 '_ts' => $purchase->purchased_at?->getTimestamp() ?? 0,
             ]);
     }
@@ -619,7 +625,6 @@ final class AccountingReports
                 'method' => $payment->payment_method,
                 'status' => 'paid',
                 'date' => $payment->paid_at,
-                'href' => null,
                 '_ts' => $payment->paid_at?->getTimestamp() ?? 0,
             ]);
     }
@@ -642,7 +647,6 @@ final class AccountingReports
                 'method' => $payment->payment_method,
                 'status' => 'paid',
                 'date' => $payment->paid_at,
-                'href' => null,
                 '_ts' => $payment->paid_at?->getTimestamp() ?? 0,
             ]);
     }
@@ -668,7 +672,6 @@ final class AccountingReports
                 'method' => 'cash',
                 'status' => 'paid',
                 'date' => $movement->moved_at,
-                'href' => null,
                 '_ts' => $movement->moved_at?->getTimestamp() ?? 0,
             ]);
     }
@@ -730,7 +733,9 @@ final class AccountingReports
                     'customer' => $oldestUnpaid->customer->name,
                     'days' => $days,
                 ]),
-                'href' => route('pharmacy.accounting.sales.show', $oldestUnpaid->number),
+                // مسار نسبي محايد — التنبيه قابل للنقر في الـSPA، وبلا اعتماد
+                // على مسارات الويب.
+                'href' => '/accounting/sales/'.$oldestUnpaid->number,
             ];
         }
 
@@ -1031,7 +1036,18 @@ final class AccountingReports
      * `$from`/`$to` = null ⇒ بلا فلتر زمني (كل الفواتير). هذا يخدم شاشة
      * السجل الكامل ويُبقي التوقيع آمنًا (لا TypeError على null).
      *
-     * @return array{total:float,count:int,paid:float,remaining:float,discount:float}
+     * ── تعريفات متسقة (D7) ─────────────────────────────────────────────
+     *   total        = إجمالي المبيعات **قبل** الإرجاعات (تاريخي، لا يتغيّر)
+     *   refunded     = قيمة البضاعة المرتجعة (مجموع `refunded_amount`)
+     *   net_total    = صافي المبيعات = total − refunded
+     *   paid         = النقد الصافي المحتفظ به (بعد ردود المال)
+     *   remaining    = الذمم القائمة القابلة للتحصيل (صافي الفاتورة − المحصَّل)
+     *   discount     = الخصومات
+     *
+     * ⚠️ لا نساوي بين `refunded` (قيمة بضاعة) و`cash_refunded` (نقد مُردّ):
+     * البضاعة المرتجعة قد تكون غير مدفوعة فتُلغِي دَينًا بلا نقد.
+     *
+     * @return array{total:float,count:int,paid:float,remaining:float,discount:float,refunded:float,net_total:float}
      */
     private static function sumSales(int $pharmacyId, ?CarbonInterface $from = null, ?CarbonInterface $to = null): array
     {
@@ -1047,16 +1063,53 @@ final class AccountingReports
             ->selectRaw(
                 'COALESCE(SUM(total),0) as total, COUNT(*) as cnt, '.
                 'COALESCE(SUM(paid),0) as paid, COALESCE(SUM(remaining),0) as remaining, '.
-                'COALESCE(SUM(discount),0) as discount'
+                'COALESCE(SUM(discount),0) as discount, COALESCE(SUM(refunded_amount),0) as refunded'
             )
             ->first();
 
+        $total = round((float) ($row->total ?? 0), 2);
+        $refunded = round((float) ($row->refunded ?? 0), 2);
+
         return [
-            'total' => round((float) ($row->total ?? 0), 2),
+            'total' => $total,
             'count' => (int) ($row->cnt ?? 0),
             'paid' => round((float) ($row->paid ?? 0), 2),
             'remaining' => round((float) ($row->remaining ?? 0), 2),
             'discount' => round((float) ($row->discount ?? 0), 2),
+            'refunded' => $refunded,
+            'net_total' => round($total - $refunded, 2),
+        ];
+    }
+
+    /**
+     * ملخّص الإرجاعات المالية — يفصل قيمة البضاعة عن النقد المُردّ وعن الدين
+     * الملغى، حتى لا يُقرأ «الإرجاع» كأنه كله مال خرج من الصندوق.
+     *
+     * @return array{gross_sales:float,refunded_goods:float,net_sales:float,cash_refunded:float,debt_cancelled:float,count:int}
+     */
+    public static function refundTotals(int $pharmacyId, ?CarbonInterface $from = null, ?CarbonInterface $to = null): array
+    {
+        $sales = self::sumSales($pharmacyId, $from, $to);
+
+        // النقد المُردّ والدَين الملغى من سجل الإرجاعات لنفس فواتير النطاق.
+        $salesQuery = Sale::query()->forPharmacy($pharmacyId)->active();
+        if ($from !== null && $to !== null) {
+            $salesQuery->between($from, $to);
+        }
+        $saleIds = $salesQuery->pluck('id');
+
+        $refunds = Refund::query()
+            ->where('pharmacy_id', $pharmacyId)
+            ->whereIn('sale_id', $saleIds)
+            ->where('status', Refund::STATUS_COMPLETED);
+
+        return [
+            'gross_sales' => $sales['total'],
+            'refunded_goods' => $sales['refunded'],
+            'net_sales' => $sales['net_total'],
+            'cash_refunded' => round((float) (clone $refunds)->sum('cash_refunded'), 2),
+            'debt_cancelled' => round((float) (clone $refunds)->sum('debt_cancelled'), 2),
+            'count' => (int) $refunds->count(),
         ];
     }
 

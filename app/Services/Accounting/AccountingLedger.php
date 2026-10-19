@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\CustomerPayment;
 use App\Models\Expense;
 use App\Models\Purchase;
+use App\Models\PurchaseItem;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Supplier;
@@ -237,6 +238,13 @@ final class AccountingLedger
                 throw new InvalidArgumentException('الفاتورة ملغاة مسبقًا');
             }
 
+            // فاتورة أُجري عليها إرجاع لا تُلغى: الإرجاع أعاد بعض المخزون
+            // وألغى بعض الدين، والإلغاء سيعيد **كل** المخزون ويقلب الدين ⇒
+            // مضاعفة. نرفض بدل كتابة واقع غير موجود.
+            if ((float) $fresh->refunded_amount > 0) {
+                throw new InvalidArgumentException('لا يمكن إلغاء فاتورة أُجري عليها إرجاع');
+            }
+
             // ── 1) إرجاع المخزون ─────────────────────────────────────────
             foreach ($fresh->items()->get() as $item) {
                 if ($item->pharmacy_medicine_id === null) {
@@ -390,16 +398,22 @@ final class AccountingLedger
                 'created_by' => $userId,
             ]);
 
-            static::recordCash(
-                $pharmacyId,
-                CashMovement::DIRECTION_IN,
-                $amount,
-                CashMovement::SOURCE_CUSTOMER_PAYMENT,
-                $payment->id,
-                'تحصيل من '.$customer->name,
-                $date,
-                $userId
-            );
+            // النقد الفعلي فقط يدخل الصندوق. تحصيل البطاقة/التحويل يُسجَّل في
+            // `customer_payments` (بوسيلته ومرجعه ووقته) لكنه **لا** يزيد النقد
+            // في الدرج — نظير بيع البطاقة/التحويل الذي لا يمرّ بالصندوق.
+            // إدخاله هنا كان ينفخ الجرد النقدي كذبًا.
+            if (static::isCashTender($method)) {
+                static::recordCash(
+                    $pharmacyId,
+                    CashMovement::DIRECTION_IN,
+                    $amount,
+                    CashMovement::SOURCE_CUSTOMER_PAYMENT,
+                    $payment->id,
+                    'تحصيل من '.$customer->name,
+                    $date,
+                    $userId
+                );
+            }
 
             static::adjustCustomerBalance($customer, -1 * $amount);
 
@@ -423,18 +437,26 @@ final class AccountingLedger
                     throw new InvalidArgumentException('لا يمكن تسجيل دفعة على فاتورة ملغاة أو مرجوعة');
                 }
 
+                // السقف **صافي** الفاتورة (الإجمالي − قيمة البضاعة المرتجعة)،
+                // لا الإجمالي التاريخي: لا يعقل أن يسدّد العميل ثمن بضاعة أرجعها.
+                $netTotal = $sale->netTotal();
                 $newPaid = round((float) $sale->paid + $amount, 2);
 
-                // لا تتجاوز الفاتورة إجماليها: دفعة زائدة تبقى في رصيد العميل
+                // لا تتجاوز الفاتورة صافيتها: دفعة زائدة تبقى في رصيد العميل
                 // (سلفة) لكنها لا تجعل الفاتورة «مدفوعة أكثر من قيمتها».
-                if ($newPaid > (float) $sale->total) {
-                    $newPaid = (float) $sale->total;
+                if (bccomp((string) $newPaid, (string) $netTotal, 2) > 0) {
+                    $newPaid = $netTotal;
                 }
 
                 $sale->forceFill([
                     'paid' => $newPaid,
-                    'remaining' => round((float) $sale->total - $newPaid, 2),
-                    'status' => Sale::deriveStatus((float) $sale->total, $newPaid),
+                    'remaining' => round($netTotal - $newPaid, 2),
+                    'status' => Sale::deriveRefundAwareStatus(
+                        (float) $sale->total,
+                        (float) $sale->refunded_amount,
+                        $netTotal,
+                        $newPaid
+                    ),
                 ])->save();
             }
 
@@ -444,6 +466,10 @@ final class AccountingLedger
 
     /**
      * تسجيل دفعة لمورد: تنقص ديننا له وتنقص الصندوق.
+     *
+     * إن ارتبطت الدفعة بفاتورة شراء (`purchase_id`) تُحدَّث الفاتورة نفسها
+     * (paid/remaining/status) داخل نفس المعاملة — وإلا بقيت الفاتورة
+     * «غير مدفوعة» إلى الأبد رغم تسجيل الدفعة، وهو انحراف صامت في التقارير.
      */
     public static function recordSupplierPayment(int $pharmacyId, int $userId, Supplier $supplier, array $data): SupplierPayment
     {
@@ -460,10 +486,32 @@ final class AccountingLedger
             $date = isset($data['paid_at']) ? Carbon::parse($data['paid_at']) : Carbon::now();
             $method = (string) ($data['payment_method'] ?? 'cash');
 
+            // فاتورة الشراء (إن أُرسلت) يجب أن تخصّ هذه الصيدلية وهذا المورد،
+            // وألا تكون ملغاة — وإلا صار الدفع لفاتورة وهمية.
+            $purchase = null;
+            if (! empty($data['purchase_id'])) {
+                $purchase = Purchase::forPharmacy($pharmacyId)
+                    ->whereKey($data['purchase_id'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($purchase === null) {
+                    throw new InvalidArgumentException('فاتورة الشراء لا تتبع هذه الصيدلية');
+                }
+
+                if ((int) $purchase->supplier_id !== (int) $supplier->id) {
+                    throw new InvalidArgumentException('فاتورة الشراء لا تتبع هذا المورّد');
+                }
+
+                if ($purchase->isCancelled()) {
+                    throw new InvalidArgumentException('لا يمكن تسجيل دفعة على فاتورة شراء ملغاة');
+                }
+            }
+
             $payment = SupplierPayment::create([
                 'pharmacy_id' => $pharmacyId,
                 'supplier_id' => $supplier->id,
-                'purchase_id' => $data['purchase_id'] ?? null,
+                'purchase_id' => $purchase?->id,
                 'amount' => $amount,
                 'payment_method' => $method,
                 'reference' => $data['reference'] ?? null,
@@ -487,7 +535,279 @@ final class AccountingLedger
 
             static::adjustSupplierBalance($supplier, -1 * $amount);
 
+            if ($purchase !== null) {
+                $newPaid = round((float) $purchase->paid + $amount, 2);
+
+                // لا تتجاوز الفاتورة إجماليها: دفعة زائدة تبقى في رصيد المورد
+                // (سلفة) لكنها لا تجعل الفاتورة «مدفوعة أكثر من قيمتها».
+                if ($newPaid > (float) $purchase->total) {
+                    $newPaid = (float) $purchase->total;
+                }
+
+                $purchase->forceFill([
+                    'paid' => $newPaid,
+                    'remaining' => round((float) $purchase->total - $newPaid, 2),
+                    'status' => Purchase::deriveStatus((float) $purchase->total, $newPaid),
+                ])->save();
+            }
+
             return $payment;
+        });
+    }
+
+    /**
+     * إنشاء فاتورة شراء: فاتورة + أسطر + **زيادة** المخزون + صندوق + رصيد مورد.
+     *
+     * ⚠️ عكس `recordSale` في اتجاهين:
+     *   - المخزون **يزيد** (لا يُخصم)، ولا فشل إذا كانت الكمية الحالية صفرًا.
+     *   - الصندوق يخرج منه النقد المدفوع (`out`) لا يدخله.
+     *
+     * التكرار (idempotency): لا يوجد مفتاح تكرار هنا. منع الازدواج يقع على
+     * العميل (زر واحد) وعلى قيد `unique(pharmacy_id, number)` — إرسال نفس
+     * الرقم مرتين يفشل بدل مضاعفة المخزون.
+     *
+     * @param  array{
+     *     supplier_id?: int|null, number?: string, discount?: float,
+     *     payment_method?: string, paid?: float|null, notes?: string|null,
+     *     purchased_at?: \DateTimeInterface|string|null,
+     *     items: list<array{
+     *         pharmacy_medicine_id?: int|null, medicine_id?: int|null,
+     *         moh_medicine_id?: int|null, medicine_name: string,
+     *         barcode?: string|null, unit_cost: float, quantity: int,
+     *         line_discount?: float
+     *     }>
+     * }  $data
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function recordPurchase(int $pharmacyId, int $userId, array $data): Purchase
+    {
+        $items = $data['items'] ?? [];
+
+        if (count($items) === 0) {
+            throw new InvalidArgumentException('فاتورة الشراء يجب أن تحتوي على صنف واحد على الأقل');
+        }
+
+        return DB::transaction(function () use ($pharmacyId, $userId, $data, $items) {
+            $purchasedAt = isset($data['purchased_at'])
+                ? Carbon::parse($data['purchased_at'])
+                : Carbon::now();
+
+            // ── 1) المجاميع قبل أي كتابة ─────────────────────────────────
+            $subtotal = 0.0;
+            $prepared = [];
+
+            foreach ($items as $row) {
+                $quantity = (int) ($row['quantity'] ?? 0);
+                if ($quantity < 1) {
+                    throw new InvalidArgumentException('كمية الصنف يجب أن تكون 1 على الأقل');
+                }
+
+                $unitCost = (float) ($row['unit_cost'] ?? 0);
+                if ($unitCost < 0) {
+                    throw new InvalidArgumentException('تكلفة الوحدة لا يمكن أن تكون سالبة');
+                }
+
+                $lineDiscount = (float) ($row['line_discount'] ?? 0);
+                if ($lineDiscount < 0) {
+                    throw new InvalidArgumentException('خصم السطر لا يمكن أن يكون سالبًا');
+                }
+
+                $lineTotal = PurchaseItem::computeLineTotal($unitCost, $quantity, $lineDiscount);
+                if ($lineTotal < 0) {
+                    throw new InvalidArgumentException('إجمالي السطر لا يمكن أن يكون سالبًا');
+                }
+
+                $subtotal += $lineTotal;
+                $prepared[] = [
+                    'row' => $row,
+                    'quantity' => $quantity,
+                    'unit_cost' => $unitCost,
+                    'line_discount' => $lineDiscount,
+                    'line_total' => $lineTotal,
+                ];
+            }
+
+            $subtotal = round($subtotal, 2);
+            $invoiceDiscount = round((float) ($data['discount'] ?? 0), 2);
+            $total = round($subtotal - $invoiceDiscount, 2);
+
+            if ($total < 0) {
+                throw new InvalidArgumentException('إجمالي الفاتورة لا يمكن أن يكون سالبًا');
+            }
+
+            $method = (string) ($data['payment_method'] ?? 'credit');
+
+            // الافتراضي للشراء **آجل** (credit) — عكس البيع النقدي.
+            $paid = array_key_exists('paid', $data) && $data['paid'] !== null
+                ? round((float) $data['paid'], 2)
+                : ($method === 'credit' ? 0.0 : $total);
+
+            if ($paid > $total) {
+                $paid = $total;
+            }
+
+            $remaining = round($total - $paid, 2);
+
+            // ── 2) المورد (إن أُرسل) يجب أن يخصّ هذه الصيدلية ──────────────
+            $supplier = null;
+            if (! empty($data['supplier_id'])) {
+                $supplier = Supplier::forPharmacy($pharmacyId)->find($data['supplier_id']);
+
+                if ($supplier === null) {
+                    throw new InvalidArgumentException('المورد لا يتبع هذه الصيدلية');
+                }
+            }
+
+            // ── 3) الفاتورة ──────────────────────────────────────────────
+            $purchase = Purchase::create([
+                'pharmacy_id' => $pharmacyId,
+                'supplier_id' => $supplier?->id,
+                'supplier_name' => $supplier?->name ?? ($data['supplier_name'] ?? null),
+                'number' => $data['number'] ?? static::nextPurchaseNumber($pharmacyId),
+                'subtotal' => $subtotal,
+                'discount' => $invoiceDiscount,
+                'total' => $total,
+                'paid' => $paid,
+                'remaining' => $remaining,
+                'payment_method' => $method,
+                'status' => Purchase::deriveStatus($total, $paid),
+                'notes' => $data['notes'] ?? null,
+                'purchased_at' => $purchasedAt,
+                'created_by' => $userId,
+            ]);
+
+            // ── 4) الأسطر + زيادة المخزون ─────────────────────────────────
+            foreach ($prepared as $p) {
+                $row = $p['row'];
+                $pmId = $row['pharmacy_medicine_id'] ?? null;
+
+                $purchase->items()->create([
+                    'pharmacy_medicine_id' => $pmId,
+                    'medicine_id' => $row['medicine_id'] ?? null,
+                    'moh_medicine_id' => $row['moh_medicine_id'] ?? null,
+                    'medicine_name' => (string) $row['medicine_name'],
+                    'barcode' => $row['barcode'] ?? null,
+                    'unit_cost' => $p['unit_cost'],
+                    'quantity' => $p['quantity'],
+                    'line_discount' => $p['line_discount'],
+                    'line_total' => $p['line_total'],
+                ]);
+
+                if ($pmId === null) {
+                    continue; // سطر بلا ربط مخزون (يُربط لاحقًا)
+                }
+
+                // زيادة ذرّية مشروطة بالصيدلية — تمنع الكتابة على مخزون غيرك.
+                $affected = DB::table('pharmacy_medicines')
+                    ->where('id', (int) $pmId)
+                    ->where('pharmacy_id', $pharmacyId)
+                    ->increment('quantity', $p['quantity']);
+
+                if ($affected === 0) {
+                    throw new InvalidArgumentException(
+                        'الصنف لا يتبع مخزون هذه الصيدلية: '.$row['medicine_name']
+                    );
+                }
+            }
+
+            // ── 5) الصندوق: النقد المدفوع يخرج فقط ────────────────────────
+            if ($paid > 0 && static::isCashTender($method)) {
+                static::recordCash(
+                    $pharmacyId,
+                    CashMovement::DIRECTION_OUT,
+                    $paid,
+                    CashMovement::SOURCE_PURCHASE,
+                    $purchase->id,
+                    'فاتورة شراء '.$purchase->number,
+                    $purchasedAt,
+                    $userId
+                );
+            }
+
+            // ── 6) رصيد المورد: المتبقي فقط يزيد ما علينا ─────────────────
+            if ($supplier !== null && $remaining > 0) {
+                static::adjustSupplierBalance($supplier, $remaining);
+            }
+
+            return $purchase->load('items');
+        });
+    }
+
+    /**
+     * إلغاء فاتورة شراء: عكس المخزون + الصندوق + رصيد المورد.
+     *
+     * ⚠️ **لا يُسمح بالإلغاء لو استُهلك المخزون.** عكس شراء 10 علب والمخزون
+     * الحالي 3 يجعل الرصيد سالبًا كذبًا. نرفض برسالة واضحة بدل كتابة واقع
+     * غير موجود — الإرجاع للمورد عملية أخرى (لم تُنفَّذ بعد).
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function cancelPurchase(Purchase $purchase, int $userId): Purchase
+    {
+        if ($purchase->isCancelled()) {
+            throw new InvalidArgumentException('فاتورة الشراء ملغاة مسبقًا');
+        }
+
+        return DB::transaction(function () use ($purchase, $userId) {
+            $locked = Purchase::whereKey($purchase->getKey())->lockForUpdate()->first();
+
+            if ($locked === null) {
+                throw new InvalidArgumentException('فاتورة الشراء غير موجودة');
+            }
+
+            // إعادة الفحص تحت القفل — طلبان متزامنان يجب ألا يعكسا مرتين.
+            if ($locked->isCancelled()) {
+                throw new InvalidArgumentException('فاتورة الشراء ملغاة مسبقًا');
+            }
+
+            foreach ($locked->items()->get() as $item) {
+                $pmId = $item->pharmacy_medicine_id;
+                $qty = (int) $item->quantity;
+
+                if ($pmId === null || $qty <= 0) {
+                    continue;
+                }
+
+                $affected = DB::table('pharmacy_medicines')
+                    ->where('id', (int) $pmId)
+                    ->where('pharmacy_id', $locked->pharmacy_id)
+                    ->where('quantity', '>=', $qty)
+                    ->decrement('quantity', $qty);
+
+                if ($affected === 0) {
+                    throw new InvalidArgumentException(
+                        'لا يمكن إلغاء فاتورة استُهلك مخزونها — الكمية الحالية أقل من كمية الشراء'
+                    );
+                }
+            }
+
+            static::reverseCashFor(
+                $locked->pharmacy_id,
+                CashMovement::SOURCE_PURCHASE,
+                $locked->id,
+                $userId,
+                'إلغاء فاتورة شراء '.$locked->number
+            );
+
+            // رصيد المورد: نُسقط **المتبقي** فقط. المدفوع خرج نقدًا فعلًا ولا
+            // يجوز «إعادته» بقيد عكسي بلا استرداد حقيقي.
+            if ($locked->supplier_id !== null && (float) $locked->remaining > 0) {
+                $supplier = Supplier::forPharmacy($locked->pharmacy_id)->find($locked->supplier_id);
+
+                if ($supplier !== null) {
+                    static::adjustSupplierBalance($supplier, -1 * (float) $locked->remaining);
+                }
+            }
+
+            $locked->forceFill([
+                'is_cancelled' => true,
+                'cancelled_at' => Carbon::now(),
+                'cancelled_by' => $userId,
+                'status' => Purchase::STATUS_CANCELLED,
+            ])->save();
+
+            return $locked->load('items');
         });
     }
 

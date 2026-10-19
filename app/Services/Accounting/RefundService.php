@@ -4,15 +4,46 @@ namespace App\Services\Accounting;
 
 use App\Models\CashMovement;
 use App\Models\Customer;
+use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
-use App\Models\Sale;
-use App\Models\SaleItem;
 use App\Models\Refund;
 use App\Models\RefundItem;
+use App\Models\Sale;
+use App\Models\SaleItem;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
+/**
+ * إرجاع بيع — إرجاع بضاعة، وردّ مال، وإلغاء دين — في معاملة واحدة.
+ * ══════════════════════════════════════════════════════════════════════════
+ * يتعامل الإرجاع مع ثلاثة مكوّنات مستقلة يجب ألا تختلط:
+ *
+ *   1) **إرجاع البضاعة**: إعادة الكميات إلى المخزون. قيمته = `refunds.amount`.
+ *   2) **ردّ الأموال**: نقد يخرج من الصندوق (للكاش)، أو رجوع عبر نفس وسيلة
+ *      الدفع (للبطاقة/التحويل). قيمته = `refunds.cash_refunded`.
+ *   3) **إلغاء الدين**: الجزء غير المدفوع من قيمة البضاعة المرتجعة يُلغى من
+ *      دَين العميل والفاتورة بلا أي حركة نقدية. قيمته = `refunds.debt_cancelled`.
+ *
+ * العلاقة:  amount = cash_refunded + debt_cancelled  (عند حدّ الثقة للقيمة).
+ *
+ * ── قاعدة التوزيع: «الدَين أولاً» ──────────────────────────────────────
+ * قيمة البضاعة المرتجعة تُخصَم من **الدَين القائم** أولاً، والفائض وحده
+ * يُردّ نقدًا:
+ *
+ *     debt_cancelled = min(R, remaining)
+ *     cash_refunded  = R − debt_cancelled
+ *
+ * هكذا: بضاعة غير مدفوعة تُلغِي دَينًا (لا نطبع نقدًا لم يُحصَّل)، وبضاعة
+ * مدفوعة تُرجع نقدًا في حدود ما حُصِّل فعلاً (`cash_refunded ≤ paid`).
+ *
+ * ── الميزانية على الفاتورة ─────────────────────────────────────────────
+ *     net_total = total − refunded_amount
+ *     paid      = paid − cash_refunded        (صافي النقد المحتفظ به)
+ *     remaining = net_total − paid            (= remaining − debt_cancelled)
+ *
+ * كلها تُحسب من **سجلات قاعدة البيانات** بعد القفل، لا من قيم يرسلها العميل.
+ */
 final class RefundService
 {
     public static function processRefund(
@@ -31,44 +62,73 @@ final class RefundService
             throw new InvalidArgumentException('لا يمكن إرجاع فاتورة ملغاة أو مرجوعة');
         }
 
-        $alreadyRefunded = Refund::forPharmacy($pharmacyId)
-            ->where('sale_id', $sale->id)
-            ->sum('amount');
+        return DB::transaction(function () use ($pharmacyId, $userId, $sale, $itemsToRefund, $reason, $refundedAt) {
+            // ── 0) قفل الصيدلية: يُسلسل كل عمليات الإرجاع النقدي على نفس
+            // الدرج، فلا يتنافس طلبان على رصيد واحد (انظر فحص الصندوق أدناه).
+            Pharmacy::query()->whereKey($pharmacyId)->lockForUpdate()->first();
 
-        $availableToRefund = (float) $sale->paid - $alreadyRefunded;
+            // ── 1) قفل الفاتورة وإعادة قراءة أرصدتها **داخل** المعاملة.
+            // طلبان متزامنان كانا يقرآن نفس `paid` قبل الإرجاع فيُرجعان مثليه.
+            $sale = Sale::whereKey($sale->getKey())->lockForUpdate()->firstOrFail();
 
-        if ($availableToRefund <= 0) {
-            throw new InvalidArgumentException('الفاتورة نفذت إرجاعها بالفعل');
-        }
+            if ($sale->status === Sale::STATUS_CANCELLED || $sale->status === Sale::STATUS_REFUNDED) {
+                throw new InvalidArgumentException('لا يمكن إرجاع فاتورة ملغاة أو مرجوعة');
+            }
 
-        return DB::transaction(function () use ($pharmacyId, $userId, $sale, $itemsToRefund, $reason, $refundedAt, $availableToRefund) {
-            $refundedAt = $refundedAt ?? Carbon::now();
-            $totalRefunded = 0.0;
-            $refundItems = [];
-            $restoredStock = [];
-            $toRestoreCash = 0.0;
-            $toReduceCustomerBalance = 0.0;
+            $availableToRefund = (float) $sale->paid;
+            if ($availableToRefund <= 0 && (float) $sale->remaining <= 0) {
+                // لا نقد يُردّ ولا دَين يُلغى ⇒ لا شيء للإرجاع.
+                throw new InvalidArgumentException('الفاتورة نفذت إرجاعها بالفعل');
+            }
 
+            // ── 2) سقف الكميات التراكمي من سجل الإرجاعات نفسه (لا من العميل).
+            $alreadyRefundedQty = RefundItem::query()
+                ->join('refunds', 'refund_items.refund_id', '=', 'refunds.id')
+                ->where('refunds.sale_id', $sale->id)
+                ->select('refund_items.sale_item_id', DB::raw('SUM(refund_items.quantity) as refunded_qty'))
+                ->groupBy('refund_items.sale_item_id')
+                ->pluck('refunded_qty', 'refund_items.sale_item_id');
+
+            // دمج الأسطر المكرّرة لنفس البند في الطلب الواحد (حتى لا يُتجاوز
+            // السقف بإرسال البند مرتين).
+            $requested = [];
             foreach ($itemsToRefund as $itemData) {
                 $itemId = (int) ($itemData['sale_item_id'] ?? 0);
-                $quantityToRefund = (int) ($itemData['quantity'] ?? 0);
+                $qty = (int) ($itemData['quantity'] ?? 0);
 
-                if ($quantityToRefund <= 0) {
+                if ($qty <= 0) {
                     throw new InvalidArgumentException('الكمية يجب أن تكون أكبر من صفر لكل بند');
                 }
 
+                $requested[$itemId] = ($requested[$itemId] ?? 0) + $qty;
+            }
+
+            if ($requested === []) {
+                throw new InvalidArgumentException('يجب تحديد بند واحد على الأقل للإرجاع');
+            }
+
+            $refundedAt = $refundedAt ?? Carbon::now();
+            $totalRefunded = 0.0;          // R — قيمة البضاعة المرتجعة (amount)
+            $cashRefunded = 0.0;           // المال المُردّ فعليًا
+            $refundItems = [];
+            $restoredStock = [];
+
+            foreach ($requested as $itemId => $quantityToRefund) {
                 $saleItem = SaleItem::query()
                     ->where('id', $itemId)
                     ->where('sale_id', $sale->id)
                     ->first();
 
-                if (!$saleItem) {
+                if (! $saleItem) {
                     throw new InvalidArgumentException('بند الفاتورة غير موجود');
                 }
 
-                if ($quantityToRefund > $saleItem->quantity) {
+                $alreadyQty = (int) ($alreadyRefundedQty[$itemId] ?? 0);
+                $maxQty = (int) $saleItem->quantity - $alreadyQty;
+
+                if ($quantityToRefund > $maxQty) {
                     throw new InvalidArgumentException(
-                        "الكمية المطلوب إرجاعها ({$quantityToRefund}) أكبر من المتوفر في الفاتورة ({$saleItem->quantity})"
+                        "الكمية المطلوب إرجاعها ({$quantityToRefund}) أكبر من المتاح للإرجاع ({$maxQty}) لبند: {$saleItem->medicine_name}"
                     );
                 }
 
@@ -78,30 +138,19 @@ final class RefundService
                         ->where('pharmacy_id', $pharmacyId)
                         ->first();
 
-                    if (!$pm) {
+                    if (! $pm) {
                         throw new InvalidArgumentException('الصنف غير موجود في مخزون الصيدلية');
                     }
                 }
-            }
 
-            foreach ($itemsToRefund as $itemData) {
-                $itemId = (int) ($itemData['sale_item_id'] ?? 0);
-                $quantityToRefund = (int) ($itemData['quantity'] ?? 0);
-
-                $saleItem = SaleItem::query()
-                    ->where('id', $itemId)
-                    ->where('sale_id', $sale->id)
-                    ->firstOrFail();
-
-                $itemRefundAmount = round($saleItem->unit_price * $quantityToRefund -
-                    ($saleItem->line_discount * $quantityToRefund / $saleItem->quantity), 2);
-
-                if ($saleItem->line_discount > 0 && $quantityToRefund < $saleItem->quantity) {
-                    $itemRefundAmount = round($saleItem->line_total / $saleItem->quantity * $quantityToRefund, 2);
-                }
+                // قيمة الوحدة الصافية = إجمالي السطر ÷ كميته (يقسّم الخصم بعدل).
+                // الإرجاع الجزئي يأخذ نصيبه، والإرجاع الكامل يعيد إجمالي السطر.
+                $lineTotal = (float) $saleItem->line_total;
+                $lineQty = max(1, (int) $saleItem->quantity);
+                $itemRefundAmount = round($lineTotal / $lineQty * $quantityToRefund, 2);
 
                 if ($itemRefundAmount < 0) {
-                    $itemRefundAmount = $saleItem->line_total;
+                    $itemRefundAmount = $lineTotal;
                 }
 
                 $totalRefunded = round($totalRefunded + $itemRefundAmount, 2);
@@ -111,10 +160,6 @@ final class RefundService
                         'pharmacy_medicine_id' => $saleItem->pharmacy_medicine_id,
                         'quantity' => $quantityToRefund,
                     ];
-                }
-
-                if ($sale->payment_method === Sale::METHOD_CASH && $sale->paid > 0) {
-                    $toRestoreCash += $itemRefundAmount;
                 }
 
                 $refundItems[] = [
@@ -128,23 +173,42 @@ final class RefundService
                 throw new InvalidArgumentException('مجموع الإرجاع يجب أن يكون أكبر من صفر');
             }
 
-            if ($totalRefunded > $availableToRefund) {
-                throw new InvalidArgumentException(
-                    "الإجمالي المطلوب إرجاعه ({$totalRefunded}) أكبر من المبلغ المتاح للإرجاع ({$availableToRefund})"
-                );
+            // ── 3) توزيع قيمة البضاعة المرتجعة: دَين أولاً ثم نقد.
+            $remaining = round((float) $sale->remaining, 2);
+            $paid = round((float) $sale->paid, 2);
+
+            $debtCancelled = round(min($totalRefunded, $remaining), 2);
+            $cashRefunded = round($totalRefunded - $debtCancelled, 2);
+
+            // لا يُردّ نقد أكثر مما حُصِّل فعلاً — ضمانة صريحة لا تعتمد على
+            // صحة القاعدة وحدها (وإن كانت النتيجة الحسابية تضمنها).
+            if (bccomp((string) $cashRefunded, (string) $paid, 2) > 0) {
+                throw new InvalidArgumentException('المبلغ المطلوب ردّه أكبر من المبلغ المحصَّل على الفاتورة');
             }
 
-            if ($sale->customer_id && $sale->remaining > 0) {
-                $customerRefundShare = $totalRefunded / $sale->total * $sale->remaining;
-                $toReduceCustomerBalance = $customerRefundShare;
+            // ── 4) حماية الصندوق (كاش فقط): لا يُسجَّل خروج نقدي يتجاوز الرصيد.
+            $isCash = AccountingLedger::isCashTender((string) $sale->payment_method);
+
+            if ($cashRefunded > 0 && $isCash) {
+                $drawer = AccountingReports::cashBalance($pharmacyId);
+
+                if (bccomp((string) $cashRefunded, (string) $drawer, 2) > 0) {
+                    throw new InvalidArgumentException(
+                        'رصيد الصندوق غير كافٍ: المتاح '.number_format($drawer, 2).
+                        ' والمطلوب ردّه '.number_format($cashRefunded, 2)
+                    );
+                }
             }
 
+            // ── 5) سجل الإرجاع وبنوده (المصدر التدقيقي).
             $refund = Refund::create([
                 'pharmacy_id' => $pharmacyId,
                 'sale_id' => $sale->id,
                 'created_by' => $userId,
                 'refunded_at' => $refundedAt,
                 'amount' => $totalRefunded,
+                'cash_refunded' => $cashRefunded,
+                'debt_cancelled' => $debtCancelled,
                 'reason' => $reason,
                 'status' => Refund::STATUS_COMPLETED,
             ]);
@@ -158,6 +222,7 @@ final class RefundService
                 ]);
             }
 
+            // ── 6) إعادة البضاعة إلى المخزون (بمُعرّف يخصّ هذه الصيدلية).
             foreach ($restoredStock as $stock) {
                 PharmacyMedicine::query()
                     ->where('id', $stock['pharmacy_medicine_id'])
@@ -165,11 +230,13 @@ final class RefundService
                     ->increment('quantity', $stock['quantity']);
             }
 
-            if ($sale->payment_method === Sale::METHOD_CASH && $toRestoreCash > 0) {
+            // ── 7) ردّ المال: حركة صندوق **فقط** للكاش. البطاقة/التحويل
+            // تخرج عبر وسيلتها (بلا حركة درج)، فلا تُنفَخ النقدية كذبًا.
+            if ($cashRefunded > 0 && $isCash) {
                 AccountingLedger::recordCash(
                     $pharmacyId,
                     CashMovement::DIRECTION_OUT,
-                    $toRestoreCash,
+                    $cashRefunded,
                     CashMovement::SOURCE_REFUND,
                     $refund->id,
                     'إرجاع فاتورة '.$sale->number,
@@ -179,32 +246,33 @@ final class RefundService
                 );
             }
 
-            if ($sale->customer_id && $toReduceCustomerBalance > 0) {
+            // ── 8) إلغاء الدين: تعديل **واحد** لرصيد العميل بمقدار الجزء
+            // غير المدفوع فقط — لا تعديل ثانٍ بالمبلغ النقدي (الذي لولا ذلك
+            // لطُرح مرّتين: مرة كدَين ومرة كردّ مال).
+            if ($debtCancelled > 0 && $sale->customer_id) {
                 $customer = Customer::forPharmacy($pharmacyId)->find($sale->customer_id);
                 if ($customer) {
-                    AccountingLedger::adjustCustomerBalance($customer, -$toReduceCustomerBalance);
+                    AccountingLedger::adjustCustomerBalance($customer, -1 * $debtCancelled);
                 }
             }
 
-            $newPaid = max(0, (float) $sale->paid - $totalRefunded);
-            $newRemaining = round((float) $sale->total - $newPaid, 2);
-
-            $isFullRefund = bccomp((string)$totalRefunded, (string)$sale->total, 2) >= 0;
-            $isPartialPaid = $newPaid > 0 && bccomp((string)$newPaid, (string)$sale->total, 2) < 0;
-
-            if ($isFullRefund) {
-                $newStatus = Sale::STATUS_REFUNDED;
-            } elseif ($isPartialPaid) {
-                $newStatus = Sale::STATUS_PARTIALLY_PAID;
-            } else {
-                $newStatus = $sale->status;
-            }
+            // ── 9) تحديث الفاتورة على الميزانية الجديدة.
+            $newRefunded = round((float) $sale->refunded_amount + $totalRefunded, 2);
+            $newPaid = round($paid - $cashRefunded, 2);
+            $newNetTotal = round((float) $sale->total - $newRefunded, 2);
+            $newRemaining = round($newNetTotal - $newPaid, 2);
 
             $sale->update([
+                'refunded_amount' => $newRefunded,
                 'paid' => $newPaid,
                 'remaining' => $newRemaining,
-                'status' => $newStatus,
-                'notes' => trim(($sale->notes ? $sale->notes . "\n" : '') . 'تم إرجاع: ' . $totalRefunded . ' ₤'),
+                'status' => Sale::deriveRefundAwareStatus(
+                    (float) $sale->total,
+                    $newRefunded,
+                    $newNetTotal,
+                    $newPaid
+                ),
+                'notes' => trim(($sale->notes ? $sale->notes."\n" : '').'تم إرجاع: '.$totalRefunded.' ₪'),
             ]);
 
             return $refund->load('items.saleItem');
@@ -221,21 +289,25 @@ final class RefundService
             return false;
         }
 
+        if ($quantity <= 0) {
+            return false;
+        }
+
         $item = SaleItem::query()
             ->where('id', $saleItemId)
             ->where('sale_id', $sale->id)
             ->first();
 
-        if (!$item || $quantity > $item->quantity) {
+        if (! $item) {
             return false;
         }
 
-        $alreadyRefundedQty = RefundItem::query()
+        $alreadyRefundedQty = (int) RefundItem::query()
             ->join('refunds', 'refund_items.refund_id', '=', 'refunds.id')
             ->where('refunds.sale_id', $sale->id)
             ->where('refund_items.sale_item_id', $saleItemId)
             ->sum('refund_items.quantity');
 
-        return $quantity <= $item->quantity - $alreadyRefundedQty;
+        return $quantity <= ((int) $item->quantity - $alreadyRefundedQty);
     }
 }

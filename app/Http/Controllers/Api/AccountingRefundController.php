@@ -110,6 +110,8 @@ class AccountingRefundController extends Controller
                         'sale_id' => $refund->sale_id,
                         'sale_number' => $refund->sale->number,
                         'amount' => (float) $refund->amount,
+                        'cash_refunded' => (float) $refund->cash_refunded,
+                        'debt_cancelled' => (float) $refund->debt_cancelled,
                         'reason' => $refund->reason,
                         'status' => $refund->status,
                         'refunded_at' => $refund->refunded_at->toIso8601String(),
@@ -122,10 +124,13 @@ class AccountingRefundController extends Controller
                         ])->all(),
                     ],
                     'sale' => [
-                        'number' => $sale->number,
-                        'paid' => (float) $sale->paid,
-                        'remaining' => (float) $sale->remaining,
-                        'status' => $sale->status,
+                        'number' => $refund->sale->number,
+                        'total' => (float) $refund->sale->total,
+                        'refunded_amount' => (float) $refund->sale->refunded_amount,
+                        'net_total' => $refund->sale->netTotal(),
+                        'paid' => (float) $refund->sale->paid,
+                        'remaining' => (float) $refund->sale->remaining,
+                        'status' => $refund->sale->status,
                     ],
                 ],
             ], 201);
@@ -250,6 +255,13 @@ class AccountingRefundController extends Controller
             ->groupBy('refund_items.sale_item_id')
             ->pluck('refunded_qty', 'refund_items.sale_item_id');
 
+        // مجموع ما أُرجع فعليًا على هذه الفاتورة. `paid − remaining` ليست
+        // «المُرجَع» (تساوي `2·paid − total`)، وكانت تُعرض في الواجهة كرقم
+        // خاطئ. المصدر الصحيح هو مجموع مبالغ الإرجاعات.
+        $alreadyRefunded = (float) Refund::forPharmacy($pharmacy->id)
+            ->where('sale_id', $sale->id)
+            ->sum('amount');
+
         $availableItems = $sale->items->map(function ($item) use ($refundedItems, $sale) {
             $refundedQty = $refundedItems->get($item->id, 0);
             $availableQty = $item->quantity - $refundedQty;
@@ -271,9 +283,14 @@ class AccountingRefundController extends Controller
             'data' => [
                 'sale_number' => $sale->number,
                 'total' => (float) $sale->total,
+                'refunded_amount' => (float) $sale->refunded_amount,
+                'net_total' => $sale->netTotal(),
                 'paid' => (float) $sale->paid,
-                'already_refunded' => (float) $sale->paid - $sale->remaining,
-                'available_to_refund' => (float) $sale->paid,
+                'remaining' => (float) $sale->remaining,
+                'already_refunded' => $alreadyRefunded,
+                // `paid` صافي المحصَّل (كل إرجاع ينقصه)، فهو المتاح للإرجاع
+                // بذاته — وهو السقف نفسه الذي يفرضه `RefundService`.
+                'available_to_refund' => max(0.0, (float) $sale->paid),
                 'items' => $availableItems,
             ],
         ]);

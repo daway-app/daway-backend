@@ -65,6 +65,19 @@ class RefundApiTest extends TestCase
             'remaining' => 0,
         ]);
 
+        // بيع نقدي حقيقي ⇒ النقد دخل الدرج وقت البيع. نزرعه صراحةً لأن
+        // الإرجاع النقدي يتحقّق من كفاية الصندوق (D5) قبل الصرف.
+        CashMovement::create([
+            'pharmacy_id' => $pharmacy->id,
+            'direction' => CashMovement::DIRECTION_IN,
+            'amount' => $total,
+            'source_type' => CashMovement::SOURCE_SALE,
+            'source_id' => $sale->id,
+            'description' => 'فاتورة بيع '.$sale->number,
+            'created_by' => $pharmacy->user_id,
+            'moved_at' => now(),
+        ]);
+
         return $sale;
     }
 
@@ -149,8 +162,14 @@ class RefundApiTest extends TestCase
         $response->assertCreated()
             ->assertJson(['success' => true]);
 
+        // إرجاع 100 من فاتورة مدفوعة 1000: لا بضاعة غير مدفوعة هنا، فيُردّ
+        // المال. صافي البضاعة الباقية (900) سُدّدت بالكامل ⇒ الحالة «مدفوعة»
+        // لا «مدفوعة جزئيًا» (المعنى الصحيح بعد فصل حالة الإرجاع).
         $sale->refresh();
-        $this->assertEquals(Sale::STATUS_PARTIALLY_PAID, $sale->status);
+        $this->assertEquals(Sale::STATUS_PAID, $sale->status);
+        $this->assertEquals(900.0, (float) $sale->paid);
+        $this->assertEquals(0.0, (float) $sale->remaining);
+        $this->assertEquals(100.0, (float) $sale->refunded_amount);
     }
 
     public function test_prevents_double_refund(): void

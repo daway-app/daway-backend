@@ -137,6 +137,7 @@ class AccountingSalesController extends Controller
             'message' => 'تم جلب ملخّص المبيعات',
             'data' => [
                 'summary' => AccountingReports::salesSummary($pharmacy->id, $from, $to),
+                'refunds' => AccountingReports::refundTotals($pharmacy->id, $from, $to),
                 'comparison' => AccountingReports::compareSales($pharmacy->id, $from, $to),
                 'by_payment_method' => AccountingReports::salesByPaymentMethod($pharmacy->id, $from, $to),
                 'top_items' => AccountingReports::topSellingItems($pharmacy->id, $from, $to, 10),

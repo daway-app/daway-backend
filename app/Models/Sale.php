@@ -42,6 +42,7 @@ class Sale extends Model
         'total',
         'paid',
         'remaining',
+        'refunded_amount',
         'payment_method',
         'status',
         'items_count',
@@ -58,6 +59,7 @@ class Sale extends Model
             'total' => 'decimal:2',
             'paid' => 'decimal:2',
             'remaining' => 'decimal:2',
+            'refunded_amount' => 'decimal:2',
             'items_count' => 'integer',
             'sold_at' => 'datetime',
         ];
@@ -157,6 +159,50 @@ class Sale extends Model
         }
 
         return self::STATUS_PARTIALLY_PAID;
+    }
+
+    /**
+     * صافي قيمة الفاتورة = الإجمالي − قيمة البضاعة المرتجعة.
+     *
+     * هو الأساس الصحيح لحالة السداد والدين: الإرجاع يُلغي بضاعة، فيجب أن
+     * يُقاس «هل سُدّدت؟» على القيمة الباقية فعلاً لا على الإجمالي التاريخي.
+     */
+    public function netTotal(): float
+    {
+        return round((float) $this->total - (float) $this->refunded_amount, 2);
+    }
+
+    /** هل أُرجعت كل بضاعة الفاتورة؟ (refunded_amount ≥ total) */
+    public function isFullyRefunded(): bool
+    {
+        return (float) $this->total > 0
+            && bccomp((string) $this->refunded_amount, (string) $this->total, 2) >= 0;
+    }
+
+    public function isRefunded(): bool
+    {
+        return $this->status === self::STATUS_REFUNDED;
+    }
+
+    /**
+     * حالة السداد الواعية بالإرجاع.
+     *
+     * حالة واحدة (`status`) كانت تخدم مفهومين مختلفين: حالة الدفع وحالة
+     * الإرجاع. هنا نفصلهما بلا عمود جديد: «مرجوعة» تُشتق من تطابق قيمة
+     * الإرجاع مع الإجمالي، وبقية الحالات من صافي الفاتورة مقابل المحصَّل.
+     *
+     * @param float $total          الإجمالي التاريخي (قبل الإرجاع)
+     * @param float $refundedAmount قيمة البضاعة المرتجعة تراكميًا
+     * @param float $netTotal       total − refundedAmount
+     * @param float $paid           صافي النقد المحتفظ به
+     */
+    public static function deriveRefundAwareStatus(float $total, float $refundedAmount, float $netTotal, float $paid): string
+    {
+        if ($total > 0 && bccomp((string) $refundedAmount, (string) $total, 2) >= 0) {
+            return self::STATUS_REFUNDED;
+        }
+
+        return self::deriveStatus($netTotal, $paid);
     }
 
     public function isCancelled(): bool
