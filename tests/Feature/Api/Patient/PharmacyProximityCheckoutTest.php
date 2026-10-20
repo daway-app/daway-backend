@@ -49,6 +49,7 @@ class PharmacyProximityCheckoutTest extends TestCase
             'longitude' => self::BASE_LNG,
         ]);
 
+        $this->enableZeroFeeDeliveryPricing();
         $this->actingAs($this->patient, 'sanctum');
     }
 
@@ -231,14 +232,17 @@ class PharmacyProximityCheckoutTest extends TestCase
 
     public function test_single_pharmacy_checkout_skips_the_proximity_check(): void
     {
-        // إحداثيات ناقصة عمداً: صيدلية واحدة لا تدخل أي مقارنة، فلا تُعاقب.
+        // إحداثيات ناقصة عمدًا: صيدلية واحدة لا تدخل أي مقارنة، فلا يُفترض أن
+        // يظهر خطأ `pharmacy_distance`. مع تفعيل التسعير يرفض الطلب لسبب
+        // التسعير (إحداثيات مفقودة)، وليس للتقارب — وهذا ما يُثبته الاختبار.
         $only = $this->pharmacyWithoutCoordinates('صيدلية وحيدة');
 
         $this->seedCart([$this->stockFor($only)]);
 
         $this->checkout()
-            ->assertStatus(201)
-            ->assertJsonPath('data.sub_orders_count', 1);
+            ->assertStatus(422)
+            ->assertJsonMissingValidationErrors('pharmacy_distance')
+            ->assertJsonValidationErrors('delivery_fee');
     }
 
     public function test_single_pharmacy_with_valid_coordinates_is_unaffected(): void

@@ -64,6 +64,7 @@ class AuditTrailTest extends TestCase
             'longitude' => 34.4676,
         ]);
 
+        $this->enableZeroFeeDeliveryPricing();
         $this->actingAs($this->patient, 'sanctum');
     }
 

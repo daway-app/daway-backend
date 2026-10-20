@@ -38,6 +38,9 @@ class DeliveryFeeTierController extends Controller
             'success' => true,
             'data' => [
                 'enabled' => DeliveryPricingService::isEnabled(),
+                'mode' => DeliveryPricingService::mode(),
+                'base_fee' => DeliveryPricingService::baseFee(),
+                'per_km_rate' => DeliveryPricingService::perKmRate(),
                 'tiers' => $tiers->map(fn (DeliveryFeeTier $tier) => $this->tierPayload($tier))->values(),
             ],
         ]);
@@ -215,6 +218,58 @@ class DeliveryFeeTierController extends Controller
         });
     }
 
+    /**
+     * POST /api/admin/delivery-pricing/settings
+     * يضبط وضع التسعير (tiers|per_km) والسعر الأساسي البديل وسعر الكيلومتر.
+     * الحقول اختيارية (Partial)؛ التحقق يجري على الإعداد **الناتج** قبل أي كتابة،
+     * فإن كان التسعير مفعّلًا تعذّر ترك الإعداد في حالة لا يمكن التسعير بها.
+     */
+    public function updateSettings(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'mode' => ['sometimes', 'string', 'in:'.DeliveryPricingService::MODE_TIERS.','.DeliveryPricingService::MODE_PER_KM],
+            'base_fee' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'per_km_rate' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:99999999.99'],
+        ]);
+
+        return DB::transaction(function () use ($data) {
+            // اقفل صف الإعداد ثم الشرائح الفعّالة — بنفس ترتيب مسارات التفعيل/الحذف.
+            DeliveryPricingService::isEnabledLocked();
+            DeliveryFeeTier::query()->active()->lockForUpdate()->get();
+
+            $mode = array_key_exists('mode', $data) ? $data['mode'] : DeliveryPricingService::mode();
+            $baseFee = array_key_exists('base_fee', $data)
+                ? ($data['base_fee'] === null ? null : (float) $data['base_fee'])
+                : DeliveryPricingService::baseFee();
+            $perKmRate = array_key_exists('per_km_rate', $data)
+                ? ($data['per_km_rate'] === null ? null : (float) $data['per_km_rate'])
+                : DeliveryPricingService::perKmRate();
+
+            // التحقق على الإعداد الناتج **قبل** الكتابة: لا كتابة جزئية عند الرفض.
+            if (DeliveryPricingService::isEnabled()) {
+                $errors = DeliveryPricingService::activationErrorsFor($mode, $perKmRate);
+
+                if ($errors !== []) {
+                    return $this->settingsValidationError($errors);
+                }
+            }
+
+            DeliveryPricingService::setMode($mode);
+            DeliveryPricingService::setBaseFee($baseFee);
+            DeliveryPricingService::setPerKmRate($perKmRate);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم حفظ إعدادات تسعير التوصيل.',
+                'data' => [
+                    'mode' => $mode,
+                    'base_fee' => $baseFee,
+                    'per_km_rate' => $perKmRate,
+                ],
+            ]);
+        });
+    }
+
     /** @return array<string, mixed> */
     private function validated(Request $request): array
     {
@@ -266,10 +321,16 @@ class DeliveryFeeTierController extends Controller
      * وإلّا يُعيد `null`. يُقفل صف الإعداد وكل الشرائح الفعّالة (داخل المعاملة)
      * لتقليل التداخل بين طلبات إدارة متزامنة. لا يُستدعى إلا في مسارات الإزالة.
      *
+     * في وضع `per_km` تُتجاهل الشرائح كليًا، فلا معنى لهذا الحارس.
+     *
      * @return string[]|null
      */
     private function enabledEmptySetErrors(DeliveryFeeTier $exclude): ?array
     {
+        if (DeliveryPricingService::mode() !== DeliveryPricingService::MODE_TIERS) {
+            return null;
+        }
+
         if (! DeliveryPricingService::isEnabledLocked()) {
             return null;
         }
@@ -295,6 +356,16 @@ class DeliveryFeeTierController extends Controller
             'success' => false,
             'message' => $errors[0] ?? 'بيانات شرائح التوصيل غير صالحة.',
             'errors' => ['tiers' => $errors],
+        ], 422);
+    }
+
+    /** @param string[] $errors */
+    private function settingsValidationError(array $errors): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $errors[0] ?? 'إعدادات تسعير التوصيل غير صالحة.',
+            'errors' => ['settings' => $errors],
         ], 422);
     }
 }

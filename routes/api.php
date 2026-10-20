@@ -492,6 +492,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // Phase 1 — تسعير التوصيل: شرائح + مفتاح تفعيل.
     Route::get('/delivery-pricing', [AdminDeliveryFeeTierController::class, 'index']);
     Route::post('/delivery-pricing/status', [AdminDeliveryFeeTierController::class, 'setEnabled']);
+    Route::post('/delivery-pricing/settings', [AdminDeliveryFeeTierController::class, 'updateSettings']);
     Route::post('/delivery-pricing/tiers', [AdminDeliveryFeeTierController::class, 'store']);
     Route::put('/delivery-pricing/tiers/{tier}', [AdminDeliveryFeeTierController::class, 'update']);
     Route::patch('/delivery-pricing/tiers/{tier}/toggle-status', [AdminDeliveryFeeTierController::class, 'toggleStatus']);

@@ -67,6 +67,7 @@ class SubOrderIntegrityTest extends TestCase
         $this->patient = User::factory()->patient()->create();
         $this->address = Address::factory()->for($this->patient)->create();
 
+        $this->enableZeroFeeDeliveryPricing();
         $this->actingAs($this->patient, 'sanctum');
     }
 

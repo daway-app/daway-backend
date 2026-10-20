@@ -18,7 +18,8 @@ use Tests\TestCase;
  * تكامل تسعير التوصيل مع الـcheckout (Phase 1).
  *
  * يحرس العقود التالية:
- *   1. عند تعطيل التسعير: السلوك كما كان تمامًا (رسوم 0).
+ *   1. عند تعطيل التسعير (أو غياب مفتاح التفعيل): يُرفض الطلب 422، لا رسوم
+ *      صفر صامتة ولا طلب.
  *   2. عند التفعيل + وجود شريحة مطابقة: تُحتسب الرسوم في الخادم وتُحفظ **لقطة**
  *      على الطلب، ولا يدخل المبلغ في `total` (الإجمالي النهائي = total + fee).
  *   3. عند التفعيل + غياب شريحة مطابقة (أو إحداثيات): يُرفض الطلب 422 **بلا**
@@ -144,19 +145,16 @@ class DeliveryFeeCheckoutTest extends TestCase
 
     // ── الوضع المعطّل ─────────────────────────────────────────────────────
 
-    public function test_checkout_with_pricing_disabled_keeps_the_fee_at_zero(): void
+    public function test_checkout_is_rejected_when_pricing_is_disabled(): void
     {
         $this->seedCart();
 
-        $response = $this->postJson('/api/patient/checkout', [
+        $this->postJson('/api/patient/checkout', [
             'address_id' => $this->address->id,
-        ]);
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['delivery_fee']);
 
-        $response->assertStatus(201)
-            ->assertJsonPath('data.delivery_fee', 0)
-            ->assertJsonPath('data.grand_total', 100);
-
-        $this->assertSame(0.0, (float) Order::first()->delivery_fee);
+        $this->assertSame(0, Order::count(), 'لا طلب صامت برسوم صفر.');
     }
 
     // ── الوضع المفعّل ─────────────────────────────────────────────────────
@@ -345,16 +343,15 @@ class DeliveryFeeCheckoutTest extends TestCase
         $this->assertSame(12.5, (float) $order->fresh()->delivery_fee, 'اللقطة لا تتأثر بتغيّر الشرائح.');
     }
 
-    public function test_multi_pharmacy_checkout_with_pricing_disabled_keeps_the_fee_at_zero(): void
+    public function test_multi_pharmacy_checkout_is_rejected_when_pricing_is_disabled(): void
     {
-        $this->seedMultiPharmacyCart();
+        $cart = $this->seedMultiPharmacyCart();
 
         $this->postJson('/api/patient/checkout', ['address_id' => $this->address->id])
-            ->assertStatus(201)
-            ->assertJsonPath('data.delivery_fee', 0)
-            ->assertJsonPath('data.grand_total', 130)
-            ->assertJsonPath('data.sub_orders_count', 2);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['delivery_fee']);
 
-        $this->assertSame(0.0, (float) Order::first()->delivery_fee);
+        $this->assertSame(0, Order::count(), 'لا طلب صامت برسوم صفر.');
+        $this->assertSame(2, $cart->items()->count(), 'السلة تبقى كما هي.');
     }
 }

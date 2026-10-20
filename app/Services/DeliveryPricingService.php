@@ -19,11 +19,22 @@ use Illuminate\Support\Collection;
  *  · المسافة **بخط مستقيم** (Haversine) — ليست مسافة طريق. لا خرائط ولا خدمات خارجية.
  *  · الرسوم تُحسب في الخادم فقط؛ قيمة العميل لا تُوثق أبدًا.
  *  · «تسعير التوصيل» معطّل افتراضيًا (مفتاح الإعداد `delivery_pricing_enabled`).
- *    ما دام معطّلاً، كل الطلبات رسومها 0 — بلا أي تغيير سلوكي.
- *  · عند التفعيل: يجب أن تطابق المسافة شريحةً **مفعّلة**، وإلّا يُرفض الطلب.
+ *    ما دام معطّلاً أو مفتاح التفعيل غائبًا، **يُرفض إنشاء الطلب** (لا رسوم
+ *    صفر صامتة): لا يمكن التسعير بلا تهيئة صريحة.
+ *  · عند التفعيل، يحكم التسعير **وضع تسعير صريح وحصري** (مفتاح الإعداد
+ *    `delivery_pricing_mode`)، ولا دمج بين الأوضاع إطلاقًا:
+ *      – `tiers` (الافتراضي): إن طابقت المسافة شريحةً **مفعّلة** فرسومها هي
+ *        السعر **النهائي** (لا يُضاف إليها أي سعر أساسي). وإن لم تُطابق أي شريحة،
+ *        يُستخدم «السعر الأساسي» (`delivery_base_fee`) كسعر **نهائي بديل**؛ وإن
+ *        لم يُضبط السعر الأساسي يُرفض الطلب. السعر الأساسي **لا** يُستخدم عند
+ *        فشل حساب المسافة/الإحداثيات — يبقى الرفض هناك كما هو.
+ *      – `per_km`: الرسوم = `delivery_per_km_rate × المسافة(كم)` بلا حد أدنى
+ *        وبلا شرائح ولا سعر أساسي؛ تُتجاهل الشرائح كليًا في هذا الوضع.
+ *  · المسافة غير صالحة/ناقصة الإحداثيات ⇒ رفض دائم (422) في **كل** الأوضاع،
+ *    ولا يُستبدل الرفض بأي سعر أساسي أو صفري.
  *  · طلب متعدد الصيدليات: تُحسب مسافة **أقصر مسار مفتوح** يزور صيدليات الطلب
  *    كلًّا مرة واحدة وينتهي بعنوان التسليم (TSP مفتوح: بداية حرّة، بلا مسافة
- *    رجوع)، ثم تُطبَّق الشرائح على **إجمالي المسافة** وتُحفظ رسوم واحدة على
+ *    رجوع)، ثم يُطبَّق الوضع على **إجمالي المسافة** وتُحفظ رسوم واحدة على
  *    الطلب. لا تُجمَع رسوم مستقلة لكل صيدلية.
  *
  * ⚠️ «مفعّلة» هنا تعني `delivery_fee_tiers.is_active = true`، و«التسعير مفعّل»
@@ -32,8 +43,23 @@ use Illuminate\Support\Collection;
  */
 final class DeliveryPricingService
 {
-    /** مفتاح الإعداد الذي يشغّل/يوقف استخدام الشرائح في التسعير. */
+    /** مفتاح الإعداد الذي يشغّل/يوقف تسعير التوصيل كليًا. */
     public const ENABLED_SETTING_KEY = 'delivery_pricing_enabled';
+
+    /** مفتاح الإعداد الذي يحدّد وضع التسعير النشط (حصري ومتبادل). */
+    public const MODE_SETTING_KEY = 'delivery_pricing_mode';
+
+    /** مفتاح الإعداد لسعر أساسي بديل (وضع الشرائح: عند غياب شريحة مطابقة). */
+    public const BASE_FEE_SETTING_KEY = 'delivery_base_fee';
+
+    /** مفتاح الإعداد لسعر الكيلومتر (وضع `per_km` فقط). */
+    public const PER_KM_RATE_SETTING_KEY = 'delivery_per_km_rate';
+
+    /** وضع الشرائح: مطابقة شريحة مفعّلة، أو السعر الأساسي البديل، وإلّا رفض. */
+    public const MODE_TIERS = 'tiers';
+
+    /** وضع السعر لكل كيلومتر: `rate × المسافة(كم)`. تُتجاهل الشرائح كليًا. */
+    public const MODE_PER_KM = 'per_km';
 
     /**
      * أكبر عدد نقاط استلام تُحسب لها المسافة المثالية **بدقة** (Held–Karp).
@@ -76,20 +102,83 @@ final class DeliveryPricingService
             ->value('value') === '1';
     }
 
+    /** وضع التسعير النشط. أي قيمة غير معروفة/غياب المفتاح ⇒ `tiers`. */
+    public static function mode(): string
+    {
+        return Setting::query()->where('key', self::MODE_SETTING_KEY)->value('value') === self::MODE_PER_KM
+            ? self::MODE_PER_KM
+            : self::MODE_TIERS;
+    }
+
+    /** حفظ وضع التسعير (قيمة غير معروفة تُطوى إلى `tiers`). */
+    public static function setMode(string $mode): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => self::MODE_SETTING_KEY],
+            ['value' => $mode === self::MODE_PER_KM ? self::MODE_PER_KM : self::MODE_TIERS],
+        );
+    }
+
+    /** السعر الأساسي البديل، أو null إن لم يُضبط (⇒ رفض عند غياب شريحة). */
+    public static function baseFee(): ?float
+    {
+        $value = Setting::query()->where('key', self::BASE_FEE_SETTING_KEY)->value('value');
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    /** حفظ السعر الأساسي (null = غير مُضبط). */
+    public static function setBaseFee(?float $fee): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => self::BASE_FEE_SETTING_KEY],
+            ['value' => $fee === null ? null : (string) $fee],
+        );
+    }
+
+    /** سعر الكيلومتر، أو null إن لم يُضبط (وضع `per_km` يتعذّر معه). */
+    public static function perKmRate(): ?float
+    {
+        $value = Setting::query()->where('key', self::PER_KM_RATE_SETTING_KEY)->value('value');
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    /** حفظ سعر الكيلومتر (null = غير مُضبط). */
+    public static function setPerKmRate(?float $rate): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => self::PER_KM_RATE_SETTING_KEY],
+            ['value' => $rate === null ? null : (string) $rate],
+        );
+    }
+
+
     /**
-     * تسعير رحلة توصيل واحدة لطلبٍ ما.
+     * تسعير رحلة توصيل واحدة لطلبٍ ما وفق **وضع التسعير النشط**.
+     *
+     *  · `tiers`: شريحة مفعّلة مطابقة ⇒ رسومها النهائية (بلا إضافة). لا مطابقة ⇒
+     *    السعر الأساسي كسعر نهائي بديل؛ ولا سعر أساسي ⇒ رفض.
+     *  · `per_km`: `rate × المسافة(كم)` — تُتجاهل الشرائح والسعر الأساسي.
+     *
+     * في كل الأوضاع: فشل حساب المسافة (إحداثيات ناقصة/غير صالحة) ⇒ رفض دائم،
+     * ولا يُستبدل بأي سعر بديل.
      *
      * @param  Collection<int, Pharmacy>  $pharmacies  صيدليات الطلب (بدون تكرار)
-     * @return array{fee: float, distance_meters: int|null, tier_id: int|null}
+     * @return array{fee: float, distance_meters: int|null, tier_id: int|null, mode: string}
      *
-     * @throws DeliveryPricingException  عند نقص الإحداثيات أو غياب شريحة مطابقة
+     * @throws DeliveryPricingException  عند تعطيل التسعير أو نقص الإحداثيات أو تعذّر التسعير
      */
     public static function quoteForCheckout(Collection $pharmacies, Address $address): array
     {
-        // التسعير معطّل ⇒ صفر، بلا تغيير سلوكي إطلاقًا.
+        // التسعير معطّل أو مفتاح التفعيل غائب ⇒ رفض الطلب (لا رسوم صفر صامتة).
         if (! self::isEnabled()) {
-            return ['fee' => 0.0, 'distance_meters' => null, 'tier_id' => null];
+            throw new DeliveryPricingException(
+                'تسعير التوصيل غير مفعّل حاليًا. يرجى مراجعة إعدادات التوصيل قبل إنشاء الطلب.'
+            );
         }
+
+        $mode = self::mode();
 
         $unique = $pharmacies->unique('id')->values();
 
@@ -101,25 +190,58 @@ final class DeliveryPricingService
         // وينتهي بعنوان التسليم. لصيدلية واحدة تساوي المسافة المباشرة نفسها.
         $distance = self::routeDistanceMeters($unique, $address);
 
+        // إحداثيات ناقصة/غير صالحة ⇒ رفض دائم في كل الأوضاع — لا سعر بديل.
         if ($distance === null) {
             throw new DeliveryPricingException(
                 'تعذّر حساب مسافة التوصيل: إحداثيات العنوان أو إحدى صيدليات الطلب غير متوفرة.'
             );
         }
 
-        $tier = self::tierForMeters($distance);
+        // ── وضع السعر لكل كيلومتر: rate × المسافة(كم)، بلا شرائح ولا سعر أساسي ──
+        if ($mode === self::MODE_PER_KM) {
+            $rate = self::perKmRate();
 
-        if ($tier === null) {
-            throw new DeliveryPricingException(
-                'لا توجد شريحة توصيل مطابقة لمسافة هذا الطلب. يرجى مراجعة إعدادات التوصيل.'
-            );
+            if ($rate === null || $rate <= 0.0) {
+                throw new DeliveryPricingException(
+                    'وضع التسعير لكل كيلومتر مفعّل دون سعر كيلومتر صالح (يجب أن يكون أكبر من صفر). يرجى مراجعة إعدادات التوصيل.'
+                );
+            }
+
+            return [
+                'fee' => round($rate * ($distance / 1000), 2),
+                'distance_meters' => $distance,
+                'tier_id' => null,
+                'mode' => $mode,
+            ];
         }
 
-        return [
-            'fee' => (float) $tier->fee,
-            'distance_meters' => $distance,
-            'tier_id' => $tier->getKey(),
-        ];
+        // ── وضع الشرائح: شريحة مطابقة ⇒ سعرها النهائي (بلا إضافة) ──────────────
+        $tier = self::tierForMeters($distance);
+
+        if ($tier !== null) {
+            return [
+                'fee' => (float) $tier->fee,
+                'distance_meters' => $distance,
+                'tier_id' => $tier->getKey(),
+                'mode' => $mode,
+            ];
+        }
+
+        // لا شريحة مطابقة ⇒ السعر الأساسي كسعر نهائي بديل، وإلّا رفض.
+        $base = self::baseFee();
+
+        if ($base !== null) {
+            return [
+                'fee' => $base,
+                'distance_meters' => $distance,
+                'tier_id' => null,
+                'mode' => $mode,
+            ];
+        }
+
+        throw new DeliveryPricingException(
+            'لا توجد شريحة توصيل مطابقة لمسافة هذا الطلب، ولا سعر أساسي بديل. يرجى مراجعة إعدادات التوصيل.'
+        );
     }
 
     /** الشريحة الفعّالة المطابقة لمسافة (بالمتر)، أو null. */
@@ -463,12 +585,31 @@ final class DeliveryPricingService
     }
 
     /**
-     * أخطاء تفعيل التسعير: يجب وجود شريحة فعّالة واحدة على الأقل، ومجموعة سليمة.
+     * أخطاء تفعيل التسعير وفق **الوضع النشط** الحالي:
+     *  · `tiers`: يجب وجود شريحة فعّالة واحدة على الأقل، ومجموعة سليمة.
+     *  · `per_km`: يجب ضبط سعر الكيلومتر **بقيمة أكبر من صفر** (الشرائح غير ذات صلة).
      *
      * @return string[]
      */
     public static function enableErrors(): array
     {
+        return self::activationErrorsFor(self::mode(), self::perKmRate());
+    }
+
+    /**
+     * أخطاء تفعيل التسعير **لإعداد مُرتقى** (قبل كتابته) — يستخدمه مسار ضبط
+     * الإعدادات ليعطي 422 قبل أي كتابة (لا كتابة جزئية عند الرفض).
+     *
+     * @return string[]
+     */
+    public static function activationErrorsFor(string $mode, ?float $perKmRate): array
+    {
+        if ($mode === self::MODE_PER_KM) {
+            return $perKmRate === null || $perKmRate <= 0.0
+                ? ['لا يمكن تفعيل تسعير التوصيل بوضع السعر لكل كيلومتر دون سعر كيلومتر أكبر من صفر.']
+                : [];
+        }
+
         $tiers = self::activeTiersAsArrays();
 
         if ($tiers === []) {
