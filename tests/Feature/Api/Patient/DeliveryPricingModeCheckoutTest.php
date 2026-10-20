@@ -14,6 +14,7 @@ use App\Models\SubOrder;
 use App\Models\User;
 use App\Services\DeliveryPricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -284,6 +285,50 @@ class DeliveryPricingModeCheckoutTest extends TestCase
         $this->assertSame(0, Order::count(), 'لا طلب عند غياب شريحة وسعر أساسي.');
     }
 
+    /**
+     * رفض «لا شريحة مطابقة ولا سعر أساسي» يجب ألّا يترك أثرًا جزئيًا:
+     * لا طلب أب/فرعي، ولا نقص مخزون، ولا استهلاك كوبون، والسلة كما هي.
+     */
+    public function test_rejection_without_a_matching_tier_or_base_fee_leaves_no_partial_state(): void
+    {
+        // شريحة قصيرة (0–100م) لا تغطي ~1500م، وبلا سعر أساسي بديل.
+        $this->tier(0, 100, 5.0);
+        DeliveryPricingService::setEnabled(true);
+        $this->assertNull(DeliveryPricingService::baseFee());
+
+        $coupon = Coupon::create([
+            'code' => 'NORESET',
+            'type' => 'fixed',
+            'value' => 15,
+            'minimum_order_amount' => 50,
+            'per_user_limit' => 1,
+            'is_active' => true,
+        ]);
+
+        $cart = $this->seedMultiPharmacyCart();
+
+        $stockBeforeA = (int) $this->pharmacyMedicine->fresh()->quantity;
+        $stockBeforeB = (int) $this->pharmacyMedicine2->fresh()->quantity;
+
+        $this->postJson('/api/patient/checkout', [
+            'address_id' => $this->address->id,
+            'coupon_code' => $coupon->code,
+            'idempotency_key' => 'reject-nonce-1',
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['delivery_fee']);
+
+        $this->assertSame(0, Order::count(), 'لا طلب أب عند رفض التسعير.');
+        $this->assertSame(0, SubOrder::count(), 'لا طلبات فرعية عند رفض التسعير.');
+        $this->assertSame($stockBeforeA, (int) $this->pharmacyMedicine->fresh()->quantity, 'مخزون الصيدلية الأولى لم ينقص.');
+        $this->assertSame($stockBeforeB, (int) $this->pharmacyMedicine2->fresh()->quantity, 'مخزون الصيدلية الثانية لم ينقص.');
+        $this->assertSame(0, (int) $coupon->fresh()->used_count, 'used_count لم يزد.');
+        $this->assertSame(0, (int) $coupon->fresh()->users_used_count, 'users_used_count لم يزد.');
+        $this->assertSame(0, DB::table('coupon_user')->count(), 'لا استهلاك للكوبون من المستخدم.');
+        $this->assertSame(0, DB::table('checkout_idempotencies')->count(), 'لا تسجيل لمفتاح idempotency.');
+        $this->assertSame(1, Cart::where('user_id', $this->patient->id)->count(), 'السلة نفسها باقية ولم تُحذف.');
+        $this->assertSame(2, $cart->fresh()->items()->count(), 'السلة تبقى كما هي دون تفريغ.');
+    }
+
     // ── وضع السعر لكل كيلومتر ────────────────────────────────────────────────
 
     public function test_per_km_mode_charges_rate_times_distance_and_ignores_tiers_and_base(): void
@@ -402,6 +447,7 @@ class DeliveryPricingModeCheckoutTest extends TestCase
             'type' => 'fixed',
             'value' => 15,
             'minimum_order_amount' => 50,
+            'per_user_limit' => 1,
             'is_active' => true,
         ]);
 
@@ -421,5 +467,10 @@ class DeliveryPricingModeCheckoutTest extends TestCase
         $this->assertSame(7.0, (float) $order->delivery_fee, 'رسوم واحدة على الطلب الأب.');
         $this->assertSame(115.0, (float) $order->total, 'الإجمالي = subtotal - discount.');
         $this->assertSame(0.0, (float) $order->subOrders()->sum('shipping_fee'), 'لا رسوم على الأبناء.');
+
+        // ضبط تحكّم مقابل: النجاح يستهلك الكوبون فعلًا (فيصبح صفر الرفض ذا معنى).
+        $this->assertSame(1, (int) $coupon->fresh()->used_count, 'يُستهلك الكوبون مرة واحدة عند النجاح.');
+        $this->assertSame(1, (int) $coupon->fresh()->users_used_count);
+        $this->assertSame(1, DB::table('coupon_user')->count());
     }
 }

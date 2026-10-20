@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Api\Admin;
 
+use App\Http\Controllers\Api\Admin\DeliveryFeeTierController;
 use App\Models\DeliveryFeeTier;
 use App\Models\User;
 use App\Services\DeliveryPricingService;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -505,5 +507,74 @@ class DeliveryFeeTierApiTest extends TestCase
         $this->actingAs($pharmacy, 'sanctum')
             ->postJson('/api/admin/delivery-pricing/status', ['enabled' => true])
             ->assertStatus(403);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Concurrency guard (P1)
+    // ══════════════════════════════════════════════════════════════════
+
+    /**
+     * كل مسارات الكتابة تشترك في القفل نفسه: أثناء حجزه لا تُنفَّذ أي كتابة
+     * (لا «تحقّق ثم اكتب» متزامن)، وبعد تحريره يمرّ المسار ويُحرَّر القفل.
+     */
+    public function test_every_pricing_write_path_is_blocked_while_another_write_holds_the_shared_lock(): void
+    {
+        $tier = $this->tier(0, null, 10.0, active: false);
+
+        $this->actingAs($this->admin(), 'sanctum');
+
+        // الرسالة نفسها في كل المسارات ⇒ يثبت أن 409 من قفل الكتابة لا من سبب آخر.
+        $lockedMessage = 'هناك عملية تعديل أخرى على إعدادات تسعير التوصيل قيد التنفيذ. أعد المحاولة بعد لحظات.';
+
+        $held = Cache::lock(DeliveryFeeTierController::CONCURRENCY_LOCK, 10);
+        $this->assertTrue($held->get(), 'تعذّر حجز القفل لمحاكاة تعديل متزامن.');
+
+        try {
+            $this->postJson('/api/admin/delivery-pricing/tiers', [
+                'min_distance_meters' => 0,
+                'fee' => 5,
+            ])->assertStatus(409)->assertJsonPath('success', false)->assertJsonPath('message', $lockedMessage);
+
+            $this->putJson("/api/admin/delivery-pricing/tiers/{$tier->id}", [
+                'min_distance_meters' => 0,
+                'fee' => 6,
+            ])->assertStatus(409)->assertJsonPath('success', false)->assertJsonPath('message', $lockedMessage);
+
+            $this->patchJson("/api/admin/delivery-pricing/tiers/{$tier->id}/toggle-status")
+                ->assertStatus(409)->assertJsonPath('success', false)->assertJsonPath('message', $lockedMessage);
+
+            $this->deleteJson("/api/admin/delivery-pricing/tiers/{$tier->id}")
+                ->assertStatus(409)->assertJsonPath('success', false)->assertJsonPath('message', $lockedMessage);
+
+            $this->postJson('/api/admin/delivery-pricing/settings', [
+                'mode' => DeliveryPricingService::MODE_PER_KM,
+                'per_km_rate' => 2,
+            ])->assertStatus(409)->assertJsonPath('success', false)->assertJsonPath('message', $lockedMessage);
+
+            $this->postJson('/api/admin/delivery-pricing/status', ['enabled' => true])
+                ->assertStatus(409)->assertJsonPath('success', false)->assertJsonPath('message', $lockedMessage);
+        } finally {
+            $held->release();
+        }
+
+        // لم تُكتب أي قيمة أثناء القفل.
+        $this->assertSame(1, DeliveryFeeTier::count());
+        $this->assertSame(10.0, (float) $tier->fresh()->fee);
+        $this->assertFalse($tier->fresh()->is_active);
+        $this->assertNull(DeliveryPricingService::baseFee());
+        $this->assertSame(DeliveryPricingService::MODE_TIERS, DeliveryPricingService::mode());
+        $this->assertFalse(DeliveryPricingService::isEnabled());
+
+        // بعد التحرير يمرّ المسار نفسه، ويُحرَّر القفل بعد النجاح أيضًا.
+        $this->postJson('/api/admin/delivery-pricing/tiers', [
+            'min_distance_meters' => 0,
+            'fee' => 5,
+        ])->assertStatus(201);
+
+        $this->assertSame(2, DeliveryFeeTier::count());
+
+        $after = Cache::lock(DeliveryFeeTierController::CONCURRENCY_LOCK, 10);
+        $this->assertTrue($after->get(), 'القفل بقي معلّقًا بعد كتابة ناجحة.');
+        $after->release();
     }
 }

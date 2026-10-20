@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryFeeTier;
 use App\Services\DeliveryPricingService;
+use Closure;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -26,6 +29,16 @@ use Illuminate\Support\Facades\DB;
  */
 class DeliveryFeeTierController extends Controller
 {
+    /**
+     * قفل موحّد لكل مسارات الكتابة على التسعير (الشرائح + الإعدادات + التفعيل).
+     *
+     * `lockForUpdate()` سلوكه يختلف بين المحركات (لا يُنفّذ على SQLite مثلًا)،
+     * لذا الاعتماد عليه وحده لا يمنع التحقق المتزامن ثم كتابة مجموعتين متعارضتين.
+     * هذا القفل عبر `Cache::lock` يعمل على كل المحركات ويُشارَك بين جميع المسارات،
+     * فيبقى «اقرأ ← تحقّق ← اكتب» ذرّيًا حتى لو تعدّد المشرفون.
+     */
+    public const CONCURRENCY_LOCK = 'daway:delivery-pricing:write';
+
     /** GET /api/admin/delivery-pricing */
     public function index(): JsonResponse
     {
@@ -51,7 +64,7 @@ class DeliveryFeeTierController extends Controller
     {
         $data = $this->validated($request);
 
-        return DB::transaction(function () use ($request, $data) {
+        return $this->locked(function () use ($request, $data) {
             $isActive = $request->has('is_active') ? $request->boolean('is_active') : false;
 
             if ($isActive) {
@@ -84,7 +97,11 @@ class DeliveryFeeTierController extends Controller
     {
         $data = $this->validated($request);
 
-        return DB::transaction(function () use ($request, $data, $tier) {
+        return $this->locked(function () use ($request, $data, $tier) {
+            // ربط المسار يقرأ الصف قبل القفل؛ أعد قراءته تحت القفل كي لا يُبنى
+            // القرار على لقطة قديمة عدّلها مشرف آخر في الأثناء.
+            $tier->refresh();
+
             $isActive = $request->has('is_active') ? $request->boolean('is_active') : (bool) $tier->is_active;
 
             if ($isActive) {
@@ -125,7 +142,9 @@ class DeliveryFeeTierController extends Controller
     /** PATCH /api/admin/delivery-pricing/tiers/{tier}/toggle-status */
     public function toggleStatus(DeliveryFeeTier $tier): JsonResponse
     {
-        return DB::transaction(function () use ($tier) {
+        return $this->locked(function () use ($tier) {
+            $tier->refresh();
+
             $newState = ! $tier->is_active;
 
             if ($newState) {
@@ -162,7 +181,9 @@ class DeliveryFeeTierController extends Controller
     /** DELETE /api/admin/delivery-pricing/tiers/{tier} */
     public function destroy(DeliveryFeeTier $tier): JsonResponse
     {
-        return DB::transaction(function () use ($tier) {
+        return $this->locked(function () use ($tier) {
+            $tier->refresh();
+
             // حذف شريحة فعّالة قد يُفرغ المجموعة (ممنوع أثناء التفعيل) أو يفتح فجوة.
             if ($tier->is_active) {
                 $errors = $this->enabledEmptySetErrors($tier)
@@ -191,7 +212,7 @@ class DeliveryFeeTierController extends Controller
             'enabled' => ['required', 'boolean'],
         ]);
 
-        return DB::transaction(function () use ($data) {
+        return $this->locked(function () use ($data) {
             // اقفل صف الإعداد ثم الشرائح الفعّالة بنفس ترتيب مسارات التعطيل/الحذف،
             // لمزامنة التفعيل مع أي تعديل متزامن على الشرائح.
             DeliveryPricingService::isEnabledLocked();
@@ -232,7 +253,7 @@ class DeliveryFeeTierController extends Controller
             'per_km_rate' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:99999999.99'],
         ]);
 
-        return DB::transaction(function () use ($data) {
+        return $this->locked(function () use ($data) {
             // اقفل صف الإعداد ثم الشرائح الفعّالة — بنفس ترتيب مسارات التفعيل/الحذف.
             DeliveryPricingService::isEnabledLocked();
             DeliveryFeeTier::query()->active()->lockForUpdate()->get();
@@ -268,6 +289,35 @@ class DeliveryFeeTierController extends Controller
                 ],
             ]);
         });
+    }
+
+    /**
+     * ينفّذ كتابة تسعير واحدة تحت قفل مشترك (كل المحركات) ثم داخل معاملة.
+     *
+     * إن كان مشرف آخر يكتب الآن، نرفض فورًا بـ409 بدل الانتظار: الطلب المُرفض
+     * لا يغيّر شيئًا، والتحقق يبقى على لقطة ما بعد القفل لا قبله.
+     *
+     * @template T
+     *
+     * @param  Closure(): T  $callback
+     * @return T
+     */
+    private function locked(Closure $callback)
+    {
+        $lock = Cache::lock(self::CONCURRENCY_LOCK, 30);
+
+        if (! $lock->get()) {
+            throw new HttpResponseException(response()->json([
+                'success' => false,
+                'message' => 'هناك عملية تعديل أخرى على إعدادات تسعير التوصيل قيد التنفيذ. أعد المحاولة بعد لحظات.',
+            ], 409));
+        }
+
+        try {
+            return DB::transaction($callback);
+        } finally {
+            $lock->release();
+        }
     }
 
     /** @return array<string, mixed> */
