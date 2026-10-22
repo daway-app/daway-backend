@@ -123,10 +123,19 @@ class PharmacyMedicineController extends Controller
             ])->status(422);
         }
 
-        // صورة اختيارية من الموبايل (رابط مباشر — Cloudinary) تُحفظ على الدواء في الكتالوج العام
-        if (! empty($data['image_url'])) {
+        // صورة اختيارية: ملف مرفوع يُرفع إلى Cloudinary، أو رابط مباشر كبديل.
+        // الملف يفوز عند إرسال الاثنين معاً.
+        $imageFile = $request->file('image_file');
+        unset($data['image_file']);
+
+        $image = $data['image_url'] ?? null;
+        if ($imageFile !== null) {
+            $image = Cloudinary::upload($imageFile, 'medicines') ?? $image;
+        }
+
+        if ($image) {
             Cloudinary::deleteLocal($medicine->image);
-            $medicine->image = $data['image_url'];
+            $medicine->image = $image;
             $medicine->save();
         }
 
@@ -195,6 +204,7 @@ class PharmacyMedicineController extends Controller
             'subcategory_id' => ['nullable', 'integer', 'exists:subcategories,id'],
             // C4: SecureImageUrl rule تستبعد javascript:/data: و http://
             'image_url' => ['nullable', 'string', 'max:2048', new \App\Rules\SecureImageUrl],
+            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
 
         // القسم يجب أن يكون نشطاً (ضمن القائمة المغلقة للأقسام الحالية)
@@ -269,10 +279,19 @@ class PharmacyMedicineController extends Controller
             ])->status(422);
         }
 
-        // صورة اختيارية من الموبايل (رابط مباشر — Cloudinary) تُحفظ على الدواء في الكتالوج العام
-        if (! empty($data['image_url'])) {
+        // صورة اختيارية: ملف مرفوع يُرفع إلى Cloudinary، أو رابط مباشر كبديل.
+        // الملف يفوز عند إرسال الاثنين معاً.
+        $imageFile = $request->file('image_file');
+        unset($data['image_file']);
+
+        $image = $data['image_url'] ?? null;
+        if ($imageFile !== null) {
+            $image = Cloudinary::upload($imageFile, 'medicines') ?? $image;
+        }
+
+        if ($image) {
             Cloudinary::deleteLocal($medicine->image);
-            $medicine->image = $data['image_url'];
+            $medicine->image = $image;
             $medicine->save();
         }
 

@@ -22,6 +22,8 @@ class PharmacyMedicineRequest extends FormRequest
             'is_available' => 'sometimes|boolean',
             // C4: SecureImageUrl rule تستبعد javascript:/data: و http://
             'image_url' => ['nullable', 'string', 'max:2048', new \App\Rules\SecureImageUrl],
+            // Direct upload from the React form; wins over image_url when present.
+            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             // إثراء بيانات الكتالوج: اختياري في التحديث، لا يُمسح قيمة موجودة
             'trade_name' => [
                 'sometimes',
