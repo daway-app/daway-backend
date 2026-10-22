@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -29,6 +30,10 @@ class Order extends Model
                 'status',
                 'payment_status',
                 'payment_method',
+                'payment_reviewed_by',
+                'payment_reviewed_at',
+                'payment_rejection_reason',
+                'payment_problem_reported_at',
                 'subtotal',
                 'discount',
                 'total',
@@ -68,6 +73,10 @@ class Order extends Model
         'picked_up_at',
         'payment_status',
         'payment_method',
+        'payment_reviewed_by',
+        'payment_reviewed_at',
+        'payment_rejection_reason',
+        'payment_problem_reported_at',
         'snapshot',
         'address_snapshot',
     ];
@@ -83,6 +92,8 @@ class Order extends Model
             'delivered_at' => 'datetime',
             'assigned_at' => 'datetime',
             'picked_up_at' => 'datetime',
+            'payment_reviewed_at' => 'datetime',
+            'payment_problem_reported_at' => 'datetime',
             'snapshot' => 'array',
             'address_snapshot' => 'array',
         ];
@@ -104,7 +115,25 @@ class Order extends Model
     public const STATUS_CANCELLED = 'cancelled';
 
     public const PAYMENT_PENDING = 'pending';
+    public const PAYMENT_UNDER_REVIEW = 'under_review';
     public const PAYMENT_PAID = 'paid';
+    public const PAYMENT_REJECTED = 'rejected';
+    public const PAYMENT_PROBLEM_REPORTED = 'problem_reported';
+
+    /**
+     * Payment phase — states `orders.payment_status` may hold.
+     * The parent order is the single source of truth; sub-orders only mirror
+     * this value for display.
+     */
+    public const PAYMENT_STATUSES = [
+        self::PAYMENT_PENDING,
+        self::PAYMENT_UNDER_REVIEW,
+        self::PAYMENT_PAID,
+        self::PAYMENT_REJECTED,
+        self::PAYMENT_PROBLEM_REPORTED,
+    ];
+
+    public const PAYMENT_METHOD_BANK_TRANSFER = 'bank_transfer';
 
     /**
      * Rider Delivery — مراحل التوصيل التي يملكها المندوب على الطلب الأب.
@@ -151,6 +180,37 @@ class Order extends Model
     public function subOrders(): HasMany
     {
         return $this->hasMany(SubOrder::class);
+    }
+
+    /**
+     * Payment phase — declared bank transfers, newest first via the latest
+     * convenience relationship below.
+     */
+    public function paymentSubmissions(): HasMany
+    {
+        return $this->hasMany(OrderPaymentSubmission::class);
+    }
+
+    public function latestPaymentSubmission(): HasOne
+    {
+        return $this->hasOne(OrderPaymentSubmission::class)->latestOfMany();
+    }
+
+    public function paymentProblems(): HasMany
+    {
+        return $this->hasMany(PaymentProblem::class);
+    }
+
+    public function openPaymentProblem(): HasOne
+    {
+        return $this->hasOne(PaymentProblem::class)
+            ->where('status', PaymentProblem::STATUS_OPEN)
+            ->latestOfMany();
+    }
+
+    public function paymentReviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'payment_reviewed_by');
     }
 
     public function statusHistories(): HasMany

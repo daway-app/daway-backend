@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\Admin\OrderDispatchController as AdminOrderDispatch
 use App\Http\Controllers\Api\Admin\PatientInventoryController as AdminPatientInventoryController;
 use App\Http\Controllers\Api\Admin\PharmacyController as AdminPharmacyController;
 use App\Http\Controllers\Api\Admin\ProfileController as AdminProfileController;
+use App\Http\Controllers\Api\Admin\PaymentBankController as AdminPaymentBankController;
+use App\Http\Controllers\Api\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AdminPharmacyMohDryRunController;
@@ -39,6 +41,7 @@ use App\Http\Controllers\Api\PatientAssistantController;
 use App\Http\Controllers\Api\PatientInquiryController;
 use App\Http\Controllers\Api\PatientProfileController;
 use App\Http\Controllers\Api\PharmacyAlternativeController;
+use App\Http\Controllers\Api\OrderPaymentController;
 use App\Http\Controllers\Api\PharmacyController;
 use App\Http\Controllers\Api\PharmacyDashboardController;
 use App\Http\Controllers\Api\PharmacyInquiryController;
@@ -173,6 +176,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::get('orders/{order}/tracking', [OrderController::class, 'tracking'])->name('orders.tracking');
         Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+
+        // الدفع بالتحويل البنكي — البنوك النشطة، ملخص دفع الطلب، رفع الإيصال،
+        // بلاغ مشكلة، وتنزيل الإيصال المحمي. الملكية تُفرض داخل المتحكم.
+        Route::get('payment-banks', [OrderPaymentController::class, 'banks'])->name('payment.banks');
+        Route::get('orders/{order}/payment', [OrderPaymentController::class, 'show'])->name('orders.payment.show');
+        Route::post('orders/{order}/payment/receipt', [OrderPaymentController::class, 'submitReceipt'])
+            ->middleware('throttle:writes')
+            ->name('orders.payment.receipt');
+        Route::post('orders/{order}/payment/problem', [OrderPaymentController::class, 'reportProblem'])
+            ->middleware('throttle:writes')
+            ->name('orders.payment.problem');
+        Route::get('orders/{order}/payment/submissions/{submission}/receipt', [OrderPaymentController::class, 'downloadReceipt'])
+            ->name('orders.payment.receipt.download');
 
         Route::post('coupons/validate', [CouponController::class, 'validateCoupon']);
 
@@ -505,6 +521,21 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::match(['put', 'patch'], '/delivery-riders/{rider}', [AdminDeliveryRiderController::class, 'update']);
     Route::patch('/delivery-riders/{rider}/toggle-status', [AdminDeliveryRiderController::class, 'toggleStatus']);
     Route::delete('/delivery-riders/{rider}', [AdminDeliveryRiderController::class, 'destroy']);
+
+    // الدفع بالتحويل البنكي — إدارة البنوك ومراجعة الإيصالات والبلاغات.
+    Route::get('/payment-banks', [AdminPaymentBankController::class, 'index']);
+    Route::post('/payment-banks', [AdminPaymentBankController::class, 'store']);
+    Route::match(['put', 'patch'], '/payment-banks/{paymentBank}', [AdminPaymentBankController::class, 'update']);
+    Route::patch('/payment-banks/{paymentBank}/toggle-status', [AdminPaymentBankController::class, 'toggleStatus']);
+    Route::delete('/payment-banks/{paymentBank}', [AdminPaymentBankController::class, 'destroy']);
+
+    Route::get('/payments', [AdminPaymentController::class, 'index']);
+    Route::get('/payments/{order}', [AdminPaymentController::class, 'show']);
+    Route::post('/payments/{order}/approve', [AdminPaymentController::class, 'approve']);
+    Route::post('/payments/{order}/reject', [AdminPaymentController::class, 'reject']);
+    Route::get('/payments/{order}/submissions/{submission}/receipt', [AdminPaymentController::class, 'downloadReceipt']);
+    Route::get('/payment-problems', [AdminPaymentController::class, 'problems']);
+    Route::post('/payment-problems/{paymentProblem}/resolve', [AdminPaymentController::class, 'resolveProblem']);
 
     // Rider Delivery — طلبات التوصيل: عرض + إسناد/فك إسناد مندوب.
     Route::get('/orders', [AdminOrderDispatchController::class, 'index']);
