@@ -17,6 +17,8 @@ class CategoryMedicineLink extends Model
 
     public const SOURCE_ADMIN = 'admin';
 
+    public const SOURCE_PHARMACY = 'pharmacy';
+
     protected $fillable = [
         'category_id',
         'subcategory_id',

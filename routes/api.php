@@ -213,6 +213,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('ratings', [PharmacyRatingController::class, 'index']);
 
         Route::get('medicines/search', [PharmacyMedicineController::class, 'search']);
+        Route::get('medicines/uncategorized', [PharmacyMedicineController::class, 'uncategorized'])
+            ->name('api.pharmacy.medicines.uncategorized');
+        Route::patch('medicines/{medicine}/category', [PharmacyMedicineController::class, 'assignCategory'])
+            ->middleware('throttle:writes')
+            ->name('api.pharmacy.medicines.category');
         Route::post('medicine-requests', [MedicineRequestController::class, 'store'])->middleware('throttle:writes');
         Route::get('medicine-requests', [MedicineRequestController::class, 'index']);
         // ط¥ط¶ط§ظپط© ط¯ظˆط§ط، ط¨ط§ظ„ط§ط³ظ… ظ…ط¨ط§ط´ط±ط© (ظ„ظ„ظ…ظˆط¨ط§ظٹظ„) â€” ط¨ط¯ظˆظ† medicine_id ط£ظˆ moh_medicine_id

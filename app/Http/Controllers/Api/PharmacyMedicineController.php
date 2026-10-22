@@ -15,10 +15,13 @@ use App\Models\Subcategory;
 use App\Services\MedicineCatalogService;
 use App\Services\PharmacyContext;
 use App\Models\SyncTombstone;
+use App\Support\CategoryCatalogCache;
 use App\Support\Cloudinary;
+use App\Support\Image;
 use App\Support\LowStockNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PharmacyMedicineController extends Controller
@@ -59,6 +62,158 @@ class PharmacyMedicineController extends Controller
                 'per_page' => $items->perPage(),
                 'current_page' => $items->currentPage(),
                 'last_page' => $items->lastPage(),
+            ],
+        ]);
+    }
+
+    /**
+     * أدوية الصيدلية الحالية غير المرتبطة بأي قسم.
+     */
+    public function uncategorized(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user->role === 'pharmacy', 403);
+
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+        $q = trim((string) ($validated['q'] ?? ''));
+        $perPage = (int) ($validated['per_page'] ?? 50);
+
+        $pharmacy = PharmacyContext::forUser($user);
+        if (! $pharmacy) {
+            return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
+        }
+
+        $items = PharmacyMedicine::query()
+            ->where('pharmacy_id', $pharmacy->id)
+            ->whereHas('medicine')
+            ->whereDoesntHave('medicine.categoryLinks')
+            ->when($q !== '', function ($query) use ($q): void {
+                $query->whereHas('medicine', fn ($medicine) => $medicine
+                    ->where('trade_name', 'like', "%{$q}%")
+                    ->orWhere('trade_name_ar', 'like', "%{$q}%")
+                    ->orWhere('active_ingredient', 'like', "%{$q}%"));
+            })
+            ->with('medicine')
+            ->orderByDesc('id')
+            ->paginate($perPage);
+
+        $data = collect($items->items())->map(function (PharmacyMedicine $item): array {
+            $medicine = $item->medicine;
+
+            return [
+                'id' => $item->id,
+                'medicine_id' => $item->medicine_id !== null ? (int) $item->medicine_id : null,
+                'trade_name' => $medicine?->trade_name,
+                'trade_name_ar' => $medicine?->trade_name_ar,
+                'description' => $medicine?->description,
+                'active_ingredient' => $medicine?->active_ingredient,
+                'image_url' => Image::url($medicine?->image),
+                'quantity' => (int) $item->quantity,
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب الأدوية غير المصنفة بنجاح',
+            'data' => $data,
+            'pagination' => [
+                'total' => $items->total(),
+                'per_page' => $items->perPage(),
+                'current_page' => $items->currentPage(),
+                'last_page' => $items->lastPage(),
+            ],
+        ]);
+    }
+
+    /**
+     * تعيين قسم (وقسم فرعي اختياري) لدواء في مخزون الصيدلية.
+     */
+    public function assignCategory(Request $request, PharmacyMedicine $medicine): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user->role === 'pharmacy', 403);
+
+        $pharmacy = PharmacyContext::forUser($user);
+        if (! $pharmacy || $medicine->pharmacy_id !== $pharmacy->id) {
+            return response()->json(['success' => false, 'message' => 'الدواء غير موجود في مخزون الصيدلية'], 404);
+        }
+
+        $data = $request->validate([
+            'category_id' => ['required', 'integer'],
+            'subcategory_id' => ['nullable', 'integer'],
+        ]);
+
+        if ($medicine->medicine_id === null) {
+            throw ValidationException::withMessages([
+                'medicine_id' => 'الدواء غير مرتبط بالكتالوج العام ولا يمكن تصنيفه',
+            ])->status(422);
+        }
+
+        $category = Category::active()->find((int) $data['category_id']);
+        if (! $category) {
+            throw ValidationException::withMessages([
+                'category_id' => 'القسم غير صالح أو غير نشط',
+            ])->status(422);
+        }
+
+        $subcategoryId = isset($data['subcategory_id']) && $data['subcategory_id'] !== null
+            ? (int) $data['subcategory_id']
+            : null;
+        if ($subcategoryId !== null) {
+            $subcategory = Subcategory::active()
+                ->where('category_id', $category->id)
+                ->find($subcategoryId);
+
+            if (! $subcategory) {
+                throw ValidationException::withMessages([
+                    'subcategory_id' => 'القسم الفرعي لا ينتمي إلى القسم المختار أو غير نشط',
+                ])->status(422);
+            }
+        }
+
+        $medicineId = (int) $medicine->medicine_id;
+
+        DB::transaction(function () use ($medicineId, $category, $subcategoryId): void {
+            $locked = Medicine::whereKey($medicineId)->lockForUpdate()->first();
+            if (! $locked) {
+                throw ValidationException::withMessages([
+                    'medicine_id' => 'الدواء غير موجود في الكتالوج العام',
+                ])->status(422);
+            }
+
+            $alreadyLinked = CategoryMedicineLink::where('medicine_id', $medicineId)->exists();
+            if ($alreadyLinked) {
+                throw ValidationException::withMessages([
+                    'category_id' => 'هذا الدواء مصنف مسبقاً',
+                ])->status(422);
+            }
+
+            CategoryMedicineLink::create([
+                'category_id' => $category->id,
+                'subcategory_id' => $subcategoryId,
+                'moh_product_id' => null,
+                'moh_drug_id' => null,
+                'medicine_id' => $medicineId,
+                'source' => CategoryMedicineLink::SOURCE_PHARMACY,
+                'confidence' => 100,
+                'needs_review' => false,
+            ]);
+        });
+
+        CategoryCatalogCache::bump();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تعيين القسم بنجاح',
+            'data' => [
+                'medicine_id' => $medicineId,
+                'category_id' => (int) $category->id,
+                'subcategory_id' => $subcategoryId,
             ],
         ]);
     }

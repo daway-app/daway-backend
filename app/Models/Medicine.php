@@ -35,6 +35,11 @@ class Medicine extends Model
         return $this->hasMany(PharmacyMedicine::class);
     }
 
+    public function categoryLinks(): HasMany
+    {
+        return $this->hasMany(CategoryMedicineLink::class);
+    }
+
     /**
      * علاقة: الأدوية البديلة لهذا الدواء (علاقة many-to-many)
      */
