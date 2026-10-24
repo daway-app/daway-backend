@@ -21,6 +21,13 @@ use Maatwebsite\Excel\Facades\Excel;
  */
 final class InventoryFileParser
 {
+    /**
+     * الحد الأقصى للكمية في `pharmacy_medicines.quantity` — signed INT.
+     * أي كمية تملثثق بها (مضافة أو مطلقة) لا يجب أن تتجاوزه، لتفادي overflow
+     * في MySQL الذي يرفض القيم خارج نطاق signed INT.
+     */
+    public const MAX_QUANTITY = 2147483647;
+
     /** الأعمدة الإلزامية (بعد التطبيع). */
     private const REQUIRED_COLUMNS = ['trade_name', 'price', 'quantity'];
 
@@ -342,8 +349,10 @@ final class InventoryFileParser
             $parsed = $this->number($quantityRaw);
 
             // نمنع الكسور والطفح: الكمية عدد صحيح غير سالب
-            if ($parsed === null || $parsed < 0 || $parsed > 4294967295 || floor($parsed) !== $parsed) {
+            if ($parsed === null || $parsed < 0 || floor($parsed) !== $parsed) {
                 $errors[] = 'invalid_quantity';
+            } elseif ($parsed > self::MAX_QUANTITY) {
+                $errors[] = 'quantity_out_of_range';
             } else {
                 $quantity = (int) $parsed;
             }

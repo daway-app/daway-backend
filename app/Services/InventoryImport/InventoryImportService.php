@@ -401,9 +401,8 @@ final class InventoryImportService
                 $created = 0;
                 $written = 0;
 
-                $withMinStock = [];
-                $withoutMinStock = [];
-                $now = now();
+                $resolved = [];
+                $targetMedicineIds = [];
 
                 foreach ($chunk as $entry) {
                     $row = $entry['row'];
@@ -427,14 +426,52 @@ final class InventoryImportService
                     }
 
                     $medicineId = $medicine?->id ?? (int) $row['medicine_id'];
-                    $input = (array) $row['input'];
+
+                    $resolved[] = [
+                        'medicine_id' => $medicineId,
+                        'input' => (array) $row['input'],
+                        'learn_alias' => $entry['learn_alias'],
+                    ];
+
+                    $targetMedicineIds[$medicineId] = true;
+                }
+
+                $existingQuantities = [];
+
+                if ($targetMedicineIds !== []) {
+                    $existingQuantities = PharmacyMedicine::query()
+                        ->where('pharmacy_id', $pharmacy->id)
+                        ->whereIn('medicine_id', array_keys($targetMedicineIds))
+                        ->lockForUpdate()
+                        ->pluck('quantity', 'medicine_id')
+                        ->map(fn ($quantity): int => (int) $quantity)
+                        ->all();
+                }
+
+                $withMinStock = [];
+                $withoutMinStock = [];
+                $now = now();
+
+                foreach ($resolved as $entry) {
+                    $medicineId = (int) $entry['medicine_id'];
+                    $input = $entry['input'];
+                    $importedQuantity = (int) ($input['quantity'] ?? 0);
+                    $existingQuantity = $existingQuantities[$medicineId] ?? 0;
+                    $finalQuantity = $existingQuantity + $importedQuantity;
+
+                    $existingQuantities[$medicineId] = $finalQuantity;
+
+                    $importedAvailable = (bool) ($input['is_available'] ?? false);
+                    $isAvailable = $importedAvailable === ($importedQuantity > 0)
+                        ? $finalQuantity > 0
+                        : $importedAvailable;
 
                     $record = [
                         'pharmacy_id' => $pharmacy->id,
                         'medicine_id' => $medicineId,
                         'price' => (float) ($input['price'] ?? 0),
-                        'quantity' => (int) ($input['quantity'] ?? 0),
-                        'is_available' => (bool) ($input['is_available'] ?? false),
+                        'quantity' => $finalQuantity,
+                        'is_available' => $isAvailable,
                         'min_stock' => $input['min_stock'] ?? null,
                         'created_at' => $now,
                         'updated_at' => $now,

@@ -159,6 +159,62 @@ class PharmacyInventoryImportApiTest extends TestCase
         ]);
     }
 
+    public function test_decide_and_commit_add_the_quantity_to_existing_stock(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 3,
+        ]);
+
+        $import = $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 9]]);
+
+        $this->postJson('/api/pharmacy/inventory/import/'.$import->uuid.'/decide', [
+            'rows' => [['row' => 2, 'action' => 'link', 'medicine_id' => $medicine->id]],
+        ])->assertOk()->assertJsonPath('data.decisions.ready', true);
+
+        $this->postJson('/api/pharmacy/inventory/import/'.$import->uuid.'/commit')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.import.status', InventoryImport::STATUS_COMMITTED);
+
+        $this->assertDatabaseHas('pharmacy_medicines', [
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 12,
+        ]);
+    }
+
+    public function test_commit_does_not_duplicate_a_medicine_already_in_pharmacy(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 3,
+        ]);
+
+        $import = $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 4, 'quantity' => 6]]);
+
+        $this->postJson('/api/pharmacy/inventory/import/'.$import->uuid.'/commit')
+            ->assertOk()
+            ->assertJsonPath('data.import.status', InventoryImport::STATUS_COMMITTED)
+            ->assertJsonPath('data.summary.created_medicines', 0)
+            ->assertJsonPath('data.summary.committed_rows', 1);
+
+        $this->assertSame(1, PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->count());
+        $this->assertDatabaseHas('pharmacy_medicines', [
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 9,
+        ]);
+    }
+
     public function test_commit_through_the_api_rejects_a_pending_session(): void
     {
         [, $pharmacy] = $this->pharmacyUser();

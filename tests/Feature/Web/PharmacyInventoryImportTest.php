@@ -221,7 +221,7 @@ class PharmacyInventoryImportTest extends TestCase
      | التنفيذ
      ===================================================================== */
 
-    public function test_commit_writes_the_absolute_quantity_not_a_sum(): void
+    public function test_commit_adds_the_imported_quantity_to_the_existing_stock(): void
     {
         [$user, $pharmacy] = $this->pharmacyUser();
         $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
@@ -241,11 +241,115 @@ class PharmacyInventoryImportTest extends TestCase
             ->where('medicine_id', $medicine->id)
             ->firstOrFail();
 
-        // الكمية قيمة مطلقة: 10 وليست 3+10
-        $this->assertSame(10, (int) $row->quantity);
+        // الكمية تُضاف: 3 + 10 = 13
+        $this->assertSame(13, (int) $row->quantity);
         $this->assertSame('9.50', $row->price);
         $this->assertTrue((bool) $row->is_available);
         $this->assertSame(1, PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->count());
+    }
+
+    public function test_two_rows_linked_to_the_same_medicine_are_summed(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 3,
+        ]);
+
+        $import = $this->preview([
+            ['trade_name' => 'ALPHA DRUG', 'price' => 5, 'quantity' => 10],
+            ['trade_name' => 'BETA DRUG', 'price' => 5, 'quantity' => 4],
+        ], $user);
+
+        $this->decide($user, $import, [
+            ['row' => 2, 'action' => 'link', 'medicine_id' => $medicine->id],
+            ['row' => 3, 'action' => 'link', 'medicine_id' => $medicine->id],
+        ])->assertOk();
+
+        $this->commit($user, $import)->assertRedirect();
+
+        $row = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->where('medicine_id', $medicine->id)
+            ->firstOrFail();
+
+        $this->assertSame(17, (int) $row->quantity);
+    }
+
+    public function test_a_zero_quantity_row_keeps_existing_stock_available(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 5,
+            'is_available' => true,
+        ]);
+
+        $import = $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 0]], $user);
+
+        $this->commit($user, $import)->assertRedirect();
+
+        $row = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->where('medicine_id', $medicine->id)
+            ->firstOrFail();
+
+        $this->assertSame(5, (int) $row->quantity);
+        $this->assertTrue((bool) $row->is_available);
+    }
+
+    public function test_an_explicit_unavailable_value_is_respected_when_adding_stock(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 5,
+            'is_available' => true,
+        ]);
+
+        $import = $this->preview([
+            ['trade_name' => 'PANADOL EXTRA', 'price' => 5, 'quantity' => 10, 'is_available' => '0'],
+        ], $user);
+
+        $this->commit($user, $import)->assertRedirect();
+
+        $row = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)
+            ->where('medicine_id', $medicine->id)
+            ->firstOrFail();
+
+        $this->assertSame(15, (int) $row->quantity);
+        $this->assertFalse((bool) $row->is_available);
+    }
+
+    public function test_a_medicine_already_in_pharmacy_is_updated_not_duplicated(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL EXTRA']);
+
+        PharmacyMedicine::factory()->create([
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 3,
+        ]);
+
+        $import = $this->preview([['trade_name' => 'PANADOL EXTRA', 'price' => 4, 'quantity' => 6]], $user);
+
+        $this->commit($user, $import)->assertRedirect();
+
+        $this->assertSame(1, PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->count());
+        $this->assertSame(0, (int) $import->fresh()->created_medicines);
+        $this->assertDatabaseHas('pharmacy_medicines', [
+            'pharmacy_id' => $pharmacy->id,
+            'medicine_id' => $medicine->id,
+            'quantity' => 9,
+        ]);
     }
 
     public function test_commit_creates_a_new_inventory_row_when_none_exists(): void
@@ -398,7 +502,7 @@ class PharmacyInventoryImportTest extends TestCase
 
         $row = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->where('medicine_id', $medicine->id)->firstOrFail();
 
-        $this->assertSame(30, (int) $row->quantity);
+        $this->assertSame(31, (int) $row->quantity);
         $this->assertSame(7, (int) $row->min_stock);
     }
 
@@ -422,6 +526,7 @@ class PharmacyInventoryImportTest extends TestCase
 
         $row = PharmacyMedicine::where('pharmacy_id', $pharmacy->id)->where('medicine_id', $medicine->id)->firstOrFail();
 
+        $this->assertSame(31, (int) $row->quantity);
         $this->assertSame(4, (int) $row->min_stock);
     }
 

@@ -201,6 +201,29 @@ class InventoryFileParserTest extends TestCase
         @unlink($path);
     }
 
+    public function test_it_marks_a_quantity_above_signed_int_max_as_out_of_range(): void
+    {
+        $path = $this->csv("trade_name,price,quantity\nA,1,".InventoryFileParser::MAX_QUANTITY."\n");
+
+        $row = $this->parser->parse($path)['rows'][0];
+
+        $this->assertNotContains('invalid_quantity', $row['errors']);
+        $this->assertEmpty($row['errors']);
+
+        @unlink($path);
+    }
+
+    public function test_it_marks_a_quantity_exceeding_signed_int_max_as_out_of_range(): void
+    {
+        $path = $this->csv("trade_name,price,quantity\nA,1,".(InventoryFileParser::MAX_QUANTITY + 1)."\n");
+
+        $row = $this->parser->parse($path)['rows'][0];
+
+        $this->assertContains('quantity_out_of_range', $row['errors']);
+
+        @unlink($path);
+    }
+
     public function test_it_marks_a_blank_quantity_as_an_error(): void
     {
         $path = $this->csv("trade_name,price,quantity\nA,1,\n");

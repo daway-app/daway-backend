@@ -10,7 +10,7 @@ return [
 
     // --- General ---
     'title' => 'Bulk Inventory Import',
-    'subtitle' => 'Update your whole pharmacy stock from a single Excel or CSV file, reviewing every row before saving.',
+    'subtitle' => 'Add your pharmacy stock quantities from a single Excel or CSV file, reviewing every row before committing.',
     'back_to_inventory' => 'Back to inventory',
 
     // --- Steps ---
@@ -52,7 +52,7 @@ return [
     'summary_unmatched' => 'Unknown',
     'summary_duplicate' => 'Duplicate rows',
     'summary_error' => 'Rows with errors',
-    'summary_matched_hint' => 'Found directly in the catalog — updated without asking.',
+    'summary_matched_hint' => 'Found directly in the catalog — their quantities are added to stock without asking.',
     'summary_review_hint' => 'Unconfirmed suggestions or MOH catalog matches — need your decision.',
     'summary_unmatched_hint' => 'No counterpart found — link to an existing medicine, create a new one, or skip.',
     'summary_duplicate_hint' => 'Several rows point to the same medicine — choose which one wins.',
@@ -99,6 +99,7 @@ return [
     'err_missing_name' => 'Trade name (EN or AR) is required.',
     'err_invalid_price' => 'Invalid price — negatives and text are not accepted.',
     'err_invalid_quantity' => 'Quantity is required and must be a non-negative whole number.',
+    'err_quantity_out_of_range' => 'Quantity exceeds the maximum (2,147,483,647) and could overflow when added to existing stock.',
     'err_invalid_min_stock' => 'Invalid low-stock threshold — non-negative whole number.',
     'err_invalid_is_available' => 'Unrecognized availability value (use yes/no).',
 
@@ -108,7 +109,7 @@ return [
 
     // --- Merge ---
     'merge_title' => 'Duplicate rows',
-    'merge_hint' => 'Quantity is an absolute value, so rows are never summed automatically. Pick the row that reflects reality.',
+    'merge_hint' => 'There is more than one row for the same medicine, and they are not summed automatically. Choose the row whose quantity you want to add to stock.',
     'merge_keep_last' => 'Keep the last row',
     'merge_keep_first' => 'Keep the first row',
     'merge_skip_all' => 'Skip all rows',
@@ -124,14 +125,14 @@ return [
     'confirm_commit' => 'Run import',
     'confirm_pending_notice' => ':count row(s) are still awaiting your decision.',
     'confirm_creating_notice' => ':count new medicine(s) will be created in the shared catalog.',
-    'confirm_irreversible' => 'This updates inventory quantities directly.',
+    'confirm_irreversible' => "Each row's quantity is added to the current pharmacy stock (not replaced) and cannot be undone.",
     'cancel_import' => 'Cancel session',
     'cancel_confirm' => 'This import will be cancelled and no changes will be saved. Continue?',
     'download_errors' => 'Download error report',
 
     // --- Result ---
     'done_title' => 'Import complete',
-    'done_committed_rows' => 'Rows updated',
+    'done_committed_rows' => 'Rows applied',
     'done_skipped_rows' => 'Rows skipped',
     'done_created_medicines' => 'New medicines',
     'done_learned_aliases' => 'Aliases saved',
@@ -139,7 +140,7 @@ return [
     'done_back' => 'Back to inventory',
 
     // --- Notification ---
-    'notif_import_finished' => 'Your inventory was imported: :count item(s) updated, :low below the low-stock threshold.',
+    'notif_import_finished' => 'Your inventory was imported: quantities for :count item(s) were added, :low below the low-stock threshold.',
 
     // --- Service errors (shown to the user) ---
     'error_not_previewed' => 'Decisions cannot be applied before the file is analyzed. Upload the file first.',
