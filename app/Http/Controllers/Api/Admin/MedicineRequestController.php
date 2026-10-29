@@ -3,25 +3,17 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
-use App\Models\CategoryMedicineLink;
-use App\Models\Medicine;
 use App\Models\MedicineRequest;
-use App\Models\MohMedicine;
-use App\Models\PharmacyMedicine;
-use App\Models\Subcategory;
-use App\Support\CategoryCatalogCache;
+use App\Services\MedicineRequest\MedicineRequestApprovalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 /**
  * لوحة الأدمن — طلبات الأدوية (JSON).
  *
- * منطق الاعتماد منقول حرفياً من `web/Admin/MedicineRequestController@approve`
- * بما فيه القفل (`lockForUpdate`) والمعاملة الواحدة — بدونها يقع اعتماد
- * مزدوج متزامن يُنشئ روابط مكررة.
+ * منطق الاعتماد مشترك مع واجهة الويب عبر `MedicineRequestApprovalService`
+ * (كان مُنسوخاً حرفياً في كلا الكنترولرين). القفل (`lockForUpdate`) والمعاملة
+ * الواحدة داخل الخدمة — بدونهما يقع اعتماد مزدوج متزامن يُنشئ روابط مكررة.
  */
 class MedicineRequestController extends Controller
 {
@@ -100,118 +92,12 @@ class MedicineRequestController extends Controller
             'subcategory_id' => ['nullable', 'integer', 'exists:subcategories,id'],
         ]);
 
-        $result = DB::transaction(function () use ($medicineRequest, $data, $request) {
-            $locked = MedicineRequest::where('id', $medicineRequest->id)->lockForUpdate()->first();
-
-            if ($locked->status !== MedicineRequest::STATUS_PENDING) {
-                throw ValidationException::withMessages([
-                    'request' => 'الطلب ليس بحالة بانتظار المراجعة',
-                ]);
-            }
-
-            $name = trim($data['trade_name'] ?? $locked->trade_name);
-            $nameAr = $data['trade_name_ar'] ?? $locked->trade_name_ar;
-            $ingredient = $data['active_ingredient'] ?? $locked->active_ingredient;
-            $categoryId = $data['category_id'] ?? $locked->category_id;
-            $subcategoryId = $data['subcategory_id'] ?? $locked->subcategory_id;
-
-            $category = Category::active()->find($categoryId);
-            if (! $category) {
-                throw ValidationException::withMessages(['category_id' => 'القسم غير صالح']);
-            }
-            if ($subcategoryId) {
-                $sub = Subcategory::where('category_id', $category->id)->find($subcategoryId);
-                if (! $sub) {
-                    throw ValidationException::withMessages(['subcategory_id' => 'القسم الفرعي لا ينتمي للقسم']);
-                }
-            }
-
-            $moh = MohMedicine::where('trade_name', $name)->lockForUpdate()->first();
-
-            $approvedMohId = null;
-            $approvedMedId = null;
-            $inventoryMedId = null;
-
-            if ($moh) {
-                $bridge = Medicine::where('trade_name', $moh->trade_name)->lockForUpdate()->first()
-                    ?? Medicine::create([
-                        'trade_name' => $moh->trade_name,
-                        'active_ingredient' => $moh->generic_name ?? $moh->trade_name,
-                        'description' => $moh->manufacturer ?? $moh->company,
-                    ]);
-
-                $approvedMohId = $moh->id;
-                $inventoryMedId = $bridge->id;
-            } else {
-                $local = Medicine::where('trade_name', $name)->lockForUpdate()->first();
-
-                if (! $local) {
-                    $local = Medicine::create([
-                        'trade_name' => $name,
-                        'trade_name_ar' => $nameAr,
-                        'active_ingredient' => $ingredient ?? $name,
-                    ]);
-                }
-
-                $approvedMedId = $local->id;
-                $inventoryMedId = $local->id;
-            }
-
-            if ($approvedMohId !== null) {
-                $mohRow = MohMedicine::find($approvedMohId);
-                CategoryMedicineLink::firstOrCreate(
-                    [
-                        'category_id' => $category->id,
-                        'subcategory_id' => $subcategoryId,
-                        'moh_product_id' => $mohRow->moh_product_id,
-                        'moh_drug_id' => $mohRow->moh_drug_id,
-                    ],
-                    ['source' => CategoryMedicineLink::SOURCE_ADMIN, 'confidence' => 100, 'needs_review' => false]
-                );
-            } else {
-                CategoryMedicineLink::firstOrCreate(
-                    [
-                        'category_id' => $category->id,
-                        'subcategory_id' => $subcategoryId,
-                        'medicine_id' => $approvedMedId,
-                    ],
-                    ['source' => CategoryMedicineLink::SOURCE_ADMIN, 'confidence' => 100, 'needs_review' => false]
-                );
-            }
-
-            if (! PharmacyMedicine::where('pharmacy_id', $locked->pharmacy_id)
-                ->where('medicine_id', $inventoryMedId)
-                ->where(fn ($q) => $approvedMohId
-                    ? $q->where('moh_medicine_id', $approvedMohId)
-                    : $q->whereNull('moh_medicine_id'))
-                ->exists()) {
-                PharmacyMedicine::create([
-                    'pharmacy_id' => $locked->pharmacy_id,
-                    'medicine_id' => $inventoryMedId,
-                    'moh_medicine_id' => $approvedMohId,
-                    'price' => $locked->official_price ?? 0,
-                    'quantity' => 0,
-                    'is_available' => false,
-                ]);
-            }
-
-            $locked->fill([
-                'trade_name' => $name,
-                'trade_name_ar' => $nameAr,
-                'active_ingredient' => $ingredient,
-                'category_id' => $category->id,
-                'subcategory_id' => $subcategoryId,
-                'status' => MedicineRequest::STATUS_APPROVED,
-                'approved_moh_medicine_id' => $approvedMohId,
-                'approved_medicine_id' => $approvedMedId,
-                'reviewed_by' => $request->user()->id,
-                'reviewed_at' => now(),
-            ])->save();
-
-            CategoryCatalogCache::bump();
-
-            return $locked;
-        });
+        // المنطق مشترك مع واجهة الويب — منقول إلى الخدمة (M-3A parity)
+        $result = app(MedicineRequestApprovalService::class)->approve(
+            $medicineRequest,
+            $data,
+            (int) $request->user()->id,
+        );
 
         return response()->json([
             'success' => true,

@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Pharmacy;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class PharmacyPasswordChangeTest extends TestCase
@@ -12,12 +13,16 @@ class PharmacyPasswordChangeTest extends TestCase
     public function test_pharmacy_created_by_admin_gets_independent_random_password(): void
     {
         $admin = User::factory()->admin()->create();
+        Sanctum::actingAs($admin);
 
-        $response = $this->actingAs($admin)->post(route('pharmacies.store'), [
+        // بعد حذف واجهة Blade: التزويد عبر مسار API الإداري (يعيد كلمة المرور
+        // الأولية في الاستجابة بدل flash الجلسة).
+        $response = $this->postJson('/api/admin/pharmacies', [
             'pharmacy_name' => 'Test Pharmacy',
-        ]);
+        ])->assertCreated();
 
-        $response->assertRedirect(route('pharmacies.index'));
+        $initialPassword = (string) $response->json('data.credentials.password');
+        $this->assertNotEmpty($initialPassword);
 
         $pharmacy = Pharmacy::where('pharmacy_name', 'Test Pharmacy')->first();
         $this->assertNotNull($pharmacy);
@@ -25,12 +30,7 @@ class PharmacyPasswordChangeTest extends TestCase
         $this->assertNull($pharmacy->address);
         $this->assertNull($pharmacy->profile_completed_at);
 
-        // M-4: بيانات الدخول لمرة واحدة تُفلاش للجلسة
-        // (المفاتيح موحّدة مع مسار التسجيل الذاتي — كانت initial_* وهي مفاتيح لا يقرأها أي قالب)
-        $initialPassword = session('delivered_password');
-        $initialId = session('delivered_pharmacy_id');
-        $this->assertNotEmpty($initialPassword);
-        $this->assertSame($pharmacy->pharmacy_custom_id, $initialId);
+        $this->assertSame($pharmacy->pharmacy_custom_id, $response->json('data.credentials.pharmacy_id'));
 
         $user = $pharmacy->user;
         $this->assertNull($user->email);

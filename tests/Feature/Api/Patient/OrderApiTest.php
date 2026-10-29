@@ -329,6 +329,7 @@ class OrderApiTest extends TestCase
         $this->seedCart(1, 1);
         $this->postJson('/api/patient/checkout', ['address_id' => $this->address->id])->assertStatus(201);
         $order = Order::first();
+        $order->update(['payment_status' => Order::PAYMENT_PAID]);
 
         $pharmacyUser = $this->pharmacy->user;
         $this->actingAs($pharmacyUser, 'sanctum');

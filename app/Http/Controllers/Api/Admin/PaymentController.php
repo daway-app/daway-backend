@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderPaymentSubmission;
 use App\Models\PaymentProblem;
+use App\Services\OrderNotificationService;
 use App\Services\PaymentFlowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentController extends Controller
 {
-    public function __construct(private readonly PaymentFlowService $payments) {}
+    public function __construct(
+        private readonly PaymentFlowService $payments,
+        private readonly OrderNotificationService $notifications
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -87,13 +91,20 @@ class PaymentController extends Controller
             'review_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        return $this->respond(
-            $this->payments->approvePayment(
-                $order,
-                $request->user(),
-                $data['review_note'] ?? null
-            )
+        $result = $this->payments->approvePayment(
+            $order,
+            $request->user(),
+            $data['review_note'] ?? null
         );
+
+        if ($result['ok'] && empty($result['data']['already_paid'])) {
+            $this->notifications->paymentApproved(
+                $order->fresh(),
+                (int) ($result['data']['submission']['id'] ?? 0)
+            );
+        }
+
+        return $this->respond($result);
     }
 
     public function reject(Request $request, Order $order): JsonResponse
@@ -102,9 +113,16 @@ class PaymentController extends Controller
             'reason' => ['required', 'string', 'max:1000'],
         ]);
 
-        return $this->respond(
-            $this->payments->rejectPayment($order, $request->user(), $data['reason'])
-        );
+        $result = $this->payments->rejectPayment($order, $request->user(), $data['reason']);
+
+        if ($result['ok']) {
+            $this->notifications->paymentRejected(
+                $order->fresh(),
+                (int) ($result['data']['submission']['id'] ?? 0)
+            );
+        }
+
+        return $this->respond($result);
     }
 
     public function downloadReceipt(
@@ -171,13 +189,24 @@ class PaymentController extends Controller
             'admin_note' => ['required', 'string', 'max:2000'],
         ]);
 
-        return $this->respond(
-            $this->payments->resolveProblem(
-                $paymentProblem,
-                $request->user(),
-                $data['admin_note']
-            )
+        $result = $this->payments->resolveProblem(
+            $paymentProblem,
+            $request->user(),
+            $data['admin_note']
         );
+
+        if ($result['ok']) {
+            $freshProblem = $paymentProblem->fresh();
+
+            if ($freshProblem?->order) {
+                $this->notifications->paymentProblemResolved(
+                    $freshProblem->order,
+                    (int) $freshProblem->id
+                );
+            }
+        }
+
+        return $this->respond($result);
     }
 
     /** @param array{ok: bool, status: int, message: string, data: array<string, mixed>} $result */

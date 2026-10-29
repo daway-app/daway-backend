@@ -16,6 +16,8 @@ class NotificationResource extends JsonResource
             'type' => $this->type,
             'message' => $this->message,
             'is_read' => (bool) $this->is_read,
+            'order_id' => $this->order_id,
+            'sub_order_id' => $this->sub_order_id,
             'created_at' => $this->created_at?->toDateTimeString(),
             'medicine' => $this->whenLoaded('medicine', fn () => $this->medicine ? [
                 'id' => $this->medicine->id,

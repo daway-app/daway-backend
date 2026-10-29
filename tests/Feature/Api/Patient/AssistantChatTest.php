@@ -1076,6 +1076,82 @@ class AssistantChatTest extends TestCase
         Http::assertNothingSent();
     }
 
+    // ==================== Profile-location fallback ====================
+
+    public function test_falls_back_to_profile_location_when_request_has_no_coordinates(): void
+    {
+        $medicine = Medicine::factory()->create(['trade_name' => 'ASPIRIN']);
+
+        // إحداثيات مريض محفوظة في البروفايل — تمثّل موقعه الحالي.
+        $patient = User::factory()->patient()->create([
+            'latitude' => self::USER_LAT,
+            'longitude' => self::USER_LNG,
+        ]);
+
+        $this->stockAt($medicine, 31.5016, 34.4668, 5.00, 50, ['pharmacy_name' => 'Near']);  // ~0.35 كم
+        $this->stockAt($medicine, 31.55, 34.48, 5.00, 50, ['pharmacy_name' => 'Medium']);     // ~5.6 كم
+
+        Sanctum::actingAs($patient);
+
+        $response = $this->postJson(self::ENDPOINT, ['message' => 'Aspirin']);
+
+        $response->assertOk()
+            ->assertJsonPath('requires_location', false)
+            ->assertJsonPath('location_source', 'profile')
+            // الترتيب الافتراضي nearest ⇒ الأقرب للمريض (من بروفايله) أولاً
+            ->assertJsonPath('pharmacies.0.name', 'Near')
+            ->assertJsonPath('pharmacies.1.name', 'Medium');
+
+        $data = $response->json('pharmacies');
+        $this->assertNotNull($data[0]['distance_km']);
+        $this->assertLessThan(1.0, $data[0]['distance_km']);
+        // الترتيب حسب المسافة: الأقرب أولاً
+        $this->assertLessThanOrEqual($data[1]['distance_km'], $data[0]['distance_km']);
+    }
+
+    public function test_request_coordinates_take_precedence_over_profile(): void
+    {
+        $medicine = Medicine::factory()->create(['trade_name' => 'ASPIRIN']);
+
+        $stockAt = $this->stockAt($medicine, 31.5016, 34.4668, 5.00, 50, ['pharmacy_name' => 'Near']);
+
+        // بروفايل المريض عنده موقع غير اسطنافي (بعيد)، لكن الطلب بعث إحداثيات قريبة.
+        $patient = User::factory()->patient()->create([
+            'latitude' => 29.95,   // القاهرة (بعيد)
+            'longitude' => 31.24,
+        ]);
+
+        Sanctum::actingAs($patient);
+
+        $response = $this->postJson(self::ENDPOINT, [
+            'message' => 'Aspirin',
+            'latitude' => self::USER_LAT,
+            'longitude' => self::USER_LNG,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('location_source', 'request')
+            // النتيجة بناءً على إحداثيات الطلب (قريبة) وليس البروفايل (بعيدة)
+            ->assertJsonPath('pharmacies.0.pharmacy_id', $stockAt->id)
+            ->assertJsonPath('pharmacies.0.name', 'Near');
+    }
+
+    public function test_no_location_anywhere_keeps_requires_location_true(): void
+    {
+        $medicine = Medicine::factory()->create(['trade_name' => 'ASPIRIN']);
+
+        $this->stockAt($medicine, 31.5016, 34.4668, 5.00, 50);
+
+        // مريض بلا إحداثيات في البروفايل — السلوك يبقى كما كان
+        Sanctum::actingAs(User::factory()->patient()->create());
+
+        $this->postJson(self::ENDPOINT, ['message' => 'Aspirin'])
+            ->assertOk()
+            ->assertJsonPath('requires_location', true)
+            ->assertJsonPath('location_source', 'none')
+            ->assertJsonPath('pharmacies.0.distance_km', null);
+    }
+
     /**
      * @param  array<int, array<string, mixed>>  $records
      */

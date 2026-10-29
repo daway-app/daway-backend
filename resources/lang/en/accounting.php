@@ -192,6 +192,12 @@ return [
         'alert_low_cash_desc' => 'Current balance :amount — below the safe limit',
         'alert_register_unclosed' => 'Register not closed',
         'alert_register_unclosed_desc' => 'Register #:register open since :time',
+        // ── مفاتيح كانت في `ar` وحدها ───────────────────────────────
+        // `AccountingReports` (مصدر بيانات نظرة المحاسبة في API) يناديها،
+        // فكان العميل الإنجليزي يستلم المفتاح الخام بدل نص.
+        'alert_low_stock' => 'Low stock',
+        'alert_out_of_stock' => 'Out of stock',
+        'alert_stock_remaining' => ':count units remaining',
         'no_alerts' => 'No alerts',
         'no_alerts_desc' => 'Everything is under control',
         'no_transactions' => 'No transactions yet',

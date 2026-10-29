@@ -7,6 +7,8 @@ use App\Models\Notification;
 use App\Models\PharmacyMedicine;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * يولّد إشعارات النظام تلقائياً حسب البيانات الفعلية.
@@ -30,6 +32,8 @@ class NotificationGenerator
         $pharmacy = $user->pharmacy()->first();
 
         if ($pharmacy) {
+            // يشمل الصفر عمدًا: النفاد الكامل يُصنَّف `out_of_stock` (نفس
+            // تصنيف `LowStockNotifier`) — مواءمة M-2.4 (الخيار A).
             $lowStockRows = $pharmacy->pharmacyMedicines()
                 ->with('medicine')
                 ->where('quantity', '<=', PharmacyMedicine::LOW_STOCK_THRESHOLD)
@@ -43,14 +47,26 @@ class NotificationGenerator
                     continue;
                 }
 
+                $type = self::classifyQuantity((int) $row->quantity);
+                if ($type === null) {
+                    continue;
+                }
+
                 if (in_array($medicine->id, $existingIds, true)) {
                     continue;
                 }
 
-                self::create($user, $medicine->id, __('layout.notif_low_stock_pharmacy', [
-                    'name' => $medicine->trade_name,
-                    'count' => $row->quantity,
-                ]));
+                self::create(
+                    $user,
+                    $medicine->id,
+                    $type,
+                    $type === 'out_of_stock'
+                        ? __('layout.notif_out_of_stock', ['name' => $medicine->trade_name])
+                        : __('layout.notif_low_stock_pharmacy', [
+                            'name' => $medicine->trade_name,
+                            'count' => (int) $row->quantity,
+                        ]),
+                );
 
                 $created = true;
             }
@@ -58,7 +74,8 @@ class NotificationGenerator
 
         if ($user->role === 'admin') {
             // الأدوية ذات الكميات المنخفضة إجمالاً عبر الصيدليات (بدل medicines.stock الميت)
-            // نأخذ أعلى كمية متبقية لكل دواء كرقم عرض، ونمرر كل دواء مرة واحدة فقط
+            // نأخذ أعلى كمية متبقية لكل دواء كرقم عرض، ونمرر كل دواء مرة واحدة فقط.
+            // يشمل الصفر عمدًا: أعلى كمية ≤ 0 ⇒ النفاد في كل الصيدليات ⇒ `out_of_stock`.
             $lowStockMedicines = Cache::remember('global_low_stock_medicines', 300, function () {
                 return PharmacyMedicine::query()
                     ->select('medicine_id')
@@ -85,14 +102,26 @@ class NotificationGenerator
                         continue;
                     }
 
+                    $type = self::classifyQuantity((int) $row['max_quantity']);
+                    if ($type === null) {
+                        continue;
+                    }
+
                     if (in_array($medicine->id, $existingIds, true)) {
                         continue;
                     }
 
-                    self::create($user, $medicine->id, __('layout.notif_low_stock', [
-                        'name' => $medicine->trade_name,
-                        'count' => $row['max_quantity'],
-                    ]));
+                    self::create(
+                        $user,
+                        $medicine->id,
+                        $type,
+                        $type === 'out_of_stock'
+                            ? __('layout.notif_out_of_stock', ['name' => $medicine->trade_name])
+                            : __('layout.notif_low_stock', [
+                                'name' => $medicine->trade_name,
+                                'count' => $row['max_quantity'],
+                            ]),
+                    );
 
                     $created = true;
                 }
@@ -102,23 +131,90 @@ class NotificationGenerator
         return $created;
     }
 
+    /**
+     * تشغيل المزامنة مع خنق: مرة واحدة على الأكثر لكل دقيقة لكل مستخدم.
+     *
+     * هذه هي نقطة التكامل الموحّدة بين الويب والـAPI — كانت منطق الخنق
+     * وكسر الكاش خاصاً بواجهة Blade (`web\Admin\NotificationController::
+     * syncNotifications`).
+     *
+     * آمن ضد التكرار: `syncForUser` يتخطّى أي دواء له إشعار `low_stock`
+     * أو `out_of_stock` قائم للمستخدم (**بغضّ النظر عن مقروئيته**) ⇒ لا
+     * صفوف مكررة، وتصنيف الحالة مطابق لمسار `LowStockNotifier` الحدثي
+     * (M-2.4 — الخيار A: مواءمة التصنيف + التفريد عبر النوعين).
+     *
+     * ⚠️ الأثر: المولّد (الاستطلاع) لا يُعيد الإشعار عند تحوّل النوع بين
+     * النفاد والنقص — المسار الحدثي هو مصدر التحولات (موثّق أدناه).
+     *
+     * لا يفعل شيئاً للمريض: بلا صيدلية وليس أدمن ⇒ no-op.
+     *
+     * الفشل يُسجَّل فقط ولا يُسقط استجابة قائمة الإشعارات (قراءة لا يجب أن
+     * تفشل بسبب مولّد اختياري).
+     */
+    public static function syncThrottledFor(User $user): void
+    {
+        $throttleKey = 'notif_sync_at_'.$user->id;
+
+        if (! Cache::add($throttleKey, true, 60)) {
+            return;
+        }
+
+        try {
+            if (self::syncForUser($user)) {
+                Cache::forget('notifications_count_'.$user->id);
+                Cache::forget('notifications_feed_'.$user->id);
+            }
+        } catch (Throwable $e) {
+            Log::error('Error syncing notifications: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * تصنيف الكمية إلى نوع الإشعار — **نفس** دلالات `LowStockNotifier`
+     * (`notifyIfLowStock`) حتى لا يختلف المساران على تصنيف الحالة:
+     *   · `quantity <= 0` ⇒ `out_of_stock` (نفاد كامل)
+     *   · `0 < quantity <= LOW_STOCK_THRESHOLD` ⇒ `low_stock`
+     *   · أعلى من الحد ⇒ لا إشعار (null)
+     */
+    private static function classifyQuantity(int $quantity): ?string
+    {
+        if ($quantity <= 0) {
+            return 'out_of_stock';
+        }
+
+        if ($quantity <= PharmacyMedicine::LOW_STOCK_THRESHOLD) {
+            return 'low_stock';
+        }
+
+        return null;
+    }
+
+    /**
+     * التفريد عبر **النوعين معًا** (`low_stock` و`out_of_stock`) لكل مستخدم
+     * ودواء — بموافقة M-2.4 (الخيار A).
+     *
+     * ⚠️ الأثر المقصود: المولّد (مسار الاستطلاع) لا يُعيد الإشعار عند تغيّر
+     * النوع بين النفاد والنقص، بخلاف المسار الحدثي `LowStockNotifier` الذي
+     * يُنشئ إشعارًا جديدًا لكل تحول (موثّق ومُختبَر في
+     * `LowStockNotificationDedupTest`). المسار الحدثي يبقى هو مصدر التحولات.
+     */
     private static function existingMedicineIds(User $user): array
     {
         return Notification::query()
             ->where('user_id', $user->id)
-            ->where('type', 'low_stock')
+            ->whereIn('type', ['low_stock', 'out_of_stock'])
             ->whereNotNull('medicine_id')
             ->pluck('medicine_id')
             ->map(fn ($id) => (int) $id)
             ->all();
     }
 
-    private static function create(User $user, int $medicineId, string $message): void
+    private static function create(User $user, int $medicineId, string $type, string $message): void
     {
         Notification::create([
             'user_id' => $user->id,
             'medicine_id' => $medicineId,
-            'type' => 'low_stock',
+            'type' => $type,
             'message' => $message,
             'is_read' => false,
             'created_at' => now(),

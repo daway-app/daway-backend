@@ -178,11 +178,9 @@ class RiderOrderApiTest extends TestCase
         $order = $this->readyMultiPharmacyOrder();
         $this->assignAsAdmin($order, $this->rider);
 
+        // تهيئة معطى فقط: إلغاء الطلب الفرعي مباشرة (انظر forceCancelSubOrder).
         $subB = $this->subOrderFor($order, $this->pharmacyB);
-        $this->actingAs($this->pharmacyB->user, 'sanctum');
-        $this->postJson("/api/pharmacy/sub-orders/{$subB->id}/status", [
-            'status' => SubOrder::STATUS_CANCELLED,
-        ])->assertStatus(200);
+        $this->forceCancelSubOrder($subB);
 
         $this->actingAs($this->rider, 'sanctum');
         $this->postJson("/api/rider/orders/{$order->id}/pickup", [
@@ -198,10 +196,7 @@ class RiderOrderApiTest extends TestCase
         // Cancel B; picking up A must now be enough to make the parent picked_up.
         $subA = $this->subOrderFor($order, $this->pharmacyA);
         $subB = $this->subOrderFor($order, $this->pharmacyB);
-        $this->actingAs($this->pharmacyB->user, 'sanctum');
-        $this->postJson("/api/pharmacy/sub-orders/{$subB->id}/status", [
-            'status' => SubOrder::STATUS_CANCELLED,
-        ])->assertStatus(200);
+        $this->forceCancelSubOrder($subB);
 
         $this->actingAs($this->rider, 'sanctum');
         $this->postJson("/api/rider/orders/{$order->id}/pickup", ['sub_order_id' => $subA->id])->assertStatus(200);
@@ -279,15 +274,29 @@ class RiderOrderApiTest extends TestCase
         $this->assertSame(Order::STATUS_PICKED_UP, $order->fresh()->status);
 
         $subA = $this->subOrderFor($order, $this->pharmacyA);
+
+        // سياسة Phase-4 محفوظة: الصيدلية لا تلغي طلبًا مدفوعًا بلا استرداد.
         $this->actingAs($this->pharmacyA->user, 'sanctum');
         $this->postJson("/api/pharmacy/sub-orders/{$subA->id}/status", [
             'status' => SubOrder::STATUS_CANCELLED,
-        ])->assertStatus(200);
+        ])->assertStatus(422)->assertJsonPath('data.code', 'refund_required');
+
+        // ثم نُهيّئ الإلغاء مباشرةً لاختبار اشتقاق الحالة وحدها.
+        $this->forceCancelSubOrder($subA);
 
         // Derivation must not pull the parent back from the rider-owned phase.
         $this->assertSame(Order::STATUS_PICKED_UP, $order->fresh()->status);
     }
 
+    /**
+     * 🔒 **حارس الثغرة**: الحارس يقرأ `rider_id` من الطلب الأب لا من الطلب
+     * الفرعي.
+     *
+     * `sub_orders` لا يحمل عمود `rider_id`، فقراءته على كائن `SubOrder`
+     * تُرجع null دائمًا ⇒ يسقط الحارس بصمت وتستطيع أي صيدلية دفع طلب
+     * مُسند إلى مندوب إلى `out_for_delivery` ثم `delivered`. هذا الاختبار
+     * يثبت الرفض في **الحالتين** (وليس `out_for_delivery` فقط).
+     */
     public function test_pharmacy_cannot_push_delivery_when_rider_assigned(): void
     {
         $order = $this->readyMultiPharmacyOrder();
@@ -300,6 +309,37 @@ class RiderOrderApiTest extends TestCase
         ])->assertStatus(422);
 
         $this->assertSame(SubOrder::STATUS_READY, $subA->fresh()->status);
+    }
+
+    /** الحارس نفسه عبر مسار الطلب الأب (legacy) — `delivered` أيضًا مرفوض. */
+    public function test_pharmacy_cannot_mark_delivered_when_rider_assigned(): void
+    {
+        $order = $this->readyMultiPharmacyOrder();
+        $this->assignAsAdmin($order, $this->rider);
+
+        $this->actingAs($this->pharmacyA->user, 'sanctum');
+        $this->postJson("/api/pharmacy/orders/{$order->id}/status", [
+            'status' => Order::STATUS_DELIVERED,
+        ])->assertStatus(422);
+
+        $this->assertSame(Order::STATUS_READY, $order->fresh()->status);
+    }
+
+    /**
+     * وما دام الطلب **غير** مُسند، تبقى الصيدلية مالكة لمرحلة التجهيز
+     * والتسليم كما كان — الإصلاح لم يوسّع الرفض بلا داعٍ.
+     */
+    public function test_pharmacy_can_still_push_delivery_when_no_rider_assigned(): void
+    {
+        $order = $this->readyMultiPharmacyOrder();
+        $subA = $this->subOrderFor($order, $this->pharmacyA);
+
+        $this->actingAs($this->pharmacyA->user, 'sanctum');
+        $this->postJson("/api/pharmacy/sub-orders/{$subA->id}/status", [
+            'status' => SubOrder::STATUS_OUT_FOR_DELIVERY,
+        ])->assertStatus(200);
+
+        $this->assertSame(SubOrder::STATUS_OUT_FOR_DELIVERY, $subA->fresh()->status);
     }
 
     // ── Audit trail ──────────────────────────────────────────────────────────

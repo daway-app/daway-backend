@@ -134,8 +134,28 @@ class MultiPharmacyCheckoutTest extends TestCase
         return $order->subOrders()->where('pharmacy_id', $pharmacy->id)->firstOrFail();
     }
 
+    private function pay(Order $order): void
+    {
+        $order->update(['payment_status' => Order::PAYMENT_PAID]);
+        $order->subOrders()
+            ->where('status', '!=', SubOrder::STATUS_CANCELLED)
+            ->update(['payment_status' => Order::PAYMENT_PAID]);
+    }
+
     /** Advance a sub-order through a chain of statuses as the owning pharmacy. */
     private function advance(SubOrder $subOrder, User $pharmacyUser, array $statuses): void
+    {
+        $this->pay($subOrder->order);
+        $this->actingAs($pharmacyUser, 'sanctum');
+        foreach ($statuses as $status) {
+            $this->postJson("/api/pharmacy/sub-orders/{$subOrder->id}/status", [
+                'status' => $status,
+            ])->assertStatus(200);
+        }
+    }
+
+    /** Advance a sub-order through a chain of statuses as the owning pharmacy — without marking the order as paid. */
+    private function advanceWithoutPay(SubOrder $subOrder, User $pharmacyUser, array $statuses): void
     {
         $this->actingAs($pharmacyUser, 'sanctum');
         foreach ($statuses as $status) {
@@ -469,10 +489,10 @@ class MultiPharmacyCheckoutTest extends TestCase
         $subA = $this->subOrderFor($order, $this->pharmacyA);
         $subB = $this->subOrderFor($order, $this->pharmacyB);
 
-        $this->advance($subA, $this->pharmacyA->user, [SubOrder::STATUS_CANCELLED]);
+        $this->advanceWithoutPay($subA, $this->pharmacyA->user, [SubOrder::STATUS_CANCELLED]);
         $this->assertNotSame(Order::STATUS_CANCELLED, $order->fresh()->status, 'B still active');
 
-        $this->advance($subB, $this->pharmacyB->user, [SubOrder::STATUS_CANCELLED]);
+        $this->advanceWithoutPay($subB, $this->pharmacyB->user, [SubOrder::STATUS_CANCELLED]);
         $this->assertSame(Order::STATUS_CANCELLED, $order->fresh()->status);
     }
 
@@ -485,15 +505,71 @@ class MultiPharmacyCheckoutTest extends TestCase
         $subA = $this->subOrderFor($order, $this->pharmacyA);
         $subB = $this->subOrderFor($order, $this->pharmacyB);
 
-        $this->advance($subB, $this->pharmacyB->user, [SubOrder::STATUS_CANCELLED]);
+        $this->assertSame(Order::STATUS_CONFIRMED, $order->status, 'parent is confirmed after checkout');
+
+        $this->advanceWithoutPay($subB, $this->pharmacyB->user, [SubOrder::STATUS_CANCELLED]);
+        $this->assertNotSame(Order::STATUS_CANCELLED, $order->fresh()->status, 'A still active');
+
+        // Step 2: Advance subA to `ready`. `advance()` marks the order paid (subB is already cancelled, so it stays unpaid).
         $this->advance($subA, $this->pharmacyA->user, [
             SubOrder::STATUS_PREPARING,
             SubOrder::STATUS_READY,
-            SubOrder::STATUS_OUT_FOR_DELIVERY,
-            SubOrder::STATUS_DELIVERED,
         ]);
+        $this->assertSame(Order::STATUS_READY, $order->fresh()->status, 'parent reflects A ready, B cancelled');
 
-        $this->assertSame(Order::STATUS_DELIVERED, $order->fresh()->status);
+        // Step 3: Assign a Rider as Admin and trigger pickup + delivery via the real Rider API.
+        $rider = User::factory()->rider()->create();
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin, 'sanctum');
+        $this->postJson("/api/admin/orders/{$order->id}/assign-rider", [
+            'rider_id' => $rider->id,
+        ])->assertStatus(200);
+
+        $order = $order->fresh();
+        $this->assertNotNull($order->rider_id, 'rider assigned');
+        $this->assertSame($rider->id, $order->fresh()->rider_id);
+
+        $this->actingAs($rider, 'sanctum');
+        $this->postJson("/api/rider/orders/{$order->id}/pickup", [
+            'sub_order_id' => $subA->id,
+        ])->assertStatus(200);
+
+        $order = $order->fresh();
+        $this->assertSame(Order::STATUS_PICKED_UP, $order->status, 'parent picked_up after rider pickup');
+
+        $this->postJson("/api/rider/orders/{$order->id}/status", [
+            'status' => 'out_for_delivery',
+        ])->assertStatus(200);
+
+        $order = $order->fresh();
+        $this->assertSame(Order::STATUS_OUT_FOR_DELIVERY, $order->status, 'parent out_for_delivery');
+
+        // Parent must not be `delivered` until the Rider completes delivery.
+        $this->assertNotSame(Order::STATUS_DELIVERED, $order->fresh()->status, 'parent must wait for delivery completion');
+
+        $this->postJson("/api/rider/orders/{$order->id}/status", [
+            'status' => 'delivered',
+        ])->assertStatus(200);
+
+        // Parent finally reaches `delivered` (all active sub-orders delivered, cancelled ones excluded).
+        $order = $order->fresh();
+        $this->assertSame(Order::STATUS_DELIVERED, $order->status);
+        $this->assertNotNull($order->delivered_at);
+
+        $subA = $subA->fresh();
+        $this->assertSame(SubOrder::STATUS_DELIVERED, $subA->status);
+        $this->assertNotNull($subA->delivered_at);
+
+        $subB = $subB->fresh();
+        $this->assertSame(SubOrder::STATUS_CANCELLED, $subB->status);
+        $this->assertNull($subB->delivered_at);
+
+        // Verify that the paid-order cancellation guard (Decision 1) still denies on the now-paid subA.
+        $this->actingAs($this->pharmacyA->user, 'sanctum');
+        $this->postJson("/api/pharmacy/sub-orders/{$subA->id}/status", [
+            'status' => SubOrder::STATUS_CANCELLED,
+        ])->assertStatus(422);
     }
 
     public function test_sub_order_invalid_transition_is_rejected(): void
@@ -504,8 +580,8 @@ class MultiPharmacyCheckoutTest extends TestCase
         $order = Order::firstOrFail();
         $subA = $this->subOrderFor($order, $this->pharmacyA);
 
+        $this->pay($order);
         $this->actingAs($this->pharmacyA->user, 'sanctum');
-        // confirmed → delivered directly is not allowed.
         $this->postJson("/api/pharmacy/sub-orders/{$subA->id}/status", [
             'status' => SubOrder::STATUS_DELIVERED,
         ])->assertStatus(422);
@@ -556,6 +632,7 @@ class MultiPharmacyCheckoutTest extends TestCase
         $order = Order::firstOrFail();
         $subA = $this->subOrderFor($order, $this->pharmacyA);
         $subB = $this->subOrderFor($order, $this->pharmacyB);
+        $this->pay($order);
 
         // Pharmacy A uses the legacy parent route → its own sub-order moves.
         $this->actingAs($this->pharmacyA->user, 'sanctum');
@@ -779,7 +856,8 @@ class MultiPharmacyCheckoutTest extends TestCase
         $this->assertCount(0, $resp->json('data.sub_orders'));
         $this->assertFalse($resp->json('data.is_multi_pharmacy'));
 
-        // Pharmacy can still advance the parent directly.
+        // Pharmacy can still advance the parent directly once payment is approved.
+        $order->update(['payment_status' => Order::PAYMENT_PAID]);
         $this->actingAs($this->pharmacyA->user, 'sanctum');
         $this->postJson("/api/pharmacy/orders/{$order->id}/status", [
             'status' => Order::STATUS_PREPARING,

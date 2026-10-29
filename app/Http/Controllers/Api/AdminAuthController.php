@@ -99,6 +99,7 @@ class AdminAuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role,
+                    'must_change_password' => (bool) $user->must_change_password,
                 ],
                 'token' => $token,
             ],

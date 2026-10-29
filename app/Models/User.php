@@ -68,12 +68,17 @@ class User extends Authenticatable
      * H-13: إنشاء توكن مع تتبّع بداية سلسلة الـ refresh.
      * عمود chain_started_at يورَّث عبر الـ rotations حتى يبقى الحد المطلق
      * (MAX_TOKEN_AGE_DAYS في AuthController) مفعّلاً رغم تجديد التوكن.
+     *
+     * ⚠️ `instanceof PersonalAccessToken` إلزامي: `currentAccessToken()` قد
+     * يعيد `TransientToken` (مصادقة جلسة عبر Sanctum) الذي **لا يملك**
+     * `chain_started_at` — وقراءته كانت تُسقط بـ500. الجلسة ليست سلسلة
+     * refresh أصلًا، فالبدء من `now()` هو السلوك الصحيح لها.
      */
     public function createToken(string $name, array $abilities = ['*'])
     {
         $current = $this->currentAccessToken();
 
-        $chainStartedAt = ($current && $current->chain_started_at)
+        $chainStartedAt = ($current instanceof \Laravel\Sanctum\PersonalAccessToken && $current->chain_started_at)
             ? $current->chain_started_at
             : now();
 

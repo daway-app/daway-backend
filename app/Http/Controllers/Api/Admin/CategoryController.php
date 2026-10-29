@@ -8,8 +8,10 @@ use App\Models\CategoryMedicineLink;
 use App\Models\Medicine;
 use App\Models\MohMedicine;
 use App\Support\CategoryCatalogCache;
+use App\Support\Cloudinary;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /**
  * لوحة الأدمن — الأقسام (JSON).
@@ -235,5 +237,180 @@ class CategoryController extends Controller
                 ],
             ],
         ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // CRUD الأقسام — كان ناقصًا من الـAPI (الويب فقط).
+    // المنطق مُطابق لـ`web/Admin/CategoryController::{store,update,destroy}`
+    // مع فرق واحد مقصود موثَّق في `store`/`update` حول القيم الافتراضية.
+    // ══════════════════════════════════════════════════════════════════
+
+    /** POST /api/admin/categories */
+    public function store(Request $request): JsonResponse
+    {
+        $data = $this->validated($request);
+
+        $data['slug'] = $this->uniqueSlug(
+            $request->filled('slug')
+                ? Str::slug($request->input('slug'))
+                : Str::slug($request->input('name_en'))
+        );
+
+        // قسم جديد بلا `is_active` صريح يبدأ **نشطًا** (نفس افتراضي العمود).
+        // نموذج Blade كان يفرض false عند غياب المربّع، لكن ذلك أثرُ نموذج HTML
+        // (المربّع غير المحدَّد لا يُرسَل) لا قاعدة عمل.
+        $data['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
+        $data['sort_order'] = $request->filled('sort_order') ? (int) $request->input('sort_order') : 0;
+
+        unset($data['image'], $data['image_file']);
+
+        $category = Category::create($data);
+
+        $this->applyImage($request, $category, null);
+
+        CategoryCatalogCache::bump();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم إنشاء القسم بنجاح.',
+            'data' => ['id' => $category->id, 'slug' => $category->slug],
+        ], 201);
+    }
+
+    /** PUT /api/admin/categories/{category} */
+    public function update(Request $request, Category $category): JsonResponse
+    {
+        $data = $this->validated($request);
+
+        // الـslug: يُستبدل عند إدخاله صراحةً، أو يُعاد توليده عند تغيّر الاسم
+        // الإنجليزي، وإلا يبقى كما هو (نفس قاعدة الويب).
+        if ($request->filled('slug')) {
+            $data['slug'] = $this->uniqueSlug(Str::slug($request->input('slug')), $category->id);
+        } elseif ($request->input('name_en') !== $category->name_en) {
+            $data['slug'] = $this->uniqueSlug(Str::slug($request->input('name_en')), $category->id);
+        } else {
+            unset($data['slug']);
+        }
+
+        // عند الغياب لا نلمس الحالة ولا الترتيب — طلب API ناقص الحقل يجب ألا
+        // يُعطّل قسمًا أو يُصفّر ترتيبه بصمت (خلافًا للنموذج الذي يفرضهما دائمًا).
+        if ($request->has('is_active')) {
+            $data['is_active'] = $request->boolean('is_active');
+        }
+
+        if ($request->filled('sort_order')) {
+            $data['sort_order'] = (int) $request->input('sort_order');
+        }
+
+        unset($data['image'], $data['image_file']);
+
+        $category->update($data);
+
+        $this->applyImage($request, $category, $category->image);
+
+        CategoryCatalogCache::bump();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث القسم بنجاح.',
+            'data' => ['id' => $category->id, 'slug' => $category->slug],
+        ]);
+    }
+
+    /**
+     * DELETE /api/admin/categories/{category}
+     *
+     * حذف **ناعم** فقط — صفوف `category_medicine_links` و`subcategories` تبقى.
+     * قيد الـFK عليهما `cascadeOnDelete` لكنه لا يُفعَّل إلا عند `forceDelete()`
+     * (الصف لا يُحذف فعليًا). إعادة استخدام نفس الـslug ممكنة لأن `uniqueSlug`
+     * يفحص `withTrashed()` — الفهرس unique على مستوى الجدول لا على الصفوف الحيّة.
+     */
+    public function destroy(Category $category): JsonResponse
+    {
+        $category->delete();
+        CategoryCatalogCache::bump();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حذف القسم بنجاح.',
+        ]);
+    }
+
+    /**
+     * تحقّق مشترك بين `store` و`update` — في مكان واحد حتى لا ينحرف الحدّان
+     * (نفس نمط `Api\Admin\MedicineController::validated`).
+     *
+     * `image` هنا **رابط** نصي (Cloudinary مرفوع مسبقًا)، وبايتات الملف تُرسل
+     * في `image_file` — نفس تفريق كنترولر الأدوية.
+     */
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'name_ar' => ['required', 'string', 'max:150'],
+            'name_en' => ['required', 'string', 'max:150'],
+            'slug' => ['nullable', 'string', 'max:180'],
+            'image' => ['nullable', 'string', 'max:2048'],
+            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'is_active' => ['sometimes', 'boolean'],
+            'sort_order' => ['sometimes', 'integer', 'min:0'],
+        ]);
+    }
+
+    /**
+     * توليد slug فريد — يفحص المحذوف ناعمًا لأن قيد unique على مستوى الجدول
+     * (منقول من `web/Admin/CategoryController::uniqueSlug`).
+     */
+    private function uniqueSlug(string $base, ?int $ignoreId = null): string
+    {
+        $base = $base !== '' ? $base : 'category';
+        $base = mb_substr($base, 0, 180);
+        $slug = $base;
+        $suffix = 2;
+
+        while (Category::withTrashed()
+            ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+            ->where('slug', $slug)
+            ->exists()) {
+            // القصّ يحفظ الطول داخل حدّ العمود (180) مع بقاء اللاحقة مميّزة
+            $suffixPart = '-'.$suffix;
+            $slug = mb_substr($base, 0, 180 - mb_strlen($suffixPart)).$suffixPart;
+            $suffix++;
+        }
+
+        return $slug;
+    }
+
+    /**
+     * صورة القسم: بايتات الملف (`image_file`) تغلب رابطًا جاهزًا (`image`)،
+     * وعند الاستبدال تُحذف النسخة المحلية القديمة (لا نسخة Cloudinary).
+     * نفس ترتيب `Api\Admin\MedicineController`.
+     */
+    private function applyImage(Request $request, Category $category, ?string $current): void
+    {
+        if ($request->hasFile('image_file')) {
+            if ($current !== null) {
+                Cloudinary::deleteLocal($current);
+            }
+
+            $uploaded = Cloudinary::upload($request->file('image_file'), 'categories');
+
+            if ($uploaded !== null) {
+                $category->image = $uploaded;
+                $category->save();
+            }
+
+            return;
+        }
+
+        $url = $request->input('image');
+
+        if (is_string($url) && $url !== '' && $url !== $current) {
+            if ($current !== null) {
+                Cloudinary::deleteLocal($current);
+            }
+
+            $category->image = $url;
+            $category->save();
+        }
     }
 }

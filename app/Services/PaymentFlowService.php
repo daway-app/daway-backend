@@ -277,7 +277,7 @@ class PaymentFlowService
                     return $this->error(422, 'البنك المحدد غير متاح.');
                 }
 
-                $submission = OrderPaymentSubmission::create([
+                 $submission = OrderPaymentSubmission::create([
                     'order_id' => $locked->id,
                     'bank_id' => $bank->id,
                     'bank_name' => $bank->bank_name,
@@ -285,6 +285,9 @@ class PaymentFlowService
                     'account_number' => $bank->account_number,
                     'iban' => $bank->iban,
                     'amount' => (float) $data['amount'],
+                    'order_grand_total' => $this->grandTotal($locked),
+                    'amount_status' => $this->compareAmount((float) $data['amount'], $this->grandTotal($locked)),
+                    'overage_amount' => $this->overage((float) $data['amount'], $this->grandTotal($locked)),
                     'sender_name' => $data['sender_name'] ?? null,
                     'transfer_reference' => $data['transfer_reference'] ?? null,
                     'transferred_at' => $data['transferred_at'] ?? null,
@@ -509,6 +512,21 @@ class PaymentFlowService
                 return $this->error(422, 'لا يوجد إيصال قيد المراجعة لهذا الطلب.');
             }
 
+            // Phase 1 (P0-03) — verify the transfer amount against the CURRENT
+            // server-computed totals before any approval mutation. The snapshot
+            // taken at receipt time is trusted only to detect an order whose
+            // total drifted since submission; the live amount-vs-grand_total is
+            // recomputed now, so approval always reflects the real order.
+            $currentGrandTotal = $this->grandTotal($locked);
+
+            if ($submission->order_grand_total !== null && abs((float) $submission->order_grand_total - $currentGrandTotal) >= 0.005) {
+                return $this->amountMismatchError((float) $submission->amount, $currentGrandTotal);
+            }
+
+            if ($this->compareAmount((float) $submission->amount, $currentGrandTotal) !== OrderPaymentSubmission::AMOUNT_MATCHES) {
+                return $this->amountMismatchError((float) $submission->amount, $currentGrandTotal);
+            }
+
             $submission->update([
                 'status' => OrderPaymentSubmission::STATUS_APPROVED,
                 'review_note' => $reviewNote,
@@ -671,6 +689,9 @@ class PaymentFlowService
             'account_number' => $submission->account_number,
             'iban' => $submission->iban,
             'amount' => (float) $submission->amount,
+            'order_grand_total' => (float) $submission->order_grand_total,
+            'amount_status' => $submission->amount_status,
+            'overage_amount' => (float) $submission->overage_amount,
             'sender_name' => $submission->sender_name,
             'transfer_reference' => $submission->transfer_reference,
             'transferred_at' => $submission->transferred_at?->toDateString(),
@@ -730,6 +751,49 @@ class PaymentFlowService
     private function grandTotal(Order $order): float
     {
         return round((float) $order->total + (float) $order->delivery_fee, 2);
+    }
+
+    /**
+     * Phase 1 (P0-03) — compare the patient-declared transfer amount to the
+     * server-computed grand total. Comparison is done on 2-decimal values so a
+     * float artifact on either side can never cause a false match.
+     */
+    private function compareAmount(float $declared, float $expected): string
+    {
+        $d = round($declared, 2);
+        $e = round($expected, 2);
+
+        if (abs($d - $e) < 0.005) {
+            return OrderPaymentSubmission::AMOUNT_MATCHES;
+        }
+
+        return $d < $e ? OrderPaymentSubmission::AMOUNT_UNDER : OrderPaymentSubmission::AMOUNT_OVER;
+    }
+
+    private function overage(float $declared, float $expected): float
+    {
+        return $declared > $expected ? round($declared - $expected, 2) : 0.0;
+    }
+
+    /** @return array{ok: false, status: int, message: string, data: array<string, mixed>} */
+    private function amountMismatchError(float $declared, float $expected): array
+    {
+        $cmp = $this->compareAmount($declared, $expected);
+        $diff = $cmp === OrderPaymentSubmission::AMOUNT_UNDER
+            ? round($expected - $declared, 2)
+            : round($declared - $expected, 2);
+
+        return [
+            'ok' => false,
+            'status' => 422,
+            'message' => 'مبلغ التحويل لا يطابق إجمالي الطلب.',
+            'data' => [
+                'code' => 'amount_unmatched',
+                'amount' => round($declared, 2),
+                'grand_total' => round($expected, 2),
+                $cmp === OrderPaymentSubmission::AMOUNT_UNDER ? 'deficit' : 'overage' => $diff,
+            ],
+        ];
     }
 
     private function hasUnderReviewSubmission(Order $order): bool

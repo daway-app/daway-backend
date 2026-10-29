@@ -9,7 +9,13 @@ use Tests\TestCase;
 
 class MobileAvatarAdminVisibilityTest extends TestCase
 {
-    public function test_patient_avatar_url_shows_in_admin_users_and_patients_pages(): void
+    // 🔻 حُذف بعد Phase D: `test_patient_avatar_url_shows_in_admin_users_and_patients_pages`
+    // كان يقرأ HTML صفحتي `users.index` و`patients.index` من Blade ويتحقق من
+    // رابط التصغير `w_72,h_72` المرسوم. لا صفحة Blade بعد اليوم؛ ما يبقى
+    // محميًّا هنا هو **حفظ** الأفاتار عبر API (الاختبار أدناه) — وعرضه صار
+    // مسؤولية واجهة React التي تستهلك `avatar_url` كما هو.
+
+    public function test_patient_avatar_url_is_persisted_via_api(): void
     {
         $patient = User::factory()->patient()->create();
         // C4: الـ avatar URL يجب أن يكون رابط Cloudinary فقط.
@@ -21,27 +27,6 @@ class MobileAvatarAdminVisibilityTest extends TestCase
             ->assertJsonPath('data.avatar_url', $avatarUrl);
 
         $this->assertSame($avatarUrl, $patient->fresh()->avatar);
-
-        $admin = User::factory()->admin()->create();
-
-        // صفحة المستخدمين والمرضى تعرض الأفاتار عبر Image::thumbUrl، أي أن الصورة
-        // تُطلب من Cloudinary بتحويل تصغير (w_72,h_72,...) بدل الأبعاد الأصلية.
-        // لذا نتحقق من أساس الرابط + وجود التحويل، لا من مطابقة الرابط حرفيًا.
-        $basePath = 'image/upload/';
-        $publicId = 'v1/patient-avatar.jpg';
-        $transform = 'w_72,h_72';
-
-        foreach ([route('users.index'), route('patients.index')] as $routeName) {
-            $html = $this->actingAs($admin)->get($routeName)->assertOk()->getContent();
-
-            $this->assertStringContainsString($publicId, $html, "الأفاتار يجب أن يظهر في {$routeName}");
-            $this->assertStringContainsString($transform, $html, "الأفاتار يجب أن يُطلب بتحويل تصغير في {$routeName}");
-            $this->assertMatchesRegularExpression(
-                '#res\.cloudinary\.com/[^"\']*'.preg_quote($basePath, '#').'w_72,h_72[^"\']*'.preg_quote($publicId, '#').'#',
-                $html,
-                "رابط الأفاتار في {$routeName} يجب أن يكون رابط تصغير صالح على Cloudinary"
-            );
-        }
     }
 
     public function test_pharmacy_logo_url_is_persisted_via_api(): void

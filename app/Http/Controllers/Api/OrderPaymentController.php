@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderPaymentSubmission;
 use App\Models\PaymentProblem;
+use App\Services\OrderNotificationService;
 use App\Services\PaymentFlowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderPaymentController extends Controller
 {
-    public function __construct(private readonly PaymentFlowService $payments) {}
+    public function __construct(
+        private readonly PaymentFlowService $payments,
+        private readonly OrderNotificationService $notifications
+    ) {}
 
     public function banks(Request $request): JsonResponse
     {
@@ -52,14 +56,21 @@ class OrderPaymentController extends Controller
             'transferred_at' => ['nullable', 'date', 'before_or_equal:today'],
         ]);
 
-        return $this->respond(
-            $this->payments->submitReceipt(
-                $order,
-                $request->user(),
-                $data,
-                $request->file('receipt')
-            )
+        $result = $this->payments->submitReceipt(
+            $order,
+            $request->user(),
+            $data,
+            $request->file('receipt')
         );
+
+        if ($result['ok']) {
+            $this->notifications->receiptSubmitted(
+                $order->fresh(),
+                (int) ($result['data']['submission']['id'] ?? 0)
+            );
+        }
+
+        return $this->respond($result);
     }
 
     public function reportProblem(Request $request, Order $order): JsonResponse
@@ -77,9 +88,16 @@ class OrderPaymentController extends Controller
             ],
         ]);
 
-        return $this->respond(
-            $this->payments->reportProblem($order, $request->user(), $data)
-        );
+        $result = $this->payments->reportProblem($order, $request->user(), $data);
+
+        if ($result['ok']) {
+            $this->notifications->paymentProblemReported(
+                $order->fresh(),
+                (int) ($result['data']['problem']['id'] ?? 0)
+            );
+        }
+
+        return $this->respond($result);
     }
 
     public function downloadReceipt(

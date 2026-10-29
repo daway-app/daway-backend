@@ -49,7 +49,11 @@ class MedicineSeeder extends Seeder
         ];
 
         foreach ($medicines as $medicine) {
-            Medicine::updateOrCreate(
+            // Phase F1: `firstOrCreate` لا `updateOrCreate`.
+            // السبب: كان التشغيل المتكرر (كل deploy) يعيد ضبط `stock`
+            // و`is_available` لصفوف حقيقية في كتالوج الإنتاج (Panadol/Amoxil…)
+            // إلى قيم الـseeder. الآن: يُنشئ الناقص فقط، ولا يمسّ موجودًا.
+            Medicine::firstOrCreate(
                 ['trade_name' => $medicine['trade_name']],
                 $medicine
             );

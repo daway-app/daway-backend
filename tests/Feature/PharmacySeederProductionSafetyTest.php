@@ -78,20 +78,12 @@ class PharmacySeederProductionSafetyTest extends TestCase
         // In production this should be false
         $seeder->run();
 
-        // Demo pharmacies (PH-2001–PH-2010) should NOT exist in production
-        $demoPharmacies = Pharmacy::whereIn('pharmacy_custom_id', [
-            'PH-2001', 'PH-2002', 'PH-2003', 'PH-2004', 'PH-2005',
-            'PH-2006', 'PH-2007', 'PH-2008', 'PH-2009', 'PH-2010',
-        ])->count();
-
-        $this->assertEquals(0, $demoPharmacies, 'Demo pharmacies should NOT be created in production environment');
-
-        // Demo inventory should NOT exist
-        $demoInventory = PharmacyMedicine::count();
-        $this->assertEquals(0, $demoInventory, 'Demo pharmacy_medicines should NOT be created in production environment');
-
-        // Base pharmacies (PH-1234, PH-5678) should exist
-        $this->assertDatabaseHas('pharmacies', ['pharmacy_custom_id' => 'PH-1234']);
-        $this->assertDatabaseHas('pharmacies', ['pharmacy_custom_id' => 'PH-5678']);
+        // Phase F1: لا شيء يُنشأ في الإنتاج — لا صيدليات عرض ولا الحسابات
+        // التجريبية. (النسخة السابقة كانت تسمح بـPH-1234/PH-5678 في الإنتاج،
+        // وهي صيدليات عرض بكلمة مرور `password` — أُغلق ذلك.)
+        $this->assertEquals(0, Pharmacy::count(), 'لا صيدليات إطلاقًا في الإنتاج');
+        $this->assertEquals(0, PharmacyMedicine::count(), 'لا مخزون تجريبي في الإنتاج');
+        $this->assertDatabaseMissing('users', ['email' => 'pharmacy@daway.com']);
+        $this->assertDatabaseMissing('users', ['email' => 'pharmacy2@daway.com']);
     }
 }

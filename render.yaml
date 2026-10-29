@@ -1,8 +1,16 @@
 services:
   - type: web
     name: daway-backend
-    # H-5: مسار النشر الفعلي هو Dockerfile متعدد المراحل — يُبنى تلقائياً من Dockerfile
+    # H-5: مسار النشر الفعلي هو Dockerfile (مرحلة PHP واحدة — لا Node/Vite بعد Phase D)
     # (لا buildCommand/startCommand: التشغيل والهجرات داخل CMD في الـ Dockerfile)
+    #
+    # ── Phase F1 ────────────────────────────────────────────────────
+    # CMD = API فقط (لا migrate ولا seeders). الهجرات تُنفَّذ كخطوة مستقلة
+    # ومراقبة — انظر docs/PRODUCTION-DEPLOY.md.
+    #
+    # preDeployCommand يتطلب **web service مدفوعًا** (غير متاح على free):
+    #   preDeployCommand: php artisan migrate --force
+    # عند الترقيم: أزل التعليق أعلاه وحذف خطوة الهجرات اليدوية من الإجراء.
     runtime: docker
     plan: free
     healthCheckPath: /healthz

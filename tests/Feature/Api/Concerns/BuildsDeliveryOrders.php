@@ -109,6 +109,18 @@ trait BuildsDeliveryOrders
         return $order->subOrders()->where('pharmacy_id', $pharmacy->id)->firstOrFail();
     }
 
+    /** Money-gated lifecycle fixtures start from an explicitly paid order. */
+    protected function markOrderPaid(Order $order): void
+    {
+        $order->update(['payment_status' => Order::PAYMENT_PAID]);
+
+        $order->subOrders()
+            ->where('status', '!=', SubOrder::STATUS_CANCELLED)
+            ->update(['payment_status' => Order::PAYMENT_PAID]);
+
+        $order->refresh();
+    }
+
     /** Push one sub-order to `ready` as its owning pharmacy. */
     protected function advanceSubOrderToReady(SubOrder $subOrder, User $pharmacyUser): void
     {
@@ -124,6 +136,7 @@ trait BuildsDeliveryOrders
     protected function readyMultiPharmacyOrder(): Order
     {
         $order = $this->checkoutTwoPharmacy();
+        $this->markOrderPaid($order);
 
         $this->advanceSubOrderToReady($this->subOrderFor($order, $this->pharmacyA), $this->pharmacyA->user);
         $this->advanceSubOrderToReady($this->subOrderFor($order, $this->pharmacyB), $this->pharmacyB->user);
@@ -137,6 +150,8 @@ trait BuildsDeliveryOrders
     /** Assign a rider to an order as the admin. */
     protected function assignAsAdmin(Order $order, User $rider): void
     {
+        $this->markOrderPaid($order);
+
         $this->actingAs($this->admin, 'sanctum');
         $this->postJson("/api/admin/orders/{$order->id}/assign-rider", [
             'rider_id' => $rider->id,
@@ -157,5 +172,24 @@ trait BuildsDeliveryOrders
             ])->assertStatus(200);
         }
         $order->refresh();
+    }
+
+    /**
+     * إلغاء طلب فرعي **مباشرة في قاعدة البيانات** — لتهيئة حالة اختبار فقط.
+     *
+     * ── لماذا لا عبر الـHTTP؟ ───────────────────────────────────────
+     * سياسة Phase-4 تمنع الصيدلية من إلغاء طلب فرعي داخل طلب **مدفوع**
+     * بلا استرداد (`refund_required` / 422)، وهي مثبَّتة في
+     * `OrderCancellationPolicyTest` ومقصودة. الاختبارات هنا تختبر **دورة
+     * حياة المندوب** لا سياسة الإلغاء، فتحتاج طلبًا فرعيًا ملغى كمعطى
+     * ابتدائي. المرور بالـHTTP كان يجعلها تعتمد على سلوك مُلغى الآن.
+     *
+     * لا يُستخدم هذا المساعد لإثبات أن الإلغاء مسموح — أي اختبار يحتاج
+     * ذلك يجب أن يمرّ بالـHTTP ويؤكد السياسة.
+     */
+    protected function forceCancelSubOrder(SubOrder $subOrder): void
+    {
+        $subOrder->addStatus(SubOrder::STATUS_CANCELLED, 'إلغاء تهيئة اختبار');
+        $subOrder->refresh();
     }
 }

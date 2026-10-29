@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\NotificationResource;
 use App\Models\Notification;
+use App\Services\NotificationGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,6 +13,10 @@ class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        // M-22 parity: توليد إشعارات النظام (نقص المخزون) كما كانت واجهة
+        // Blade تفعل — مُخنّق إلى مرة/دقيقة/مستخدم، وno-op للمريض.
+        NotificationGenerator::syncThrottledFor($request->user());
+
         $query = Notification::with('medicine')
             ->where('user_id', $request->user()->id);
 
@@ -41,6 +46,9 @@ class NotificationController extends Controller
 
     public function count(Request $request): JsonResponse
     {
+        // M-22 parity: نفس نقطة التكامل — مُخنّق (مرة/دقيقة/مستخدم)
+        NotificationGenerator::syncThrottledFor($request->user());
+
         $unreadCount = Notification::where('user_id', $request->user()->id)
             ->where('is_read', false)
             ->count();

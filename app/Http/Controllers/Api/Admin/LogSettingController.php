@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Exports\LogsExport;
 use App\Http\Controllers\Controller;
 use App\Models\MohMedicine;
 use App\Models\User;
@@ -10,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Activitylog\Models\Activity;
 
 /**
@@ -22,8 +24,16 @@ use Spatie\Activitylog\Models\Activity;
  */
 class LogSettingController extends Controller
 {
-    /** GET /api/admin/logs */
-    public function logs(Request $request): JsonResponse
+    /**
+     * Build the filtered activity query shared by `logs()` and `exportLogs()`.
+     *
+     * 🔴 THE EXPORT MUST USE THIS TOO. If the export re-derived its own query,
+     * the button would download a file that does not match the table the admin
+     * is looking at — the single worst failure mode for an export.
+     *
+     * @return array{0: \Illuminate\Database\Eloquent\Builder, 1: array<string, string>}
+     */
+    private function filteredLogQuery(Request $request): array
     {
         $q = trim((string) $request->query('q', ''));
 
@@ -36,8 +46,6 @@ class LogSettingController extends Controller
         if ($date !== '' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             $date = '';
         }
-
-        $perPage = min(100, max(1, (int) $request->query('per_page', 50)));
 
         $query = Activity::with(['causer'])
             ->when($q !== '', function ($query) use ($q) {
@@ -65,6 +73,16 @@ class LogSettingController extends Controller
             }
         }
 
+        return [$query, ['q' => $q, 'event' => $event, 'date' => $date]];
+    }
+
+    /** GET /api/admin/logs */
+    public function logs(Request $request): JsonResponse
+    {
+        $perPage = min(100, max(1, (int) $request->query('per_page', 50)));
+
+        [$query, $filters] = $this->filteredLogQuery($request);
+
         $logs = $query->latest()->paginate($perPage);
 
         return response()->json([
@@ -75,6 +93,12 @@ class LogSettingController extends Controller
                     'description' => $l->description,
                     'event' => $l->event,
                     'subject_type' => $l->subject_type,
+                    // The Blade table renders `class_basename(subject_type) #id`.
+                    // `subject_type` alone is not enough to reproduce it, so the
+                    // id travels too — and only the id, never the loaded subject:
+                    // hydrating every polymorphic subject for a read-only audit
+                    // list would cost a query per row for data nothing displays.
+                    'subject_id' => $l->subject_id,
                     'causer_name' => $l->causer?->name,
                     'properties' => $l->properties,
                     'created_at' => $l->created_at?->toIso8601String(),
@@ -85,14 +109,37 @@ class LogSettingController extends Controller
                     'per_page' => $logs->perPage(),
                     'total' => $logs->total(),
                 ],
-                'filters' => ['q' => $q, 'event' => $event, 'date' => $date],
+                'filters' => $filters,
             ],
         ]);
     }
 
-    /** GET /api/admin/settings */
-    public function settings(): JsonResponse
+    /**
+     * GET /api/admin/logs/export — the xlsx download behind the header button.
+     *
+     * Reuses `App\Exports\LogsExport` unchanged, and honours the same filters as
+     * `logs()` (see `filteredLogQuery()`). NOT paginated: an export that carried
+     * only the visible page would defeat its own purpose.
+     *
+     * The web route serves this from a session-authenticated GET, which an SPA
+     * cannot use — it holds a bearer token, and a bare `<a href>` would send no
+     * Authorization header. The client therefore fetches the bytes with its
+     * token and saves the Blob itself.
+     */
+    public function exportLogs(Request $request)
     {
+        [$query] = $this->filteredLogQuery($request);
+
+        $logs = $query->latest()->get();
+
+        $timestamp = Carbon::now()->format('Y-m-d_H-i');
+        $filename = "logs_report_{$timestamp}.xlsx";
+
+        return Excel::download(new LogsExport($logs), $filename);
+    }
+
+    /** GET /api/admin/settings */
+    public function settings(): JsonResponse    {
         $settings = DB::table('settings')->pluck('value', 'key')->all();
         $catalogCount = MohMedicine::count();
 

@@ -15,12 +15,27 @@ class SyncController extends Controller
     }
 
     /**
-     * إصدار Sanctum token لمستخدم لوحة التحكم (جلسة ويب) لتفعيل المزامنة.
-     * هذا المسار خارج auth:sanctum — يعتمد على جلسة الويب.
+     * إصدار Sanctum token لتفعيل المزامنة.
+     *
+     * ── مصادر التفويض المقبولة (الاثنان يعملان) ──────────────────────
+     * 1. **Bearer** (`auth:sanctum` على المسار): تطبيق React أو أي عميل
+     *    يحمل توكن مصادقة عاديًّا — وهذا ما يجعل الإصدار ممكنًا بعد
+     *    انتقال الواجهة من Blade إلى React (لا جلسة ويب بعد الحذف).
+     * 2. **جلسة ويب** عبر Sanctum stateful (كوكي): يبقى مقبولًا للعملاء
+     *    الذين يرسلون كوكي الجلسة (`EnsureFrontendRequestsAreStateful`).
+     *    بعد حذف واجهة Blade لم يبقَ مستهلك داخلي يستخدمه، لكن إبقاؤه
+     *    لا يكلّف شيئًا ويمنع كسر أي عميل يعتمد الجلسة.
+     *
+     * ── لماذا `$request->user()` لا `Auth::guard('web')`؟ ────────────
+     * `Auth::guard('web')` كان **يقتل** المسار Bearer عمدًا (يقرأ الجلسة
+     * فقط)، فيصبح الإصدار مستحيلًا لأي عميل بلا جلسة. `$request->user()`
+     * يعيد المستخدم من المصادقة الفعلية التي أجراها middleware المسار
+     * (`auth:sanctum` — Bearer أو جلسة)، فلا نثق بمعرّف يرسله العميل
+     * ولا نتحقق مرتين من شيئين مختلفين.
      */
     public function issueToken(Request $request): JsonResponse
     {
-        $user = Auth::guard('web')->user();
+        $user = $request->user();
 
         if (! $user || $user->role !== 'pharmacy') {
             return response()->json(['success' => false, 'message' => 'غير مصرح'], 403);

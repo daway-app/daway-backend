@@ -21,7 +21,9 @@ use App\Support\Image;
 use App\Support\LowStockNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class PharmacyMedicineController extends Controller
@@ -29,6 +31,99 @@ class PharmacyMedicineController extends Controller
     public function __construct(private readonly MedicineCatalogService $catalog)
     {
     }
+
+    /**
+     * كتابة صورة الدواء على الكتالوج **المشترك** — بشرط الحكر فقط.
+     *
+     * ── المشكلة التي تمنعها ─────────────────────────────────────────
+     * `medicines` جدول كتالوج عام تشترك فيه كل الصيدليات. الكتابة عليه
+     * بلا شرط تعني أن صيدلية ترفع صورة فتُغيّر صورة الدواء عند **كل**
+     * الصيدليات، والأخطر أن `Cloudinary::deleteLocal` كان يحذف ملف
+     * الصورة السابق — أي حذف أصل يملكه غيرنا.
+     *
+     * ── القاعدة ─────────────────────────────────────────────────────
+     * نفس بوابة `MedicineCatalogService::applySoleOwnerEdits`: لا كتابة
+     * إلا إذا كانت هذه الصيدلية المستخدمة **الوحيدة** للدواء. الفحص يجري
+     * **قبل** الرفع إلى Cloudinary أيضًا، فلا نُنشئ ملفًا يتيمًا في كل
+     * محاولة مرفوضة.
+     *
+     * الصيدلية غير الحصرية لا تفقد شيئًا: الاستجابة تُرجع صورة الكتالوج
+     * القائمة كما هي (`Image::url($medicine->image)`)، ونُسجّل تحذيرًا
+     * ليكون القرار مرئيًا لا صامتًا.
+     */
+    private function applyCatalogImage(
+        Medicine $medicine,
+        int $pharmacyId,
+        ?string $imageUrl,
+        ?UploadedFile $file,
+    ): void {
+        if ($imageUrl === null && $file === null) {
+            return;
+        }
+
+        // ── قفل صف الكتالوج قبل القرار (TOCTOU) ────────────────────────
+        // الفحص والكتابة يجب أن يجريا تحت قفل صف `medicines`: صيدليتان
+        // تضيفان نفس الدواء في نفس اللحظة كانتا ترين "لا مستخدم غيري"
+        // قبل أن يُدرج أي صفّ مخزون، فتكتب كلتاهما وتحذف الثانية ملف
+        // الأولى. القفل يجعل "اقرأ ← تحقّق ← اكتب" ذرّيًّا على السجل.
+        $locked = Medicine::query()->whereKey($medicine->id)->lockForUpdate()->first();
+
+        if ($locked === null) {
+            return;
+        }
+
+        $medicine = $locked;
+
+        if (! $this->catalog->isSoleUser($medicine->id, $pharmacyId)) {
+            Log::warning('catalog image write skipped — medicine is shared with other pharmacies', [
+                'medicine_id' => $medicine->id,
+                'pharmacy_id' => $pharmacyId,
+            ]);
+
+            return;
+        }
+
+        $image = $imageUrl;
+
+        if ($file !== null) {
+            $image = Cloudinary::upload($file, 'medicines') ?? $image;
+        }
+
+        if ($image === null || $image === '') {
+            return;
+        }
+
+        $previous = $medicine->image;
+        $medicine->image = $image;
+
+        try {
+            $medicine->save();
+        } catch (\Throwable $e) {
+            // اتساق قاعدة البيانات والملفات: فشل الحفظ ⇒ التراجع يلغي كل
+            // شيء، لكن الملف المرفوع حديثًا كان سيبقى يتيمًا — ننظّفه.
+            if ($file !== null && $image !== $imageUrl) {
+                Cloudinary::deleteLocal($image);
+            }
+
+            throw $e;
+        }
+
+        // حذف الملف السابق **بعد** نجاح الحفظ لا قبله: لو حُذف أولًا وفشل
+        // الحفظ لَفقدنا الصورة القديمة من الملف والسجل معًا. فشل التنظيف
+        // لا يُفشل الطلب — الملف اليتيم القديم أقل ضررًا من فقدان الصورة.
+        if ($previous && $previous !== $image) {
+            try {
+                Cloudinary::deleteLocal($previous);
+            } catch (\Throwable $e) {
+                Log::warning('previous catalog image cleanup failed', [
+                    'medicine_id' => $medicine->id,
+                    'image' => $previous,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+    }
+
     /**
      * قائمة أدوية الصيدلية الحالية مع pagination.
      */
@@ -280,28 +375,35 @@ class PharmacyMedicineController extends Controller
 
         // صورة اختيارية: ملف مرفوع يُرفع إلى Cloudinary، أو رابط مباشر كبديل.
         // الملف يفوز عند إرسال الاثنين معاً.
-        $imageFile = $request->file('image_file');
+        //
+        // ⚠️ الكتابة على `medicines` (الكتالوج **المشترك**) محكومة ببوابة
+        // الحكر نفسها المستخدمة في `applySoleOwnerEdits`: صيدلية ليست
+        // المستخدمة الوحيدة لا يحق لها تغيير صورة الدواء الذي تستخدمه غيرها.
+        //
+        // الإدراج وكتابة الصورة داخل **معاملة واحدة**: قفل صف الكتالوج في
+        // `applyCatalogImage` يحمي "اقرأ ← تحقّق ← اكتب" من سباق صيدليتين
+        // تضيفان نفس الدواء في نفس اللحظة، وفشل أي خطوة يتراجع بالكامل.
         unset($data['image_file']);
 
-        $image = $data['image_url'] ?? null;
-        if ($imageFile !== null) {
-            $image = Cloudinary::upload($imageFile, 'medicines') ?? $image;
-        }
+        $pharmacyMedicine = DB::transaction(function () use ($medicine, $pharmacy, $data, $request, $mohMedicineId) {
+            $row = PharmacyMedicine::create([
+                'pharmacy_id' => $pharmacy->id,
+                'medicine_id' => $medicine->id,
+                'moh_medicine_id' => $mohMedicineId,
+                'price' => $data['price'],
+                'quantity' => $data['quantity'],
+                'is_available' => $request->boolean('is_available'),
+            ]);
 
-        if ($image) {
-            Cloudinary::deleteLocal($medicine->image);
-            $medicine->image = $image;
-            $medicine->save();
-        }
+            $this->applyCatalogImage(
+                $medicine,
+                $pharmacy->id,
+                $data['image_url'] ?? null,
+                $request->file('image_file'),
+            );
 
-        $pharmacyMedicine = PharmacyMedicine::create([
-            'pharmacy_id' => $pharmacy->id,
-            'medicine_id' => $medicine->id,
-            'moh_medicine_id' => $mohMedicineId,
-            'price' => $data['price'],
-            'quantity' => $data['quantity'],
-            'is_available' => $request->boolean('is_available'),
-        ]);
+            return $row;
+        });
 
         LowStockNotifier::notifyIfLowStock($pharmacyMedicine);
 
@@ -436,27 +538,31 @@ class PharmacyMedicineController extends Controller
 
         // صورة اختيارية: ملف مرفوع يُرفع إلى Cloudinary، أو رابط مباشر كبديل.
         // الملف يفوز عند إرسال الاثنين معاً.
-        $imageFile = $request->file('image_file');
+        //
+        // ⚠️ نفس بوابة الحكر: `storeByName` قد تحلّ إلى دواء موجود يستخدمه
+        // غيرنا، وكتابة الصورة عليه كانت تلوّث كتالوج صيدليات أخرى (وقد
+        // تحذف ملفها من Cloudinary). الإدراج والصورة في معاملة واحدة —
+        // نفس سبب `store()` أعلاه.
         unset($data['image_file']);
 
-        $image = $data['image_url'] ?? null;
-        if ($imageFile !== null) {
-            $image = Cloudinary::upload($imageFile, 'medicines') ?? $image;
-        }
+        $pharmacyMedicine = DB::transaction(function () use ($medicine, $pharmacy, $data, $request) {
+            $row = PharmacyMedicine::create([
+                'pharmacy_id' => $pharmacy->id,
+                'medicine_id' => $medicine->id,
+                'price' => $data['price'],
+                'quantity' => $data['quantity'],
+                'is_available' => $request->boolean('is_available'),
+            ]);
 
-        if ($image) {
-            Cloudinary::deleteLocal($medicine->image);
-            $medicine->image = $image;
-            $medicine->save();
-        }
+            $this->applyCatalogImage(
+                $medicine,
+                $pharmacy->id,
+                $data['image_url'] ?? null,
+                $request->file('image_file'),
+            );
 
-        $pharmacyMedicine = PharmacyMedicine::create([
-            'pharmacy_id' => $pharmacy->id,
-            'medicine_id' => $medicine->id,
-            'price' => $data['price'],
-            'quantity' => $data['quantity'],
-            'is_available' => $request->boolean('is_available'),
-        ]);
+            return $row;
+        });
 
         LowStockNotifier::notifyIfLowStock($pharmacyMedicine);
 

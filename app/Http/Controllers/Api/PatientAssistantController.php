@@ -57,15 +57,28 @@ class PatientAssistantController extends Controller
             'sort' => ['nullable', 'string', Rule::in(PharmacyInventorySearch::SORTS)],
         ]);
 
-        $latitude = isset($data['latitude']) ? (float) $data['latitude'] : null;
-        $longitude = isset($data['longitude']) ? (float) $data['longitude'] : null;
+        // الموقع: الإحداثيات المرسلة أولى؛ إن غابت نستخدم الموقع المخزن في
+        // بروفايل المستخدم (كائن user محمّل أصلاً — لا استعلام إضافي)؛ وإلا
+        // تبقى النتائج بلا مسافة كما في السلوك السابق. لا نسأل العميل قطعا.
+        $requestLat = isset($data['latitude']) ? (float) $data['latitude'] : null;
+        $requestLng = isset($data['longitude']) ? (float) $data['longitude'] : null;
 
-        // الإحداثيات إمّا تُرسَل كاملة أو لا تُرسَل — لا نخمّن موقع المستخدم.
-        $hasGeo = $latitude !== null && $longitude !== null;
+        // الإحداثيات إمّا تُرسَل كاملة أو لا تُرسَل — نصف قيمتين لا يُعتدّ بهما.
+        $fromRequest = $requestLat !== null && $requestLng !== null;
 
-        if (! $hasGeo) {
-            $latitude = null;
-            $longitude = null;
+        if ($fromRequest) {
+            $latitude = $requestLat;
+            $longitude = $requestLng;
+            $locationSource = 'request';
+        } else {
+            $latitude = $request->user()->latitude !== null ? (float) $request->user()->latitude : null;
+            $longitude = $request->user()->longitude !== null ? (float) $request->user()->longitude : null;
+            $locationSource = $latitude !== null && $longitude !== null ? 'profile' : 'none';
+
+            if ($locationSource === 'none') {
+                $latitude = null;
+                $longitude = null;
+            }
         }
 
         // تتبّع البحث — نفس عُرف /medicines/resolve و/medicines/search.
@@ -117,7 +130,8 @@ class PatientAssistantController extends Controller
             'pharmacies' => $pharmacies,
             'alternatives' => $this->resolver->alternatives($medicine->id, self::MAX_ALTERNATIVES),
             'total_found' => count($pharmacies),
-            'requires_location' => ! $hasGeo,
+            'requires_location' => $locationSource === 'none',
+            'location_source' => $locationSource,
         ];
 
         if ($pharmacies === []) {
@@ -167,6 +181,7 @@ class PatientAssistantController extends Controller
             'alternatives' => [],
             'total_found' => 0,
             'requires_location' => false,
+            'location_source' => 'none',
             'message' => 'لم أتمكن من تحديد اسم الدواء.',
         ]);
     }

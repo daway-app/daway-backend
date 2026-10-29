@@ -111,42 +111,4 @@ class PharmacyProfileCompletionApiTest extends TestCase
         $this->assertSame($first?->toDateString(), $pharmacy->profile_completed_at?->toDateString());
         $this->assertNotNull($user->fresh()->pharmacy->profile_completed_at);
     }
-
-    public function test_web_login_after_mobile_completion_goes_to_dashboard(): void
-    {
-        // توكن حقيقي بدل Sanctum::actingAs — لأن actingAs يُصادق كل الطلبات التالية
-        // بنفس الاختبار، فيكسر دخول الويب (guest middleware يرجّع '/' لمن هو مسجّل).
-        $user = User::factory()->pharmacy()->create();
-        $token = $user->createToken('test')->plainTextToken;
-        $pharmacy = Pharmacy::factory()->create([
-            'user_id' => $user->id,
-            'profile_completed_at' => null,
-            'phone_number' => null,
-            'address' => null,
-            'region' => null,
-            'latitude' => null,
-            'longitude' => null,
-        ]);
-
-        $this->postJson('/api/profile/pharmacy', $this->completePayload(), [
-            'Authorization' => 'Bearer '.$token,
-        ])->assertOk();
-
-        // ثم تدخل من الويب — يجب ألا تنحبس بصفحة الإكمال
-        // (pharmacy_custom_id خارج $fillable — يُضبط صراحةً كما في الكود الإنتاجي)
-        $user->update(['password' => bcrypt('WEB-PASS1')]);
-        $pharmacy->pharmacy_custom_id = 'PH-WEB1';
-        $pharmacy->save();
-
-        // طلب الـ API السابق جعل Sanctum هو الـ guard الافتراضي مع مستخدم cached —
-        // بدونه يرى guest middleware الجلسة "مصادقة" ويرجّع '/' بدلاً من الدخول.
-        auth()->forgetGuards();
-        auth()->shouldUse('web');
-
-        $this->post(route('login'), [
-            'identity' => 'PH-WEB1',
-            'password' => 'WEB-PASS1',
-            'account_type' => 'pharmacy',
-        ])->assertRedirect(route('pharmacy.dashboard.index'));
-    }
 }

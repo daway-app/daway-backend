@@ -68,7 +68,10 @@ final class AccountingMockData
                 'format' => 'money',
                 'icon' => 'fas fa-cash-register',
                 'tone' => 'teal',
-                'href' => route('pharmacy.accounting.sales.index'),
+                // مسار SPA نسبي محايد — لا نستخدم دالة المسارات في كود غير-Blade
+                // (كانت `route('pharmacy.accounting.sales.index')` وتُسقط الـAPI
+                // بعد حذف مسارات الويب).
+                'href' => '/accounting/sales',
             ],
             [
                 'key' => 'today_purchases',

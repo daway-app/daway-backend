@@ -69,17 +69,16 @@ class MedicineCategoryNormalizationTest extends TestCase
     {
         // دواء محلي جديد يُربط بقسم واحد فقط — قاعدة «دواء واحد = قسم واحد».
         [$user] = $this->pharmacyUserWithPharmacy();
+        Sanctum::actingAs($user);
 
-        $this->actingAs($user)
-            ->post(route('pharmacy.medicines.store'), [
-                'trade_name' => 'SoleCat Drug',
-                'active_ingredient' => 'Solozole',
-                'category_id' => $this->categoryId('medicines'),
-                'price' => 5,
-                'quantity' => 3,
-                'is_available' => 1,
-            ])
-            ->assertRedirect();
+        $this->postJson('/api/pharmacy/medicines/by-name', [
+            'trade_name' => 'SoleCat Drug',
+            'active_ingredient' => 'Solozole',
+            'category_id' => $this->categoryId('medicines'),
+            'price' => 5,
+            'quantity' => 3,
+            'is_available' => 1,
+        ])->assertSuccessful();
 
         $medicine = Medicine::where('trade_name', 'SoleCat Drug')->first();
         $this->assertNotNull($medicine);
@@ -89,64 +88,7 @@ class MedicineCategoryNormalizationTest extends TestCase
         $this->assertSame($this->categoryId('medicines'), (int) $links->first()->category_id);
     }
 
-    // ── دواء جديد بدون قسم → مرفوض ───────────────────────────────
-
-    public function test_web_manual_medicine_add_requires_category(): void
-    {
-        [$user] = $this->pharmacyUserWithPharmacy();
-
-        $this->actingAs($user)
-            ->post(route('pharmacy.medicines.store'), [
-                'trade_name' => 'NoCat Web Drug',
-                'active_ingredient' => 'Xyzol',
-                'price' => 5,
-                'quantity' => 3,
-                'is_available' => 1,
-            ])
-            ->assertSessionHasErrors('category_id');
-
-        $this->assertDatabaseMissing('medicines', ['trade_name' => 'NoCat Web Drug']);
-    }
-
-    public function test_web_manual_medicine_add_with_valid_category_creates_medicine_and_link(): void
-    {
-        [$user] = $this->pharmacyUserWithPharmacy();
-
-        $this->actingAs($user)
-            ->post(route('pharmacy.medicines.store'), [
-                'trade_name' => 'Cat Web Drug',
-                'active_ingredient' => 'Yzomol',
-                'category_id' => $this->categoryId('medicines'),
-                'price' => 5,
-                'quantity' => 3,
-                'is_available' => 1,
-            ])
-            ->assertRedirect();
-
-        $medicine = Medicine::where('trade_name', 'Cat Web Drug')->first();
-        $this->assertNotNull($medicine);
-        $this->assertDatabaseHas('category_medicine_links', [
-            'medicine_id' => $medicine->id,
-            'category_id' => $this->categoryId('medicines'),
-        ]);
-    }
-
-    public function test_web_manual_medicine_add_with_invalid_category_rejected(): void
-    {
-        [$user] = $this->pharmacyUserWithPharmacy();
-
-        $this->actingAs($user)
-            ->post(route('pharmacy.medicines.store'), [
-                'trade_name' => 'BadCat Web Drug',
-                'active_ingredient' => 'Xyzol',
-                'category_id' => 999999,
-                'price' => 5,
-                'quantity' => 3,
-            ])
-            ->assertSessionHasErrors('category_id');
-
-        $this->assertDatabaseMissing('medicines', ['trade_name' => 'BadCat Web Drug']);
-    }
+    // ── دواء جديد بدون قسم → مرفوض (مسار API فقط بعد حذف واجهة Blade) ──
 
     public function test_by_name_add_requires_category(): void
     {

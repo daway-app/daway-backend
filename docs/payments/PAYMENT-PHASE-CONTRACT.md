@@ -112,7 +112,9 @@ Fields:
 - `transferred_at` optional date, not after today
 
 Returns `201` with `data.submission`, `data.payment_status`. Duplicate while a
-submission is under review: `409`.
+submission is under review: `409`. The amount submitted by the patient is stored
+as-declared on `order_payment_submissions.amount`; approval will reconcile it
+against the server-computed order total (see Approval reconciliation).
 
 ### POST `/api/patient/orders/{order}/payment/problem`
 
@@ -195,6 +197,50 @@ Detail data:
 - Approve is idempotent once paid; reject on a paid order returns `422`.
 - Both actions are transactional and lock the order/submission.
 
+#### Approval reconciliation (P0-03)
+
+At submission time the system stores, server-side and inside the order lock:
+
+- `order_payment_submissions.order_grand_total` = `order.total + order.delivery_fee`;
+- `order_payment_submissions.amount_status` = `matches | under | over` (the
+  patient-declared `amount` versus `order_grand_total`);
+- `order_payment_submissions.overage_amount` (only meaningful when `over`).
+
+`amount` is never treated as proof of payment; it is only flagged for review.
+
+On approve, the order is re-loaded and locked, and `grand_total` is recomputed
+from the **current** order data. Approval is rejected with `422` and
+`code: amount_unmatched` when:
+
+- the current `grand_total` differs from `order_grand_total` (the order total
+  changed after the receipt was submitted — request a new receipt), or
+- `amount` does not equal the current `grand_total`.
+
+The `422` response carries the live values:
+
+```json
+{
+  "success": false,
+  "data": {
+    "code": "amount_unmatched",
+    "amount": 80.0,
+    "grand_total": 130.0,
+    "deficit": 50.0
+  }
+}
+```
+
+- Underpayment returns `deficit` (`grand_total - amount`);
+- Overpayment returns `overage` (`amount - grand_total`); no refund is created
+  automatically — the submission stays `under_review` and the overpayment must
+  be returned and recorded separately before approval.
+- On approval mismatch no field on the order or submission changes: the order
+  stays `under_review`, the submission stays `under_review`, and no
+  `payment_reviewed_*` is stamped.
+
+Resubmitting a new receipt while the previous one is `under_review` is `409`;
+after a `rejected` submission the patient may submit a new receipt.
+
 ### Problems
 
 - `GET /api/admin/payment-problems?status=&page=&per_page=`
@@ -245,3 +291,32 @@ payment fields untouched.
   informational and never auto-confirms payment.
 - Order payment status is the source of truth; sub-order payment statuses are
   mirrored for display only.
+
+## Fulfillment payment gate
+
+Dawak has no cash-on-delivery flow. An order may enter or continue fulfillment
+only while the parent `orders.payment_status` is `paid`. The sub-order
+`payment_status` mirror is never used for this decision.
+
+Blocked transitions and actions:
+
+- pharmacy sub-order or legacy order status to `preparing`, `ready`,
+  `picked_up`, `out_for_delivery`, or `delivered`;
+- admin rider assignment (`POST /api/admin/orders/{order}/assign-rider`);
+- rider pickup and rider delivery status transitions.
+
+Cancellation remains allowed for unpaid orders. Rejected requests make no state
+change and emit no lifecycle notification.
+
+The rejection is `422` with the stable code `payment_required`:
+
+```json
+{
+  "success": false,
+  "message": "لا يمكن بدء أو متابعة تجهيز الطلب قبل تأكيد الدفع.",
+  "data": {
+    "code": "payment_required",
+    "payment_status": "pending"
+  }
+}
+```

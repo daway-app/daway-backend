@@ -20,6 +20,9 @@ class Notification extends Model
     protected $fillable = [
         'user_id',
         'medicine_id',
+        'order_id',
+        'sub_order_id',
+        'dedupe_key',
         'type',
         'message',
         'is_read',
@@ -57,5 +60,15 @@ class Notification extends Model
     public function medicine(): BelongsTo
     {
         return $this->belongsTo(Medicine::class);
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function subOrder(): BelongsTo
+    {
+        return $this->belongsTo(SubOrder::class);
     }
 }

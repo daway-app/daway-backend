@@ -130,6 +130,7 @@ class AuditTrailTest extends TestCase
         $this->seedCart(2);
         $order = $this->checkout();
 
+        $order->update(['payment_status' => Order::PAYMENT_PAID]);
         $subOrder = SubOrder::where('order_id', $order->id)->firstOrFail();
 
         $before = Activity::where('subject_type', SubOrder::class)

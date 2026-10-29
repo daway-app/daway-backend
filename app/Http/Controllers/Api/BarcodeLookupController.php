@@ -44,28 +44,35 @@ final class BarcodeLookupController extends Controller
         $moh = $record->mohMedicine;
         $local = $record->localMedicine;
 
-        $image = \App\Models\MedicineImage::query()
-            ->where('moh_medicine_id', $moh->id)
-            ->orderByDesc('is_verified')
-            ->orderBy('id')
-            ->first();
+        // باركود دواء محلي بلا سجل MOH (شائع للأدوية غير المسجّلة): لا يوجد
+        // `$moh` إطلاقًا، فكل قراءة منه كانت تُسقط الطلب بخطأ 500. نُكمل
+        // البيانات من الكتالوج المحلي بدل الانهيار.
+        if ($moh === null && $local === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الباركود غير مرتبط بأي دواء',
+            ], 404);
+        }
 
-        return response()->json([
-            'success' => true,
+        return response()->json([            'success' => true,
             'message' => 'تم جلب الدواء بالباركود بنجاح',
             'data' => [
                 'medicine' => [
-                    'id' => $moh->id,
-                    'name_en' => $moh->trade_name,
-                    'name_ar' => $moh->generic_name,
-                    'active_ingredient' => $moh->generic_name,
-                    'manufacturer' => $moh->manufacturer ?: $moh->company,
-                    'dosage_form' => $moh->dosage_form,
-                    'pack_size' => $moh->packaging,
-                    'official_price' => $moh->official_price !== null ? (float) $moh->official_price : null,
-                    'moh_product_id' => $moh->moh_product_id,
-                    'moh_drug_id' => $moh->moh_drug_id,
+                    // عند غياب MOH يُستخدم معرّف الكتالوج المحلي — والعميل
+                    // يميّزه عبر `source` أدناه لا عبر تخمين المعرّف.
+                    'id' => $moh?->id ?? $local?->id,
+                    'name_en' => $moh?->trade_name ?? $local?->trade_name,
+                    'name_ar' => $moh?->generic_name ?? $local?->trade_name_ar,
+                    'active_ingredient' => $moh?->generic_name ?? $local?->active_ingredient,
+                    'manufacturer' => $moh ? ($moh->manufacturer ?: $moh->company) : null,
+                    'dosage_form' => $moh?->dosage_form,
+                    'pack_size' => $moh?->packaging,
+                    'official_price' => $moh?->official_price !== null ? (float) $moh->official_price : null,
+                    'moh_product_id' => $moh?->moh_product_id,
+                    'moh_drug_id' => $moh?->moh_drug_id,
                     'local_medicine_id' => $local?->id,
+                    // يميّز للمستهلك أي كتالوج جاء منه هذا الرد.
+                    'source' => $moh !== null ? 'moh' : 'local',
                 ],
                 'barcode' => [
                     'value' => $record->barcode,
@@ -74,7 +81,7 @@ final class BarcodeLookupController extends Controller
                     'verified' => (bool) $record->is_verified,
                     'source' => $record->source,
                 ],
-                'image' => $this->image($moh->id),
+                'image' => $moh !== null ? $this->image($moh->id) : null,
             ],
         ]);
     }

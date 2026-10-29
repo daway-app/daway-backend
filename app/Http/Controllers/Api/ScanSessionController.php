@@ -37,6 +37,20 @@ use Illuminate\Support\Str;
 class ScanSessionController extends Controller
 {
     /**
+     * بادئة هوية جهاز مشتقّة من `device_id` الذي يولّده التطبيق ويحتفظ به.
+     *
+     * هي الهوية **الوحيدة غير القابلة للتخمين**: uuid يولّده العميل مرة واحدة،
+     * فلا يمكن لطرف ثالث إنتاج نفس القيمة بالتخمين.
+     */
+    private const DEVICE_ID_PREFIX_CLIENT = 'dev-i.';
+
+    /** بادئة هوية مشتقّة من الاسم — تُستخدم للعرض وللتوافق الخلفي فقط. */
+    private const DEVICE_ID_PREFIX_NAME = 'dev-n.';
+
+    /** بادئة هوية عشوائية لجهاز بلا اسم ولا معرّف. */
+    private const DEVICE_ID_PREFIX_ANON = 'dev-a.';
+
+    /**
      * إنشاء جلسة مسح جديدة.
      *
      * ── جلسة نشطة واحدة لكل صيدلية ───────────────────────────────────
@@ -176,11 +190,19 @@ class ScanSessionController extends Controller
 
         $validated = $request->validate([
             'device_name' => 'nullable|string|max:120',
+            // معرّف ثابت يولّده التطبيق مرة واحدة ويحتفظ به في تخزينه الآمن.
+            // اختياري للتوافق الخلفي، لكنه الطريق الوحيد للتعافي **بلا**
+            // تدخّل بشري (انظر `provesDeviceOwnership`).
+            'device_id' => 'nullable|string|max:191',
         ]);
 
         $deviceName = isset($validated['device_name']) ? trim((string) $validated['device_name']) : null;
         $deviceName = $deviceName === '' ? null : $deviceName;
-        $deviceId = $this->deviceId($deviceName);
+
+        $clientDeviceId = isset($validated['device_id']) ? trim((string) $validated['device_id']) : '';
+        $clientDeviceId = $clientDeviceId === '' ? null : $clientDeviceId;
+
+        $deviceId = $this->deviceId($deviceName, $clientDeviceId);
 
         $source = $request->attributes->get(AuthorizeScanSession::SOURCE_ATTRIBUTE);
 
@@ -189,13 +211,26 @@ class ScanSessionController extends Controller
         // ⚠️ `device_token = null` عمدًا: توكن الجهاز السابق يجب أن يموت مع
         // استبداله، وإلا بقي جهاز مطرود قادرًا على إرسال باركودات. الجهاز
         // الجديد يستلم توكنه عندما يُعيد الاقتران (نجاح متكرر أدناه).
+        //
+        // ── لماذا نأخذ هوية الجهاز المعلّق لا هوية الويب؟ ─────────────
+        // الويب لا يعرف `device_id` للجهاز (لا يرسله له أحد)، فهو يرسل
+        // الاسم فقط. لو اعتمدنا الاسم لصارت الهوية `dev-n.*` بينما الجهاز
+        // يعرّف نفسه بـ`dev-i.*` ⇒ لن يتطابقا أبدًا بعد الموافقة فيدور
+        // الجهاز في 409. لذلك الموافقة **تتبنّى** هوية الطالب المسجَّلة في
+        // `pending_device_id` — هي الحقيقة التي رآها المستخدم ووافق عليها.
+        //
+        // ── لماذا لا تُمسَح `pending_device_id` هنا؟ ───────────────────
+        // بعد التبني تصبح هي **بوابة نافذة المطالبة**: `device_token` فارغ
+        // والجهاز النشط جاهز، فالمطالبة به تتطلب مطابقة هذه الهوية تحديدًا
+        // (`provesDeviceOwnership`). تُمسح تلقائيًا عند إصدار التوكن.
         if ($source === AuthorizeScanSession::SOURCE_PHARMACY) {
+            $approvedDeviceId = $session->pending_device_id ?: $deviceId;
+            $approvedDeviceName = $session->pending_device_name ?: $deviceName;
+
             $session->forceFill([
                 'status' => ScanSession::STATUS_PAIRED,
-                'active_device_id' => $deviceId,
-                'active_device_name' => $deviceName,
-                'pending_device_id' => null,
-                'pending_device_name' => null,
+                'active_device_id' => $approvedDeviceId,
+                'active_device_name' => $approvedDeviceName,
                 'device_token' => null,
             ])->save();
 
@@ -209,11 +244,26 @@ class ScanSessionController extends Controller
             ]);
         }
 
-        // الجوال: إعادة اقتران نفس الجهاز ⇒ نجاح متكرر لا 409، مع إصدار
-        // توكن جهاز جديد. هذا مسار «التعافي»: تطبيق فقد توكنه (إعادة تشغيل،
-        // إعادة تثبيت) يعيد النداء فيستلم توكنًا صالحًا بلا مسح QR جديد.
-        if ($session->active_device_id !== null && $session->active_device_id === $deviceId) {
-            return $this->issueDeviceToken($session, $deviceName);
+        // الجوال: إعادة اقتران **نفس الجهاز**.
+        //
+        // ── لماذا لا يكفي تطابق الاسم؟ ───────────────────────────────
+        // الاسم ليس سرًّا: «iPhone» أو «Samsung A52» معروف أو قابل للتخمين،
+        // وتوكن الاقتران معروض في الـQR على الشاشة. لو كان التطابق بالاسم
+        // وحده كافيًا لإصدار توكن، لأمكن لأي حامل لتوكن الاقتران — نافذة
+        // مفتوحة، صورة شاشة، سجل — أن يصدر لنفسه `device_token` **بصمت**
+        // ويرسل باركودات إلى كاشير الصيدلية. لذلك المطابقة صارت **شرطًا
+        // لازمًا لا كافيًا**، ويُشترط معها إثبات ملكية (`provesDeviceOwnership`).
+        if ($session->active_device_id !== null && hash_equals($session->active_device_id, $deviceId)) {
+            if ($this->provesDeviceOwnership($request, $session, $deviceId)) {
+                return $this->issueDeviceToken($session, $deviceName);
+            }
+
+            // اسم مطابق بلا إثبات ⇒ ليست إعادة اقتران بل محاولة انتحال.
+            // نعاملها **بضبط** معاملة الجهاز الآخر: طلب معلّق + 409،
+            // فيبقى القرار البشري هو الباب الوحيد (لا تجاوز صامت).
+            $this->recordPendingDevice($session, $deviceId, $deviceName);
+
+            return $this->fail('جهاز آخر مرتبط بالجلسة', 409);
         }
 
         // جهاز نشط آخر ⇒ لا تجاوز: نُسجّل الطالب كطلب معلّق ونُبلّغ بالتعارض.
@@ -385,7 +435,11 @@ class ScanSessionController extends Controller
                 'platform' => null,
                 'active' => true,
             ]] : [],
-            'pending_device' => $session->pending_device_id !== null ? [
+            // الجهاز المتبنّى (pending == active بعد الموافقة) ليس قرارًا
+            // معلّقًا — عرضه كان سيُظهر زر [سماح] لعجلًا لا قرار فيها.
+            // يُعرض pending فقط حين يختلف عن الجهاز النشط فعليًا.
+            'pending_device' => ($session->pending_device_id !== null
+                && $session->pending_device_id !== $session->active_device_id) ? [
                 'name' => $session->pending_device_name,
             ] : null,
             'barcode' => $session->scanned_barcode,
@@ -405,8 +459,22 @@ class ScanSessionController extends Controller
         return $session;
     }
 
+    /**
+     * تسجيل جهاز طالب كطلب معلّق ينتظر قرارًا بشريًّا.
+     *
+     * ── لماذا لا نطغى على طلب قائم؟ ─────────────────────────────────
+     * الـpending هو ما يراه المستخدم على الويب ليقرّر [سماح]/[رفض]. طمسُه
+     * عند كل محاولة يعني أن مهاجمًا يملك توكن الاقتران يستطيع إخفاء الجهاز
+     * المشروع بإغراق المحاولات — فلا يرى المستخدم طلبًا حقيقيًا أصلًا.
+     * القاعدة: **الأول حجز مكانه**، والمحاولات اللاحقة تُرفض بـ409 كما هي.
+     * الطلب المعلّق لا يُستبدل إلا بقرار المستخدم نفسه (موافقة أو إغلاق).
+     */
     private function recordPendingDevice(ScanSession $session, string $deviceId, ?string $deviceName): void
     {
+        if ($session->pending_device_id !== null) {
+            return;
+        }
+
         $session->forceFill([
             'pending_device_id' => $deviceId,
             'pending_device_name' => $deviceName,
@@ -418,6 +486,9 @@ class ScanSessionController extends Controller
      *
      * التوكن القديم يُستبدل — لا يبقى رمزان صالحان لجهاز واحد. هذا يمنع
      * تراكم رموز صالحة لو أعاد التطبيق الاقتران مرارًا.
+     *
+     * كما تمسح الهوية المعلّقة: نافذة الموافقة تُغلق **بالمطالبة نفسها** —
+     * بعد إصدار التوكن لا يوجد `device_token === null` يُفتح من جديد.
      */
     private function issueDeviceToken(ScanSession $session, ?string $deviceName): JsonResponse
     {
@@ -442,21 +513,76 @@ class ScanSessionController extends Controller
     }
 
     /**
-     * هوية الجهاز.
+     * هل يملك الطالب حقّ إعادة إصدار توكن الجهاز النشط؟
      *
-     * ⚠️ **قيد معروف في العقد:** `pair` يحمل `device_name` فقط — لا معرّف
-     * جهاز. لذا تُشتقّ الهوية من الاسم: تطبيق يرسل نفس الاسم يُعتبر نفس
-     * الجهاز (إعادة اقتران ⇒ نجاح متكرر لا 409). بلا اسم نُولّد هوية
-     * عشوائية، فلا يمكن التعرّف على الجهاز مرة أخرى — وهو السلوك الصحيح
-     * لغياب أي معرّف.
+     * ── الشروط الثلاثة (واحد يكفي) ──────────────────────────────────
+     * 1. **نافذة موافقة بشرية:** `device_token === null` مع وجود جهاز نشط
+     *    تعني أن الويب وافق للتو على **هوية محددة** (`pending_device_id`).
+     *    المطالبة تُقبل فقط لمطابق — لا لمن يطابق الجهاز النشط أو الاسم.
+     *    أول مطالبة ناجحة تُغلق النافذة: تُكتب التوكن **وتمسح** الهوية
+     *    المعلّقة (`issueDeviceToken`)، فلا يُعاد فتحها.
+     * 2. **تدوير ذاتي:** الجهاز يحمل توكنه الحالي في `X-Device-Token`
+     *    فيستبدله بآخر — إعادة تشغيل التطبيق مع توكن محفوظ.
+     * 3. **معرّف عميل ثابت:** الهوية المخزَّنة مشتقّة من `device_id` الذي
+     *    يولّده التطبيق (بادئة `dev-i.`). إنتاج نفس الهوية يستلزم معرفة
+     *    ذلك الـuuid نفسه — وهو غير قابل للتخمين، بخلاف الاسم.
+     *
+     * ما **ليس** شرطًا: تطابق `device_name` وحده. الاسم بيانات عرض.
+     *
+     * ⚠️ **حصة متبقية معروفة (لا تُخفى):** للعميل الذي يعرّف نفسه بالاسم
+     * فقط (`dev-n.*`)، مطابقة النافذة تعني مطابقة اسم الجهاز المعتمد —
+     * والاسم ليس سرًّا. من يحمل توكن الاقتران ويعرف الاسم ويفوز بالسباق
+     * قبل الجهاز الحقيقي قد يأخذ التوكن. الحل الجذري الوحيد هو أن يحمل
+     * العميل سرًّا خاصًّا به (`device_id`) — وهو متاح في العقد الحالي
+     * وموصى به للفلاتر. أما عميل الاسم فقط فتظل نافذته مفتوحة رياضيًّا
+     * لا يمكن إغلاقها بلا سرّ يملكه الجهاز وحده.
      */
-    private function deviceId(?string $deviceName): string
+    private function provesDeviceOwnership(Request $request, ScanSession $session, string $deviceId): bool
     {
-        if ($deviceName === null) {
-            return 'dev-'.Str::random(24);
+        // (1) نافذة الموافقة: الهوية المعلّقة هي من وافق عليها البشر تحديدًا.
+        if ($session->device_token === null) {
+            return is_string($session->pending_device_id)
+                && hash_equals($session->pending_device_id, $deviceId);
         }
 
-        return 'dev-'.sha1($deviceName);
+        // (2) تدوير ذاتي بتقديم التوكن الحالي.
+        $presented = trim((string) $request->header('X-Device-Token', ''));
+
+        if ($presented !== ''
+            && hash_equals((string) $session->device_token, ScanSessionQr::hashToken($presented))) {
+            return true;
+        }
+
+        // (3) هوية عميل ثابتة غير قابلة للتخمين.
+        return is_string($session->active_device_id)
+            && str_starts_with($session->active_device_id, self::DEVICE_ID_PREFIX_CLIENT);
+    }
+
+    /**
+     * هوية الجهاز.
+     *
+     * ── ثلاث درجات من اليقين، مرتّبة ────────────────────────────────
+     * 1. `device_id` من العميل ⇒ هوية **غير قابلة للتخمين** (الأفضل).
+     * 2. `device_name` فقط ⇒ هوية مشتقّة من الاسم: مناسبة للعرض ومنع
+     *    سباق الاقتران، **لكنها ليست إثبات ملكية** — الاسم ليس سرًّا.
+     *    لذلك لا تكفي وحدها لإعادة إصدار توكن (انظر أعلاه).
+     * 3. لا شيء ⇒ هوية عشوائية، فلا يمكن التعرّف على الجهاز لاحقًا —
+     *    وهو السلوك الصحيح عند غياب أي معرّف.
+     *
+     * البادئات تمنع أي تصادم بين الأنواع الثلاثة، وتمنع أن يُنتج اسمٌ
+     * نفس هوية معرّف عميل (كان `sha1` عاريًا يخلط بينهما).
+     */
+    private function deviceId(?string $deviceName, ?string $clientDeviceId = null): string
+    {
+        if ($clientDeviceId !== null) {
+            return self::DEVICE_ID_PREFIX_CLIENT.hash('sha256', $clientDeviceId);
+        }
+
+        if ($deviceName !== null) {
+            return self::DEVICE_ID_PREFIX_NAME.sha1($deviceName);
+        }
+
+        return self::DEVICE_ID_PREFIX_ANON.Str::random(24);
     }
 
     /**

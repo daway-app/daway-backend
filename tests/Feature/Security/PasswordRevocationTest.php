@@ -50,23 +50,29 @@ class PasswordRevocationTest extends TestCase
             ->assertStatus(401);
     }
 
-    public function test_web_password_change_revokes_api_tokens(): void
+    /**
+     * H-13 عبر API (بعد حذف واجهة Blade): تغيير كلمة مرور المريض يُبطل كل
+     * توكنات API الصادرة سابقًا. كان الاختبار يمرّ عبر `/profile/password`
+     * (مسار ويب) — انتقل إلى `POST /api/profile/patient/change-password`
+     * الذي يحمل نفس الضمان.
+     */
+    public function test_api_patient_password_change_revokes_api_tokens(): void
     {
-        $user = User::factory()->patient()->create();
+        $user = User::factory()->patient()->create([
+            'password' => Hash::make('password'),
+        ]);
         $user->createToken('old');
 
         $this->assertSame(1, $user->tokens()->count());
 
-        $response = $this->actingAs($user)->from('/profile')->post('/profile/password', [
-            '_method' => 'PUT',
-            'current_password' => 'password',
-            'password' => 'new-secure-password',
-            'password_confirmation' => 'new-secure-password',
-        ]);
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/profile/patient/change-password', [
+                'current_password' => 'password',
+                'password' => 'new-secure-password',
+                'password_confirmation' => 'new-secure-password',
+            ])->assertOk();
 
-        $response->assertRedirect();
-
-        // H-13: أي توكنات API صادرة سابقاً للحساب تُبطَل بعد تغيير كلمة المرور من الويب
+        // H-13: أي توكنات API صادرة سابقاً للحساب تُبطَل بعد تغيير كلمة المرور
         $user->refresh();
         $this->assertSame(0, $user->tokens()->count());
     }

@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\AccountingBarcodeController;
 use App\Http\Controllers\Api\AccountingCashController;
 use App\Http\Controllers\Api\AccountingExpenseController;
+use App\Http\Controllers\Api\AccountingInventorySearchController;
 use App\Http\Controllers\Api\AccountingOverviewController;
 use App\Http\Controllers\Api\AccountingPartiesController;
+use App\Http\Controllers\Api\AccountingPurchaseController;
 use App\Http\Controllers\Api\AccountingRefundController;
 use App\Http\Controllers\Api\AccountingSalesController;
 use App\Http\Controllers\Api\AddressController;
@@ -15,14 +18,15 @@ use App\Http\Controllers\Api\Admin\LogSettingController as AdminLogSettingContro
 use App\Http\Controllers\Api\Admin\MedicineController as AdminMedicineController;
 use App\Http\Controllers\Api\Admin\MedicineRequestController as AdminMedicineRequestController;
 use App\Http\Controllers\Api\Admin\OrderDispatchController as AdminOrderDispatchController;
+use App\Http\Controllers\Api\Admin\PaymentBankController as AdminPaymentBankController;
+use App\Http\Controllers\Api\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Api\Admin\PatientInventoryController as AdminPatientInventoryController;
 use App\Http\Controllers\Api\Admin\PharmacyController as AdminPharmacyController;
 use App\Http\Controllers\Api\Admin\ProfileController as AdminProfileController;
-use App\Http\Controllers\Api\Admin\PaymentBankController as AdminPaymentBankController;
-use App\Http\Controllers\Api\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AdminPharmacyMohDryRunController;
+use App\Http\Controllers\Api\Admin\CatalogMaintenanceController as AdminCatalogMaintenanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvailabilityAlertController;
 use App\Http\Controllers\Api\BarcodeLookupController;
@@ -37,11 +41,11 @@ use App\Http\Controllers\Api\MedicineRequestController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OcrController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrderPaymentController;
 use App\Http\Controllers\Api\PatientAssistantController;
 use App\Http\Controllers\Api\PatientInquiryController;
 use App\Http\Controllers\Api\PatientProfileController;
 use App\Http\Controllers\Api\PharmacyAlternativeController;
-use App\Http\Controllers\Api\OrderPaymentController;
 use App\Http\Controllers\Api\PharmacyController;
 use App\Http\Controllers\Api\PharmacyDashboardController;
 use App\Http\Controllers\Api\PharmacyInquiryController;
@@ -115,6 +119,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/profile/patient', [PatientProfileController::class, 'show']);
     Route::post('/profile/patient', [PatientProfileController::class, 'update']);
+    // تغيير كلمة مرور المريض — كان مفقودًا من API (نظير الويب PUT /profile/password).
+    // حدّ 6/دقيقة كحارس ضد تخمين كلمة المرور الحالية عبر توكن مسروق.
+    Route::post('/profile/patient/change-password', [PatientProfileController::class, 'changePassword'])
+        ->middleware('throttle:6,1');
     Route::get('/profile/pharmacy', [PharmacyProfileController::class, 'show']);
     Route::post('/profile/pharmacy', [PharmacyProfileController::class, 'update']);
 
@@ -282,6 +290,18 @@ Route::middleware('auth:sanctum')->group(function () {
             // القراءة أولًا كي لا تلتقط المسارات الديناميكية الكلمات الثابتة.
             Route::get('sales-summary', [AccountingSalesController::class, 'summary'])
                 ->name('api.pharmacy.accounting.sales.summary');
+
+            // حلّ باركود **داخل مخزون هذه الصيدلية** — يعيد pharmacy_medicine_id
+            // والسعر والكمية من الخادم (لا يقبل سعرًا/كمية من العميل).
+            // بلا قيد regex على المسار: الصيغة غير الصالحة تُعاد 422 من
+            // المتحكم برسالة مفهومة، لا 404 يُخفي السبب.
+            Route::get('barcode/{barcode}', [AccountingBarcodeController::class, 'show'])
+                ->name('api.pharmacy.accounting.barcode');
+
+            // بحث مخزون الصيدلية لنقطة البيع (اسم/مادة فعالة/باركود + ترقيم).
+            // منفصل عن `pharmacy/medicines/search` الذي يبحث في الكتالوج.
+            Route::get('inventory/search', [AccountingInventorySearchController::class, 'search'])
+                ->name('api.pharmacy.accounting.inventory.search');
             Route::get('sales', [AccountingSalesController::class, 'index'])
                 ->name('api.pharmacy.accounting.sales.index');
             Route::get('sales/{number}', [AccountingSalesController::class, 'show'])
@@ -300,6 +320,14 @@ Route::middleware('auth:sanctum')->group(function () {
                 ->name('api.pharmacy.accounting.sales.refunds');
             Route::get('sales/{number}/refund-items', [AccountingRefundController::class, 'availableItems'])
                 ->name('api.pharmacy.accounting.sales.refund-items');
+
+            // ── المشتريات (دورة كاملة: قائمة · تفاصيل · إنشاء · إلغاء) ──
+            // `purchases` قبل `purchases/{number}` حتى لا يلتقط الديناميكي
+            // الكلمة الثابتة (نفس قاعدة sales-summary).
+            Route::get('purchases', [AccountingPurchaseController::class, 'index'])
+                ->name('api.pharmacy.accounting.purchases.index');
+            Route::get('purchases/{number}', [AccountingPurchaseController::class, 'show'])
+                ->name('api.pharmacy.accounting.purchases.show');
 
             Route::get('expense-categories', [AccountingExpenseController::class, 'categories'])
                 ->name('api.pharmacy.accounting.expense-categories');
@@ -345,8 +373,15 @@ Route::middleware('auth:sanctum')->group(function () {
                 // الإرجاعات — كتابة (تُنشئ قيدًا في الدفتر وتُعيد المخزون).
                 Route::post('refunds', [AccountingRefundController::class, 'store'])
                     ->name('api.pharmacy.accounting.refunds.store');
+
+                // المشتريات — كتابة: تُنشئ فاتورة وتزيد المخزون وتُحرّك الصندوق.
+                Route::post('purchases', [AccountingPurchaseController::class, 'store'])
+                    ->name('api.pharmacy.accounting.purchases.store');
+                Route::post('purchases/{number}/cancel', [AccountingPurchaseController::class, 'cancel'])
+                    ->name('api.pharmacy.accounting.purchases.cancel');
             });
         });
+
         // ==================== SCAN SESSIONS (المسح بالهاتف) ====================
         // جلسة مؤقتة يربط فيها تطبيق الجوال نفسه بشاشة نقاط البيع، ويرسل
         // **نصّ الباركود** فقط. لا منطق سلة ولا طلبات هنا — التكامل مع السلة
@@ -373,7 +408,6 @@ Route::middleware('auth:sanctum')->group(function () {
                 ->middleware('throttle:writes')
                 ->name('destroy');
         });
-
     });
 
     // Ratings
@@ -384,13 +418,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('ratings/{rating}', [RatingController::class, 'destroy'])->name('api.ratings.destroy');
 });
 
-// Offline-first Sync (Pharmacy web PWA)
-Route::middleware('auth')->post('/sync/token', [SyncController::class, 'issueToken']);
+// Offline-first Sync (Pharmacy React web + Flutter)
+// `auth:sanctum` يقبل **Bearer** (React/Flutter) وكذلك كوكي جلسة stateful
+// (لا مستهلك داخلي بعد حذف Blade، لكنه مقبول بلا كلفة).
+Route::middleware(['auth:sanctum', 'role:pharmacy'])->post('/sync/token', [SyncController::class, 'issueToken']);
 
 Route::middleware(['auth:sanctum', 'role:pharmacy'])->prefix('sync')->group(function () {
     Route::post('push', [SyncController::class, 'push'])->middleware('throttle:writes');
     Route::get('pull', [SyncController::class, 'pull']);
 });
+
 // ===== جلسات المسح: الاقتران وإرسال الباركود (مصادقة مزدوجة) =====
 // ⚠️ **خارج `auth:sanctum` عمدًا.** تطبيق الجوال لا يسجّل دخولًا — يُفوَّض
 // بتوكن مؤقت من الـQR. و`auth:sanctum` يرمي 401 قبل أي منطق، فيستحيل داخله
@@ -416,11 +453,14 @@ Route::prefix('pharmacy/scan-sessions')->name('api.pharmacy.scan-sessions.')
             ->name('barcode');
     });
 
-
 // ===== Admin-only: Dry-run للتحقق من ربط pharmacy_medicines ↔ moh_medicines =====
 // ⚠️ Read-Only: لا تنفذ أي تعديل بيانات. مؤقتة — تغريد بعد الاستخدام.
-Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/maintenance')->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin', 'admin.password.changed'])->prefix('admin/maintenance')->group(function () {
     Route::get('pharmacy-moh-backfill/dry-run', AdminPharmacyMohDryRunController::class);
+
+    // صيانة الكتالوج — العمليتان القابلتان للتقسيم فقط.
+    // `moh:import` و`moh:sync` و`--fresh` مستبعَدة عمدًا (انظر docblock الكنترولر).
+    Route::post('catalog/run', [AdminCatalogMaintenanceController::class, 'run']);
 });
 
 // Categories (public catalog metadata)
@@ -429,7 +469,7 @@ Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::get('/categories/{category}/medicines', [CategoryController::class, 'medicines']);
 
 // Admin: full catalog (no availability filter)
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin', 'admin.password.changed'])->group(function () {
     Route::get('/admin/categories/{category}/medicines', [CategoryController::class, 'adminMedicines']);
 });
 
@@ -453,7 +493,11 @@ Route::get('/medicine-filters', [CategoryController::class, 'filters']);
 // (كتالوج كامل بلا فلتر توفّر) — لذلك لا أُعيد تعريفه هنا، ومسار الروابط
 // اسمه `/links` صراحةً لتفادي الغموض.
 // =============================================================================
-Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+// The only admin endpoint available while an initial password is pending.
+Route::post('/admin/change-password', [AdminProfileController::class, 'changePassword'])
+    ->middleware(['auth:sanctum', 'role:admin', 'throttle:6,1']);
+
+Route::middleware(['auth:sanctum', 'role:admin', 'admin.password.changed'])->prefix('admin')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);
 
@@ -504,9 +548,17 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::post('/categories/{category}/medicines', [AdminCategoryController::class, 'attachMedicine']);
     Route::delete('/categories/{category}/medicines/{link}', [AdminCategoryController::class, 'detachMedicine']);
     Route::post('/categories/{category}/review/{link}', [AdminCategoryController::class, 'approveReview']);
+    // CRUD الأقسام — كان ويب-فقط (`web/Admin/CategoryController`).
+    // لا تعارض مع مسارات `/{category}/…` أعلاه: أطول مسار يفوز في مطابقة Laravel.
+    Route::post('/categories', [AdminCategoryController::class, 'store']);
+    Route::put('/categories/{category}', [AdminCategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy']);
 
     // Activity log + settings
     Route::get('/logs', [AdminLogSettingController::class, 'logs']);
+    // Must be declared BEFORE any `/logs/{id}` route, or `export` would be
+    // captured as the parameter. None exists today; the order keeps it safe.
+    Route::get('/logs/export', [AdminLogSettingController::class, 'exportLogs']);
     Route::get('/settings', [AdminLogSettingController::class, 'settings']);
     Route::post('/settings', [AdminLogSettingController::class, 'updateSettings']);
 
@@ -553,8 +605,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // SEPARATE endpoint on purpose: the pharmacy one aborts unless
     // `role === 'pharmacy'`, so it can never serve an admin.
     Route::get('/profile', [AdminProfileController::class, 'show']);
-    Route::post('/change-password', [AdminProfileController::class, 'changePassword'])
-        ->middleware('throttle:6,1');
 });
 
 // =============================================================================

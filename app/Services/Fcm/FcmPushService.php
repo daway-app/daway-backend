@@ -18,6 +18,21 @@ class FcmPushService implements FcmSender
      * عنوان الإشعار لكل نوع — النص الكامل يأتي من جدول notifications.
      */
     private const TITLES = [
+        'order_created' => 'طلب جديد',
+        'order_payment_receipt_submitted' => 'إيصال دفع جديد',
+        'order_payment_approved' => 'تم اعتماد الدفع',
+        'order_payment_rejected' => 'تم رفض الإيصال',
+        'order_payment_problem_reported' => 'بلاغ دفع جديد',
+        'order_payment_problem_resolved' => 'تم حل بلاغ الدفع',
+        'order_preparing' => 'طلبك قيد التجهيز',
+        'order_ready' => 'طلبك جاهز',
+        'order_rider_assigned' => 'تم إسناد طلب توصيل',
+        'order_rider_reassigned' => 'تم إعادة إسناد الطلب',
+        'order_rider_unassigned' => 'تم فك إسناد الطلب',
+        'order_picked_up' => 'تم استلام الطلب',
+        'order_out_for_delivery' => 'طلبك في الطريق',
+        'order_delivered' => 'تم تسليم الطلب',
+        'order_cancelled' => 'تم إلغاء الطلب',
         'medicine_available' => 'دواء أصبح متوفراً ✓',
         'low_stock' => 'تنبيه: مخزون منخفض',
         'out_of_stock' => 'تنبيه: نفد المخزون',
@@ -124,6 +139,8 @@ class FcmPushService implements FcmSender
                 'notification_id' => $notification->id,
                 'type' => $type,
                 'medicine_id' => $notification->medicine_id,
+                'order_id' => $notification->order_id,
+                'sub_order_id' => $notification->sub_order_id,
             ]);
         } catch (Throwable $e) {
             Log::warning('fcm_from_notification_failed', [

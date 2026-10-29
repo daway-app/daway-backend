@@ -217,17 +217,21 @@ class CategoryApiTest extends TestCase
     {
         $this->getJson('/api/categories')->assertOk();
         $admin = User::factory()->admin()->create();
-        $this->actingAs($admin)->post(route('categories.store'), [
+
+        // بعد حذف واجهة Blade: نفس العمل الإداري عبر مسار API (لا route() ويب).
+        $this->actingAs($admin)->postJson('/api/admin/categories', [
             'name_ar' => 'قسم فوري',
             'name_en' => 'Immediate Category',
             'is_active' => '1',
-        ])->assertRedirect(route('categories.index'));
+        ])->assertSuccessful();
 
         $created = $this->getJson('/api/categories')->assertOk();
         $this->assertContains('immediate-category', collect($created->json('data'))->pluck('slug')->all());
 
         $category = Category::where('slug', 'immediate-category')->firstOrFail();
-        $this->actingAs($admin)->patch(route('categories.toggleStatus', $category))->assertRedirect();
+        $this->actingAs($admin)
+            ->patchJson('/api/admin/categories/'.$category->id.'/toggle-status')
+            ->assertSuccessful();
 
         $hidden = $this->getJson('/api/categories')->assertOk();
         $this->assertNotContains('immediate-category', collect($hidden->json('data'))->pluck('slug')->all());
@@ -510,11 +514,11 @@ class CategoryApiTest extends TestCase
         $this->getJson('/api/medicines?category_id='.$category->id)->assertJsonPath('pagination.total', 1);
 
         $admin = User::factory()->admin()->create();
-        $this->actingAs($admin)->post(route('categories.medicines.attach', $category), [
+        $this->actingAs($admin)->postJson('/api/admin/categories/'.$category->id.'/medicines', [
             'type' => 'moh',
             'moh_product_id' => 8202,
             'moh_drug_id' => 9202,
-        ])->assertRedirect();
+        ])->assertSuccessful();
 
         $this->getJson("/api/categories/{$category->id}/medicines")->assertJsonPath('pagination.total', 2);
         $this->getJson('/api/medicines?category_id='.$category->id)->assertJsonPath('pagination.total', 2);

@@ -3,47 +3,42 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
+/**
+ * فحص دور المستخدم — **API فقط** بعد حذف واجهة Blade.
+ *
+ * كان الحارس يملك فرعًا كاملًا لإعادة التوجيه إلى صفحات الويب
+ * (`login.show` / `dashboard` / `pharmacy.dashboard.index`). بعد إزالة
+ * الواجهة لم يعد لتلك المسارات وجود، فأي وصول إليها يرمي
+ * `RouteNotFoundException` ويحوّل 403 متوقعًا إلى 500.
+ */
 class EnsureRole
 {
-    /**
-     * Ensure the authenticated user has the required role.
-     */
     public function handle(Request $request, Closure $next, string $role): Response
     {
         $user = $request->user();
 
-        if ($request->expectsJson()) {
-            if (! $user) {
-                abort(401);
-            }
-            if ($user->role !== $role) {
-                abort(403);
-            }
-
-            return $next($request);
-        }
-
+        // 401 عبر `AuthenticationException` لا `abort(401)`: المعالج في
+        // bootstrap يترجمها إلى `{success:false, message:'يجب تسجيل الدخول'}`
+        // بنفس شكل بقية أخطاء API. (`abort(401)` ينتج HttpException عامة
+        // برسالة فارغة لا يلتقطها معالج المصادقة.)
         if (! $user) {
-            return redirect()->route('login.show')->with('error', __('pharmacy.access_denied'));
+            throw new AuthenticationException;
         }
 
-        if ($user->role === $role) {
-            return $next($request);
+        if ($user->role !== $role) {
+            // AccessDeniedHttpException لا HttpException عامة: معالج
+            // الاستثناءات في bootstrap يلتقط هذا النوع تحديدًا ويعيد
+            // `{success:false, message}` — الشكل الموحّد لعقود API.
+            // `abort(403)` كان يرمي استثناء عام برسالة فارغة يفوّته
+            // المعالج فيصل العميل `{"message":""}` بلا `success`.
+            throw new AccessDeniedHttpException;
         }
 
-        // Admin tries to access a pharmacy route → send to the admin dashboard
-        if ($user->role === 'admin') {
-            return redirect()->route('dashboard')->with('error', __('pharmacy.access_denied'));
-        }
-
-        // Pharmacy tries to access an admin route → send to the pharmacy dashboard
-        if ($user->role === 'pharmacy') {
-            return redirect()->route('pharmacy.dashboard.index')->with('error', __('pharmacy.access_denied'));
-        }
-
-        return redirect()->route('login.show')->with('error', __('pharmacy.access_denied'));
+        return $next($request);
     }
 }

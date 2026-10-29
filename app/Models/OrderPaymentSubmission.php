@@ -32,6 +32,16 @@ class OrderPaymentSubmission extends Model
         self::STATUS_REJECTED,
     ];
 
+    public const AMOUNT_MATCHES = 'matches';
+    public const AMOUNT_UNDER = 'under';
+    public const AMOUNT_OVER = 'over';
+
+    public const AMOUNT_STATUSES = [
+        self::AMOUNT_MATCHES,
+        self::AMOUNT_UNDER,
+        self::AMOUNT_OVER,
+    ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -56,7 +66,10 @@ class OrderPaymentSubmission extends Model
         'account_holder',
         'account_number',
         'iban',
-        'amount',
+         'amount',
+        'order_grand_total',
+        'amount_status',
+        'overage_amount',
         'sender_name',
         'transfer_reference',
         'transferred_at',
@@ -75,6 +88,8 @@ class OrderPaymentSubmission extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'order_grand_total' => 'decimal:2',
+            'overage_amount' => 'decimal:2',
             'transferred_at' => 'date',
             'receipt_size' => 'integer',
             'reviewed_at' => 'datetime',

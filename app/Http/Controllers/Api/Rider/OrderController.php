@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\SubOrder;
 use App\Services\DeliveryLifecycleService;
+use App\Services\OrderNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,9 +22,10 @@ class OrderController extends Controller
 {
     use FormatsDeliveryOrders;
 
-    public function __construct(private readonly DeliveryLifecycleService $lifecycle)
-    {
-    }
+    public function __construct(
+        private readonly DeliveryLifecycleService $lifecycle,
+        private readonly OrderNotificationService $notifications
+    ) {}
 
     /** GET /api/rider/orders */
     public function index(Request $request): JsonResponse
@@ -98,6 +100,14 @@ class OrderController extends Controller
 
         $result = $this->lifecycle->markPickup($order, $subOrder, $request->user());
 
+        if ($result['ok']) {
+            $this->notifications->riderPickedUp(
+                $order->fresh(),
+                $subOrder->fresh(['pharmacy.user']),
+                (bool) ($result['data']['all_picked_up'] ?? false)
+            );
+        }
+
         return $this->respond($result, 200);
     }
 
@@ -111,6 +121,14 @@ class OrderController extends Controller
         $result = $data['status'] === Order::STATUS_DELIVERED
             ? $this->lifecycle->markDelivered($order, $request->user())
             : $this->lifecycle->startDelivery($order, $request->user());
+
+        if ($result['ok']) {
+            if ($data['status'] === Order::STATUS_DELIVERED) {
+                $this->notifications->orderDelivered($order->fresh());
+            } else {
+                $this->notifications->orderOutForDelivery($order->fresh());
+            }
+        }
 
         return $this->respond($result, 200);
     }

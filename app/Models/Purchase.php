@@ -73,6 +73,47 @@ class Purchase extends Model
         return $this->hasMany(SupplierPayment::class);
     }
 
+    /** أسطر الفاتورة — أُضيفت مع دورة المشتريات (2026-10-17). */
+    public function items(): HasMany
+    {
+        return $this->hasMany(PurchaseItem::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function isCancelled(): bool
+    {
+        return (bool) $this->is_cancelled;
+    }
+
+    /** نفس منطق `Sale::deriveStatus` — حالة مشتقّة لا مُدخَلة. */
+    public static function deriveStatus(float $total, float $paid): string
+    {
+        if ($paid <= 0) {
+            return self::STATUS_UNPAID;
+        }
+
+        if ($paid >= $total) {
+            return self::STATUS_PAID;
+        }
+
+        return self::STATUS_PARTIALLY_PAID;
+    }
+
+    /** @return list<string> */
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_PAID,
+            self::STATUS_PARTIALLY_PAID,
+            self::STATUS_UNPAID,
+            self::STATUS_CANCELLED,
+        ];
+    }
+
     public function scopeForPharmacy(Builder $query, int $pharmacyId): Builder
     {
         return $query->where('pharmacy_id', $pharmacyId);

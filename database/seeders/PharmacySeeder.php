@@ -13,6 +13,19 @@ class PharmacySeeder extends Seeder
 {
     public function run(): void
     {
+        // 🔴 Phase F1: كل ما يُنشئه هذا الـseeder بيانات عرض — صيدليات
+        // بإحداثيات وأسماء تجريبية، وحسابات بكلمة مرور افتراضية (`password`)،
+        // وإعادة كتابة `is_active`/`profile_completed_at` على كل تشغيل.
+        // لا يجوز أن يلمس الإنتاج إطلاقًا. المحاكاة المحلية وحدها هي المقصودة.
+        if (! app()->environment('local', 'testing')) {
+            $this->command?->info(
+                'PharmacySeeder: بيانات عرض (demo) — تخطّي كامل في بيئة '
+                .app()->environment().'. لا صيدليات ولا حسابات تُنشأ.'
+            );
+
+            return;
+        }
+
         // ✅ استخدام updateOrCreate عشان ما يكرر
         $pharmacyUser = $this->pharmacyUser('pharmacy@daway.com', 'صيدلية الأمل', '+970591234567');
 
@@ -51,12 +64,9 @@ class PharmacySeeder extends Seeder
             ]
         ));
 
-        // ⚠️ PRODUCTION-SAFE: Demo inventory (PH-2001–PH-2010) is skipped in production
-        // environments to prevent seeding fake pharmacy_medicines on every deploy.
-        // Local/test environments retain demo data for development.
-        if (app()->environment('local', 'testing')) {
-            $this->seedDemoPharmacies();
-        }
+        // بيانات المخزون التجريبي (PH-2001–PH-2010) — الحارس البيئي في أعلى
+        // `run()` يضمن أننا هنا في local/testing فقط.
+        $this->seedDemoPharmacies();
     }
 
     /**

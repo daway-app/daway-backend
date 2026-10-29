@@ -330,8 +330,9 @@ class AccountingSalesController extends Controller
     // ══════════════════════════════════════════════════════════════════
 
     /**
-     * تحويل Sale إلى مصفوفة الاستجابة. المفاتيح مطابقة لما تنتظره
-     * `resources/js/accounting/accounting-sales.js` حرفيًا.
+     * تحويل Sale إلى مصفوفة الاستجابة. المفاتيح ثابتة كعقد API
+     * (موثّقة في `docs/ACCOUNTING-API-CONTRACT.md`) — لا تُغيَّر بلا
+     * تحديث الوثيقة والعميلين معًا.
      */
     private function presentSale(Sale $sale, bool $withItems = false): array
     {

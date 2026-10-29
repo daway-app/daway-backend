@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\DeliveryLifecycleService;
+use App\Services\OrderNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,9 +22,10 @@ class OrderDispatchController extends Controller
 {
     use FormatsDeliveryOrders;
 
-    public function __construct(private readonly DeliveryLifecycleService $lifecycle)
-    {
-    }
+    public function __construct(
+        private readonly DeliveryLifecycleService $lifecycle,
+        private readonly OrderNotificationService $notifications
+    ) {}
 
     /** GET /api/admin/orders */
     public function index(Request $request): JsonResponse
@@ -110,6 +112,16 @@ class OrderDispatchController extends Controller
 
         $result = $this->lifecycle->assignRider($order, $rider, $request->user());
 
+        if ($result['ok']) {
+            $previousRiderId = $result['data']['previous_rider_id'] ?? null;
+
+            $this->notifications->riderAssigned(
+                $order->fresh(),
+                (int) $result['data']['rider_id'],
+                $previousRiderId !== null ? (int) $previousRiderId : null
+            );
+        }
+
         return $this->respond($result);
     }
 
@@ -117,6 +129,14 @@ class OrderDispatchController extends Controller
     public function unassignRider(Request $request, Order $order): JsonResponse
     {
         $result = $this->lifecycle->unassignRider($order, $request->user());
+
+        if ($result['ok']) {
+            $this->notifications->riderUnassigned(
+                $order->fresh(),
+                (int) $result['data']['previous_rider_id'],
+                $result['data']['previous_assigned_at'] ?? null
+            );
+        }
 
         return $this->respond($result);
     }

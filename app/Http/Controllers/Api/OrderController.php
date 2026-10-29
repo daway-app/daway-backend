@@ -13,6 +13,9 @@ use App\Models\Pharmacy;
 use App\Models\SubOrder;
 use App\Exceptions\DeliveryPricingException;
 use App\Services\DeliveryPricingService;
+use App\Services\OrderCancellationPolicy;
+use App\Services\OrderNotificationService;
+use App\Services\PaymentFulfillmentGate;
 use App\Services\PharmacyProximityGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,6 +24,12 @@ use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
+    public function __construct(
+        private readonly OrderNotificationService $notifications,
+        private readonly PaymentFulfillmentGate $paymentGate,
+        private readonly OrderCancellationPolicy $cancelPolicy
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -442,6 +451,8 @@ class OrderController extends Controller
         // Phase 0 — run AFTER the order transaction committed.
         $cart->items()->delete();
 
+        $this->notifications->orderCreated($order);
+
         return response()->json([
             'success' => true,
             'message' => 'تم إنشاء الطلب بنجاح',
@@ -469,8 +480,17 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'الطلب غير موجود'], 404);
         }
 
-        if ($order->isExpired()) {
-            return response()->json(['success' => false, 'message' => 'لا يمكن إلغاء طلب مكتمل'], 422);
+        // Phase 2 — fast-path denial using a non-locked read so the user gets a
+        // prompt, consistent rejection; the locked row inside the transaction
+        // re-checks the same policy to defeat TOCTOU races.
+        $denial = $this->cancelPolicy->denialForCancel($order);
+
+        if ($denial !== null) {
+            return response()->json([
+                'success' => false,
+                'message' => $denial['message'],
+                'data' => $denial['data'],
+            ], $denial['status']);
         }
 
         // Phase 1 — patient cancellation is WHOLE-ORDER only (no partial cancel).
@@ -479,11 +499,17 @@ class OrderController extends Controller
         // Phase 0 — stock is given back here, exactly once per cancelled entity.
         $cancelled = DB::transaction(function () use ($order) {
             // Lock the order row first: two concurrent cancel requests must not
-            // both pass the isExpired() check above and restore stock twice.
+            // both pass the check above and restore stock twice.
             $locked = Order::whereKey($order->getKey())->lockForUpdate()->first();
 
-            if (! $locked || $locked->isExpired()) {
-                return false;
+            if (! $locked) {
+                return 'not_found';
+            }
+
+            $recheck = $this->cancelPolicy->denialForCancel($locked);
+
+            if ($recheck !== null) {
+                return $recheck;
             }
 
             $subOrders = $locked->subOrders()->lockForUpdate()->get();
@@ -525,10 +551,24 @@ class OrderController extends Controller
             return true;
         });
 
+        if ($cancelled === 'not_found') {
+            return response()->json(['success' => false, 'message' => 'الطلب غير موجود'], 404);
+        }
+
+        if (is_array($cancelled) && isset($cancelled['ok']) && ! $cancelled['ok']) {
+            return response()->json([
+                'success' => false,
+                'message' => $cancelled['message'],
+                'data' => $cancelled['data'],
+            ], $cancelled['status']);
+        }
+
         if (! $cancelled) {
             // A concurrent request already cancelled (or completed) this order.
             return response()->json(['success' => false, 'message' => 'لا يمكن إلغاء طلب مكتمل'], 422);
         }
+
+        $this->notifications->orderCancelled($order->fresh());
 
         return response()->json([
             'success' => true,
@@ -626,26 +666,53 @@ class OrderController extends Controller
 
         // Phase 0 — atomic, locked transition so a legacy cancellation restores
         // its stock exactly once and never leaves a half-applied state.
-        return DB::transaction(function () use ($order, $data) {
+        $result = DB::transaction(function () use ($order, $data) {
             $locked = Order::whereKey($order->getKey())->lockForUpdate()->first();
 
             if (! $locked) {
-                return response()->json(['success' => false, 'message' => 'الطلب غير موجود'], 404);
+                return ['ok' => false, 'status' => 404, 'message' => 'الطلب غير موجود', 'data' => []];
             }
 
             if (! $locked->canTransitionTo($data['status'])) {
-                return response()->json([
-                    'success' => false,
+                return [
+                    'ok' => false,
+                    'status' => 422,
                     'message' => "لا يمكن الانتقال من حالة {$locked->status} إلى {$data['status']}. الحالات المسموحة: " . $this->allowedListFor($locked->status),
-                ], 422);
+                    'data' => [],
+                ];
             }
 
             // Rider Delivery — الطلب المُسند لمندوب: مراحل التوصيل للمندوب فقط.
             if ($locked->rider_id && in_array($data['status'], [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_DELIVERED], true)) {
-                return response()->json([
-                    'success' => false,
+                return [
+                    'ok' => false,
+                    'status' => 422,
                     'message' => 'التوصيل مُسند إلى مندوب — لا يمكن للصيدلية تحديث مراحل التوصيل.',
-                ], 422);
+                    'data' => [],
+                ];
+            }
+
+            // Phase 4 — Decision 1: mirror the sub-order guard. A paid order may
+            // not be cancelled by a pharmacy until a refund workflow exists. Runs
+            // before stock restoration (restoreOrderInventory) and addStatus, so on
+            // denial the order row is not mutated beyond the read. The row is
+            // locked (lockForUpdate above), so the payment_status read is race-free.
+            if ($data['status'] === Order::STATUS_CANCELLED && $locked->payment_status === Order::PAYMENT_PAID) {
+                return [
+                    'ok' => false,
+                    'status' => 422,
+                    'message' => 'لا يمكن إلغاء طلب تم دفعه دفعًا كاملاً دون استرداد.',
+                    'data' => [
+                        'code' => OrderCancellationPolicy::REFUND_CODE,
+                        'payment_status' => $locked->payment_status,
+                    ],
+                ];
+            }
+
+            $denial = $this->paymentGate->denialFor($locked, $data['status']);
+
+            if ($denial !== null) {
+                return $denial;
             }
 
             if ($data['status'] === Order::STATUS_CANCELLED) {
@@ -659,15 +726,26 @@ class OrderController extends Controller
 
             $locked->addStatus($data['status'], $data['note'] ?? null);
 
-            return response()->json([
-                'success' => true,
+            return [
+                'ok' => true,
+                'status' => 200,
                 'message' => 'تم تحديث حالة الطلب بنجاح',
                 'data' => [
                     'order_id' => $locked->id,
                     'status' => $locked->status,
                 ],
-            ]);
+            ];
         });
+
+        if ($result['ok']) {
+            $this->notifications->legacyOrderStatusChanged($order->fresh(), $data['status']);
+        }
+
+        return response()->json([
+            'success' => $result['ok'],
+            'message' => $result['message'],
+            'data' => $result['data'],
+        ], $result['status']);
     }
 
     /**
@@ -740,29 +818,75 @@ class OrderController extends Controller
     {
         // Phase 0 — one transaction so a cancellation and its stock restoration
         // are atomic: either both land or neither does.
-        return DB::transaction(function () use ($order, $subOrder, $newStatus, $note) {
+        $result = DB::transaction(function () use ($order, $subOrder, $newStatus, $note) {
+            // Lock the parent order FIRST — the same order used by payment
+            // approval and patient cancellation — so the payment check cannot
+            // race an approval. Never lock a child before its parent.
+            $lockedOrder = Order::whereKey($order->getKey())->lockForUpdate()->first();
+
+            if (! $lockedOrder) {
+                return ['ok' => false, 'status' => 404, 'message' => 'الطلب غير موجود', 'data' => []];
+            }
+
             // Lock the sub-order: a concurrent cancel must not restore the same
             // stock twice, and the transition must be re-validated under the lock.
             $locked = SubOrder::whereKey($subOrder->getKey())->lockForUpdate()->first();
 
-            if (! $locked) {
-                return response()->json(['success' => false, 'message' => 'الطلب الفرعي غير موجود'], 404);
+            if (! $locked || (int) $locked->order_id !== (int) $lockedOrder->id) {
+                return ['ok' => false, 'status' => 404, 'message' => 'الطلب الفرعي غير موجود', 'data' => []];
             }
 
             if (! $locked->canTransitionTo($newStatus)) {
-                return response()->json([
-                    'success' => false,
+                return [
+                    'ok' => false,
+                    'status' => 422,
                     'message' => "لا يمكن الانتقال من حالة {$locked->status} إلى {$newStatus}. الحالات المسموحة: " . $this->allowedListFor($locked->status),
-                ], 422);
+                    'data' => [],
+                ];
             }
 
             // Rider Delivery — بعد إسناد الطلب لمندوب، تصبح مراحل التوصيل
             // (out_for_delivery/delivered) من اختصاص المندوب لا الصيدلية.
-            if ($order->rider_id && in_array($newStatus, [SubOrder::STATUS_OUT_FOR_DELIVERY, SubOrder::STATUS_DELIVERED], true)) {
-                return response()->json([
-                    'success' => false,
+            //
+            // ⚠️ `rider_id` عمود على **الطلب الأب** لا على الطلب الفرعي:
+            // `$locked` هنا هو `SubOrder` (مقفول أعلاه)، وقراءة
+            // `$locked->rider_id` كانت تُرجع null دائمًا لأن `sub_orders`
+            // لا يحمل هذا العمود — فيسقط الحارس بصمت وتستطيع أي صيدلية
+            // دفع طلب مُسند إلى مندوب. المصدر الصحيح هو `$lockedOrder`.
+            // (نفس الحارس في مسار الطلبات القديمة يستخدم `$locked->rider_id`
+            //  على `Order` — وهو صحيح هناك لأن `$locked` كائن طلب.)
+            if ($lockedOrder->rider_id && in_array($newStatus, [SubOrder::STATUS_OUT_FOR_DELIVERY, SubOrder::STATUS_DELIVERED], true)) {
+                return [
+                    'ok' => false,
+                    'status' => 422,
                     'message' => 'التوصيل مُسند إلى مندوب — لا يمكن للصيدلية تحديث مراحل التوصيل.',
-                ], 422);
+                    'data' => [],
+                ];
+            }
+
+            // Phase 4 — Decision 1: a paid parent order may not be cancelled by a
+            // pharmacy until an approved refund workflow exists. Re-use the patient
+            // cancellation policy's `refund_required` code for a consistent API
+            // surface. This runs before `denialFor`, before status change (L858),
+            // and before stock restoration (L851) — so on denial nothing is written
+            // except the read itself. The parent order row is locked (L808), so the
+            // `payment_status` read cannot race an approval.
+            if ($newStatus === SubOrder::STATUS_CANCELLED && $lockedOrder->payment_status === Order::PAYMENT_PAID) {
+                return [
+                    'ok' => false,
+                    'status' => 422,
+                    'message' => 'لا يمكن إلغاء طلب تم دفعه دفعًا كاملاً دون استرداد.',
+                    'data' => [
+                        'code' => OrderCancellationPolicy::REFUND_CODE,
+                        'payment_status' => $lockedOrder->payment_status,
+                    ],
+                ];
+            }
+
+            $denial = $this->paymentGate->denialFor($lockedOrder, $newStatus);
+
+            if ($denial !== null) {
+                return $denial;
             }
 
             if ($newStatus === SubOrder::STATUS_CANCELLED) {
@@ -778,20 +902,49 @@ class OrderController extends Controller
             $locked->addStatus($newStatus, $note);
 
             // Parent status is DERIVED from the (now updated) set of sub-orders.
-            $order->load('subOrders');
-            $order->syncStatusFromSubOrders();
+            $lockedOrder->load('subOrders');
+            $lockedOrder->syncStatusFromSubOrders();
 
-            return response()->json([
-                'success' => true,
+            $freshOrder = $lockedOrder->fresh();
+
+            return [
+                'ok' => true,
+                'status' => 200,
                 'message' => 'تم تحديث حالة الطلب بنجاح',
                 'data' => [
-                    'order_id' => $order->id,
+                    'order_id' => $lockedOrder->id,
                     'sub_order_id' => $locked->id,
                     'status' => $locked->status,
-                    'order_status' => $order->fresh()->status,
+                    'order_status' => $freshOrder->status,
                 ],
-            ]);
+                'sub_order' => $locked->fresh(['pharmacy.user']),
+                'order' => $freshOrder,
+            ];
         });
+
+        if ($result['ok']) {
+            $freshOrder = $result['order'];
+            $freshSubOrder = $result['sub_order'];
+
+            match ($newStatus) {
+                SubOrder::STATUS_PREPARING => $this->notifications->subOrderPreparing($freshOrder, $freshSubOrder),
+                SubOrder::STATUS_READY => $this->notifications->subOrderReady($freshOrder, $freshSubOrder),
+                SubOrder::STATUS_CANCELLED => $this->notifications->orderCancelled($freshOrder, $freshSubOrder),
+                SubOrder::STATUS_OUT_FOR_DELIVERY => $freshOrder->status === Order::STATUS_OUT_FOR_DELIVERY
+                    ? $this->notifications->orderOutForDelivery($freshOrder)
+                    : null,
+                SubOrder::STATUS_DELIVERED => $freshOrder->status === Order::STATUS_DELIVERED
+                    ? $this->notifications->orderDelivered($freshOrder)
+                    : null,
+                default => null,
+            };
+        }
+
+        return response()->json([
+            'success' => $result['ok'],
+            'message' => $result['message'],
+            'data' => $result['data'],
+        ], $result['status']);
     }
 
     /**

@@ -29,6 +29,8 @@ use Illuminate\Support\Facades\DB;
  */
 class DeliveryLifecycleService
 {
+    public function __construct(private readonly PaymentFulfillmentGate $paymentGate) {}
+
     /**
      * هل بدأ المندوب الاستلام فعلياً؟ (يمنع إعادة الإسناد/الفك لاحقاً)
      */
@@ -63,6 +65,12 @@ class DeliveryLifecycleService
 
             if ($this->pickupStarted($locked)) {
                 return $this->error(422, 'بدأ الاستلام — لا يمكن إعادة الإسناد بعد بدء الاستلام.');
+            }
+
+            $denial = $this->paymentGate->denialFor($locked);
+
+            if ($denial !== null) {
+                return $denial;
             }
 
             $previousRiderId = $locked->rider_id;
@@ -103,6 +111,7 @@ class DeliveryLifecycleService
             }
 
             $previousRiderId = (int) $locked->rider_id;
+            $previousAssignedAt = $locked->assigned_at?->toDateTimeString();
 
             $locked->rider_id = null;
             $locked->assigned_by = null;
@@ -112,6 +121,7 @@ class DeliveryLifecycleService
             return $this->ok('تم فك إسناد الطلب.', [
                 'order_id' => $locked->id,
                 'previous_rider_id' => $previousRiderId,
+                'previous_assigned_at' => $previousAssignedAt,
             ]);
         });
     }
@@ -177,6 +187,12 @@ class DeliveryLifecycleService
 
             if (in_array($locked->status, [Order::STATUS_DELIVERED, Order::STATUS_CANCELLED], true)) {
                 return $this->error(422, 'لا يمكن تعديل طلب مكتمل أو ملغى.');
+            }
+
+            $denial = $this->paymentGate->denialFor($locked);
+
+            if ($denial !== null) {
+                return $denial;
             }
 
             $lockedSub = SubOrder::whereKey($subOrder->getKey())->lockForUpdate()->first();
@@ -250,6 +266,12 @@ class DeliveryLifecycleService
                 return $this->error(403, 'هذا الطلب غير مُسند إليك.');
             }
 
+            $denial = $this->paymentGate->denialFor($locked);
+
+            if ($denial !== null) {
+                return $denial;
+            }
+
             // يجب أن يكون الأب قد استُلم بالكامل (`picked_up`) — لا يكفي
             // `canTransitionTo` لأنها تسمح `ready → out_for_delivery` لمسار
             // الصيدلية التاريخي، وهو غير صالح لتدفق المندوب.
@@ -281,6 +303,12 @@ class DeliveryLifecycleService
 
             if ((int) $locked->rider_id !== (int) $rider->id) {
                 return $this->error(403, 'هذا الطلب غير مُسند إليك.');
+            }
+
+            $denial = $this->paymentGate->denialFor($locked);
+
+            if ($denial !== null) {
+                return $denial;
             }
 
             if (! $locked->canTransitionTo(Order::STATUS_DELIVERED)) {

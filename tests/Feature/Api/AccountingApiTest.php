@@ -544,6 +544,94 @@ class AccountingApiTest extends TestCase
         $this->assertSame(80.0, (float) $kpis['cash_balance']['value']);
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    // R-A: الاستقلال عن مسارات الويب
+    // كانت `AccountingReports` تبني `href` بـ`route('pharmacy.accounting.*')`
+    // وهي أسماء **مسارات ويب** — فحذف واجهة الويب كان يُسقط الـAPI بـ
+    // RouteNotFoundException. الآن تُبنى مسارات SPA نسبية محايدة.
+    // ══════════════════════════════════════════════════════════════════
+
+    public function test_overview_hrefs_are_neutral_relative_paths(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        [$pm] = $this->stock($pharmacy, price: 40.00, qty: 10);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/pharmacy/accounting/sales', [
+            'payment_method' => 'cash',
+            'items' => [[
+                'pharmacy_medicine_id' => $pm->id,
+                'medicine_name' => 'دواء',
+                'unit_price' => 40.00,
+                'quantity' => 2,
+            ]],
+        ])->assertCreated();
+
+        $overview = $this->getJson('/api/pharmacy/accounting/overview')->assertOk();
+
+        // KPI «مبيعات اليوم» يشير إلى مسار SPA محايد، لا إلى رابط Blade.
+        $kpis = collect($overview->json('data.kpis'))->keyBy('key');
+        $this->assertSame('/accounting/sales', $kpis['today_sales']['href']);
+
+        // صفوف المعاملات لم تعد تحمل مفتاح href إطلاقًا (لا مستهلك له).
+        $transactions = $overview->json('data.recent_transactions');
+        $this->assertNotEmpty($transactions);
+        foreach ($transactions as $tx) {
+            $this->assertArrayNotHasKey('href', $tx);
+        }
+
+        // لا رابط مطلق ولا بادئة `/pharmacy` في أي href يُعاد للعميل.
+        $rows = array_merge($overview->json('data.kpis'), $overview->json('data.alerts'));
+        foreach ($rows as $row) {
+            $href = $row['href'] ?? null;
+            if ($href === null) {
+                continue;
+            }
+            $this->assertStringStartsWith('/', $href, 'href must be an app-relative path');
+            $this->assertStringNotContainsString('/pharmacy', $href);
+            $this->assertStringNotContainsString('http', $href);
+        }
+    }
+
+    public function test_overdue_alert_href_points_to_the_neutral_sales_path(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        [$pm] = $this->stock($pharmacy, price: 100.00, qty: 10);
+
+        $customer = Customer::create([
+            'pharmacy_id' => $pharmacy->id,
+            'name' => 'عميل متأخر',
+            'phone' => '0599000222',
+            'current_balance' => 0,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $sale = $this->postJson('/api/pharmacy/accounting/sales', [
+            'customer_id' => $customer->id,
+            'payment_method' => 'credit',
+            'items' => [[
+                'pharmacy_medicine_id' => $pm->id,
+                'medicine_name' => 'دواء اختبار',
+                'unit_price' => 100.00,
+                'quantity' => 2,
+            ]],
+        ])->assertCreated()->json('data.number');
+
+        $alerts = collect($this->getJson('/api/pharmacy/accounting/overview')
+            ->assertOk()
+            ->json('data.alerts'));
+
+        // التنبيه الوحيد الذي يحمل رابطًا هو «عميل متأخر السداد» — وباقي
+        // التنبيهات بلا href. نستهدفه بالحقل لا بالترتيب.
+        $linked = $alerts->first(fn (array $a) => ($a['href'] ?? null) !== null);
+
+        $this->assertNotNull($linked, 'expected one alert to carry a navigation href');
+        $this->assertSame('/accounting/sales/'.$sale, $linked['href']);
+    }
+
     public function test_overview_series_today_reflects_sales(): void
     {
         [$user, $pharmacy] = $this->pharmacyUser();
@@ -774,7 +862,6 @@ class AccountingApiTest extends TestCase
         $this->assertSame(80.0, (float) $customer->fresh()->current_balance);
         $this->assertSame(120.0, (float) $this->getJson('/api/pharmacy/accounting/cash')->json('stats.balance_now'));
     }
-
 
     public function test_customer_payment_with_sale_id_updates_the_sale_itself(): void
     {

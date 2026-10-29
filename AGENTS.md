@@ -1,66 +1,87 @@
 # Daway — Project Brain (AGENTS.md)
 
-This is the central instruction file for AI agents working on the Daway project. It coordinates 14 specialized skills in `.opencode/skills/` and defines what is never to be touched.
+> **آخر تحديث: 2026-10-27 (Phase D).** هذا المستودع **Laravel API فقط**.
+> واجهة Blade القديمة (routes/views/controllers web + Vite + npm) **حُذفت نهائيًا**.
+> أي كود واجهة جديد **لا يُكتب هنا** — مكانه مستودع React.
 
 ## Project at a glance
 
-- **Product**: Daway — Palestinian pharmacy/medicine availability app (Laravel API + Flutter/mobile + Blade web dashboard)
-- **Stack**: Laravel 13 (PHP 8.4 in Docker/CI), MySQL (Aiven on Render), Sanctum, Spatie Permission + ActivityLog, Vite, Blade, vanilla JS, custom CSS
-- **Locales**: Arabic-first (ar), RTL UI, Cairo font; English supported
-- **Deploy**: Render free plan, `php artisan serve` on port 10000, Dockerfile multi-stage
+- **Product**: Daway — Palestinian pharmacy/medicine availability app.
+- **هذا المستودع**: Laravel 13 (PHP 8.4) — **API-only** · MySQL (Aiven على Render) · Sanctum · Spatie Permission + ActivityLog · l5-swagger.
+- **لا واجهة هنا**: لا Blade · لا Vite · لا npm · لا `package.json` · لا `resources/js|css` · لا `public/build`.
+- **React Pharmacy Web**: مستودع منفصل `github.com/daway-app/daway-Frontend` (المجلد المحلي `daway-web`) — يستهلك هذا الـAPI.
+- **Flutter**: مستودع منفصل — يستهلك هذا الـAPI فقط، **ولا يتعامل مع قاعدة البيانات مباشرة**.
+- **النشر**: Render (خطة free) · Dockerfile أحادي المرحلة · `php artisan serve` على المنفذ 10000 · فحص الصحة `/healthz`.
+- **اللغات**: عربي أولًا (`ar` افتراضي) + `en` · رسائل الـAPI عربية.
 
-## The 14 skills — when to use which
+## ما يعيش أين (لا تخلط الطبقات)
 
-| Skill | Use when |
-|---|---|
-| `01-laravel-backend` | Any backend/Laravel/Eloquent/controller/model work or review |
-| `02-frontend` | Blade/CSS/JS/RTL/Vite/frontend work |
-| `03-database` | Migrations, queries, indexes, N+1, schema, MySQL |
-| `04-api` | REST endpoints, JSON payloads, Sanctum, mobile API consumers |
-| `05-auth-otp` | OTP, login, tokens, auth security, abuse prevention |
-| `06-medicine-pharmacy` | Domain work: medicines, pharmacies, inventory, availability, search |
-| `07-maps-location` | Maps, coordinates, distance, nearby search |
-| `08-security` | Security audits and fixes (OWASP, XSS, IDOR, CSRF, secrets) |
-| `09-performance` | Slow queries, caching, loading, latency, cold starts |
-| `10-code-audit` | Full-project audits (read-only), dead code, reports |
-| `11-testing` | PHPUnit tests, coverage, regression |
-| `12-ui-ux` | Design system, RTL UX, accessibility, medical UX |
-| `13-docker-render` | Docker, deployment, env vars, health checks, production issues |
-| `14-git-github` | Git workflow, commits, PRs, CI |
+| الطبقة | المكان | ملاحظة |
+|---|---|---|
+| المسارات | `routes/api.php` (كل شيء) + `routes/console.php` | لا `routes/web.php` |
+| المتحكمات | `app/Http/Controllers/Api/**` | لا `Controllers/web` |
+| الحُرّاس | `app/Http/Middleware/{EnsureRole,SetAppLocale,AuthorizeScanSession}.php` | API-only |
+| القوالب | `resources/views/vendor/l5-swagger/` **فقط** | واجهة Swagger — لا تُحذف |
+| الترجمات | `resources/lang/{ar,en}/**` | عقد رسائل الـAPI |
+| الأصول العامة | `public/` (entrypoint + أصول Swagger) | لا مخرجات بناء أمامية |
+| الاختبارات | `tests/Feature`, `tests/Unit` | لا `tests/Feature/Web` |
 
 ## Hard rules (never break)
 
-1. **Project root is the repo itself** — everything here assumes the repo you are working in. Verify paths before acting.
-2. **Never rewrite working code** — prefer small, targeted changes; inspect before modifying; search usages before deleting.
-3. **Never commit secrets** — `.env`, DB passwords, API keys, OTP materials, `*.sql` backups, `daway_backup.sql`, `notif-test.js`, `oracle_vm_setup.sh` are all forbidden.
-4. **Never weaken security** — no logging/returning OTPs or tokens, no removing rate limits, no skipping authorization.
-5. **Audits are read-only** — during a `10-code-audit` run, do NOT modify files; produce the structured report and wait for instructions.
-6. **Don't invent domain entities** — there are NO categories or prescriptions tables/models; no Jobs/Events/Mail/Notifications classes, no repositories, no observers exist. Build on what exists.
-7. **Keep the dual role system in sync** — `users.role` enum AND Spatie roles must both be set (see `RolePermissionSeeder`).
-8. **Respect response conventions** — API payloads are hand-built arrays `success/message/data/pagination` with ARABIC messages; match the existing controllers' `payload()` style.
-9. **Don't redesign the UI without being asked** — respect the teal design tokens in `resources/css/app.css`; incremental improvements only.
-10. **Tests must pass** — run `composer test` after changes affecting behavior; never delete tests to make suites green.
-11. **NEVER push, and never run any command that publishes to a remote.** Push to `develop` (or any branch) requires عبود's **explicit, per-instance approval**. The following are **forbidden** without it: `git push`, `git push --force`, creating a remote/repo, `gh repo create`, `gh pr create`, uploading tags, or any equivalent. Commits too: do not `git commit` unless asked. **Read-only git is always fine**: `git status`, `git diff`, `git log`, `git show`, `git ls-remote`, `git fetch` (downloads only, publishes nothing). When a task involves shipping code, stop at "changes are in the working tree" and tell the user — do not offer to push, and do not push "to be helpful".
+1. **Project root is the repo itself** — تحقّق من المسارات قبل أي إجراء.
+2. **Never rewrite working code** — تغييرات صغيرة موجّهة؛ افحص الاستخدامات قبل الحذف.
+3. **Never commit secrets** — `.env`, كلمات مرور DB، مفاتيح API، مواد OTP، `*.sql` backups.
+4. **Never weaken security** — لا تسجيل/إرجاع OTP أو التوكنات، لا إزالة حدود معدل، لا تجاوز صلاحيات.
+5. **Audits are read-only** — أثناء مراجعة شاملة لا تعدّل ملفات؛ قدّم التقرير وانتظر.
+6. **API-only, بلا استثناء** — ⛔ لا تُضِف Blade/Vite/npm/`package.json` أو `resources/js|css` إلى هذا المستودع. أي واجهة = مستودع React.
+7. **Domain facts (مصحَّحة 2026-10-27)** — الأقسام **موجودة** (`categories`, `category_medicine_links`) · يوجد Observers (`PharmacyMedicineObserver`, `RatingObserver`) · **لا** repositories · **لا** Jobs/Events/Mail classes. ابنِ على الموجود.
+8. **Keep the dual role system in sync** — `users.role` enum **و** Spatie roles معًا (انظر `RolePermissionSeeder`).
+9. **Respect response conventions** — `{success, message, data, pagination}` برسائل عربية، بنفس نمط المتحكمات الحالية.
+10. **Tests must pass** — `php artisan test` بعد أي تغيير سلوكي؛ لا تحذف اختبارًا لجعل المجموعة خضراء.
+11. **NEVER push** — `git push` / `gh pr create` / أي نشر يتطلّب موافقة عبود **الصريحة لكل مرة**. `commit` أيضًا لا يتم إلا بطلب. **القراءة مسموحة دائمًا**: `status`, `diff`, `log`, `show`, `ls-remote`, `fetch`.
 
-## Known issues (from the latest audit findings — treat as facts until fixed)
+## Auth & error contract (بعد Phase D)
 
-- `render.yaml` healthCheckPath `/up` ≠ actual route `/healthz` — Render health checks likely broken
-- API OTP codes are returned in JSON responses (no SMS gateway) — known trade-off, flag before changing
-- `app/Http/Requests/Api/*` (SendOTP/VerifyOTP/PharmacyLogin) are dead stubs; validation is inline in `Api\AuthController`
-- `app/Http/Resources/*` are stubs; controllers build arrays manually
-- Stale root-level CSS files at `resources/css/` root not in the Vite input list; root `auth.blade.php` references stale asset paths
-- FontAwesome `fas` icons used without a FontAwesome CDN include
-- Junk file named `langPath())` at repo root (PsySH stray) — candidate for deletion/gitignore
-- Only skeleton tests exist — the project has no real coverage yet
+- **Sanctum Bearer** لكل مسارات API المحمية (`auth:sanctum` + `role:*`).
+- **401** = `AuthenticationException` → `{success:false, message:'يجب تسجيل الدخول'}`.
+- **403** = `AccessDeniedHttpException` → `{success:false, message:'غير مصرح لك بالوصول'}`.
+- **🔴 `redirectGuestsTo(fn () => null)`** في `bootstrap/app.php` — بدونه يعود Laravel إلى `route('login')` غير الموجودة ⇒ **500 بدل 401**.
+- **جلسات الويب**: مدعومة عمدًا عبر Sanctum stateful (`EnsureFrontendRequestsAreStateful` + `sanctum.guard=['web']`) — يستخدمها `/api/sync/token` لعميل يرسل كوكي جلسة. **لا تُزل دون إثبات الاستغناء.**
+- **`/api/sync/token`** يعمل بـBearer (React/Flutter) **وبالجلسة** — كلاهما مختبَر.
 
-## Full audit sequence (run as one session when asked to audit "everything")
+## Tests — كيف تُشغَّل
 
-1. Repository discovery → 2. Architecture audit → 3. Database audit → 4. API audit → 5. Backend audit → 6. Frontend audit → 7. Security audit → 8. Performance audit → 9. Dead code audit → 10. Testing audit → 11. Deployment audit → 12. Final structured report (per `10-code-audit` deliverable format).
+- **المجموعة كاملة**: `php artisan test` (≈1585 اختبارًا).
+- **ثلاثة اختبارات تُسقط عملية PHP إذا شُغّلت مع البقية** (مشكلة بيئة قائمة، ليست عطل كود) — شغّلها **منفردة**:
+  - `tests/Feature/EnrichmentEngineTest.php`
+  - `tests/Feature/Api/CategorySyncApiTest.php --filter=test_full_pipeline`
+  - `tests/Feature/Commands/CategorySyncCommandTest.php --filter=test_works_with_real_full`
+- **لا `--filter "Inventory"`** — فضفاض ويلتقط مسارات ملفات أخرى.
+- ⚠️ **فخ إيجابي كاذب**: مشغّل المهام قد يوسم التشغيل "failed" بسبب اعتراض شبكة على `169.254.169.254:80` بينما المخرج `OK` — **اقرأ مخرجات PHPUnit لا حالة المهمة**.
+- **فخ كاش الـGuard**: عند تبديل التوكن داخل نفس الاختبار استدعِ `$this->app['auth']->forgetGuards()` وإلا مرّ التوكن المُبطَل بنجاح كاذب.
 
-After the report, STOP and wait for explicit instruction on which issues to fix.
+## Deploy (Render / Docker)
+
+- `Dockerfile` **مرحلة واحدة** (PHP 8.4 CLI) — لا Node ولا Vite. `render.yaml` يستخدم `runtime: docker` و`healthCheckPath: /healthz`.
+- `CMD` يشغّل: `config:cache` → `route:cache` → `storage:link` → `migrate --force` → الـseeders الخمسة → حلقة `/healthz` → `artisan serve`.
+- **لا Queue Worker ولا Scheduler منفصلين** على Render حاليًا: لا `queue:work` في الـCMD ولا في `render.yaml`. أي عمل يحتاج طابورًا يجب أن يعمل synchronously أو يُضاف كخدمة منفصلة بقرار صريح.
+- أوامر التحقق: `php artisan route:list` · `php artisan migrate:status` · `php artisan config:cache` (محليًا أولًا).
+
+## Known issues (current — لا تُعامَل كحقائق قديمة)
+
+- **OTP يُعاد في JSON** (لا مزوّد SMS في الإنتاج) — مقصود مؤقتًا؛ لا تغيّره دون تنسيق مع العميل.
+- **3 هجرات غير متتبَّعة** تنتظر قرارًا (`purchase_items` · `notifications.order_context` · `moh_medicine_id nullable`) — لم تُطبَّق.
+- **`app/OpenApi/Paths/AccountingPaths.php` منحرف عن الكود** (`price` بدل `unit_price`, بلا `requestBody`) — لا يُعتمد مصدرًا؛ المرجع `docs/ACCOUNTING-API-CONTRACT.md`.
+- **أخطاء `ValidationException`** تُعاد `{message, errors}` بلا `success` — قرار معماري مؤجَّل موثّق في `docs/VALIDATION-ERROR-CONTRACT.md`.
+
+## Skills
+
+السكيلات صارت **على مستوى المستخدم** في `~/.workbuddy-ai/skills/` (لا `.opencode/skills/`). الأكثر صلة بهذا المستودع:
+`laravel` · `compound-eng-php-laravel` · `mysql` · `api-contract-audit` · `daway-phpunit-isolated` · `laravel-log-triage` · `hotpath-gate-optimization` · `remote-db-perf-audit` · `testing-patterns` · `tech-debt-audit-remediation`.
+سكيلات الواجهة (`react-frontend-architecture`, `visual-regression-qa`, `daway-pharmacy-web`, `vitest-windows-reliable`, `service-worker-testing`, `blade-js-wiring-audit`) تخصّ **مستودع React** لا هذا المستودع.
 
 ## Repo hygiene reminders
 
-- Feature branches follow `feature/US-XX-slug`; CI (tests on sqlite) runs on push/PR to `develop`
-- Keep `.env.example` in sync when env vars are added
-- Use `composer test` / `npm run build` / `php artisan route:list` / `php artisan migrate:status` to verify changes
+- فروع الميزات: `feature/US-XX-slug` · CI (اختبارات) يعمل على push/PR إلى `develop`.
+- حدّث `.env.example` عند إضافة أي متغيّر بيئة.
+- أوامر التحقق: `php artisan test` · `php artisan route:list` · `php artisan migrate:status` · `git diff --check`.

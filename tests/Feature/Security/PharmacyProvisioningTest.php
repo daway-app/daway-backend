@@ -5,32 +5,35 @@ namespace Tests\Feature\Security;
 use App\Models\Pharmacy;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
  * M-4: تزويد الصيدليات من الأدمن — كلمة مرور أولية عشوائية (غير مساوية للمعرف)
- * مع flash في الجلسة وإلزام تغييرها عند أول دخول.
+ * مع إلزام تغييرها عند أول دخول.
  *
- * ⚠️ درس مهم: كان هذا الملف يتحقق من مفاتيح الجلسة `initial_*` فقط، بينما القالب
- * الوحيد لبيانات الدخول يقرأ `delivered_*` — فمرّ العطل: كلمة المرور تُولَّد ثم
- * تُفقد ولا يراها الأدمن. لذلك نتحقق الآن من **الـHTML المرسوم** أيضاً، لا الجلسة وحدها.
+ * ── تحويل بعد حذف واجهة Blade ─────────────────────────────────────
+ * كان الملف يتحقق من `session('delivered_*)` ومن **HTML** صندوق بيانات
+ * الدخول. الواجهة حُذفت، فصار العقد هو **استجابة API**:
+ * `POST /api/admin/pharmacies` و`PATCH .../reset-credentials` و
+ * `PATCH .../toggle-status` تعيد `data.credentials` في JSON.
+ *
+ * 🔴 ما حُذف عمدًا: تأكيد «الصندوق يُرسم في HTML» — لا صفحة Blade بعد
+ * اليوم. مكافئه الحالي: التأكد أن بيانات الدخول تُعاد فعليًا في الاستجابة
+ * (لا تُولَّد وتُفقد)، وهو ما تفعله الاختبارات أدناه.
  */
 class PharmacyProvisioningTest extends TestCase
 {
-    public function test_admin_provisions_pharmacy_with_initial_password_flash(): void
+    public function test_admin_provisions_pharmacy_with_initial_password(): void
     {
         $admin = User::factory()->admin()->create();
+        Sanctum::actingAs($admin);
 
-        $response = $this->actingAs($admin)->post(route('pharmacies.store'), [
+        $response = $this->postJson('/api/admin/pharmacies', [
             'pharmacy_name' => 'Provision Test Pharmacy',
-        ]);
+        ])->assertCreated();
 
-        $response->assertRedirect(route('pharmacies.index'));
-        // المفاتيح الموحّدة مع مسار التسجيل الذاتي (كانت initial_* = مفاتيح ميتة)
-        $response->assertSessionHas('delivered_password');
-        $response->assertSessionHas('delivered_pharmacy_id');
-
-        $initialPassword = $response->getSession()->get('delivered_password');
+        $initialPassword = (string) $response->json('data.credentials.password');
         $this->assertNotEmpty($initialPassword);
 
         $pharmacy = Pharmacy::where('pharmacy_name', 'Provision Test Pharmacy')->first();
@@ -38,6 +41,7 @@ class PharmacyProvisioningTest extends TestCase
 
         // كلمة المرور الأولية ليست معرّف الصيدلية (لا يمكن تخمينها من الـ ID)
         $this->assertNotSame($initialPassword, $pharmacy->pharmacy_custom_id);
+        $this->assertSame($pharmacy->pharmacy_custom_id, $response->json('data.credentials.pharmacy_id'));
 
         $user = $pharmacy->user;
         $this->assertNotNull($user);
@@ -48,52 +52,24 @@ class PharmacyProvisioningTest extends TestCase
     }
 
     /**
-     * 🔴 الانحدار الحقيقي: صندوق بيانات الدخول يجب أن **يُرسم فعلاً** في الصفحة.
-     * اختبار الجلسة وحده لا يكشف اختلاف أسماء المفاتيح — وهنا كان العطل يتخفّى.
-     */
-    public function test_credentials_box_is_actually_rendered_for_admin_created_pharmacy(): void
-    {
-        $admin = User::factory()->admin()->create();
-
-        $response = $this->actingAs($admin)->post(route('pharmacies.store'), [
-            'pharmacy_name' => 'Rendered Credentials Pharmacy',
-        ]);
-
-        $password = $response->getSession()->get('delivered_password');
-        $this->assertNotEmpty($password);
-
-        // نتبع إعادة التوجيه ونفحص الـHTML — الصندوق يجب أن يظهر بكلمة المرور والمعرّف
-        $page = $this->actingAs($admin)->get(route('pharmacies.index'));
-
-        $page->assertOk();
-        $page->assertSee('deliveredCredentialsBox', false);
-        $page->assertSee('deliveredPassword', false);
-        $page->assertSee($password, false);
-        $page->assertSee($response->getSession()->get('delivered_pharmacy_id'), false);
-    }
-
-    /**
      * مسار الاسترجاع الوحيد للأدمن — كان يرمي 500 لأن Crypt غير مستورد.
      */
-    public function test_reset_credentials_works_and_flashes_new_password(): void
+    public function test_reset_credentials_returns_new_password(): void
     {
         $admin = User::factory()->admin()->create();
+        Sanctum::actingAs($admin);
 
-        $this->actingAs($admin)->post(route('pharmacies.store'), [
+        $this->postJson('/api/admin/pharmacies', [
             'pharmacy_name' => 'Reset Credentials Pharmacy',
-        ]);
+        ])->assertCreated();
 
         $pharmacy = Pharmacy::where('pharmacy_name', 'Reset Credentials Pharmacy')->firstOrFail();
         $oldHash = $pharmacy->user->password;
 
-        $response = $this->actingAs($admin)
-            ->patch(route('pharmacies.resetCredentials', $pharmacy->id));
+        $response = $this->patchJson('/api/admin/pharmacies/'.$pharmacy->id.'/reset-credentials')
+            ->assertOk();
 
-        // لا 500 — كان `Class "…\Crypt" not found`
-        $response->assertRedirect(route('pharmacies.index'));
-        $response->assertSessionHasNoErrors();
-
-        $newPassword = $response->getSession()->get('delivered_password');
+        $newPassword = (string) $response->json('data.credentials.password');
         $this->assertNotEmpty($newPassword);
 
         $pharmacy->refresh();
@@ -108,10 +84,11 @@ class PharmacyProvisioningTest extends TestCase
     public function test_provisioned_pharmacy_custom_id_matches_format(): void
     {
         $admin = User::factory()->admin()->create();
+        Sanctum::actingAs($admin);
 
-        $this->actingAs($admin)->post(route('pharmacies.store'), [
+        $this->postJson('/api/admin/pharmacies', [
             'pharmacy_name' => 'Format Check Pharmacy',
-        ])->assertRedirect(route('pharmacies.index'));
+        ])->assertCreated();
 
         $pharmacy = Pharmacy::where('pharmacy_name', 'Format Check Pharmacy')->first();
         $this->assertNotNull($pharmacy);
@@ -119,11 +96,13 @@ class PharmacyProvisioningTest extends TestCase
     }
 
     /**
-     * عند تفعيل صيدلية مسجّلة ذاتياً (delivered_at=null) → يتم تسليم بيانات الدخول مرة واحدة.
+     * عند تفعيل صيدلية مسجّلة ذاتياً (delivered_at=null) → يتم تسليم بيانات
+     * الدخول مرة واحدة (في `data.credentials`).
      */
     public function test_toggle_status_delivers_credentials_for_self_registered_pharmacy(): void
     {
         $admin = User::factory()->admin()->create();
+        Sanctum::actingAs($admin);
 
         // صيدلية مسجّلة ذاتياً (بانتظار موافقة) — كلمة المرور اختارها صاحب الصيدلية
         $pharmacy = (new \App\Services\PharmacyRegistrationService)->createPending([
@@ -136,14 +115,13 @@ class PharmacyProvisioningTest extends TestCase
         $this->assertNull($pharmacy->delivered_at);
         $this->assertFalse((bool) $pharmacy->is_active);
 
-        // الأدمن يفعّل (toggleStatus = PATCH)
-        $response = $this->actingAs($admin)
-            ->patch(route('pharmacies.toggleStatus', $pharmacy->id));
+        $response = $this->patchJson('/api/admin/pharmacies/'.$pharmacy->id.'/toggle-status')
+            ->assertOk()
+            ->assertJsonPath('data.is_active', true);
 
-        $response->assertRedirect(route('pharmacies.index'));
-        $response->assertSessionHas('delivered_pharmacy_id');
         // كلمة المرور المسلَّمة هي التي اختارها صاحب الصيدلية — لا كلمة عشوائية
-        $response->assertSessionHas('delivered_password', 'chosen-pass-123');
+        $this->assertSame('chosen-pass-123', $response->json('data.credentials.password'));
+        $this->assertSame($pharmacy->pharmacy_custom_id, $response->json('data.credentials.pharmacy_id'));
 
         $pharmacy->refresh();
         $this->assertTrue((bool) $pharmacy->is_active);
@@ -151,13 +129,12 @@ class PharmacyProvisioningTest extends TestCase
         // النسخة المشفّرة صُفِّرت فور التسليم
         $this->assertNull($pharmacy->pending_password);
         // وكلمة المرور المخزّنة hash تظل مطابقة لاختيار المستخدم
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('chosen-pass-123', $pharmacy->user->password));
+        $this->assertTrue(Hash::check('chosen-pass-123', $pharmacy->user->password));
 
-        // idempotent — تفعيل مرة ثانية لا يُعيد التسليم (toggleStatus = PATCH)
-        $response2 = $this->actingAs($admin)
-            ->patch(route('pharmacies.toggleStatus', $pharmacy->id));
-
-        $response2->assertSessionMissing('delivered_pharmacy_id');
+        // idempotent — تفعيل مرة ثانية لا يُعيد التسليم
+        $this->patchJson('/api/admin/pharmacies/'.$pharmacy->id.'/toggle-status')
+            ->assertOk()
+            ->assertJsonPath('data.credentials', null);
     }
 
     /**
@@ -166,21 +143,21 @@ class PharmacyProvisioningTest extends TestCase
     public function test_toggle_status_does_not_re_deliver_for_admin_created_pharmacy(): void
     {
         $admin = User::factory()->admin()->create();
+        Sanctum::actingAs($admin);
 
-        $this->actingAs($admin)->post(route('pharmacies.store'), [
+        $this->postJson('/api/admin/pharmacies', [
             'pharmacy_name' => 'Admin Created Pharmacy',
-        ]);
+        ])->assertCreated();
 
         $pharmacy = Pharmacy::where('pharmacy_name', 'Admin Created Pharmacy')->firstOrFail();
         $pharmacy->delivered_at = now(); // الأدمن خلّاها delivered مسبقاً
         $pharmacy->save();
 
-        // الأدمن يعطّل ثم يفعّل (toggleStatus = PATCH)
-        $this->actingAs($admin)
-            ->patch(route('pharmacies.toggleStatus', $pharmacy->id));
+        // الأدمن يعطّل ثم يفعّل
+        $this->patchJson('/api/admin/pharmacies/'.$pharmacy->id.'/toggle-status')->assertOk();
 
-        $this->actingAs($admin)
-            ->patch(route('pharmacies.toggleStatus', $pharmacy->id))
-            ->assertSessionMissing('delivered_pharmacy_id');
+        $this->patchJson('/api/admin/pharmacies/'.$pharmacy->id.'/toggle-status')
+            ->assertOk()
+            ->assertJsonPath('data.credentials', null);
     }
 }

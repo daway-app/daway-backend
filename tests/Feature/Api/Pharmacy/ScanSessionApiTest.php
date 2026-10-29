@@ -261,15 +261,58 @@ class ScanSessionApiTest extends TestCase
         $this->assertSame('Phone B', $session->pending_device_name);
     }
 
-    public function test_same_device_repairing_issues_a_fresh_device_token(): void
+    /**
+     * 🔒 **حارس الثغرة**: تطابق الاسم وحده **لا** يصدر توكنًا.
+     *
+     * قبل الإصلاح كان حامل توكن الاقتران يرسل نفس `device_name` فيستلم
+     * `device_token` صالحًا بصمت — بلا موافقة بشرية ولا إثبات ملكية.
+     * الاسم ليس سرًّا («iPhone»، «Samsung A52»)، وتوكن الاقتران معروض على
+     * الشاشة داخل الـQR، فكان أي نافذة مفتوحة أو صورة شاشة تكفي للسيطرة
+     * على مسار الباركود في كاشير الصيدلية.
+     *
+     * السلوك الصحيح: تُعامل المحاولة كجهاز آخر ⇒ 409 + طلب معلّق،
+     * والقرار البشري هو الباب الوحيد.
+     */
+    public function test_repairing_by_name_alone_does_not_issue_a_token(): void
     {
         [, $pharmacy] = $this->pharmacyUser();
         [$session, $pairingToken] = $this->makeSession($pharmacy);
 
         $first = $this->pairDevice($session, $pairingToken, 'Phone A');
 
-        // نفس الاسم = نفس الجهاز ⇒ نجاح متكرر (مسار التعافي) لا 409.
-        $second = $this->pairDevice($session, $pairingToken, 'Phone A');
+        // محاولة انتحال: نفس الاسم، توكن الاقتران فقط، بلا إثبات ملكية.
+        $this->postJson($this->pairUrl($session), ['device_name' => 'Phone A'], ['X-Scan-Token' => $pairingToken])
+            ->assertStatus(409)
+            ->assertJson(['success' => false]);
+
+        $session->refresh();
+
+        // التوكن الأصلي لم يُستبدل ولم يُصدر بديل.
+        $this->assertSame(ScanSessionQr::hashToken($first), $session->device_token);
+        $this->assertSame('Phone A', $session->active_device_name);
+
+        // ولم يُرفض صامتًا: صار طلبًا معلّقًا يقرأه الويب.
+        $this->assertNotNull($session->pending_device_id);
+    }
+
+    /**
+     * مسار التدوير المشروع: الجهاز الذي **يحمل** توكنه الحالي يستبدله بآخر.
+     * هذا ما يحدث عند إعادة تشغيل التطبيق مع توكن محفوظ — لا يُحرَم المستخدم.
+     */
+    public function test_device_holding_its_token_can_rotate_it(): void
+    {
+        [, $pharmacy] = $this->pharmacyUser();
+        [$session, $pairingToken] = $this->makeSession($pharmacy);
+
+        $first = $this->pairDevice($session, $pairingToken, 'Phone A');
+
+        $response = $this->postJson(
+            $this->pairUrl($session),
+            ['device_name' => 'Phone A'],
+            ['X-Scan-Token' => $pairingToken, 'X-Device-Token' => $first]
+        )->assertOk();
+
+        $second = (string) $response->json('data.device_token');
 
         $this->assertNotSame($first, $second, 'التوكن القديم يجب أن يُستبدل لا أن يبقى صالحًا.');
 
@@ -277,6 +320,90 @@ class ScanSessionApiTest extends TestCase
 
         // رمز واحد صالح فقط للجهاز في أي لحظة.
         $this->assertSame(ScanSessionQr::hashToken($second), $session->device_token);
+
+        // القديم مات فعليًا.
+        $this->postJson($this->barcodeUrl($session), ['barcode' => '111'], ['X-Device-Token' => $first])
+            ->assertUnauthorized();
+    }
+
+    /**
+     * التعافي بلا تدخّل بشري عبر `device_id` الثابت الذي يولّده التطبيق:
+     * إنتاجه يستلزم معرفة الـuuid نفسه، وهو غير قابل للتخمين بخلاف الاسم.
+     */
+    public function test_stable_device_id_enables_recovery_without_approval(): void
+    {
+        [, $pharmacy] = $this->pharmacyUser();
+        [$session, $pairingToken] = $this->makeSession($pharmacy);
+
+        $stableId = 'e7c1f0a2-9d3b-4f88-a1c4-2b7e5d6f9012';
+
+        $first = (string) $this->postJson(
+            $this->pairUrl($session),
+            ['device_name' => 'Phone A', 'device_id' => $stableId],
+            ['X-Scan-Token' => $pairingToken]
+        )->assertOk()->json('data.device_token');
+
+        // التطبيق فقد توكنه لكنه يحفظ معرّفه الثابت ⇒ يستعيد بلا موافقة.
+        $second = (string) $this->postJson(
+            $this->pairUrl($session),
+            ['device_name' => 'Phone A', 'device_id' => $stableId],
+            ['X-Scan-Token' => $pairingToken]
+        )->assertOk()->json('data.device_token');
+
+        $this->assertNotSame($first, $second);
+
+        // معرّف مختلف ⇒ جهاز آخر ⇒ 409 (المعرّف الثابت لا يُشارك).
+        $this->postJson(
+            $this->pairUrl($session),
+            ['device_name' => 'Phone A', 'device_id' => 'other-uuid'],
+            ['X-Scan-Token' => $pairingToken]
+        )->assertStatus(409);
+    }
+
+    /**
+     * بعد موافقة الويب، الجهاز المعتمد يستلم توكنه رغم أن هويته مشتقّة من
+     * `device_id` (الويب لا يعرفها ويرسل الاسم فقط). الموافقة تتبنّى هوية
+     * الطلب المعلّق، فلا يدور الجهاز في 409 أبدي.
+     */
+    public function test_approved_device_with_client_id_receives_its_token(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUser();
+        [$session, $pairingToken] = $this->makeSession($pharmacy, $user);
+
+        $this->pairDevice($session, $pairingToken, 'Phone A');
+
+        $stableId = 'aaaaaaaa-1111-4222-8333-444444444444';
+
+        // الجهاز الثاني يطلب (يُسجَّل معلّقًا بهويته المشتقّة من device_id).
+        $this->postJson(
+            $this->pairUrl($session),
+            ['device_name' => 'Phone B', 'device_id' => $stableId],
+            ['X-Scan-Token' => $pairingToken]
+        )->assertStatus(409);
+
+        // الويب يوافق بالاسم فقط (لا يعرف device_id).
+        Sanctum::actingAs($user);
+        $this->postJson($this->pairUrl($session), ['device_name' => 'Phone B'])->assertOk();
+
+        // الموافقة تبنّت هوية الطالب المعلّق لا هوية الويب المشتقّة من الاسم.
+        $session->refresh();
+        $this->assertNotNull($session->active_device_id);
+        $this->assertStringStartsWith('dev-i.', (string) $session->active_device_id);
+        $this->assertNull($session->device_token, 'النافذة مفتوحة للجهاز المعتمد فقط حتى أول مطالبة.');
+
+        // نعود إلى دور الجوال: بدون هذا يبقى الـBearer فعّالًا فيأخذ الحارس
+        // فرع الصيدلية ويُفسَّر النداء كموافقة ويب جديدة.
+        $this->app['auth']->forgetGuards();
+
+        // الجهاز يعيد المحاولة بمعرّفه الثابت ⇒ يستلم توكنًا.
+        $token = (string) $this->postJson(
+            $this->pairUrl($session),
+            ['device_name' => 'Phone B', 'device_id' => $stableId],
+            ['X-Scan-Token' => $pairingToken]
+        )->assertOk()->json('data.device_token');
+
+        $this->assertNotSame('', $token);
+        $this->assertSame(ScanSessionQr::hashToken($token), $session->fresh()->device_token);
     }
 
     public function test_pharmacy_bearer_approves_and_replaces_active_device(): void
@@ -296,12 +423,90 @@ class ScanSessionApiTest extends TestCase
         $session->refresh();
 
         $this->assertSame('Phone B', $session->active_device_name);
-        $this->assertNull($session->pending_device_name);
+
+        // الهوية المتبنّاة تبقى محفوظة كـ**بوابة نافذة المطالبة** (لا تُمسح
+        // عند الموافقة، بل عند إصدار التوكن) — لكنها لم تعد «قرارًا معلّقًا»
+        // في العقد: الويب لا يرى زر [سماح] لعجلٍ حُسم.
+        $this->assertSame('Phone B', $session->pending_device_name);
+
+        // العقد: الويب لا يرى «قرارًا معلّقًا» للجهاز المتبنّى.
+        $this->getJson('/api/pharmacy/scan-sessions/'.$session->id)
+            ->assertOk()
+            ->assertJsonPath('data.pending_device', null);
 
         // 🔒 الجهاز المطرود يفقد قدرته فورًا: توكنه مات مع الاستبدال.
         $this->assertNull($session->device_token);
         $this->postJson($this->barcodeUrl($session), ['barcode' => '111'], ['X-Device-Token' => $deviceTokenA])
             ->assertUnauthorized();
+    }
+
+    /**
+     * 🔒 **حارس A2**: محاولات الانتحال لا تطمس الجهاز المعلّق المشروع.
+     *
+     * الـpending هو ما يراه المستخدم ليقرّر [سماح]/[رفض]. لو استُبدل عند كل
+     * محاولة، لأمكن لمن يملك توكن الاقتران إخفاء طلب جهاز حقيقي بإغراق
+     * المحاولات. القاعدة: أول طلب يحجز مكانه، والبقية تُرفض بـ409 كما هي.
+     */
+    public function test_impersonation_attempts_cannot_overwrite_the_pending_device(): void
+    {
+        [, $pharmacy] = $this->pharmacyUser();
+        [$session, $pairingToken] = $this->makeSession($pharmacy);
+
+        $this->pairDevice($session, $pairingToken, 'Phone A');
+
+        // الجهاز المشروع يطلب الاقتران ويحجز مكان الـpending.
+        $this->postJson($this->pairUrl($session), ['device_name' => 'Legit Phone'], ['X-Scan-Token' => $pairingToken])
+            ->assertStatus(409);
+
+        // محاولات انتحال متتابعة بأسماء مختلفة.
+        foreach (['Attacker 1', 'Attacker 2', 'iPhone'] as $name) {
+            $this->postJson($this->pairUrl($session), ['device_name' => $name], ['X-Scan-Token' => $pairingToken])
+                ->assertStatus(409);
+        }
+
+        // الطلب المشروع الأول باقٍ — لم يُطمس.
+        $this->assertSame('Legit Phone', $session->fresh()->pending_device_name);
+    }
+
+    /**
+     * 🔒 **حارس A1**: نافذة المطالبة تُغلق بإصدار التوكن نفسه.
+     *
+     * جهاز بالاسم فقط يخسر توكنه ⇒ موافقة بشرية ⇒ يطالب فيفتح النافذة
+     * ويستلم توكنًا **وتُمسح الهوية المعلّقة**. أي طلب لاحق بنفس الاسم بلا
+     * توكن يعود إلى 409 — لا تُفتح نافذة جديدة من نفس الموافقة.
+     */
+    public function test_claim_closes_the_approval_window_for_name_only_devices(): void
+    {
+        [, $pharmacy] = $this->pharmacyUser();
+        [$session, $pairingToken] = $this->makeSession($pharmacy);
+
+        // جهاز بالاسم فقط يقرن ثم يفقد توكنه.
+        $this->pairDevice($session, $pairingToken, 'Phone A');
+
+        $this->postJson($this->pairUrl($session), ['device_name' => 'Phone A'], ['X-Scan-Token' => $pairingToken])
+            ->assertStatus(409);
+
+        // موافقة بشرية للجهاز نفسه ⇒ نافذة مفتوحة.
+        Sanctum::actingAs($pharmacy->user);
+        $this->postJson($this->pairUrl($session), ['device_name' => 'Phone A'])->assertOk();
+
+        $this->app['auth']->forgetGuards();
+
+        // المطالبة داخل النافذة تنجح وتمسح الهوية المعلّقة.
+        $claimed = (string) $this->postJson(
+            $this->pairUrl($session),
+            ['device_name' => 'Phone A'],
+            ['X-Scan-Token' => $pairingToken]
+        )->assertOk()->json('data.device_token');
+        $this->assertNotSame('', $claimed);
+
+        $session->refresh();
+        $this->assertNull($session->pending_device_id, 'النافذة أُغلقت بمسح الهوية المعلّقة.');
+
+        // وبعد الإغلاق: نفس الاسم بلا توكن ⇒ 409 لا توكن جديد.
+        $this->postJson($this->pairUrl($session), ['device_name' => 'Phone A'], ['X-Scan-Token' => $pairingToken])
+            ->assertStatus(409);
+        $this->assertSame(ScanSessionQr::hashToken($claimed), $session->fresh()->device_token);
     }
 
     public function test_pair_with_invalid_token_is_401(): void

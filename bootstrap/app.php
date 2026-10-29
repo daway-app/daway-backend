@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\HealthController;
 use App\Http\Middleware\AuthorizeScanSession;
-use App\Http\Middleware\EnsurePasswordChanged;
-use App\Http\Middleware\EnsureProfileComplete;
+use App\Http\Middleware\EnsureAdminPasswordChanged;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\SetAppLocale;
 use App\Support\InventoryImportThrottle;
@@ -16,6 +16,7 @@ use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -28,24 +29,13 @@ Request::enableHttpMethodParameterOverride();
 require_once __DIR__.'/../app/helpers.php';
 
 /**
- * هل الطلب على مسارات الاستيراد الجماعي؟
+ * هل الطلب على مسارات الاستيراد الجماعي (API فقط بعد حذف واجهة Blade)؟
  *
  * نُقيّد معالج 429 بهذه المسارات فقط، حتى لا نغيّر سلوك بقية الحدود
  * (login / otp / register / throttle:api) التي تحتاج معالجة مختلفة.
- *
- * ويب: أسماء المسارات `pharmacy.inventory.import.*`
- * API: لا أسماء مسارات هناك، فنطابق المسار نفسه.
  */
 $isInventoryImportRequest = static function (Request $request): bool {
-    $name = (string) ($request->route()?->getName() ?? '');
-
-    if (str_starts_with($name, 'pharmacy.inventory.import.')) {
-        return true;
-    }
-
     return $request->is(
-        'pharmacy/inventory/import',
-        'pharmacy/inventory/import/*',
         'api/pharmacy/inventory/import',
         'api/pharmacy/inventory/import/*',
     );
@@ -53,21 +43,34 @@ $isInventoryImportRequest = static function (Request $request): bool {
 
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        // `/healthz` يُسجَّل هنا — لا في routes/web.php.
+        // السبب: هو عقد فحص الصحة في render.yaml (`healthCheckPath: /healthz`)
+        // وحلقة الإبقاء في Dockerfile. لو بقي مسارًا ويبًا لسقط النشر عند حذف
+        // واجهة Blade. نفس المسار ونفس الاستجابة (JSON من HealthController)،
+        // وبلا مجموعة `web` (لا جلسة ولا كوكيز — وهي غير لازمة لفحص صحة).
+        then: function () {
+            Route::get('/healthz', [HealthController::class, 'index']);
+        },
     )
     ->withMiddleware(function (Middleware $middleware) {
         // C-1/H-3: البروكسي الموثوق يُقرأ وقت الطلب من config('trustedproxy.proxies')
         // (يرسله middleware الـ TrustProxies المدمج) — آمن بعد config:cache ولا يُنفَّذ هنا أبداً.
         $middleware->throttleApi();
 
+        // 🔴 تطبيق API فقط: لا صفحة دخول بعد حذف Blade.
+        // Laravel يضبط افتراضيًّا `redirectGuestsTo(fn () => route('login'))`؛
+        // بعد حذف المسار صار كل طلب غير مصادَق **لا يتوقّع JSON** (متصفح يفتح
+        // /api/... مباشرة) يرمي RouteNotFoundException داخل `Authenticate`
+        // قبل حتى بناء AuthenticationException ⇒ 500 بدل 401.
+        // إرجاع null يجعل الاستثناء بلا redirectTo فيلتقطه معالج API أدناه.
+        $middleware->redirectGuestsTo(fn () => null);
+
         $middleware->alias([
             'role' => EnsureRole::class,
-            'profile.complete' => EnsureProfileComplete::class,
-            // إلزام تغيير كلمة المرور المؤقتة — يسبق profile.complete (إجراء أمني).
-            'password.changed' => EnsurePasswordChanged::class,
+            'admin.password.changed' => EnsureAdminPasswordChanged::class,
             // جلسات المسح بالهاتف: مسارات `pair`/`barcode` تقبل توكن اقتران
             // مؤقت **أو** Bearer صيدلية، فلا تصلح معها `auth:sanctum` (ترمي
             // 401 قبل أي منطق). الحارس نفسه يفحص المصدرين ويعزل الصيدلية.
@@ -91,25 +94,22 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ? response()->json(['success' => false, 'message' => 'غير موجود'], 404)
             : null);
 
-        $exceptions->render(fn (AccessDeniedHttpException $e, Request $request) => $request->expectsJson()
+        $exceptions->render(fn (AccessDeniedHttpException $e, Request $request) => ($request->expectsJson() || $request->is('api/*'))
             ? response()->json(['success' => false, 'message' => 'غير مصرح لك بالوصول'], 403)
             : null);
 
-        $exceptions->render(fn (AuthenticationException $e, Request $request) => $request->expectsJson()
+        // `api/*` صريحة عمدًا (مثل EnsureRole): طلب API غير مصادَق يجب أن يحصل
+        // على 401 JSON دائمًا. بلا هذا الشرط يهبط الطلب غير-JSON (متصفح يفتح
+        // /api/... مباشرة) إلى معالج Laravel الافتراضي
+        // (Foundation\Exceptions\Handler::unauthenticated) الذي ينادي
+        // `route('login')` ⇒ RouteNotFoundException بعد حذف مسارات الويب.
+        $exceptions->render(fn (AuthenticationException $e, Request $request) => ($request->expectsJson() || $request->is('api/*'))
             ? response()->json(['success' => false, 'message' => 'يجب تسجيل الدخول'], 401)
             : null);
 
-        // HTTP 429 على مسارات الاستيراد: رسالة مفهومة + Retry-After، بدل صفحة
-        // الخطأ الخام التي لا تقول للصيدلي كم ينتظر ولا ما العمل.
-        //
-        //  - طلب JSON (Flutter / fetch): JSON 429 مع `retry_after` بالثواني،
-        //    ويقرأه العميل فيعيد المحاولة بعد الانتظار.
-        //  - نموذج ويب (رفع/تنفيذ/إلغاء): إعادة توجيه إلى الصفحة نفسها التي
-        //    جاء منها الطلب مع خطأ واضح، فيظهر في مكان بقية أخطاء الاستيراد.
-        //
-        // ملاحظة مقصودة: مسار الويب يعيد 302 لا 429. السبب أن الصيدلي أمامه
-        // نموذج، والرسالة داخل الصفحة أنفع له من صفحة خطأ كاملة. وحتى لا يضيع
-        // الحدّ عن المراقبة، نُسجّل كل حجب حقيقي كـ warning.
+        // HTTP 429 على مسارات الاستيراد (API فقط): رسالة مفهومة + Retry-After
+        // بدل جسم الخطأ الخام، مع `retry_after` بالثواني ليقرأه العميل فيعيد
+        // المحاولة بعد الانتظار. يُسجَّل كل حجب حقيقي كـwarning للمراقبة.
         $exceptions->render(function (ThrottleRequestsException $e, Request $request) use ($isInventoryImportRequest) {
             if (! $isInventoryImportRequest($request)) {
                 return null;
@@ -129,31 +129,15 @@ $app = Application::configure(basePath: dirname(__DIR__))
                 'retry_after' => $retryAfter,
             ]);
 
-            if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $message,
-                    'retry_after' => $retryAfter,
-                ], 429, $headers);
-            }
-
-            // وجهة الإرجاع محدّدة صراحةً بدل back(): لا نعتمد على Referer قد يغيب.
-            $name = (string) ($request->route()?->getName() ?? '');
-            $uuid = (string) $request->route('import');
-
-            if ($name !== 'pharmacy.inventory.import.preview' && $uuid !== '') {
-                $target = redirect()->route('pharmacy.inventory.import.show', ['import' => $uuid]);
-            } else {
-                $target = redirect()->route('pharmacy.inventory.import.index');
-            }
-
-            return $target
-                ->withErrors(['file' => $message])
-                ->with('retry_after', $retryAfter);
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+                'retry_after' => $retryAfter,
+            ], 429, $headers);
         });
 
         $exceptions->render(function (Throwable $e, Request $request) {
-            if (! $request->expectsJson()) {
+            if (! ($request->expectsJson() || $request->is('api/*'))) {
                 return null;
             }
 
@@ -195,6 +179,7 @@ $app->booted(function () {
 
     // M-9: حد مخصص لنقاط الكتابة المعرضة للإساءة (استفسارات، تقييمات، مزامنة، مخزون)
     RateLimiter::for('writes', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()));
+
     // إرسال الباركود من الجوال: المفتاح هو **جلسة المسح** لا المستخدم ولا IP.
     // السبب: تطبيق الجوال لا يسجّل دخولًا (يُفوَّض بتوكن الاقتران)، فلا user_id
     // لبناء المفتاح عليه؛ والـIP مشترك بين أجهزة شبكة الصيدلية فيحجب أبرياء.
