@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Migrations;
 
-use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -18,14 +17,6 @@ use RuntimeException;
  */
 final class MySqlMigrationRecoveryTest extends TestCase
 {
-    public function createApplication()
-    {
-        $app = require dirname(__DIR__, 4).'/bootstrap/app.php';
-        $app->make(Kernel::class)->bootstrap();
-
-        return $app;
-    }
-
     protected function setUp(): void
     {
         parent::setUp();

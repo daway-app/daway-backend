@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - test/migration-recovery-f113
+      - develop
   workflow_dispatch:
 
 permissions:
