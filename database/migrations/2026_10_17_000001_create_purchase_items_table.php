@@ -106,7 +106,10 @@ return new class extends Migration
             if (array_key_exists($name, $nullable) && (bool) ($column['nullable'] ?? false) !== $nullable[$name]) {
                 throw new RuntimeException("قابلية NULL في purchase_items.{$name} غير متوقعة؛ لم تُعدّل البيانات.");
             }
-            if ($driver !== 'sqlite' && isset($lengths[$name]) && (int) ($column['length'] ?? 0) !== $lengths[$name]) {
+            // Laravel's MySQL schema metadata exposes the length in `type`
+            // (e.g. varchar(200)); it does not provide a separate `length` key.
+            if ($driver !== 'sqlite' && isset($lengths[$name])
+                && strtolower((string) ($column['type'] ?? '')) !== 'varchar('.$lengths[$name].')') {
                 throw new RuntimeException("طول purchase_items.{$name} غير متوقع؛ لم تُعدّل البيانات.");
             }
         }

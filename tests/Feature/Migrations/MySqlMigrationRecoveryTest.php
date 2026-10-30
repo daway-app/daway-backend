@@ -40,6 +40,9 @@ final class MySqlMigrationRecoveryTest extends TestCase
     {
         $this->assertMysqlColumn('medicine_barcodes', 'moh_medicine_id', 'bigint unsigned', 'YES');
         $this->assertForeignKey('medicine_barcodes', 'moh_medicine_id', 'moh_medicines', 'id', 'CASCADE');
+        $this->assertMysqlColumn('purchase_items', 'medicine_name', 'varchar(200)', 'NO');
+        $this->assertMysqlColumn('purchase_items', 'barcode', 'varchar(32)', 'YES');
+        $this->assertMysqlColumn('notifications', 'dedupe_key', 'varchar(191)', 'YES');
 
         foreach ([
             'purchase_id' => ['purchases', 'CASCADE'],
@@ -113,13 +116,15 @@ final class MySqlMigrationRecoveryTest extends TestCase
     public function test_wrong_barcode_fk_fails_diagnostically_without_changing_the_row(): void
     {
         [$mohId, $localId, $barcodeId] = $this->createBarcode();
-        DB::table('medicines')->insert([
-            'id' => $mohId,
-            'trade_name' => 'Wrong FK target fixture',
-            'active_ingredient' => 'fixture',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        if (! DB::table('medicines')->where('id', $mohId)->exists()) {
+            DB::table('medicines')->insert([
+                'id' => $mohId,
+                'trade_name' => 'Wrong FK target fixture',
+                'active_ingredient' => 'fixture',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         $this->dropForeignKey('medicine_barcodes', 'moh_medicine_id');
         DB::statement('ALTER TABLE `medicine_barcodes` ADD CONSTRAINT `f113_wrong_barcode_fk` FOREIGN KEY (`moh_medicine_id`) REFERENCES `medicines` (`id`) ON DELETE CASCADE');
@@ -179,6 +184,43 @@ final class MySqlMigrationRecoveryTest extends TestCase
 
         $this->assertTrue(Schema::hasTable('purchase_items'));
         $this->assertFalse($this->hasForeignKey('purchase_items', 'purchase_id'));
+    }
+
+    public function test_purchase_schema_with_wrong_varchar_length_is_rejected(): void
+    {
+        DB::statement('ALTER TABLE `purchase_items` MODIFY `medicine_name` VARCHAR(199) NOT NULL');
+
+        try {
+            $this->migration('2026_10_17_000001_create_purchase_items_table.php')->up();
+            $this->fail('Expected a diagnostic exception for an incorrect purchase item length.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('طول purchase_items.medicine_name', $exception->getMessage());
+        }
+
+        $this->assertMysqlColumn('purchase_items', 'medicine_name', 'varchar(199)', 'NO');
+        $this->assertForeignKey('purchase_items', 'purchase_id', 'purchases', 'id', 'CASCADE');
+    }
+
+    public function test_notification_schema_with_wrong_dedupe_length_is_rejected_without_changing_the_row(): void
+    {
+        [$userId] = $this->createUserAndOrder();
+        $id = DB::table('notifications')->insertGetId([
+            'user_id' => $userId,
+            'type' => 'migration-test',
+            'message' => 'preserve length fixture',
+            'dedupe_key' => 'f113-length',
+        ]);
+        DB::statement('ALTER TABLE `notifications` MODIFY `dedupe_key` VARCHAR(190) NULL');
+
+        try {
+            $this->migration('2026_10_22_000001_add_order_context_to_notifications_table.php')->up();
+            $this->fail('Expected a diagnostic exception for an incorrect dedupe key length.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('notifications.dedupe_key', $exception->getMessage());
+        }
+
+        $this->assertMysqlColumn('notifications', 'dedupe_key', 'varchar(190)', 'YES');
+        $this->assertDatabaseHas('notifications', ['id' => $id, 'dedupe_key' => 'f113-length', 'message' => 'preserve length fixture']);
     }
 
     public function test_legacy_payment_default_is_removed_and_backfill_uses_order_snapshot_fields(): void

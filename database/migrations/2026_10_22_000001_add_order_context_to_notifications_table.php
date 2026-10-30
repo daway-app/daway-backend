@@ -112,7 +112,8 @@ return new class extends Migration
             $expectedType = $driver === 'sqlite' && $type === 'bigint' ? 'integer' : $type;
             if ($actualType !== $expectedType || (bool) ($column['nullable'] ?? false) !== $nullable
                 || ($driver !== 'sqlite' && in_array($name, ['order_id', 'sub_order_id'], true) && ! $unsigned)
-                || ($driver !== 'sqlite' && $length !== null && (int) ($column['length'] ?? 0) !== $length)) {
+                || ($driver !== 'sqlite' && $length !== null
+                    && strtolower((string) ($column['type'] ?? '')) !== $type.'('.$length.')')) {
                 throw new RuntimeException("تعريف notifications.{$name} غير متوقع؛ أوقفنا الهجرة دون تعديل البيانات.");
             }
 
