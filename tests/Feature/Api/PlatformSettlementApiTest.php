@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\Sale;
 use App\Models\SubOrder;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\Feature\Api\Concerns\BuildsDeliveryOrders;
 use Tests\TestCase;
 
@@ -89,6 +91,7 @@ class PlatformSettlementApiTest extends TestCase
 
     public function test_adjustments_are_snapshotted_and_paid_settlement_cannot_be_paid_twice(): void
     {
+        Storage::fake('local');
         $order = $this->checkoutTwoPharmacy();
         $this->markOrderPaid($order);
         $sub = $this->subOrderFor($order, $this->pharmacyA);
@@ -109,15 +112,51 @@ class PlatformSettlementApiTest extends TestCase
         ])->assertCreated()->assertJsonPath('data.adjustments_total', -15)->assertJsonPath('data.net_total', 85);
         $id = $response->json('data.id');
 
-        $this->postJson("/api/admin/platform-settlements/{$id}/paid", [
+        $paid = $this->withHeaders(['Accept' => 'application/json'])->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
+            'receipt' => UploadedFile::fake()->create('bank-notice.pdf', 120, 'application/pdf'),
             'transfer_reference' => 'BANK-TEST-001',
-            'paid_at' => '2026-11-01 12:00:00',
-        ])->assertOk()->assertJsonPath('data.status', 'paid')->assertJsonPath('data.transfer_reference', 'BANK-TEST-001');
-        $this->postJson("/api/admin/platform-settlements/{$id}/paid", [
-            'transfer_reference' => 'BANK-TEST-002',
-            'paid_at' => '2026-11-01 12:10:00',
+        ])->assertOk()->assertJsonPath('data.0.status', 'paid')
+            ->assertJsonPath('data.0.transfer_reference', 'BANK-TEST-001')
+            ->assertJsonPath('data.0.receipt_available', true);
+        $this->assertSame($id, $paid->json('data.0.id'));
+        $this->assertSame(0, $this->getJson('/api/admin/platform-settlements/due')->json('data.0.total_due') ?? 0);
+
+        $this->actingAs($this->pharmacyA->user, 'sanctum');
+        $this->getJson('/api/pharmacy/accounting/platform-settlements')->assertOk()
+            ->assertJsonPath('outstanding.total_due', 0)->assertJsonPath('data.0.receipt_available', true);
+        $this->get('/api/pharmacy/accounting/platform-settlements/'.$id.'/receipt')->assertOk();
+        $this->actingAs($this->pharmacyB->user, 'sanctum');
+        $this->get('/api/pharmacy/accounting/platform-settlements/'.$id.'/receipt')->assertNotFound();
+
+        $this->actingAs($this->admin, 'sanctum');
+        $this->get('/api/admin/platform-settlements/'.$id.'/receipt')->assertOk();
+        $this->withHeaders(['Accept' => 'application/json'])->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
+            'receipt' => UploadedFile::fake()->create('bank-notice-again.pdf', 120, 'application/pdf'),
         ])->assertStatus(422);
         $this->assertSame(0, CashMovement::count());
         $this->assertSame(0, Sale::count());
+    }
+
+    public function test_admin_due_list_only_includes_pharmacies_with_delivered_and_customer_paid_orders(): void
+    {
+        Storage::fake('local');
+        $order = $this->checkoutTwoPharmacy();
+        $this->markOrderPaid($order);
+        $subA = $this->subOrderFor($order, $this->pharmacyA);
+        $subB = $this->subOrderFor($order, $this->pharmacyB);
+        $subA->update(['status' => SubOrder::STATUS_DELIVERED, 'delivered_at' => '2026-10-29 10:00:00']);
+        $subB->update(['status' => SubOrder::STATUS_READY, 'delivered_at' => null]);
+        $this->admin->syncRoles(['admin']);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/platform-settlements/due')->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.pharmacy_id', $this->pharmacyA->id)
+            ->assertJsonPath('data.0.orders_count', 1)
+            ->assertJsonPath('data.0.total_due', 100);
+
+        $this->withHeaders(['Accept' => 'application/json'])->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
+            'receipt' => UploadedFile::fake()->create('transfer-proof.pdf', 80, 'application/pdf'),
+        ])->assertOk()->assertJsonPath('data.0.status', 'paid')->assertJsonPath('data.0.orders_total', 100);
+        $this->getJson('/api/admin/platform-settlements/due')->assertOk()->assertJsonCount(0, 'data');
     }
 }
