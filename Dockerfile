@@ -19,7 +19,14 @@ RUN apt-get update && apt-get install -y \
     zip \
     gd \
     opcache \
+    bcmath \
     && rm -rf /var/lib/apt/lists/*
+
+# C-2: `bcmath` is NOT part of the official php:8.4-cli image, yet the money
+# paths call bccomp() directly (RefundService, AccountingLedger, Sale).
+# Without it every refund / customer payment dies with
+# "Call to undefined function bccomp()" → HTTP 500 «حدث خطأ داخلي».
+# It is also not declared in composer.json, so nothing fails at build time.
 
 # Enable opcache for the CLI server (artisan serve)
 RUN { \
