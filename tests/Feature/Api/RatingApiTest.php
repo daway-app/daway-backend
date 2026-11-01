@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Pharmacy;
+use App\Models\Order;
 use App\Models\Rating;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
@@ -15,6 +16,7 @@ class RatingApiTest extends TestCase
         $patient = User::factory()->patient()->create();
         $pharmacyUser = User::factory()->pharmacy()->create();
         $pharmacy = Pharmacy::factory()->create(['user_id' => $pharmacyUser->id]);
+        $this->completeLegacyOrder($patient, $pharmacy);
 
         Sanctum::actingAs($patient);
 
@@ -141,6 +143,8 @@ class RatingApiTest extends TestCase
         $patient = User::factory()->patient()->create();
         $pharmacy = Pharmacy::factory()->create(['is_active' => true]);
 
+        $this->completeLegacyOrder($patient, $pharmacy);
+
         Sanctum::actingAs($patient);
 
         $this->postJson('/api/ratings', [
@@ -161,6 +165,9 @@ class RatingApiTest extends TestCase
         $patientA = User::factory()->patient()->create();
         $patientB = User::factory()->patient()->create();
         $pharmacy = Pharmacy::factory()->create(['is_active' => true]);
+
+        $this->completeLegacyOrder($patientA, $pharmacy);
+        $this->completeLegacyOrder($patientB, $pharmacy);
 
         Sanctum::actingAs($patientA);
         $this->postJson('/api/ratings', [
@@ -486,5 +493,17 @@ class RatingApiTest extends TestCase
         $pharmacy = Pharmacy::factory()->create(['user_id' => $user->id]);
 
         return [$user, $pharmacy];
+    }
+
+    private function completeLegacyOrder(User $patient, Pharmacy $pharmacy): void
+    {
+        Order::create([
+            'user_id' => $patient->id,
+            'pharmacy_id' => $pharmacy->id,
+            'subtotal' => 10,
+            'discount' => 0,
+            'total' => 10,
+            'status' => Order::STATUS_DELIVERED,
+        ]);
     }
 }

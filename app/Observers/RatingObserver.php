@@ -4,21 +4,24 @@ namespace App\Observers;
 
 use App\Models\Notification;
 use App\Models\Rating;
+use App\Models\Pharmacy;
 
 class RatingObserver
 {
     public function created(Rating $rating): void
     {
         $pharmacy = $rating->pharmacy;
-        if (! $pharmacy || ! $pharmacy->user) {
+        if (! $pharmacy) {
             return;
         }
 
         // H-6: إعادة حساب المعدل المجمّع بعد كل تقييم — العمود يُقرأ من
         // contract الجوال (pharmacyRowPayload/payload) وكان ميتاً بدون هذه الصيانة
-        $pharmacy->forceFill([
-            'avg_rating' => round((float) $pharmacy->ratings()->avg('stars_rating'), 2),
-        ])->save();
+        $this->rebuildAverage($pharmacy);
+
+        if (! $pharmacy->user) {
+            return;
+        }
 
         $userId = $pharmacy->user->id;
 
@@ -53,5 +56,27 @@ class RatingObserver
             'is_read' => false,
             'created_at' => now(),
         ]);
+    }
+
+    public function updated(Rating $rating): void
+    {
+        if ($rating->wasChanged('stars_rating') && $rating->pharmacy) {
+            $this->rebuildAverage($rating->pharmacy);
+        }
+    }
+
+    public function deleted(Rating $rating): void
+    {
+        if ($rating->pharmacy) {
+            $this->rebuildAverage($rating->pharmacy);
+        }
+    }
+
+    private function rebuildAverage(Pharmacy $pharmacy): void
+    {
+        $average = $pharmacy->ratings()->avg('stars_rating');
+        $pharmacy->forceFill([
+            'avg_rating' => $average === null ? 0.0 : round((float) $average, 2),
+        ])->save();
     }
 }

@@ -8,8 +8,11 @@ use App\Http\Requests\Api\RatingUpdateRequest;
 use App\Http\Resources\RatingResource;
 use App\Models\Pharmacy;
 use App\Models\Rating;
+use App\Models\Order;
+use App\Models\SubOrder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class RatingController extends Controller
 {
@@ -46,10 +49,35 @@ class RatingController extends Controller
 
     public function store(RatingRequest $request): JsonResponse
     {
+        abort_unless($request->user()->role === 'patient', 403);
+
         $data = $request->validated();
         $pharmacy = Pharmacy::findOrFail($data['pharmacy_id']);
 
         abort_unless($pharmacy->is_active, 403, 'الصيدلية غير نشطة');
+
+        // Keep the existing one-rating-per-patient/pharmacy rule. A completed
+        // parent alone is insufficient when that pharmacy's slice was cancelled.
+        $eligible = Order::query()
+            ->where('user_id', $request->user()->id)
+            ->where('status', Order::STATUS_DELIVERED)
+            ->whereDoesntHave('subOrders', function ($subOrders) {
+                $subOrders->whereNotIn('status', [SubOrder::STATUS_DELIVERED, SubOrder::STATUS_CANCELLED]);
+            })
+            ->where(function ($query) use ($pharmacy) {
+                $query->whereHas('subOrders', function ($subOrders) use ($pharmacy) {
+                    $subOrders->where('pharmacy_id', $pharmacy->id)
+                        ->where('status', SubOrder::STATUS_DELIVERED);
+                })->orWhere(function ($legacy) use ($pharmacy) {
+                    $legacy->whereDoesntHave('subOrders')->where('pharmacy_id', $pharmacy->id);
+                });
+            })->exists();
+
+        if (! $eligible) {
+            throw ValidationException::withMessages([
+                'pharmacy_id' => ['يمكن تقييم الصيدلية بعد استلام طلب مكتمل منها فقط.'],
+            ]);
+        }
 
         $rating = Rating::create([
             'user_id' => $request->user()->id,
@@ -103,11 +131,7 @@ class RatingController extends Controller
     {
         $this->authorizeOwner($request, $rating);
 
-        $pharmacyId = $rating->pharmacy_id;
-
         $rating->delete();
-
-        $this->rebuildAverage(collect([$pharmacyId]));
 
         return response()->json([
             'success' => true,
@@ -120,18 +144,4 @@ class RatingController extends Controller
         abort_unless($rating->user_id === $request->user()->id, 404);
     }
 
-    private function rebuildAverage($pharmacyIds): void
-    {
-        $pharmacyIds->each(function ($pharmacyId) {
-            $avg = Rating::where('pharmacy_id', $pharmacyId)->avg('stars_rating');
-            $count = Rating::where('pharmacy_id', $pharmacyId)->count();
-
-            $pharmacy = Pharmacy::find($pharmacyId);
-            if ($pharmacy) {
-                $pharmacy->forceFill([
-                    'avg_rating' => $avg !== null ? round((float) $avg, 2) : 0.00,
-                ])->save();
-            }
-        });
-    }
 }

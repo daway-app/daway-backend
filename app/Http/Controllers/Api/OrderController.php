@@ -793,21 +793,37 @@ class OrderController extends Controller
 
         $pharmacyId = $pharmacy->pharmacy?->id;
 
-        $subOrders = SubOrder::where('pharmacy_id', $pharmacyId)
-            ->with(['order', 'items', 'pharmacy'])
+        $subOrders = SubOrder::where('pharmacy_id', $pharmacyId ?? -1)
+            ->with(['order.user', 'items', 'pharmacy'])
             ->latest('created_at')
             ->paginate(20);
 
         return response()->json([
             'success' => true,
             'message' => 'تم جلب الطلبات الفرعية بنجاح',
-            'data' => collect($subOrders->items())->map(fn (SubOrder $s) => $this->subOrderPayload($s))->values(),
+            'data' => collect($subOrders->items())->map(fn (SubOrder $s) => $this->pharmacySubOrderPayload($s))->values(),
             'pagination' => [
                 'total' => $subOrders->total(),
                 'per_page' => $subOrders->perPage(),
                 'current_page' => $subOrders->currentPage(),
                 'last_page' => $subOrders->lastPage(),
             ],
+        ]);
+    }
+
+    public function pharmacySubOrder(Request $request, int $subOrder): JsonResponse
+    {
+        $pharmacyId = $request->user()->pharmacy?->id;
+
+        $owned = SubOrder::query()
+            ->where('pharmacy_id', $pharmacyId ?? -1)
+            ->with(['order.user', 'items', 'pharmacy'])
+            ->findOrFail($subOrder);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب تفاصيل الطلب الفرعي بنجاح',
+            'data' => $this->pharmacySubOrderPayload($owned),
         ]);
     }
 
@@ -1098,6 +1114,30 @@ class OrderController extends Controller
             'delivered_at' => $subOrder->delivered_at?->toDateTimeString(),
             'created_at' => $subOrder->created_at?->toDateTimeString(),
         ];
+    }
+
+    /** Pharmacy view: never serialize the parent items or parent financial totals. */
+    private function pharmacySubOrderPayload(SubOrder $subOrder): array
+    {
+        $order = $subOrder->order;
+
+        return array_merge($this->subOrderPayload($subOrder), [
+            'patient' => $order?->user ? ['name' => $order->user->name] : null,
+            'order_status' => $order?->status,
+            'payment_status' => $order?->payment_status,
+            // Checkout currently requires a delivery address; no pickup flow exists.
+            'fulfillment_method' => 'delivery',
+            'currency' => 'ILS',
+            'items' => $subOrder->items
+                ->filter(fn (OrderItem $item) => (int) $item->pharmacy_id === (int) $subOrder->pharmacy_id)
+                ->map(fn (OrderItem $item) => [
+                    'id' => $item->id,
+                    'medicine_trade_name' => $item->medicine_trade_name,
+                    'quantity' => $item->quantity,
+                    'unit_price' => (float) $item->unit_price,
+                    'total_price' => (float) $item->total_price,
+                ])->values(),
+        ]);
     }
 
     private function payloadCollection($orders): array

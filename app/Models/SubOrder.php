@@ -118,6 +118,11 @@ class SubOrder extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function settlementItem(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(PlatformSettlementItem::class, 'sub_order_id');
+    }
+
     public function statusHistories(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class)->latest();

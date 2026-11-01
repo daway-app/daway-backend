@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Admin\MedicineRequestController as AdminMedicineReq
 use App\Http\Controllers\Api\Admin\OrderDispatchController as AdminOrderDispatchController;
 use App\Http\Controllers\Api\Admin\PaymentBankController as AdminPaymentBankController;
 use App\Http\Controllers\Api\Admin\PaymentController as AdminPaymentController;
+use App\Http\Controllers\Api\Admin\PlatformSettlementController as AdminPlatformSettlementController;
 use App\Http\Controllers\Api\Admin\PatientInventoryController as AdminPatientInventoryController;
 use App\Http\Controllers\Api\Admin\PharmacyController as AdminPharmacyController;
 use App\Http\Controllers\Api\Admin\ProfileController as AdminProfileController;
@@ -53,6 +54,7 @@ use App\Http\Controllers\Api\PharmacyInventoryController;
 use App\Http\Controllers\Api\PharmacyInventoryImportController;
 use App\Http\Controllers\Api\PharmacyMedicineController;
 use App\Http\Controllers\Api\PharmacyProfileController;
+use App\Http\Controllers\Api\PharmacyPlatformSettlementController;
 use App\Http\Controllers\Api\PharmacyPasswordResetRequestController;
 use App\Http\Controllers\Api\PharmacyRatingController;
 use App\Http\Controllers\Api\RatingController;
@@ -268,6 +270,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Phase 1 — الطلبات الفرعية: كل صيدلية ترى وتحدّث طلباتها الفرعية فقط.
         // مفتاح العزل هو `pharmacy_id` صاحب الطلب، لا الصيدلية المذكورة في الأصناف.
         Route::get('sub-orders', [OrderController::class, 'pharmacySubOrders'])->name('api.pharmacy.sub-orders.index');
+        Route::get('sub-orders/{subOrder}', [OrderController::class, 'pharmacySubOrder'])->whereNumber('subOrder')->name('api.pharmacy.sub-orders.show');
         Route::post('sub-orders/{subOrder}/status', [OrderController::class, 'updateSubOrderStatus'])->name('api.pharmacy.sub-orders.status');
 
         // ==================== ACCOUNTING ====================
@@ -284,6 +287,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // سياسة بقية مسارات الكتابة في المشروع. القراء بلا حدّ مخصّص
         // (يخضعون لـ`throttle:api` العام).
         Route::prefix('accounting')->group(function () {
+            Route::get('platform-settlements', [PharmacyPlatformSettlementController::class, 'index'])
+                ->name('api.pharmacy.accounting.platform-settlements.index');
+            Route::get('platform-settlements/{settlement}', [PharmacyPlatformSettlementController::class, 'show'])
+                ->whereNumber('settlement')->name('api.pharmacy.accounting.platform-settlements.show');
+
             Route::get('overview', [AccountingOverviewController::class, 'show'])
                 ->name('api.pharmacy.accounting.overview');
 
@@ -498,6 +506,14 @@ Route::post('/admin/change-password', [AdminProfileController::class, 'changePas
     ->middleware(['auth:sanctum', 'role:admin', 'throttle:6,1']);
 
 Route::middleware(['auth:sanctum', 'role:admin', 'admin.password.changed'])->prefix('admin')->group(function () {
+    // تسويات منصة الطلبات الإلكترونية (مستقلة عن POS وصندوق النقد).
+    Route::get('/platform-settlements/eligible', [AdminPlatformSettlementController::class, 'eligible']);
+    Route::get('/platform-settlements', [AdminPlatformSettlementController::class, 'index']);
+    Route::post('/platform-settlements', [AdminPlatformSettlementController::class, 'store'])->middleware('throttle:writes');
+    Route::get('/platform-settlements/{settlement}', [AdminPlatformSettlementController::class, 'show'])->whereNumber('settlement');
+    Route::post('/platform-settlements/{settlement}/paid', [AdminPlatformSettlementController::class, 'markPaid'])->whereNumber('settlement')->middleware('throttle:writes');
+    Route::post('/platform-settlements/adjustments', [AdminPlatformSettlementController::class, 'adjustment'])->middleware('throttle:writes');
+
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);
 

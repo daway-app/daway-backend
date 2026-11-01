@@ -376,6 +376,13 @@ class Order extends Model
     {
         $derived = $this->deriveStatusFromSubOrders();
 
+        // Covers the normal last-sub-order transition and safely repairs an
+        // older delivered parent that was persisted without its timestamp.
+        if ($derived === self::STATUS_DELIVERED && $this->delivered_at === null) {
+            $this->delivered_at = now();
+            $this->save();
+        }
+
         if ($derived !== $this->status) {
             $this->addStatus($derived, 'تحديث تلقائي حسب حالة طلبات الصيدليات الفرعية');
         }
