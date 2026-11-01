@@ -10,8 +10,11 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PlatformSettlementController extends Controller
 {
@@ -60,10 +63,108 @@ class PlatformSettlementController extends Controller
         ]);
     }
 
+    public function due(): JsonResponse
+    {
+        $unbatched = DB::table('sub_orders')
+            ->join('orders', 'orders.id', '=', 'sub_orders.order_id')
+            ->where('sub_orders.status', 'delivered')
+            ->whereNotNull('sub_orders.delivered_at')
+            ->where('orders.payment_status', 'paid')
+            ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('platform_settlement_items')->whereColumn('platform_settlement_items.sub_order_id', 'sub_orders.id'))
+            ->groupBy('sub_orders.pharmacy_id')
+            ->selectRaw('sub_orders.pharmacy_id, COUNT(*) as orders_count, SUM(sub_orders.total) as orders_total')
+            ->get()->keyBy('pharmacy_id');
+        $drafts = DB::table('platform_settlements')->where('status', PlatformSettlement::STATUS_DRAFT)
+            ->groupBy('pharmacy_id')->selectRaw('pharmacy_id, COUNT(*) as draft_count, SUM(net_total) as drafts_total')->get()->keyBy('pharmacy_id');
+        $adjustments = DB::table('platform_settlement_adjustments')->whereNull('settlement_id')
+            ->whereDate('effective_period_start', '<=', now()->toDateString())
+            ->groupBy('pharmacy_id')->selectRaw('pharmacy_id, SUM(amount) as adjustments_total')->get()->keyBy('pharmacy_id');
+
+        $ids = collect([$unbatched->keys(), $drafts->keys(), $adjustments->keys()])->flatten()->unique()->values();
+        $rows = Pharmacy::query()->whereIn('id', $ids)->orderBy('pharmacy_name')->get(['id', 'pharmacy_name'])
+            ->map(function (Pharmacy $pharmacy) use ($unbatched, $drafts, $adjustments) {
+                $orders = $unbatched->get($pharmacy->id);
+                $draft = $drafts->get($pharmacy->id);
+                $adjustment = $adjustments->get($pharmacy->id);
+                $ordersTotal = round((float) ($orders->orders_total ?? 0), 2);
+                $draftsTotal = round((float) ($draft->drafts_total ?? 0), 2);
+                $adjustmentsTotal = round((float) ($adjustment->adjustments_total ?? 0), 2);
+                return [
+                    'pharmacy_id' => $pharmacy->id,
+                    'pharmacy_name' => $pharmacy->pharmacy_name,
+                    'orders_count' => (int) ($orders->orders_count ?? 0),
+                    'orders_total' => $ordersTotal,
+                    'draft_count' => (int) ($draft->draft_count ?? 0),
+                    'drafts_total' => $draftsTotal,
+                    'adjustments_total' => $adjustmentsTotal,
+                    'total_due' => round($ordersTotal + $draftsTotal + $adjustmentsTotal, 2),
+                    'currency' => 'ILS',
+                ];
+            })->filter(fn (array $row) => $row['total_due'] > 0)->values();
+
+        return response()->json(['success' => true, 'message' => 'الصيدليات التي لديها مستحقات غير مدفوعة.', 'data' => $rows]);
+    }
+
+    public function payPharmacy(Request $request, int $pharmacy): JsonResponse
+    {
+        $data = $request->validate([
+            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'transfer_reference' => ['nullable', 'string', 'max:120'],
+            'paid_at' => ['nullable', 'date', 'before_or_equal:now'],
+        ]);
+        $file = $request->file('receipt');
+        $path = $file->store('platform-settlement-receipts', 'local');
+        $receipt = [
+            'transfer_receipt_path' => $path,
+            'transfer_receipt_original_name' => $file->getClientOriginalName(),
+            'transfer_receipt_mime' => $file->getMimeType() ?: $file->getClientMimeType(),
+            'transfer_receipt_size' => $file->getSize(),
+        ];
+
+        try {
+            $rows = DB::transaction(function () use ($pharmacy, $request, $data, $receipt) {
+                $pharmacyRow = Pharmacy::query()->lockForUpdate()->findOrFail($pharmacy);
+                $this->settlements->createDraftFromOutstanding($pharmacyRow, (int) $request->user()->id);
+                $drafts = PlatformSettlement::query()->where('pharmacy_id', $pharmacyRow->id)
+                    ->where('status', PlatformSettlement::STATUS_DRAFT)->lockForUpdate()->orderBy('id')->get();
+                if ($drafts->isEmpty()) throw new InvalidArgumentException('لا توجد مستحقات غير مدفوعة لهذه الصيدلية.');
+
+                return $drafts->map(fn (PlatformSettlement $draft) => $this->settlements->serialize(
+                    $this->settlements->markPaid(
+                        $draft,
+                        $data['transfer_reference'] ?? null,
+                        isset($data['paid_at']) ? Carbon::parse($data['paid_at']) : now(),
+                        (int) $request->user()->id,
+                        $receipt
+                    )
+                ))->values();
+            });
+        } catch (InvalidArgumentException $e) {
+            Storage::disk('local')->delete($path);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            Storage::disk('local')->delete($path);
+            throw $e;
+        }
+
+        return response()->json(['success' => true, 'message' => 'تم تسجيل التحويل وإرفاق الإشعار.', 'data' => $rows]);
+    }
+
     public function show(int $settlement): JsonResponse
     {
         $row = PlatformSettlement::with(['items.subOrder.items', 'adjustments'])->findOrFail($settlement);
         return response()->json(['success' => true, 'message' => 'تم جلب تفاصيل التسوية.', 'data' => $this->settlements->serialize($row)]);
+    }
+
+    public function downloadReceipt(int $settlement): StreamedResponse|JsonResponse
+    {
+        $row = PlatformSettlement::findOrFail($settlement);
+        if (! $row->transfer_receipt_path || ! Storage::disk('local')->exists($row->transfer_receipt_path)) {
+            return response()->json(['success' => false, 'message' => 'إشعار التحويل غير موجود.'], 404);
+        }
+        return Storage::disk('local')->download($row->transfer_receipt_path, $row->transfer_receipt_original_name, [
+            'Content-Type' => $row->transfer_receipt_mime,
+        ]);
     }
 
     public function store(Request $request): JsonResponse
@@ -108,15 +209,29 @@ class PlatformSettlementController extends Controller
     public function markPaid(Request $request, int $settlement): JsonResponse
     {
         $data = $request->validate([
-            'transfer_reference' => ['required', 'string', 'max:120'],
-            'paid_at' => ['required', 'date'],
+            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'transfer_reference' => ['nullable', 'string', 'max:120'],
+            'paid_at' => ['nullable', 'date', 'before_or_equal:now'],
         ]);
+        $file = $request->file('receipt');
+        $path = $file->store('platform-settlement-receipts', 'local');
+        $receipt = [
+            'transfer_receipt_path' => $path,
+            'transfer_receipt_original_name' => $file->getClientOriginalName(),
+            'transfer_receipt_mime' => $file->getMimeType() ?: $file->getClientMimeType(),
+            'transfer_receipt_size' => $file->getSize(),
+        ];
         try {
             $row = $this->settlements->markPaid(
-                PlatformSettlement::findOrFail($settlement), $data['transfer_reference'], Carbon::parse($data['paid_at']), (int) $request->user()->id
+                PlatformSettlement::findOrFail($settlement), $data['transfer_reference'] ?? null,
+                isset($data['paid_at']) ? Carbon::parse($data['paid_at']) : now(), (int) $request->user()->id, $receipt
             );
         } catch (InvalidArgumentException $e) {
+            Storage::disk('local')->delete($path);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            Storage::disk('local')->delete($path);
+            throw $e;
         }
 
         return response()->json(['success' => true, 'message' => 'تم تسجيل التحويل.', 'data' => $this->settlements->serialize($row)]);

@@ -29,6 +29,97 @@ class PlatformSettlementService
             ->orderBy('sub_orders.id');
     }
 
+    /** Delivered and customer-paid orders that have not been included in any payout. */
+    public function outstandingQuery(int $pharmacyId): Builder
+    {
+        return SubOrder::query()
+            ->where('sub_orders.pharmacy_id', $pharmacyId)
+            ->where('sub_orders.status', SubOrder::STATUS_DELIVERED)
+            ->whereNotNull('sub_orders.delivered_at')
+            ->whereHas('order', fn (Builder $order) => $order->where('payment_status', Order::PAYMENT_PAID))
+            ->whereDoesntHave('settlementItem')
+            ->with(['order:id,external_order_id', 'items:id,sub_order_id,medicine_trade_name,quantity,unit_price,total_price'])
+            ->orderBy('sub_orders.delivered_at')
+            ->orderBy('sub_orders.id');
+    }
+
+    /** A single pharmacy balance for the simple admin and pharmacy views. */
+    public function outstandingSummary(int $pharmacyId): array
+    {
+        $orders = $this->outstandingQuery($pharmacyId)->get(['id', 'total']);
+        $drafts = PlatformSettlement::query()
+            ->where('pharmacy_id', $pharmacyId)
+            ->where('status', PlatformSettlement::STATUS_DRAFT)
+            ->get(['id', 'net_total']);
+        $adjustments = PlatformSettlementAdjustment::query()
+            ->where('pharmacy_id', $pharmacyId)
+            ->whereNull('settlement_id')
+            ->whereDate('effective_period_start', '<=', now()->toDateString())
+            ->get(['amount']);
+
+        $ordersTotal = round((float) $orders->sum(fn (SubOrder $order) => (float) $order->total), 2);
+        $draftsTotal = round((float) $drafts->sum(fn (PlatformSettlement $row) => (float) $row->net_total), 2);
+        $adjustmentsTotal = round((float) $adjustments->sum(fn (PlatformSettlementAdjustment $row) => (float) $row->amount), 2);
+
+        return [
+            'orders_count' => $orders->count(),
+            'orders_total' => $ordersTotal,
+            'draft_count' => $drafts->count(),
+            'drafts_total' => $draftsTotal,
+            'adjustments_total' => $adjustmentsTotal,
+            'total_due' => round($ordersTotal + $draftsTotal + $adjustmentsTotal, 2),
+        ];
+    }
+
+    public function createDraftFromOutstanding(Pharmacy $pharmacy, int $adminId): ?PlatformSettlement
+    {
+        $orders = $this->outstandingQuery($pharmacy->id)->lockForUpdate()->get();
+        $adjustments = PlatformSettlementAdjustment::query()
+            ->where('pharmacy_id', $pharmacy->id)
+            ->whereNull('settlement_id')
+            ->whereDate('effective_period_start', '<=', now()->toDateString())
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        if ($orders->isEmpty() && $adjustments->isEmpty()) return null;
+
+        $periodDates = $orders->map(fn (SubOrder $order) => Carbon::parse($order->delivered_at)->toDateString());
+        $from = $periodDates->min() ?? now()->toDateString();
+        $to = $periodDates->max() ?? now()->toDateString();
+        $ordersTotal = round((float) $orders->sum(fn (SubOrder $order) => (float) $order->total), 2);
+        $adjustmentsTotal = round((float) $adjustments->sum(fn (PlatformSettlementAdjustment $row) => (float) $row->amount), 2);
+        $netTotal = round($ordersTotal + $adjustmentsTotal, 2);
+        if ($netTotal <= 0) throw new InvalidArgumentException('لا يوجد مبلغ موجب مستحق للتحويل لهذه الصيدلية.');
+
+        $settlement = PlatformSettlement::create([
+            'pharmacy_id' => $pharmacy->id,
+            'pharmacy_name' => $pharmacy->pharmacy_name,
+            'period_start' => $from,
+            'period_end' => $to,
+            'currency' => PlatformSettlement::CURRENCY_ILS,
+            'orders_total' => $ordersTotal,
+            'adjustments_total' => $adjustmentsTotal,
+            'net_total' => $netTotal,
+            'status' => PlatformSettlement::STATUS_DRAFT,
+            'created_by' => $adminId,
+        ]);
+
+        foreach ($orders as $order) {
+            $settlement->items()->create([
+                'sub_order_id' => $order->id,
+                'sub_order_id_snapshot' => $order->id,
+                'order_id_snapshot' => $order->order_id,
+                'amount' => $order->total,
+            ]);
+        }
+        if ($adjustments->isNotEmpty()) {
+            PlatformSettlementAdjustment::whereKey($adjustments->modelKeys())->update(['settlement_id' => $settlement->id]);
+        }
+
+        return $settlement->load(['items.subOrder.items', 'adjustments']);
+    }
+
     public function createDraft(Pharmacy $pharmacy, string $from, string $to, int $adminId): PlatformSettlement
     {
         if ($from > $to) {
@@ -112,9 +203,9 @@ class PlatformSettlementService
         ]);
     }
 
-    public function markPaid(PlatformSettlement $settlement, string $reference, Carbon $paidAt, int $adminId): PlatformSettlement
+    public function markPaid(PlatformSettlement $settlement, ?string $reference, Carbon $paidAt, int $adminId, array $receipt = []): PlatformSettlement
     {
-        return DB::transaction(function () use ($settlement, $reference, $paidAt, $adminId) {
+        return DB::transaction(function () use ($settlement, $reference, $paidAt, $adminId, $receipt) {
             $locked = PlatformSettlement::query()->lockForUpdate()->findOrFail($settlement->id);
             if ($locked->status !== PlatformSettlement::STATUS_DRAFT) {
                 throw new InvalidArgumentException('هذه الدفعة مسجّلة كمحوّلة مسبقًا.');
@@ -124,9 +215,10 @@ class PlatformSettlementService
             }
             $locked->update([
                 'status' => PlatformSettlement::STATUS_PAID,
-                'transfer_reference' => trim($reference),
+                'transfer_reference' => $reference !== null && trim($reference) !== '' ? trim($reference) : null,
                 'paid_at' => $paidAt,
                 'paid_by' => $adminId,
+                ...$receipt,
             ]);
 
             return $locked->load(['items.subOrder.items', 'adjustments']);
@@ -148,6 +240,7 @@ class PlatformSettlementService
             'status' => $settlement->status,
             'transfer_reference' => $settlement->transfer_reference,
             'paid_at' => $settlement->paid_at?->toIso8601String(),
+            'receipt_available' => (bool) $settlement->transfer_receipt_path,
             'items' => $settlement->relationLoaded('items') ? $settlement->items->map(fn (PlatformSettlementItem $item) => [
                 'sub_order_id' => (int) $item->sub_order_id_snapshot,
                 'order_id' => (int) $item->order_id_snapshot,

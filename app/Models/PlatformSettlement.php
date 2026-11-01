@@ -17,6 +17,7 @@ class PlatformSettlement extends Model
         'pharmacy_id', 'pharmacy_name', 'period_start', 'period_end', 'currency',
         'orders_total', 'adjustments_total', 'net_total', 'status',
         'transfer_reference', 'paid_at', 'created_by', 'paid_by',
+        'transfer_receipt_path', 'transfer_receipt_original_name', 'transfer_receipt_mime', 'transfer_receipt_size',
     ];
 
     protected function casts(): array
@@ -28,6 +29,7 @@ class PlatformSettlement extends Model
             'adjustments_total' => 'decimal:2',
             'net_total' => 'decimal:2',
             'paid_at' => 'datetime',
+            'transfer_receipt_size' => 'integer',
         ];
     }
 

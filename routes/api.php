@@ -289,6 +289,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('accounting')->group(function () {
             Route::get('platform-settlements', [PharmacyPlatformSettlementController::class, 'index'])
                 ->name('api.pharmacy.accounting.platform-settlements.index');
+            Route::get('platform-settlements/{settlement}/receipt', [PharmacyPlatformSettlementController::class, 'downloadReceipt'])
+                ->whereNumber('settlement')->name('api.pharmacy.accounting.platform-settlements.receipt');
             Route::get('platform-settlements/{settlement}', [PharmacyPlatformSettlementController::class, 'show'])
                 ->whereNumber('settlement')->name('api.pharmacy.accounting.platform-settlements.show');
 
@@ -507,10 +509,14 @@ Route::post('/admin/change-password', [AdminProfileController::class, 'changePas
 
 Route::middleware(['auth:sanctum', 'role:admin', 'admin.password.changed'])->prefix('admin')->group(function () {
     // تسويات منصة الطلبات الإلكترونية (مستقلة عن POS وصندوق النقد).
+    Route::get('/platform-settlements/due', [AdminPlatformSettlementController::class, 'due']);
+    Route::post('/platform-settlements/pharmacies/{pharmacy}/pay', [AdminPlatformSettlementController::class, 'payPharmacy'])
+        ->whereNumber('pharmacy')->middleware('throttle:writes');
     Route::get('/platform-settlements/eligible', [AdminPlatformSettlementController::class, 'eligible']);
     Route::get('/platform-settlements', [AdminPlatformSettlementController::class, 'index']);
     Route::post('/platform-settlements', [AdminPlatformSettlementController::class, 'store'])->middleware('throttle:writes');
     Route::get('/platform-settlements/{settlement}', [AdminPlatformSettlementController::class, 'show'])->whereNumber('settlement');
+    Route::get('/platform-settlements/{settlement}/receipt', [AdminPlatformSettlementController::class, 'downloadReceipt'])->whereNumber('settlement');
     Route::post('/platform-settlements/{settlement}/paid', [AdminPlatformSettlementController::class, 'markPaid'])->whereNumber('settlement')->middleware('throttle:writes');
     Route::post('/platform-settlements/adjustments', [AdminPlatformSettlementController::class, 'adjustment'])->middleware('throttle:writes');
 

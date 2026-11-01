@@ -8,6 +8,8 @@ use App\Services\PlatformSettlementService;
 use App\Services\PharmacyContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PharmacyPlatformSettlementController extends Controller
 {
@@ -27,6 +29,7 @@ class PharmacyPlatformSettlementController extends Controller
             'success' => true,
             'message' => 'تم جلب تسويات صيدليتك.',
             'data' => $rows->getCollection()->map(fn ($row) => $this->settlements->serialize($row))->values(),
+            'outstanding' => $this->settlements->outstandingSummary($pharmacy->id),
             'pagination' => ['total' => $rows->total(), 'per_page' => $rows->perPage(), 'current_page' => $rows->currentPage(), 'last_page' => $rows->lastPage()],
         ]);
     }
@@ -41,5 +44,19 @@ class PharmacyPlatformSettlementController extends Controller
             ->findOrFail($settlement);
 
         return response()->json(['success' => true, 'message' => 'تم جلب تفاصيل التسوية.', 'data' => $this->settlements->serialize($row)]);
+    }
+
+    public function downloadReceipt(Request $request, int $settlement): StreamedResponse|JsonResponse
+    {
+        abort_unless($request->user()->role === 'pharmacy', 403);
+        $pharmacy = PharmacyContext::forUser($request->user());
+        if (! $pharmacy) return response()->json(['success' => false, 'message' => 'الصيدلية غير موجودة'], 404);
+        $row = PlatformSettlement::forPharmacy($pharmacy->id)->findOrFail($settlement);
+        if (! $row->transfer_receipt_path || ! Storage::disk('local')->exists($row->transfer_receipt_path)) {
+            return response()->json(['success' => false, 'message' => 'إشعار التحويل غير موجود.'], 404);
+        }
+        return Storage::disk('local')->download($row->transfer_receipt_path, $row->transfer_receipt_original_name, [
+            'Content-Type' => $row->transfer_receipt_mime,
+        ]);
     }
 }
