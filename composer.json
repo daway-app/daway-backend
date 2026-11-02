@@ -8,10 +8,12 @@
     "require": {
         "php": "^8.3",
         "bacon/bacon-qr-code": "^3.1",
+        "cloudinary/cloudinary_php": "^3.0",
         "darkaonline/l5-swagger": "^11.1",
         "kreait/laravel-firebase": "^7.2",
         "laravel/framework": "^13.8",
         "laravel/sanctum": "^4.3",
+        "league/flysystem-aws-s3-v3": "^3.25",
         "maatwebsite/excel": "3.1.69",
         "spatie/laravel-activitylog": "5.0.0",
         "spatie/laravel-permission": "^8.3"

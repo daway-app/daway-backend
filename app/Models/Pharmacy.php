@@ -17,6 +17,16 @@ class Pharmacy extends Model
     protected $table = 'pharmacies';
 
     /**
+     * `pending_password` نسخة مشفّرة قابلة للفك تُعرض للأدمن مرة واحدة عند
+     * التفعيل. لا يجوز أن تتسرّب في أي استجابة JSON: `Admin\PharmacyController`
+     * و`index/show` ترجع موديل `Pharmacy` كاملًا، و`GET /api/pharmacies/{id}`
+     * عام. الإخفاء هنا هو خط الدفاع الأخير.
+     */
+    protected $hidden = [
+        'pending_password',
+    ];
+
+    /**
      * Public/profile fields only. Ownership, moderation, rating and completion
      * fields are assigned explicitly by trusted application flows.
      */

@@ -15,7 +15,7 @@ class DeviceTokenController extends Controller
     {
         $user = $request->user();
 
-        abort_unless(in_array($user->role, ['patient', 'pharmacy', 'rider'], true), 403);
+        abort_unless(in_array($user->role, ['patient', 'pharmacy', 'rider', 'admin'], true), 403);
 
         $data = $request->validated();
 
@@ -88,7 +88,7 @@ class DeviceTokenController extends Controller
     {
         $user = $request->user();
 
-        abort_unless(in_array($user->role, ['patient', 'pharmacy', 'rider'], true), 403);
+        abort_unless(in_array($user->role, ['patient', 'pharmacy', 'rider', 'admin'], true), 403);
 
         $deviceId = $request->validated()['device_id'];
 

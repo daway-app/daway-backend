@@ -45,6 +45,37 @@ return [
         'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
         // مجلد الجذر لكل صور التطبيق داخل Cloudinary
         'folder' => env('CLOUDINARY_FOLDER', 'daway'),
+
+        /*
+        |----------------------------------------------------------------------
+        | إيصالات التحويل المالي — مسار منفصل تمامًا عن الصور العامة
+        |----------------------------------------------------------------------
+        |
+        | الصور العامة تُرفع **غير موقّعة** عبر upload_preset وتُخزَّن بنوع
+        | التسليم الافتراضي (عام). الإيصالات لا يجوز أن تسلك ذلك المسار:
+        |
+        |  · الرفع **موقّع** من الخادم بمفتاح API + سر.
+        |  · نوع التسليم `authenticated` ⇒ لا رابط عام صالح إطلاقًا.
+        |  · التنزيل يمرّ عبر Laravel فقط بعد التحقق من الصلاحية.
+        |
+        | لا تُشارك `upload_preset` هنا: preset الصور عام بطبيعته.
+        |
+        */
+        'receipts' => [
+            // auto = Cloudinary إن كان مهيّأً، وإلا القرص المحلي (بيئة التطوير)
+            // cloudinary = إلزامي — يفشل الرفع صراحةً إن لم تُضبط المفاتيح
+            // disk = القرص المضبوط في filesystems.settlement_receipt_disk
+            'driver' => env('SETTLEMENT_RECEIPT_DRIVER', 'auto'),
+
+            'api_key' => env('CLOUDINARY_API_KEY'),
+            'api_secret' => env('CLOUDINARY_API_SECRET'),
+            'folder' => env('CLOUDINARY_RECEIPTS_FOLDER', 'daway/settlement-receipts'),
+            'type' => env('CLOUDINARY_RECEIPTS_TYPE', 'authenticated'),
+
+            // PDF لا يُعالَج كصورة: يُرفع كمورد خام حتى لا يمرّ بمسارات الصور.
+            'pdf_resource_type' => env('CLOUDINARY_RECEIPTS_PDF_RESOURCE', 'raw'),
+            'image_resource_type' => 'image',
+        ],
     ],
 
     // خدمة OCR (قراءة اسم الدواء من صورة العلبة)

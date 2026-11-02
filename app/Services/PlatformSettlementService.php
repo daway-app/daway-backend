@@ -71,6 +71,62 @@ class PlatformSettlementService
         ];
     }
 
+    /**
+     * يدمج التعديلات غير المجمّعة في أقدم مسودة قائمة.
+     *
+     * سبب الوجود: `createDraftFromOutstanding` يدمج التعديلات في مسودة **جديدة**،
+     * لكن التعديل الذي يُسجَّل **بعد** إنشاء مسودة كان يبقى معلّقًا للأبد. النتيجة
+     * أن شاشة الأدمن تعرض (مسودة 100 + تعديل −20 = 80) بينما التحويل الفعلي
+     * يدفع 100، فيختلف المعروض عن المحوّل والمسجّل، ويبقى −20 معلّقًا يقلّب
+     * الرصيد إلى السالب.
+     *
+     * السياسة المالية نفسها محفوظة: التعديل يُطوى في التسوية كما يفعل
+     * `createDraftFromOutstanding` تمامًا، لكن على مسودة قائمة بدل انتظار واحدة.
+     */
+    public function absorbPendingAdjustments(Pharmacy $pharmacy): void
+    {
+        $adjustments = PlatformSettlementAdjustment::query()
+            ->where('pharmacy_id', $pharmacy->id)
+            ->whereNull('settlement_id')
+            ->whereDate('effective_period_start', '<=', now()->toDateString())
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        if ($adjustments->isEmpty()) {
+            return;
+        }
+
+        $draft = PlatformSettlement::query()
+            ->where('pharmacy_id', $pharmacy->id)
+            ->where('status', PlatformSettlement::STATUS_DRAFT)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->first();
+
+        // لا مسودة قائمة: `createDraftFromOutstanding` سيتولى دمجها في مسودة جديدة.
+        if (! $draft) {
+            return;
+        }
+
+        $adjustmentsTotal = round((float) $draft->adjustments_total + (float) $adjustments->sum('amount'), 2);
+        $netTotal = round((float) $draft->orders_total + $adjustmentsTotal, 2);
+
+        if ($netTotal <= 0) {
+            throw new InvalidArgumentException(
+                'التعديلات المعلّقة تجعل صافي المسودة صفرًا أو سالبًا؛ راجع التعديلات قبل تسجيل التحويل.'
+            );
+        }
+
+        $draft->update([
+            'adjustments_total' => $adjustmentsTotal,
+            'net_total' => $netTotal,
+        ]);
+
+        PlatformSettlementAdjustment::whereKey($adjustments->modelKeys())
+            ->update(['settlement_id' => $draft->id]);
+    }
+
     public function createDraftFromOutstanding(Pharmacy $pharmacy, int $adminId): ?PlatformSettlement
     {
         $orders = $this->outstandingQuery($pharmacy->id)->lockForUpdate()->get();
@@ -212,6 +268,13 @@ class PlatformSettlementService
             }
             if ((float) $locked->net_total <= 0) {
                 throw new InvalidArgumentException('لا يمكن تسجيل تحويل بقيمة صفر أو أقل.');
+            }
+
+            // حماية على مستوى المجال: لا سجل "مدفوع" بدون ملف إثبات محفوظ فعلاً.
+            // فحص الرفع في الكونترولر قد يُتجاوَز من أي مستدعٍ آخر مستقبلًا.
+            $receiptPath = $receipt['transfer_receipt_path'] ?? null;
+            if (! is_string($receiptPath) || trim($receiptPath) === '') {
+                throw new InvalidArgumentException('لا يمكن تسجيل تحويل مدفوع بدون إشعار تحويل محفوظ.');
             }
             $locked->update([
                 'status' => PlatformSettlement::STATUS_PAID,

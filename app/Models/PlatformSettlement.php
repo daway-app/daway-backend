@@ -18,6 +18,7 @@ class PlatformSettlement extends Model
         'orders_total', 'adjustments_total', 'net_total', 'status',
         'transfer_reference', 'paid_at', 'created_by', 'paid_by',
         'transfer_receipt_path', 'transfer_receipt_original_name', 'transfer_receipt_mime', 'transfer_receipt_size',
+        'transfer_receipt_driver', 'transfer_receipt_meta',
     ];
 
     protected function casts(): array
@@ -30,6 +31,7 @@ class PlatformSettlement extends Model
             'net_total' => 'decimal:2',
             'paid_at' => 'datetime',
             'transfer_receipt_size' => 'integer',
+            'transfer_receipt_meta' => 'array',
         ];
     }
 

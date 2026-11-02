@@ -7,6 +7,7 @@ use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
 use App\Models\SearchLog;
 use App\Models\User;
+use App\Services\PharmacyDeletionGuard;
 use App\Services\PharmacyRegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -297,8 +298,20 @@ class PharmacyController extends Controller
     }
 
     /** DELETE /api/admin/pharmacies/{pharmacy} */
-    public function destroy(Pharmacy $pharmacy): JsonResponse
+    public function destroy(Pharmacy $pharmacy, PharmacyDeletionGuard $guard): JsonResponse
     {
+        // الحذف النهائي يمحو cascade كل السجلات المالية والطلبات المرتبطة.
+        // نمنعه ما دام هناك أي سجل يمكن أن يتضرر، والبديل هو تعطيل الحساب.
+        $blockers = $guard->blockers($pharmacy);
+
+        if ($blockers !== []) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يمكن حذف الصيدلية لوجود سجلات مالية أو طلبات مرتبطة بها. عطّل الحساب بدل حذفه للحفاظ على السجلات.',
+                'data' => ['blockers' => $blockers],
+            ], 409);
+        }
+
         $pharmacy->load('user');
 
         DB::transaction(function () use ($pharmacy) {

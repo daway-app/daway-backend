@@ -12,3 +12,5 @@ Artisan::command('inspire', function () {
 // تنفيذ الجدولة يتطلب إبقاء العملية حية (schedule:work) أو GitHub Actions
 Schedule::command('moh:sync')->dailyAt('02:00');
 Schedule::command('reminders:send-due')->everyMinute();
+// تنظيف إيصالات التحويل اليتيمة (فشل معاملة بعد رفع الملف) — فترة سماح 24 ساعة.
+Schedule::command('settlements:prune-orphan-receipts --hours=24')->dailyAt('03:20');

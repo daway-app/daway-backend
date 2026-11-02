@@ -14,6 +14,8 @@ use App\Services\Ai\MedicineResolver;
 use App\Services\Ai\OcrClient;
 use App\Services\Fcm\FcmPushService;
 use App\Services\PharmacyInventorySearch;
+use App\Services\Settlement\Receipts\CloudinaryClient;
+use App\Services\Settlement\Receipts\SdkCloudinaryClient;
 use App\Services\Sms\AndroidSmsGatewayService;
 use App\Services\Sms\SmsGateService;
 use Illuminate\Support\ServiceProvider;
@@ -32,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(MedicineResolver::class);
+
+        // إيصالات التحويل: عميل Cloudinary معزول حتى يمكن استبداله في الاختبارات
+        // دون شبكة ودون مفاتيح حقيقية.
+        $this->app->bind(CloudinaryClient::class, SdkCloudinaryClient::class);
 
         // مساعد المريض: عميل تحليل النية (اختياري — بلا base_url يعمل المسار
         // المحلي الحتمي فقط) + خدمة البحث في المخزون الحقيقي.

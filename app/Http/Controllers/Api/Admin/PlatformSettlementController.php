@@ -6,19 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
 use App\Models\PlatformSettlement;
 use App\Services\PlatformSettlementService;
+use App\Services\Settlement\ReceiptStorage;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class PlatformSettlementController extends Controller
 {
-    public function __construct(private readonly PlatformSettlementService $settlements) {}
+    public function __construct(
+        private readonly PlatformSettlementService $settlements,
+        private readonly ReceiptStorage $receipts,
+    ) {}
 
     public function eligible(Request $request): JsonResponse
     {
@@ -112,18 +117,29 @@ class PlatformSettlementController extends Controller
             'transfer_reference' => ['nullable', 'string', 'max:120'],
             'paid_at' => ['nullable', 'date', 'before_or_equal:now'],
         ]);
-        $file = $request->file('receipt');
-        $path = $file->store('platform-settlement-receipts', 'local');
-        $receipt = [
-            'transfer_receipt_path' => $path,
-            'transfer_receipt_original_name' => $file->getClientOriginalName(),
-            'transfer_receipt_mime' => $file->getMimeType() ?: $file->getClientMimeType(),
-            'transfer_receipt_size' => $file->getSize(),
-        ];
+
+        // لا نُسجّل تحويلًا مدفوعًا قبل التأكد أن الإثبات وصل القرص فعلاً.
+        try {
+            $receipt = $this->receipts->put($request->file('receipt'));
+        } catch (Throwable $e) {
+            Log::error('settlement_receipt_store_failed', ['exception' => $e::class]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'تعذّر حفظ إشعار التحويل. لم يتم تسجيل أي تحويل.',
+            ], 500);
+        }
+
+        $path = $receipt['transfer_receipt_path'];
+        $driver = $receipt['transfer_receipt_driver'] ?? null;
+        $meta = $receipt['transfer_receipt_meta'] ?? null;
 
         try {
             $rows = DB::transaction(function () use ($pharmacy, $request, $data, $receipt) {
                 $pharmacyRow = Pharmacy::query()->lockForUpdate()->findOrFail($pharmacy);
+                // اطوِ التعديلات المعلّقة في المسودة القائمة أولًا، حتى يتطابق
+                // المبلغ المعروض (total_due) مع المبلغ المحوّل فعليًا.
+                $this->settlements->absorbPendingAdjustments($pharmacyRow);
                 $this->settlements->createDraftFromOutstanding($pharmacyRow, (int) $request->user()->id);
                 $drafts = PlatformSettlement::query()->where('pharmacy_id', $pharmacyRow->id)
                     ->where('status', PlatformSettlement::STATUS_DRAFT)->lockForUpdate()->orderBy('id')->get();
@@ -140,10 +156,10 @@ class PlatformSettlementController extends Controller
                 ))->values();
             });
         } catch (InvalidArgumentException $e) {
-            Storage::disk('local')->delete($path);
+            $this->receipts->delete($driver, $path, $meta);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Throwable $e) {
-            Storage::disk('local')->delete($path);
+            $this->receipts->delete($driver, $path, $meta);
             throw $e;
         }
 
@@ -159,12 +175,35 @@ class PlatformSettlementController extends Controller
     public function downloadReceipt(int $settlement): StreamedResponse|JsonResponse
     {
         $row = PlatformSettlement::findOrFail($settlement);
-        if (! $row->transfer_receipt_path || ! Storage::disk('local')->exists($row->transfer_receipt_path)) {
+
+        if (! $this->receipts->exists(
+            $row->transfer_receipt_driver,
+            $row->transfer_receipt_path,
+            $row->transfer_receipt_meta
+        )) {
             return response()->json(['success' => false, 'message' => 'إشعار التحويل غير موجود.'], 404);
         }
-        return Storage::disk('local')->download($row->transfer_receipt_path, $row->transfer_receipt_original_name, [
-            'Content-Type' => $row->transfer_receipt_mime,
-        ]);
+
+        try {
+            return $this->receipts->download(
+                $row->transfer_receipt_driver,
+                $row->transfer_receipt_path,
+                $row->transfer_receipt_original_name,
+                $row->transfer_receipt_mime,
+                $row->transfer_receipt_meta
+            );
+        } catch (Throwable $e) {
+            // يشمل رفض Cloudinary للرابط الموقّع بعد انتهاء صلاحيته.
+            Log::warning('settlement_receipt_download_failed', [
+                'settlement_id' => $row->id,
+                'exception' => $e::class,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'تعذّر جلب إشعار التحويل من التخزين المحمي. أعد المحاولة.',
+            ], 502);
+        }
     }
 
     public function store(Request $request): JsonResponse
@@ -213,24 +252,32 @@ class PlatformSettlementController extends Controller
             'transfer_reference' => ['nullable', 'string', 'max:120'],
             'paid_at' => ['nullable', 'date', 'before_or_equal:now'],
         ]);
-        $file = $request->file('receipt');
-        $path = $file->store('platform-settlement-receipts', 'local');
-        $receipt = [
-            'transfer_receipt_path' => $path,
-            'transfer_receipt_original_name' => $file->getClientOriginalName(),
-            'transfer_receipt_mime' => $file->getMimeType() ?: $file->getClientMimeType(),
-            'transfer_receipt_size' => $file->getSize(),
-        ];
+        // لا نُسجّل تحويلًا مدفوعًا قبل التأكد أن الإثبات وصل القرص فعلاً.
+        try {
+            $receipt = $this->receipts->put($request->file('receipt'));
+        } catch (Throwable $e) {
+            Log::error('settlement_receipt_store_failed', ['exception' => $e::class]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'تعذّر حفظ إشعار التحويل. لم يتم تسجيل أي تحويل.',
+            ], 500);
+        }
+
+        $path = $receipt['transfer_receipt_path'];
+        $driver = $receipt['transfer_receipt_driver'] ?? null;
+        $meta = $receipt['transfer_receipt_meta'] ?? null;
+
         try {
             $row = $this->settlements->markPaid(
                 PlatformSettlement::findOrFail($settlement), $data['transfer_reference'] ?? null,
                 isset($data['paid_at']) ? Carbon::parse($data['paid_at']) : now(), (int) $request->user()->id, $receipt
             );
         } catch (InvalidArgumentException $e) {
-            Storage::disk('local')->delete($path);
+            $this->receipts->delete($driver, $path, $meta);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Throwable $e) {
-            Storage::disk('local')->delete($path);
+            $this->receipts->delete($driver, $path, $meta);
             throw $e;
         }
 

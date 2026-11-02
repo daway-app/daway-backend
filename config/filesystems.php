@@ -17,6 +17,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Settlement transfer receipts
+    |--------------------------------------------------------------------------
+    |
+    | إشعارات التحويل المالي تُخزَّن على قرص منفصل قابل للتغيير من متغير بيئة
+    | واحد. الافتراضي `local` (تخزين داخل الحاوية) — وهو مؤقت على Render:
+    | تُفقد الملفات عند كل إعادة نشر. للإنتاج اضبط:
+    |     SETTLEMENT_RECEIPT_DISK=r2
+    | بعد تهيئة متغيرات R2_* أدناه. الكود يفشل صراحة (500) بدل تسجيل تحويل
+    | بلا إثبات لو كان القرص غير مهيّأ أو عامًّا.
+    |
+    */
+
+    'settlement_receipt_disk' => env('SETTLEMENT_RECEIPT_DISK', 'local'),
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -57,6 +74,38 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
+            'report' => false,
+        ],
+
+        /*
+        |----------------------------------------------------------------------
+        | Cloudflare R2 — تخزين دائم لإشعارات التحويل
+        |----------------------------------------------------------------------
+        |
+        | R2 متوافق مع S3، فيُستخدم محرك `s3` نفسه عبر league/flysystem-aws-s3-v3.
+        | ملاحظات إلزامية:
+        |  · region = auto (R2 لا يستخدم مناطق AWS).
+        |  · endpoint = https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+        |  · visibility = private ← ممنوع أي وصول عام؛ التنزيل يمر عبر متحكم
+        |    محمي بالمصادقة فقط (أدمن، أو الصيدلية المالكة).
+        |  · throw = true ← نريد استثناءً صريحًا عند فشل الكتابة بدل `false` صامت.
+        |  · لا تُضف `url` (لا يوجد رابط عام أصلًا، ولا نريد توليد روابط موقّعة
+        |    تلقائيًا).
+        |
+        | المتغيرات: R2_ACCESS_KEY_ID · R2_SECRET_ACCESS_KEY · R2_BUCKET ·
+        |            R2_ENDPOINT · R2_REGION (اختياري، افتراضي auto)
+        |
+        */
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
+            'throw' => true,
             'report' => false,
         ],
 
