@@ -49,22 +49,23 @@ class SettlementReceiptR2Test extends TestCase
     {
         // الحارس: بدون league/flysystem-aws-s3-v3 يفشل Storage::disk('r2') وقت
         // التشغيل فقط — أي بعد النشر وبعد أول تحويل مالي.
+        //
+        // ملاحظة: لا نُنشئ عميل S3 هنا. بناء العميل يُحمّل AWS SDK + aws-crt
+        // ويُسقط عملية PHP على هذه البيئة عند التشغيل داخل الحزمة الكاملة
+        // (Premature end of PHP process) — وهو نفس نمط الانهيار المعروف في
+        // CategorySyncApiTest. وجود الكلاس + صحة إعداد القرص يكفي كحارس.
         $this->assertTrue(
             class_exists(\League\Flysystem\AwsS3V3\AwsS3V3Adapter::class),
             'composer require league/flysystem-aws-s3-v3 is required to use the R2 disk'
         );
+        $this->assertTrue(class_exists(\Aws\S3\S3Client::class));
 
-        config([
-            'filesystems.disks.r2.key' => 'test-key',
-            'filesystems.disks.r2.secret' => 'test-secret',
-            'filesystems.disks.r2.bucket' => 'test-bucket',
-            'filesystems.disks.r2.endpoint' => 'https://example.r2.cloudflarestorage.com',
-        ]);
+        $disk = config('filesystems.disks.r2');
 
-        $disk = Storage::disk('r2');
-
-        $this->assertSame('s3', $disk->getConfig()['driver']);
-        $this->assertSame('private', $disk->getConfig()['visibility']);
+        $this->assertSame('s3', $disk['driver']);
+        $this->assertSame('private', $disk['visibility']);
+        $this->assertTrue($disk['throw']);
+        $this->assertArrayNotHasKey('url', $disk);
     }
 
     public function test_the_default_receipt_disk_stays_local(): void
