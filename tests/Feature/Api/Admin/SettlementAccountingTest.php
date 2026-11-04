@@ -67,7 +67,7 @@ class SettlementAccountingTest extends TestCase
     {
         return $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                'receipt' => UploadedFile::fake()->create('transfer.pdf', 40, 'application/pdf'),
+                'receipt' => UploadedFile::fake()->create('transfer.png', 40, 'image/png'),
                 'transfer_reference' => 'BANK-ACCT-1',
             ]);
     }

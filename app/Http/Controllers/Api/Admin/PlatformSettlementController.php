@@ -113,7 +113,7 @@ class PlatformSettlementController extends Controller
     public function payPharmacy(Request $request, int $pharmacy): JsonResponse
     {
         $data = $request->validate([
-            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'transfer_reference' => ['nullable', 'string', 'max:120'],
             'paid_at' => ['nullable', 'date', 'before_or_equal:now'],
         ]);
@@ -248,7 +248,7 @@ class PlatformSettlementController extends Controller
     public function markPaid(Request $request, int $settlement): JsonResponse
     {
         $data = $request->validate([
-            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'transfer_reference' => ['nullable', 'string', 'max:120'],
             'paid_at' => ['nullable', 'date', 'before_or_equal:now'],
         ]);

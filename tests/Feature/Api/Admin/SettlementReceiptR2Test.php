@@ -40,7 +40,7 @@ class SettlementReceiptR2Test extends TestCase
     {
         return $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                'receipt' => UploadedFile::fake()->create($name, 40, 'application/pdf'),
+                'receipt' => UploadedFile::fake()->create($name, 40, 'image/png'),
                 'transfer_reference' => 'R2-REF-1',
             ]);
     }

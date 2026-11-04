@@ -113,7 +113,7 @@ class PlatformSettlementApiTest extends TestCase
         $id = $response->json('data.id');
 
         $paid = $this->withHeaders(['Accept' => 'application/json'])->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-            'receipt' => UploadedFile::fake()->create('bank-notice.pdf', 120, 'application/pdf'),
+            'receipt' => UploadedFile::fake()->create('bank-notice.png', 120, 'image/png'),
             'transfer_reference' => 'BANK-TEST-001',
         ])->assertOk()->assertJsonPath('data.0.status', 'paid')
             ->assertJsonPath('data.0.transfer_reference', 'BANK-TEST-001')
@@ -131,7 +131,7 @@ class PlatformSettlementApiTest extends TestCase
         $this->actingAs($this->admin, 'sanctum');
         $this->get('/api/admin/platform-settlements/'.$id.'/receipt')->assertOk();
         $this->withHeaders(['Accept' => 'application/json'])->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-            'receipt' => UploadedFile::fake()->create('bank-notice-again.pdf', 120, 'application/pdf'),
+            'receipt' => UploadedFile::fake()->create('bank-notice-again.png', 120, 'image/png'),
         ])->assertStatus(422);
         $this->assertSame(0, CashMovement::count());
         $this->assertSame(0, Sale::count());
@@ -155,7 +155,7 @@ class PlatformSettlementApiTest extends TestCase
             ->assertJsonPath('data.0.total_due', 100);
 
         $this->withHeaders(['Accept' => 'application/json'])->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-            'receipt' => UploadedFile::fake()->create('transfer-proof.pdf', 80, 'application/pdf'),
+            'receipt' => UploadedFile::fake()->create('transfer-proof.png', 80, 'image/png'),
         ])->assertOk()->assertJsonPath('data.0.status', 'paid')->assertJsonPath('data.0.orders_total', 100);
         $this->getJson('/api/admin/platform-settlements/due')->assertOk()->assertJsonCount(0, 'data');
     }

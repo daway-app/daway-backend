@@ -2,6 +2,7 @@
 
 namespace App\Services\Settlement;
 
+use App\Services\Settlement\Receipts\CloudinaryPublicReceipts;
 use App\Services\Settlement\Receipts\CloudinaryReceipts;
 use App\Services\Settlement\Receipts\DiskReceipts;
 use Illuminate\Http\UploadedFile;
@@ -11,19 +12,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * موجّه تخزين إيصالات التحويل.
  *
- * مسار واحد فقط فعّال في أي لحظة، يُحدَّد من `services.cloudinary.receipts.driver`:
- *   · cloudinary : رفع موقّع + نوع تسليم authenticated (المسار المعتمد)
- *   · disk       : قرص Laravel (local/r2) — احتياطي وللصفوف القديمة
- *   · auto       : Cloudinary إن كان مهيّأً، وإلا القرص
+ * السائقون:
+ *   · cloudinary_public : الوضع المعتمد — رفع غير موقّع عبر upload_preset،
+ *                         الملف **عام** (أي من يملك الرابط يفتحه). صور فقط.
+ *   · cloudinary        : الوضع المحمي القديم (signed + authenticated) —
+ *                         يبقى للقراءة فقط ما دامت المفاتيح غير متوفرة.
+ *   · disk              : قرص Laravel (local/r2) — احتياطي وللصفوف القديمة.
  *
- * الصفوف القديمة (`transfer_receipt_driver = null`) تُقرأ كـ«قرص»، فلا حاجة
- * لأي ترحيل بيانات.
+ * الصفوف القديمة (`transfer_receipt_driver = null`) تُقرأ كـ«قرص».
  */
 class ReceiptStorage
 {
     public function __construct(
         private readonly DiskReceipts $disk,
         private readonly CloudinaryReceipts $cloudinary,
+        private readonly CloudinaryPublicReceipts $publicCloudinary,
     ) {}
 
     /** اسم السائق الذي سيُستخدم للرفع الآن. */
@@ -35,25 +38,40 @@ class ReceiptStorage
             return DiskReceipts::DRIVER;
         }
 
-        if ($mode === 'cloudinary') {
-            // إلزام صريح: لا نسقط إلى قرص مؤقت على Render بصمت.
+        if ($mode === CloudinaryPublicReceipts::DRIVER) {
+            if (! $this->publicCloudinary->configured()) {
+                throw new RuntimeException(
+                    'SETTLEMENT_RECEIPT_DRIVER=cloudinary_public يحتاج '.
+                    'CLOUDINARY_CLOUD_NAME و CLOUDINARY_UPLOAD_PRESET.'
+                );
+            }
+
+            return CloudinaryPublicReceipts::DRIVER;
+        }
+
+        if ($mode === CloudinaryReceipts::DRIVER) {
+            // الوضع المحمي يتطلب مفاتيح؛ لا نسقط إلى قرص مؤقت بصمت.
             if (! $this->cloudinary->configured()) {
                 throw new RuntimeException(
-                    'SETTLEMENT_RECEIPT_DRIVER=cloudinary لكن مفاتيح Cloudinary غير مضبوطة '.
-                    '(CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET).'
+                    'SETTLEMENT_RECEIPT_DRIVER=cloudinary يحتاج CLOUDINARY_API_KEY و CLOUDINARY_API_SECRET. '.
+                    'للعمل بلا مفاتيح استخدم cloudinary_public.'
                 );
             }
 
             return CloudinaryReceipts::DRIVER;
         }
 
-        return $this->cloudinary->configured() ? CloudinaryReceipts::DRIVER : DiskReceipts::DRIVER;
+        // auto: الوضع العام إن كان الـpreset مضبوطًا، وإلا القرص.
+        return $this->publicCloudinary->configured()
+            ? CloudinaryPublicReceipts::DRIVER
+            : DiskReceipts::DRIVER;
     }
 
-    public function isCloudinary(): bool
+    /** هل التخزين الحالي على Cloudinary (أي وضع)؟ */
+    public function usesCloudinary(): bool
     {
         try {
-            return $this->driver() === CloudinaryReceipts::DRIVER;
+            return $this->driver() !== DiskReceipts::DRIVER;
         } catch (RuntimeException) {
             return false;
         }
@@ -66,9 +84,11 @@ class ReceiptStorage
      */
     public function put(UploadedFile $file): array
     {
-        return $this->driver() === CloudinaryReceipts::DRIVER
-            ? $this->cloudinary->put($file)
-            : $this->disk->put($file);
+        return match ($this->driver()) {
+            CloudinaryPublicReceipts::DRIVER => $this->publicCloudinary->put($file),
+            CloudinaryReceipts::DRIVER => $this->cloudinary->put($file),
+            default => $this->disk->put($file),
+        };
     }
 
     public function exists(?string $driver, ?string $path, ?array $meta = null): bool
@@ -92,8 +112,12 @@ class ReceiptStorage
     }
 
     /** سائق القراءة: يعتمد على ما حُفظ فعلاً، لا على الإعداد الحالي. */
-    private function resolve(?string $driver): DiskReceipts|CloudinaryReceipts
+    private function resolve(?string $driver): DiskReceipts|CloudinaryReceipts|CloudinaryPublicReceipts
     {
-        return $driver === CloudinaryReceipts::DRIVER ? $this->cloudinary : $this->disk;
+        return match ($driver) {
+            CloudinaryReceipts::DRIVER => $this->cloudinary,
+            CloudinaryPublicReceipts::DRIVER => $this->publicCloudinary,
+            default => $this->disk,
+        };
     }
 }

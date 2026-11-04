@@ -1,80 +1,84 @@
-# إشعارات التحويل — Cloudinary (authenticated)
+# إشعارات التحويل — Cloudinary (الوضع العام غير الموقّع)
 
-> **الحالة:** الكود جاهز ومُختبر بعميل وهمي. التفعيل يحتاج مفاتيحك + تحققًا واحدًا
-> من أن حسابك يقبل النوع `authenticated` وملفات PDF.
+> **الحالة المعتمدة:** `cloudinary_public` — رفع غير موقّع عبر الـpreset الموجود،
+> بلا أي API Key أو Secret. الملف الناتج **عام**.
 
 ---
 
-## 1. لماذا مسار منفصل عن صور الأدوية
+## 1. ⚠️ اقرأ هذا أولًا
 
-| | الصور العامة (قائم) | إيصالات التحويل (جديد) |
+**الإيصال يُخزَّن على رابط عام.** أي شخص يملك الرابط يستطيع فتحه.
+
+- إخفاء الرابط داخل استجابات الـAPI **لا يجعل الملف خاصًا** — هو تقليل انتشار فقط.
+- لذلك: **لا ترفع مستندًا بنكيًا حقيقيًا** يحتوي أرقام حسابات أو بيانات شخصية.
+  ارفع صورة **منقّحة** تُظهر المبلغ والتاريخ فقط.
+- الواجهة تعرض هذا التنبيه في نموذج الدفع.
+
+إن أردت حماية فعلية لاحقًا: أضف `CLOUDINARY_API_KEY` + `CLOUDINARY_API_SECRET`
+وغيّر `SETTLEMENT_RECEIPT_DRIVER=cloudinary` (الوضع الموقّع `authenticated` — ما زال
+في الكود ويعمل).
+
+## 2. كيف يعمل
+
+| | الصور العامة (أدوية/شعارات) | الإيصالات (الوضع الحالي) |
 |---|---|---|
-| الرفع | غير موقّع عبر `upload_preset` | **موقّع** من الخادم بـ`api_key` + `api_secret` |
-| نوع التسليم | `upload` (عام) | **`authenticated`** |
-| الرابط | `secure_url` عام يُخزَّن | **لا رابط** — `public_id` فقط |
-| التنزيل | مباشر من CDN | يمر عبر Laravel بعد التحقق من الصلاحية |
+| الرفع | غير موقّع عبر `upload_preset` | **نفس الأسلوب** |
+| المفاتيح | لا شيء | **لا شيء** |
+| المجلد | `daway/medicines` … | `daway/settlement-receipts` |
+| النوع | jpg/png/webp/pdf | **jpg/png/webp فقط — PDF موقوف** |
+| الرابط | عام | **عام** |
 
-الصور العامة **لم تتغيّر**: `app/Support/Cloudinary.php` كما هو، والاختبار
-`tests/Feature/CloudinaryUploadTest.php` يثبت أنها ما زالت غير موقّعة وترجع
-`secure_url`. أُضيف حارس صريح لذلك في `SettlementReceiptCloudinaryTest`.
+الملف يُرفع إلى `https://api.cloudinary.com/v1_1/<cloud>/image/upload` مع
+`upload_preset` + `folder`. الاستجابة تعطي `public_id` و`secure_url`.
 
-## 2. متطلبات حساب Cloudinary
+**ما يُحفظ في القاعدة:**
+- `transfer_receipt_path` = `public_id`
+- `transfer_receipt_driver` = `cloudinary_public`
+- `transfer_receipt_meta` = `{public_id, resource_type, type, format, url, delivery: "public"}`
 
-1. **API Key + API Secret** من Console → Dashboard → API Keys.
-   - يُستخدمان على الخادم فقط. لا يُرسلان إلى React ولا يُسجَّلان في أي log.
-2. **السماح بتسليم PDF** — Cloudinary يقيّد تسليم PDF/ZIP على بعض الخطط.
-   اختبر قبل الاعتماد: ارفع PDF ثم نزّله من داخل التطبيق.
-3. النوع `authenticated` متاح على الحساب (تحقق منه بأول رفع حقيقي).
+**التنزيل:** يمر عبر Laravel فقط. `GET .../receipt` يتحقق أن المستخدم أدمن أو
+الصيدلية المالكة، ثم يجلب الصورة من Cloudinary ويبثّها (`Cache-Control: private, no-store`).
+الرابط لا يُعاد في أي استجابة.
 
 ## 3. متغيرات Render
 
 ```env
-SETTLEMENT_RECEIPT_DRIVER=cloudinary
-CLOUDINARY_API_KEY=<...>
-CLOUDINARY_API_SECRET=<...>
+SETTLEMENT_RECEIPT_DRIVER=cloudinary_public
 CLOUDINARY_RECEIPTS_FOLDER=daway/settlement-receipts
-CLOUDINARY_RECEIPTS_TYPE=authenticated
-CLOUDINARY_RECEIPTS_PDF_RESOURCE=raw
 ```
 
-> `SETTLEMENT_RECEIPT_DRIVER=cloudinary` **صريح** لا `auto`: لو نسيت المفاتيح
-> يفشل الرفع برسالة واضحة بدل أن يسقط بصمت إلى قرص مؤقت على Render.
+**لا تلمس:**
+- `CLOUDINARY_CLOUD_NAME` (مستخدم لصور الأدوية)
+- `CLOUDINARY_UPLOAD_PRESET` (نفسه يُستخدم للإيصالات)
 
-## 4. Migration مطلوبة (لم تُنفَّذ على Aiven)
+**يمكن حذفها** (لم تعد تُستخدم في هذا الوضع):
+- `CLOUDINARY_RECEIPTS_TYPE`
+- `CLOUDINARY_RECEIPTS_PDF_RESOURCE`
 
-```
-2026_11_01_000003_add_receipt_driver_and_meta_to_platform_settlements
-```
-تضيف عمودين: `transfer_receipt_driver` و`transfer_receipt_meta` (JSON).
-الصفوف القديمة (`null`) تُقرأ كـ«قرص» — **لا ترحيل بيانات**.
+> ⚠️ إن تركت `SETTLEMENT_RECEIPT_DRIVER=cloudinary` (القديم) سيفشل رفع الإيصال
+> برسالة واضحة لأنه يطلب مفاتيح غير موجودة. غيّرها إلى `cloudinary_public`.
 
-## 5. التحقق بعد النشر
+## 4. القيود المعروفة
 
-1. تحويل تجريبي بمبلغ صغير + إيصال PDF.
-2. الاستجابة: `receipt_available: true` وبلا أي `res.cloudinary.com`.
-3. في Cloudinary Console: الأصل ظاهر بنوع **authenticated**.
-4. افتح `https://res.cloudinary.com/<cloud>/raw/authenticated/<public_id>` في المتصفح
-   **بدون توقيع** → يجب أن يُرفض.
-5. من حساب صيدلية أخرى: تنزيل نفس الإيصال → **404**.
+| القيد | الأثر |
+|---|---|
+| **لا حذف من Cloudinary** بدون API Secret | الملفات اليتيمة تبقى وتحتاج حذفًا يدويًا من الـConsole |
+| **لا سرد للأصول** بدون API Secret | `settlements:prune-orphan-receipts` يطبع تنبيهًا ولا يحذف شيئًا في هذا الوضع |
+| **PDF موقوف** | الواجهة تقبل صورًا فقط؛ الـAPI يرفض PDF بـ422 |
+| **الملف عام** | أي شخص يملك الرابط يفتحه |
 
-## 6. تنظيف الملفات اليتيمة
+## 5. التراجع إلى الوضع المحمي
 
-```bash
-php artisan settlements:prune-orphan-receipts --hours=24 --dry-run
-php artisan settlements:prune-orphan-receipts --hours=24
-```
-يعمل تلقائيًا على السائق الفعلي (Cloudinary أو قرص). لا يحذف ما تشير إليه تسوية،
-ولا ملفًا أحدث من فترة السماح.
+1. أضف `CLOUDINARY_API_KEY` و`CLOUDINARY_API_SECRET` في Render.
+2. `SETTLEMENT_RECEIPT_DRIVER=cloudinary`.
+3. أعد النشر.
 
-## 7. التراجع
+الإيصالات العامة القديمة تبقى مقروءة لأن القراءة تتبع `transfer_receipt_driver`
+المحفوظ في كل صف.
 
-- **إلى القرص:** `SETTLEMENT_RECEIPT_DRIVER=disk` (+ `SETTLEMENT_RECEIPT_DISK=r2` للدائم).
-- **إلى R2:** انظر `settlement-receipts-r2.md`. التكامل ما زال موجودًا ومُختبرًا.
+## 6. ما لم يُختبر
 
-> الإيصالات المرفوعة على Cloudinary تبقى على Cloudinary؛ تغيير السائق لا ينقلها.
-
-## 8. ما لم يُختبر
-
-**الرفع الحقيقي إلى حساب Cloudinary لم يُنفَّذ** — لا مفاتيح. كل الاختبارات
-الآلية تستخدم عميلًا وهميًا يثبت المنطق والصلاحيات وحفظ المعرّفات، ولا تثبت أن
-حسابك يقبل `authenticated` أو PDF. هذا يحتاج الاختبار في القسم 5.
+**الرفع الحقيقي إلى حساب Cloudinary لم يُنفَّذ.** كل الاختبارات الآلية تستخدم
+`Http::fake()` وتثبت: أن الرفع غير موقّع، أن الرابط لا يُعاد، أن الصلاحيات مضبوطة،
+وأن PDF مرفوض. لا تثبت أن حسابك سيقبل الرفع فعليًا — هذا يحتاج اختبارًا واحدًا
+بصورة تجريبية بعد النشر.

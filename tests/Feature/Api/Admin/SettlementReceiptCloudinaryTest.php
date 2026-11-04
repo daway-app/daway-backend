@@ -52,7 +52,7 @@ class SettlementReceiptCloudinaryTest extends TestCase
         $this->actingAs($this->admin, 'sanctum');
     }
 
-    private function pay(string $name = 'receipt.pdf', string $mime = 'application/pdf'): \Illuminate\Testing\TestResponse
+    private function pay(string $name = 'receipt.png', string $mime = 'image/png'): \Illuminate\Testing\TestResponse
     {
         return $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
@@ -61,7 +61,7 @@ class SettlementReceiptCloudinaryTest extends TestCase
             ]);
     }
 
-    public function test_a_pdf_is_uploaded_signed_as_an_authenticated_raw_asset(): void
+    public function test_a_receipt_is_uploaded_signed_as_an_authenticated_image_asset(): void
     {
         $this->deliveredPaidOrder();
 
@@ -71,15 +71,15 @@ class SettlementReceiptCloudinaryTest extends TestCase
         $options = $this->cloud->uploads[0]['options'];
 
         $this->assertSame('authenticated', $options['type']);
-        $this->assertSame('raw', $options['resource_type']);
+        $this->assertSame('image', $options['resource_type']);
         $this->assertSame('daway/settlement-receipts', $options['folder']);
 
         $settlement = PlatformSettlement::findOrFail($response->json('data.0.id'));
         $this->assertSame('cloudinary', $settlement->transfer_receipt_driver);
         $this->assertSame($this->cloud->uploads[0]['public_id'], $settlement->transfer_receipt_path);
-        $this->assertSame('raw', $settlement->transfer_receipt_meta['resource_type']);
+        $this->assertSame('image', $settlement->transfer_receipt_meta['resource_type']);
         $this->assertSame('authenticated', $settlement->transfer_receipt_meta['type']);
-        $this->assertSame('pdf', $settlement->transfer_receipt_meta['format']);
+        $this->assertSame('png', $settlement->transfer_receipt_meta['format']);
     }
 
     public function test_an_image_is_uploaded_as_an_authenticated_image_asset(): void
@@ -207,7 +207,7 @@ class SettlementReceiptCloudinaryTest extends TestCase
 
         $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                'receipt' => UploadedFile::fake()->create('huge.pdf', 6000, 'application/pdf'),
+                'receipt' => UploadedFile::fake()->create('huge.png', 6000, 'image/png'),
             ])->assertStatus(422);
 
         $this->assertCount(0, $this->cloud->uploads);

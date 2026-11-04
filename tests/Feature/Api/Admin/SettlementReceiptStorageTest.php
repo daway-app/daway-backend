@@ -65,7 +65,7 @@ class SettlementReceiptStorageTest extends TestCase
         try {
             $this->withHeaders(['Accept' => 'application/json'])
                 ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                    'receipt' => UploadedFile::fake()->create('proof.pdf', 40, 'application/pdf'),
+                    'receipt' => UploadedFile::fake()->create('proof.png', 40, 'image/png'),
                 ])
                 ->assertStatus(500)
                 ->assertJsonPath('success', false);
@@ -84,7 +84,7 @@ class SettlementReceiptStorageTest extends TestCase
 
         $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                'receipt' => UploadedFile::fake()->create('proof.pdf', 40, 'application/pdf'),
+                'receipt' => UploadedFile::fake()->create('proof.png', 40, 'image/png'),
             ])
             ->assertStatus(500)
             ->assertJsonPath('success', false);
@@ -99,7 +99,7 @@ class SettlementReceiptStorageTest extends TestCase
 
         $response = $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                'receipt' => UploadedFile::fake()->create('bank-notice.pdf', 40, 'application/pdf'),
+                'receipt' => UploadedFile::fake()->create('bank-notice.png', 40, 'image/png'),
                 'transfer_reference' => 'BANK-STORAGE-1',
             ])->assertOk()->assertJsonPath('data.0.receipt_available', true);
 
@@ -128,7 +128,7 @@ class SettlementReceiptStorageTest extends TestCase
         $this->deliveredPaidOrder();
         $response = $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                'receipt' => UploadedFile::fake()->create('gone.pdf', 40, 'application/pdf'),
+                'receipt' => UploadedFile::fake()->create('gone.png', 40, 'image/png'),
             ])->assertOk();
 
         $settlement = PlatformSettlement::findOrFail($response->json('data.0.id'));
@@ -143,7 +143,7 @@ class SettlementReceiptStorageTest extends TestCase
         $this->deliveredPaidOrder();
         $response = $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                'receipt' => UploadedFile::fake()->create('mine.pdf', 40, 'application/pdf'),
+                'receipt' => UploadedFile::fake()->create('mine.png', 40, 'image/png'),
             ])->assertOk();
         $settlementId = $response->json('data.0.id');
 
@@ -160,7 +160,7 @@ class SettlementReceiptStorageTest extends TestCase
         $this->deliveredPaidOrder();
         $settlementId = $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                'receipt' => UploadedFile::fake()->create('legacy.pdf', 40, 'application/pdf'),
+                'receipt' => UploadedFile::fake()->create('legacy.png', 40, 'image/png'),
             ])->assertOk()->json('data.0.id');
 
         // محاكاة صف أُنشئ قبل هجرة driver/meta: القيمة null تعني «قرص».
@@ -181,7 +181,7 @@ class SettlementReceiptStorageTest extends TestCase
 
         $this->withHeaders(['Accept' => 'application/json'])
             ->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
-                'receipt' => UploadedFile::fake()->create('proof.pdf', 40, 'application/pdf'),
+                'receipt' => UploadedFile::fake()->create('proof.png', 40, 'image/png'),
             ])->assertStatus(500);
 
         $this->assertSame($orderCount, Order::count());

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\PlatformSettlement;
+use App\Services\Settlement\Receipts\CloudinaryPublicReceipts;
 use App\Services\Settlement\Receipts\CloudinaryReceipts;
 use App\Services\Settlement\Receipts\DiskReceipts;
 use App\Services\Settlement\ReceiptStorage;
@@ -37,11 +38,31 @@ class PruneOrphanSettlementReceipts extends Command
         $cutoff = now()->subHours($hours)->getTimestamp();
 
         try {
-            return $storage->isCloudinary()
+            $driver = $storage->driver();
+        } catch (Throwable $e) {
+            $this->error('تعذّر تجهيز التخزين: '.$e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        if ($driver === CloudinaryPublicReceipts::DRIVER) {
+            // الوضع العام: بلا API Secret لا يمكن سرد الأصول ولا حذفها من Cloudinary.
+            // نُبلّغ بوضوح بدل الإيهام بتنظيف لم يحدث.
+            $this->warn(
+                'الوضع الحالي cloudinary_public: لا يمكن سرد أو حذف الأصول من Cloudinary '.
+                'بدون CLOUDINARY_API_KEY/SECRET. لم يُحذف أي ملف.'
+            );
+            $this->line('الملفات اليتيمة تبقى في Cloudinary وتحتاج حذفًا يدويًا من الـConsole.');
+
+            return self::SUCCESS;
+        }
+
+        try {
+            return $driver === CloudinaryReceipts::DRIVER
                 ? $this->pruneCloudinary($cloudinary, $cutoff, $dryRun)
                 : $this->pruneDisk($disk, $cutoff, $dryRun);
         } catch (Throwable $e) {
-            $this->error('تعذّر تجهيز التخزين: '.$e->getMessage());
+            $this->error('تعذّر تنفيذ التنظيف: '.$e->getMessage());
 
             return self::FAILURE;
         }
