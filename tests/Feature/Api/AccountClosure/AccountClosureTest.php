@@ -246,4 +246,20 @@ class AccountClosureTest extends TestCase
         $this->assertSame($first, $second);
         $this->assertSame(1, AccountClosureRequest::where('subject_id', $pharmacy->id)->count());
     }
+
+    public function test_a_closed_pharmacy_receives_no_new_orders(): void
+    {
+        // صيدلية مغلقة لا تُقبل لها طلبات جديدة حتى لو كانت السلة قديمة.
+        $this->pharmacyA->forceFill(['is_active' => false, 'closed_at' => now()])->save();
+
+        $this->actingAs($this->patient, 'sanctum');
+        $this->seedTwoPharmacyCart();
+
+        $this->postJson('/api/patient/checkout', [
+            'address_id' => $this->address->id,
+            'idempotency_key' => 'closed-'.uniqid(),
+        ])->assertStatus(422);
+
+        $this->assertSame(0, Order::query()->where('user_id', $this->patient->id)->count());
+    }
 }

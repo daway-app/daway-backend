@@ -152,7 +152,12 @@ class OrderController extends Controller
             $inventoryValid = true;
             foreach ($cartItems as $item) {
                 $pm = $pharmacyMedicines->get($item->pharmacy_medicine_id);
-                if (! $pm || ! $pm->is_available || $pm->quantity < $item->quantity) {
+                // صيدلية مغلقة لا تستقبل طلبات جديدة: نمنعها هنا لا في الواجهة
+                // فقط، لأن البحث قد يكون مخزّنًا أو السلة قديمة.
+                $pharmacyClosed = $pm?->pharmacy
+                    && ($pm->pharmacy->closed_at !== null || $pm->pharmacy->is_active === false);
+
+                if (! $pm || $pharmacyClosed || ! $pm->is_available || $pm->quantity < $item->quantity) {
                     $inventoryValid = false;
                     break;
                 }
