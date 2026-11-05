@@ -42,6 +42,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="SETTLEMENT_RECEIPT_DRIVER" value="auto"/>
         <env name="CLOUDINARY_CLOUD_NAME" value=""/>
         <env name="CLOUDINARY_UPLOAD_PRESET" value=""/>
     </php>
