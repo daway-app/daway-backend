@@ -219,6 +219,15 @@ class AccountClosureService
             }
         }
 
+        // Unbatched settlement adjustments remain financial obligations even without an order.
+        if (Schema::hasTable('platform_settlement_adjustments')) {
+            $unbatchedAdjustments = DB::table('platform_settlement_adjustments')
+                ->where('pharmacy_id', $pharmacy->id)->whereNull('settlement_id')->count();
+            if ($unbatchedAdjustments > 0) {
+                $blockers[] = ['key' => 'unbatched_adjustments', 'label' => 'تعديلات تسوية غير مجمعة', 'count' => $unbatchedAdjustments];
+            }
+        }
+
         if (Schema::hasTable('refunds')) {
             $pendingRefunds = DB::table('refunds')
                 ->where('pharmacy_id', $pharmacy->id)

@@ -310,4 +310,26 @@ class AccountClosureTest extends TestCase
         $this->assertFalse((bool) $pharmacy->fresh()->is_active);
     }
 
+    public function test_unbatched_settlement_adjustment_blocks_pharmacy_closure(): void
+    {
+        $pharmacy = Pharmacy::factory()->create();
+        DB::table('platform_settlement_adjustments')->insert([
+            'pharmacy_id' => $pharmacy->id, 'pharmacy_name' => $pharmacy->pharmacy_name,
+            'effective_period_start' => now()->toDateString(), 'amount' => -10,
+            'reason' => 'pending adjustment', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $closure = AccountClosureRequest::create([
+            'subject_type' => Pharmacy::class, 'subject_id' => $pharmacy->id,
+            'status' => AccountClosureRequest::STATUS_PENDING,
+        ]);
+        $service = app(\App\Services\AccountClosure\AccountClosureService::class);
+        $this->assertContains('unbatched_adjustments', array_column($service->pharmacyBlockers($pharmacy), 'key'));
+        try {
+            $service->approvePharmacyClosure($closure, $this->admin);
+            $this->fail('Closure must be blocked while an adjustment remains unbatched.');
+        } catch (\App\Services\AccountClosure\AccountClosureBlocked $e) {
+            $this->assertNull($pharmacy->fresh()->closed_at);
+        }
+    }
+
 }
