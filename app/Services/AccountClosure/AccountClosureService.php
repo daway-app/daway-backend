@@ -127,6 +127,14 @@ class AccountClosureService
             'email' => 'deleted+'.$user->id.'@daway.invalid',
             'phone' => null,
             'avatar' => null,
+            'address' => null,
+            'birth_date' => null,
+            'emergency_contact' => null,
+            'latitude' => null,
+            'longitude' => null,
+            'email_verified_at' => null,
+            'phone_verified_at' => null,
+            'remember_token' => null,
             // كلمة مرور عشوائية: حتى لو أُعيد تفعيل الحساب لا يمكن الدخول بها.
             'password' => bcrypt(bin2hex(random_bytes(24))),
         ])->save();
@@ -258,31 +266,31 @@ class AccountClosureService
      */
     public function approvePharmacyClosure(AccountClosureRequest $request, User $admin, ?string $note = null): void
     {
-        if (! $request->isPending()) {
-            throw new RuntimeException('الطلب ليس قيد المراجعة.');
-        }
+        DB::transaction(function () use ($request, $admin, $note) {
+            // Checkout locks this same row before creating a sub-order.
+            $pharmacy = Pharmacy::query()->whereKey($request->subject_id)->lockForUpdate()->firstOrFail();
+            $request = AccountClosureRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            if (! $request->isPending() || $pharmacy->closed_at !== null) {
+                throw new RuntimeException('الطلب ليس قيد المراجعة.');
+            }
+            $blockers = $this->pharmacyBlockers($pharmacy);
+            if ($blockers !== []) {
+                throw new AccountClosureBlocked($blockers);
+            }
 
-        $pharmacy = Pharmacy::findOrFail($request->subject_id);
-
-        // إعادة الفحص لحظة الموافقة: قد تكون التزامات جديدة ظهرت بعد الطلب.
-        $blockers = $this->pharmacyBlockers($pharmacy);
-
-        if ($blockers !== []) {
-            $request->forceFill(['blockers_at_request' => $blockers])->save();
-
-            throw new AccountClosureBlocked($blockers);
-        }
-
-        DB::transaction(function () use ($request, $pharmacy, $admin, $note) {
             $pharmacy->forceFill(['is_active' => false, 'closed_at' => now()])->save();
 
-            // تعطيل كل مستخدمي الصيدلية وإبطال توكناتهم.
-            User::query()->where('pharmacy_id', $pharmacy->id)->each(function (User $employee) {
-                $employee->forceFill(['is_active' => false, 'closed_at' => now()])->save();
-                $employee->tokens()->delete();
-            });
+            // The schema associates one owner through pharmacies.user_id.
+            $owner = User::query()->whereKey($pharmacy->user_id)->lockForUpdate()->firstOrFail();
+            $ownerWasActive = (bool) $owner->is_active && $owner->closed_at === null;
+            if ($ownerWasActive) {
+                $owner->forceFill(['is_active' => false, 'closed_at' => now()])->save();
+            }
+            $owner->tokens()->delete();
 
             $request->forceFill([
+                'owner_was_active' => $ownerWasActive,
+                'closed_owner_id' => $owner->id,
                 'status' => AccountClosureRequest::STATUS_APPROVED,
                 'review_note' => $note,
                 'reviewed_by' => $admin->id,
@@ -293,27 +301,43 @@ class AccountClosureService
 
     public function rejectPharmacyClosure(AccountClosureRequest $request, User $admin, string $note): void
     {
-        if (! $request->isPending()) {
-            throw new RuntimeException('الطلب ليس قيد المراجعة.');
-        }
-
-        $request->forceFill([
-            'status' => AccountClosureRequest::STATUS_REJECTED,
-            'review_note' => $note,
-            'reviewed_by' => $admin->id,
-            'reviewed_at' => now(),
-        ])->save();
+        DB::transaction(function () use ($request, $admin, $note) {
+            Pharmacy::query()->whereKey($request->subject_id)->lockForUpdate()->firstOrFail();
+            $request = AccountClosureRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            if (! $request->isPending()) {
+                throw new RuntimeException('الطلب ليس قيد المراجعة.');
+            }
+            $request->forceFill([
+                'status' => AccountClosureRequest::STATUS_REJECTED,
+                'review_note' => $note,
+                'reviewed_by' => $admin->id,
+                'reviewed_at' => now(),
+            ])->save();
+        });
     }
 
     /** إعادة فتح صيدلية (الأدمن) — الإغلاق قابل للتراجع. */
     public function reopenPharmacy(Pharmacy $pharmacy): void
     {
         DB::transaction(function () use ($pharmacy) {
+            $pharmacy = Pharmacy::query()->whereKey($pharmacy->id)->lockForUpdate()->firstOrFail();
+            if ($pharmacy->closed_at === null) {
+                throw new RuntimeException('الصيدلية غير مغلقة.');
+            }
             $pharmacy->forceFill(['is_active' => true, 'closed_at' => null])->save();
 
-            User::query()->where('pharmacy_id', $pharmacy->id)->each(function (User $employee) {
-                $employee->forceFill(['is_active' => true, 'closed_at' => null])->save();
-            });
+            $closure = AccountClosureRequest::query()
+                ->where('subject_type', Pharmacy::class)
+                ->where('subject_id', $pharmacy->id)
+                ->where('status', AccountClosureRequest::STATUS_APPROVED)
+                ->latest('id')->first();
+
+            // A legacy closure without a recorded prior state fails closed.
+            if ($closure?->owner_was_active === true && (int) $closure->closed_owner_id === (int) $pharmacy->user_id) {
+                User::query()->whereKey($pharmacy->user_id)
+                    ->whereNotNull('closed_at')
+                    ->update(['is_active' => true, 'closed_at' => null]);
+            }
         });
     }
 }

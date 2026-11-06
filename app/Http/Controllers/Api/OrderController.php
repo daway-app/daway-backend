@@ -143,6 +143,12 @@ class OrderController extends Controller
 
             $pharmacyMedicineIds = $cartItems->pluck('pharmacy_medicine_id')->toArray();
 
+            // Lock pharmacies in a stable order before inventory; closure takes the same lock.
+            $pharmacyIds = PharmacyMedicine::query()->whereIn('id', $pharmacyMedicineIds)
+                ->distinct()->pluck('pharmacy_id');
+            $lockedPharmacies = Pharmacy::query()->whereIn('id', $pharmacyIds)
+                ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+
             $pharmacyMedicines = PharmacyMedicine::with(['medicine', 'mohMedicine', 'pharmacy'])
                 ->whereIn('id', $pharmacyMedicineIds)
                 ->lockForUpdate()
@@ -154,8 +160,8 @@ class OrderController extends Controller
                 $pm = $pharmacyMedicines->get($item->pharmacy_medicine_id);
                 // صيدلية مغلقة لا تستقبل طلبات جديدة: نمنعها هنا لا في الواجهة
                 // فقط، لأن البحث قد يكون مخزّنًا أو السلة قديمة.
-                $pharmacyClosed = $pm?->pharmacy
-                    && ($pm->pharmacy->closed_at !== null || $pm->pharmacy->is_active === false);
+                $lockedPharmacy = $pm ? $lockedPharmacies->get($pm->pharmacy_id) : null;
+                $pharmacyClosed = ! $lockedPharmacy || $lockedPharmacy->closed_at !== null || ! $lockedPharmacy->is_active;
 
                 if (! $pm || $pharmacyClosed || ! $pm->is_available || $pm->quantity < $item->quantity) {
                     $inventoryValid = false;

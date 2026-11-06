@@ -30,6 +30,7 @@ class AccountClosureRequest extends Model
         return [
             'blockers_at_request' => 'array',
             'reviewed_at' => 'datetime',
+            'owner_was_active' => 'boolean',
         ];
     }
 

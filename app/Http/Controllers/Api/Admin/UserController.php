@@ -113,6 +113,14 @@ class UserController extends Controller
     /** PUT/PATCH /api/admin/users/{user} */
     public function update(Request $request, User $user): JsonResponse
     {
+        if ($user->closed_at !== null || $user->pharmacy()->whereNotNull('closed_at')->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الحساب مغلق ولا يمكن تعديله من هذا المسار.',
+                'code' => 'account_closed',
+            ], 409);
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email,'.$user->id],
@@ -166,6 +174,14 @@ class UserController extends Controller
     /** PATCH /api/admin/users/{user}/toggle-status */
     public function toggleStatus(User $user): JsonResponse
     {
+        if ($user->closed_at !== null || $user->pharmacy()->whereNotNull('closed_at')->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الحساب مغلق ولا يمكن تعديله من هذا المسار.',
+                'code' => 'account_closed',
+            ], 409);
+        }
+
         if ($user->id === (int) auth()->id() && $user->is_active) {
             return response()->json([
                 'success' => false,

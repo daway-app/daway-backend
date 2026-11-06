@@ -98,6 +98,12 @@ class AccountClosureTest extends TestCase
         ]);
         Order::where('id', $order->id)->update(['notes' => 'ملاحظة شخصية حساسة']);
 
+        $patient->forceFill([
+            'address' => 'private address', 'birth_date' => '1990-01-01',
+            'emergency_contact' => 'private contact', 'latitude' => 31.5, 'longitude' => 35.1,
+            'remember_token' => 'private-token',
+        ])->save();
+
         $tokenId = $patient->createToken('test')->accessToken->id;
 
         $this->actingAs($patient, 'sanctum')
@@ -111,6 +117,9 @@ class AccountClosureTest extends TestCase
         $this->assertStringContainsString('حساب محذوف', $fresh->name);
         $this->assertStringNotContainsString('@example.test', (string) $fresh->email);
         $this->assertNull($fresh->phone);
+        foreach (['address', 'birth_date', 'emergency_contact', 'latitude', 'longitude', 'remember_token', 'phone_verified_at', 'email_verified_at'] as $field) {
+            $this->assertNull($fresh->{$field}, $field);
+        }
 
         // العنوان أُخفي في مكانه (لم يُحذف — حذفه يمحو الطلب بالـcascade).
         $address = DB::table('addresses')->where('user_id', $patient->id)->first();
@@ -262,4 +271,43 @@ class AccountClosureTest extends TestCase
 
         $this->assertSame(0, Order::query()->where('user_id', $this->patient->id)->count());
     }
+    public function test_reopening_only_restores_an_owner_who_was_active_before_closure(): void
+    {
+        foreach ([true, false] as $wasActive) {
+            $pharmacy = Pharmacy::factory()->create();
+            $owner = $pharmacy->user;
+            $owner->forceFill(['is_active' => $wasActive])->save();
+            $token = $owner->createToken('closure-test')->accessToken;
+            $closure = AccountClosureRequest::create([
+                'subject_type' => Pharmacy::class, 'subject_id' => $pharmacy->id,
+                'status' => AccountClosureRequest::STATUS_PENDING,
+            ]);
+            $service = app(\App\Services\AccountClosure\AccountClosureService::class);
+            $service->approvePharmacyClosure($closure, $this->admin);
+            $this->assertFalse((bool) $owner->fresh()->is_active);
+            $this->assertDatabaseMissing('personal_access_tokens', ['id' => $token->id]);
+            $service->reopenPharmacy($pharmacy);
+            $this->assertSame($wasActive, (bool) $owner->fresh()->is_active);
+            $this->assertTrue((bool) $pharmacy->fresh()->is_active);
+        }
+    }
+
+    public function test_admin_cannot_reactivate_a_closed_patient_through_general_user_endpoints(): void
+    {
+        $patient = $this->patient();
+        $patient->forceFill(['is_active' => false, 'closed_at' => now()])->save();
+        $this->actingAs($this->admin, 'sanctum')
+            ->patchJson('/api/admin/users/'.$patient->id.'/toggle-status')->assertStatus(409);
+        $this->assertFalse((bool) $patient->fresh()->is_active);
+    }
+
+    public function test_admin_cannot_reactivate_a_closed_pharmacy_through_the_general_toggle(): void
+    {
+        $pharmacy = Pharmacy::factory()->create();
+        $pharmacy->forceFill(['is_active' => false, 'closed_at' => now()])->save();
+        $this->actingAs($this->admin, 'sanctum')
+            ->patchJson('/api/admin/pharmacies/'.$pharmacy->id.'/toggle-status')->assertStatus(409);
+        $this->assertFalse((bool) $pharmacy->fresh()->is_active);
+    }
+
 }
