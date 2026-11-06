@@ -41,6 +41,14 @@ class AccountClosureTest extends TestCase
         return $this->patient->fresh();
     }
 
+    private function withPatientToken(User $patient): static
+    {
+        $token = $patient->createToken('closure-test')->plainTextToken;
+        $this->app['auth']->forgetGuards();
+
+        return $this->withToken($token);
+    }
+
     private function orderFor(User $patient): Order
     {
         $this->actingAs($patient, 'sanctum');
@@ -58,7 +66,7 @@ class AccountClosureTest extends TestCase
         $patient = $this->patient();
         $order = $this->orderFor($patient);
 
-        $this->actingAs($patient, 'sanctum')
+        $this->withPatientToken($patient)
             ->postJson('/api/account/closure', ['confirm' => 'DELETE'])
             ->assertStatus(409)
             ->assertJsonPath('code', 'closure_blocked')
@@ -72,7 +80,7 @@ class AccountClosureTest extends TestCase
     {
         $patient = $this->patient();
         foreach ([[], ['confirm' => 'delete']] as $payload) {
-            $this->actingAs($patient, 'sanctum')->postJson('/api/account/closure', $payload)
+            $this->withPatientToken($patient)->postJson('/api/account/closure', $payload)
                 ->assertUnprocessable()->assertJsonValidationErrors('confirm');
         }
         $this->assertNull($patient->fresh()->closed_at);
@@ -80,9 +88,19 @@ class AccountClosureTest extends TestCase
 
     public function test_closure_requires_authentication_and_patient_role(): void
     {
+        $this->app['auth']->forgetGuards();
         $this->postJson('/api/account/closure', ['confirm' => 'DELETE'])->assertUnauthorized();
         $this->actingAs($this->pharmacyA->user, 'sanctum')
             ->postJson('/api/account/closure', ['confirm' => 'DELETE'])->assertForbidden();
+    }
+
+    public function test_web_session_without_a_sanctum_token_cannot_close_an_account(): void
+    {
+        $patient = $this->patient();
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($patient, 'web');
+        $this->postJson('/api/account/closure', ['confirm' => 'DELETE'])->assertUnauthorized();
+        $this->assertNull($patient->fresh()->closed_at);
     }
 
     public function test_patient_can_close_with_a_bearer_token_without_password_or_otp(): void
@@ -90,11 +108,28 @@ class AccountClosureTest extends TestCase
         $patient = $this->patient();
         $token = $patient->createToken('mobile')->plainTextToken;
         $other = $patient->createToken('other')->accessToken->id;
+        $this->app['auth']->forgetGuards();
         $this->withToken($token)->postJson('/api/account/closure', ['confirm' => 'DELETE'])
             ->assertOk()->assertJsonPath('data.status', 'closed');
         $this->assertDatabaseMissing('personal_access_tokens', ['id' => $other]);
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->getJson('/api/account/status')->assertUnauthorized();
+    }
+
+    public function test_closure_removes_preexisting_login_otp_for_the_old_phone(): void
+    {
+        $patient = $this->patient();
+        $phone = $patient->phone;
+        DB::table('otp_codes')->insert([
+            'phone' => $phone, 'otp' => Hash::make('123456'),
+            'expires_at' => now()->addMinutes(10), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->withPatientToken($patient)->postJson('/api/account/closure', ['confirm' => 'DELETE'])->assertOk();
+        $this->assertDatabaseMissing('otp_codes', ['phone' => $phone]);
+        $this->app['auth']->forgetGuards();
+        $this->postJson('/api/otp/verify', ['phone' => $phone, 'otp' => '123456'])->assertStatus(400);
+        $this->assertFalse((bool) $patient->fresh()->is_active);
+        $this->assertSame(0, $patient->tokens()->count());
     }
 
     public function test_closing_an_account_anonymises_everywhere_and_keeps_financial_rows(): void
@@ -123,7 +158,7 @@ class AccountClosureTest extends TestCase
 
         $tokenId = $patient->createToken('test')->accessToken->id;
 
-        $this->actingAs($patient, 'sanctum')
+        $this->withPatientToken($patient)
             ->postJson('/api/account/closure', ['confirm' => 'DELETE'])
             ->assertOk()
             ->assertJsonPath('data.status', 'closed');
@@ -161,7 +196,7 @@ class AccountClosureTest extends TestCase
 
         $token = $patient->createToken('mobile')->plainTextToken;
 
-        $this->actingAs($patient, 'sanctum')
+        $this->withPatientToken($patient)
             ->postJson('/api/account/closure', ['confirm' => 'DELETE'])
             ->assertOk();
 
@@ -169,6 +204,57 @@ class AccountClosureTest extends TestCase
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/account/status')
             ->assertUnauthorized();
+    }
+
+    public function test_pending_payment_submission_blocks_closure_for_a_finished_order(): void
+    {
+        $patient = $this->patient();
+        $order = $this->orderFor($patient);
+        $order->update(['status' => 'delivered']);
+        $id = DB::table('order_payment_submissions')->insertGetId([
+            'order_id' => $order->id, 'bank_name' => 'Bank', 'account_holder' => 'Holder',
+            'account_number' => '123', 'amount' => 42, 'sender_name' => 'Patient Name',
+            'receipt_path' => 'receipt.jpg', 'receipt_original_name' => 'receipt.jpg',
+            'receipt_mime' => 'image/jpeg', 'status' => 'under_review',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->withPatientToken($patient)->postJson('/api/account/closure', ['confirm' => 'DELETE'])
+            ->assertStatus(409)->assertJsonPath('data.blockers.0.key', 'pending_payments');
+        $this->assertDatabaseHas('order_payment_submissions', ['id' => $id, 'sender_name' => 'Patient Name']);
+        $this->assertNull($patient->fresh()->closed_at);
+    }
+
+    public function test_open_payment_problem_blocks_closure_for_a_finished_order(): void
+    {
+        $patient = $this->patient();
+        $order = $this->orderFor($patient);
+        $order->update(['status' => 'delivered']);
+        $id = DB::table('payment_problems')->insertGetId([
+            'order_id' => $order->id, 'category' => 'other', 'message' => 'Needs review',
+            'status' => 'open', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->withPatientToken($patient)->postJson('/api/account/closure', ['confirm' => 'DELETE'])
+            ->assertStatus(409)->assertJsonPath('data.blockers.0.key', 'open_payment_problems');
+        $this->assertDatabaseHas('payment_problems', ['id' => $id, 'status' => 'open']);
+        $this->assertNull($patient->fresh()->closed_at);
+    }
+
+    public function test_closure_keeps_approved_payment_and_anonymizes_its_sender(): void
+    {
+        $patient = $this->patient();
+        $order = $this->orderFor($patient);
+        $order->update(['status' => 'delivered']);
+        $id = DB::table('order_payment_submissions')->insertGetId([
+            'order_id' => $order->id, 'bank_name' => 'Bank', 'account_holder' => 'Holder',
+            'account_number' => '123', 'amount' => 42, 'sender_name' => 'Patient Name',
+            'receipt_path' => 'receipt.jpg', 'receipt_original_name' => 'receipt.jpg',
+            'receipt_mime' => 'image/jpeg', 'status' => 'approved',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->withPatientToken($patient)->postJson('/api/account/closure', ['confirm' => 'DELETE'])->assertOk();
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'user_id' => $patient->id]);
+        $this->assertDatabaseHas('order_payment_submissions', ['id' => $id, 'order_id' => $order->id, 'status' => 'approved', 'sender_name' => null]);
+        $this->assertEquals(42, DB::table('order_payment_submissions')->where('id', $id)->value('amount'));
     }
 
     // ---------------- الصيدلية ----------------

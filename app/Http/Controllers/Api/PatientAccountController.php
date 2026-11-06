@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\AccountClosure\AccountClosureBlocked;
 use App\Services\AccountClosure\AccountClosureService;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * إغلاق حساب المريض — فوري بعد المصادقة وتأكيد الطلب (قرار D-3).
@@ -21,6 +23,11 @@ class PatientAccountController extends Controller
     /** POST /api/patient/account/closure */
     public function close(Request $request): JsonResponse
     {
+        // Sanctum can also authenticate a web session; closure requires a real bearer token.
+        if (! $request->bearerToken() || ! ($request->user()?->currentAccessToken() instanceof PersonalAccessToken)) {
+            throw new AuthenticationException;
+        }
+
         $data = $request->validate([
             'confirm' => ['required', 'string', 'in:DELETE'],
             'reason' => ['nullable', 'string', 'max:500'],

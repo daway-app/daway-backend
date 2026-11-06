@@ -62,6 +62,18 @@ class AccountClosureService
             }
         }
 
+        if (Schema::hasTable('payment_problems')) {
+            $openProblems = DB::table('payment_problems as problem')
+                ->join('orders as o', 'o.id', '=', 'problem.order_id')
+                ->where('o.user_id', $user->id)
+                ->where('problem.status', \App\Models\PaymentProblem::STATUS_OPEN)
+                ->count();
+
+            if ($openProblems > 0) {
+                $blockers[] = ['key' => 'open_payment_problems', 'label' => 'مشكلات دفع قيد المراجعة', 'count' => $openProblems];
+            }
+        }
+
         return $blockers;
     }
 
@@ -79,6 +91,10 @@ class AccountClosureService
         }
 
         return DB::transaction(function () use ($user, $reason) {
+            // Remove outstanding login codes before the phone number is anonymized.
+            if ($user->phone !== null) {
+                DB::table('otp_codes')->where('phone', $user->phone)->delete();
+            }
             $this->purgePersonalData($user);
             $this->anonymizePersonalData($user);
 
