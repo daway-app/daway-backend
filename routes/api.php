@@ -129,11 +129,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile/patient/change-password', [PatientProfileController::class, 'changePassword'])
         ->middleware('throttle:6,1');
 
-    // إغلاق حساب المريض — فوري بعد تأكيد كلمة المرور (D-3).
+    // إغلاق حساب المريض — فوري بعد المصادقة والتأكيد الصريح (D-3).
     // حدّ 3/دقيقة: عملية لا رجعة فيها، ولا يصح أن تُجرَّب بكثافة.
-    Route::get('/account/status', [PatientAccountController::class, 'status']);
+    Route::get('/account/status', [PatientAccountController::class, 'status'])->middleware('role:patient');
     Route::post('/account/closure', [PatientAccountController::class, 'close'])
-        ->middleware('throttle:3,1');
+        ->middleware(['role:patient', 'throttle:3,1']);
     Route::get('/profile/pharmacy', [PharmacyProfileController::class, 'show']);
     Route::post('/profile/pharmacy', [PharmacyProfileController::class, 'update']);
 

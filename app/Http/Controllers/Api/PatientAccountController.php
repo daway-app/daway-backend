@@ -7,10 +7,9 @@ use App\Services\AccountClosure\AccountClosureBlocked;
 use App\Services\AccountClosure\AccountClosureService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 /**
- * إغلاق حساب المريض — فوري بعد تأكيد الهوية (قرار D-3).
+ * إغلاق حساب المريض — فوري بعد المصادقة وتأكيد الطلب (قرار D-3).
  *
  * لا يُغلق الحساب إن كانت هناك طلبات نشطة أو إثباتات دفع قيد المراجعة؛
  * الإغلاق يوقف الوصول ويُخفي الهوية، ولا يمسّ أي سجل مالي (D-1).
@@ -23,21 +22,11 @@ class PatientAccountController extends Controller
     public function close(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'password' => ['required', 'string'],
             'confirm' => ['required', 'string', 'in:DELETE'],
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
         $user = $request->user();
-
-        // تأكيد الهوية: كلمة المرور الحالية. عملية لا رجعة فيها.
-        if (! Hash::check($data['password'], (string) $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'كلمة المرور غير صحيحة.',
-                'code' => 'invalid_password',
-            ], 422);
-        }
 
         try {
             $closure = $this->closure->closePatient($user, $data['reason'] ?? null);

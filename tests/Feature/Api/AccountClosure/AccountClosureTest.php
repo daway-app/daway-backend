@@ -59,7 +59,7 @@ class AccountClosureTest extends TestCase
         $order = $this->orderFor($patient);
 
         $this->actingAs($patient, 'sanctum')
-            ->postJson('/api/account/closure', ['password' => 'Secret-123', 'confirm' => 'DELETE'])
+            ->postJson('/api/account/closure', ['confirm' => 'DELETE'])
             ->assertStatus(409)
             ->assertJsonPath('code', 'closure_blocked')
             ->assertJsonPath('data.blockers.0.key', 'active_orders');
@@ -68,16 +68,33 @@ class AccountClosureTest extends TestCase
         $this->assertDatabaseHas('orders', ['id' => $order->id]);
     }
 
-    public function test_a_wrong_password_is_rejected(): void
+    public function test_explicit_confirmation_is_required(): void
     {
         $patient = $this->patient();
-
-        $this->actingAs($patient, 'sanctum')
-            ->postJson('/api/account/closure', ['password' => 'wrong', 'confirm' => 'DELETE'])
-            ->assertStatus(422)
-            ->assertJsonPath('code', 'invalid_password');
-
+        foreach ([[], ['confirm' => 'delete']] as $payload) {
+            $this->actingAs($patient, 'sanctum')->postJson('/api/account/closure', $payload)
+                ->assertUnprocessable()->assertJsonValidationErrors('confirm');
+        }
         $this->assertNull($patient->fresh()->closed_at);
+    }
+
+    public function test_closure_requires_authentication_and_patient_role(): void
+    {
+        $this->postJson('/api/account/closure', ['confirm' => 'DELETE'])->assertUnauthorized();
+        $this->actingAs($this->pharmacyA->user, 'sanctum')
+            ->postJson('/api/account/closure', ['confirm' => 'DELETE'])->assertForbidden();
+    }
+
+    public function test_patient_can_close_with_a_bearer_token_without_password_or_otp(): void
+    {
+        $patient = $this->patient();
+        $token = $patient->createToken('mobile')->plainTextToken;
+        $other = $patient->createToken('other')->accessToken->id;
+        $this->withToken($token)->postJson('/api/account/closure', ['confirm' => 'DELETE'])
+            ->assertOk()->assertJsonPath('data.status', 'closed');
+        $this->assertDatabaseMissing('personal_access_tokens', ['id' => $other]);
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->getJson('/api/account/status')->assertUnauthorized();
     }
 
     public function test_closing_an_account_anonymises_everywhere_and_keeps_financial_rows(): void
@@ -107,7 +124,7 @@ class AccountClosureTest extends TestCase
         $tokenId = $patient->createToken('test')->accessToken->id;
 
         $this->actingAs($patient, 'sanctum')
-            ->postJson('/api/account/closure', ['password' => 'Secret-123', 'confirm' => 'DELETE'])
+            ->postJson('/api/account/closure', ['confirm' => 'DELETE'])
             ->assertOk()
             ->assertJsonPath('data.status', 'closed');
 
@@ -145,7 +162,7 @@ class AccountClosureTest extends TestCase
         $token = $patient->createToken('mobile')->plainTextToken;
 
         $this->actingAs($patient, 'sanctum')
-            ->postJson('/api/account/closure', ['password' => 'Secret-123', 'confirm' => 'DELETE'])
+            ->postJson('/api/account/closure', ['confirm' => 'DELETE'])
             ->assertOk();
 
         $this->app['auth']->forgetGuards();

@@ -2,31 +2,73 @@
   "info": {
     "name": "DAWAK — Account Closure",
     "_postman_id": "d4e2a1c0-5b7f-4c31-9e2a-accountclosure",
-    "description": "إغلاق حسابات المرضى والصيدليات.\n\nمهم لفريق Flutter:\n· الإغلاق **لا يحذف** أي سجل مالي — يوقف الوصول ويُخفي الهوية.\n· حساب المريض يُغلق فورًا بعد تأكيد كلمة المرور، بشرط ألا تكون هناك طلبات نشطة أو إثباتات دفع قيد المراجعة.\n· الصيدلية تُقدّم طلبًا، والأدمن يوافق. الموافقة تفشل (409) حتى تُسوى كل الالتزامات، بما فيها مبالغ لم تُجمَّع بعد في تسوية.\n· بعد الإغلاق تُبطَل كل التوكنات، وأي توكن قديم يرجع 401.\n· كل المسارات تتطلب `Authorization: Bearer <token>`.\n\nرموز الأخطاء:\n· 401 غير مصادَق (أو توكن أُبطل بعد الإغلاق)\n· 403 الحساب ليس مالك صيدلية\n· 409 `closure_blocked` مع `data.blockers[]`\n· 422 `invalid_password` أو خطأ تحقق",
+    "description": "إغلاق حسابات المرضى والصيدليات.\n\nمهم لفريق Flutter:\n· الإغلاق **لا يحذف** أي سجل مالي — يوقف الوصول ويُخفي الهوية.\n· حساب المريض يُغلق فورًا بعد المصادقة بالتوكن والتأكيد الصريح، بشرط ألا تكون هناك طلبات نشطة أو إثباتات دفع قيد المراجعة.\n· الصيدلية تُقدّم طلبًا، والأدمن يوافق. الموافقة تفشل (409) حتى تُسوى كل الالتزامات، بما فيها مبالغ لم تُجمَّع بعد في تسوية.\n· بعد الإغلاق تُبطَل كل التوكنات، وأي توكن قديم يرجع 401.\n· كل المسارات تتطلب `Authorization: Bearer <token>`.\n\nرموز الأخطاء:\n· 401 غير مصادَق (أو توكن أُبطل بعد الإغلاق)\n· 403 الحساب ليس مالك صيدلية\n· 409 `closure_blocked` مع `data.blockers[]`\n· 422 عند غياب التأكيد أو عدم تطابقه",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "https://daway-backend-zlh2.onrender.com" },
-    { "key": "patient_token", "value": "" },
-    { "key": "pharmacy_token", "value": "" },
-    { "key": "admin_token", "value": "" },
-    { "key": "closure_id", "value": "1" }
+    {
+      "key": "base_url",
+      "value": "https://daway-backend-zlh2.onrender.com"
+    },
+    {
+      "key": "patient_token",
+      "value": ""
+    },
+    {
+      "key": "pharmacy_token",
+      "value": ""
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "closure_id",
+      "value": "1"
+    }
   ],
   "item": [
     {
       "name": "Patient — Status",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{patient_token}}" }],
-        "url": { "raw": "{{base_url}}/api/account/status", "host": ["{{base_url}}"], "path": ["api", "account", "status"] },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{patient_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/account/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "account",
+            "status"
+          ]
+        },
         "description": "حالة الحساب + الموانع الحالية قبل الإغلاق. اعرضها في التطبيق قبل عرض زر الإغلاق."
       },
       "response": [
         {
           "name": "200 — active with no blockers",
-          "originalRequest": { "method": "GET", "url": { "raw": "{{base_url}}/api/account/status" } },
-          "status": "OK", "code": 200, "_postman_previewlanguage": "json",
-          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/account/status"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
           "body": "{\n  \"success\": true,\n  \"data\": {\n    \"status\": \"active\",\n    \"closed_at\": null,\n    \"blockers\": []\n  }\n}"
         }
       ]
@@ -36,37 +78,89 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{patient_token}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Authorization",
+            "value": "Bearer {{patient_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"password\": \"<current-password>\",\n  \"confirm\": \"DELETE\",\n  \"reason\": \"اختياري\"\n}"
+          "raw": "{\n  \"confirm\": \"DELETE\",\n  \"reason\": \"اختياري\"\n}"
         },
-        "url": { "raw": "{{base_url}}/api/account/closure", "host": ["{{base_url}}"], "path": ["api", "account", "closure"] },
-        "description": "إغلاق فوري. `confirm` يجب أن يكون النص الحرفي `DELETE` وإلا 422."
+        "url": {
+          "raw": "{{base_url}}/api/account/closure",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "account",
+            "closure"
+          ]
+        },
+        "description": "يُرسل الطلب بتوكن Sanctum الحالي بعد نافذة تحذير وتأكيد. لا تُطلب كلمة مرور أو OTP. يجب أن يساوي confirm النص DELETE؛ تُلغى جميع التوكنات بعد النجاح."
       },
       "response": [
         {
           "name": "200 — closed",
-          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/account/closure" } },
-          "status": "OK", "code": 200, "_postman_previewlanguage": "json",
-          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/account/closure"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
           "body": "{\n  \"success\": true,\n  \"message\": \"تم إغلاق الحساب. لن تتمكن من تسجيل الدخول مرة أخرى.\",\n  \"data\": { \"status\": \"closed\", \"closed_at\": \"2026-11-05T10:00:00+00:00\" }\n}"
         },
         {
           "name": "409 — blocked",
-          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/account/closure" } },
-          "status": "Conflict", "code": 409, "_postman_previewlanguage": "json",
-          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/account/closure"
+            }
+          },
+          "status": "Conflict",
+          "code": 409,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
           "body": "{\n  \"success\": false,\n  \"message\": \"لا يمكن إغلاق الحساب الآن لوجود التزامات قائمة.\",\n  \"code\": \"closure_blocked\",\n  \"data\": {\n    \"blockers\": [\n      { \"key\": \"active_orders\", \"label\": \"طلبات نشطة\", \"count\": 2 }\n    ]\n  }\n}"
         },
         {
-          "name": "422 — wrong password",
-          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/account/closure" } },
-          "status": "Unprocessable Entity", "code": 422, "_postman_previewlanguage": "json",
-          "header": [{ "key": "Content-Type", "value": "application/json" }],
-          "body": "{\n  \"success\": false,\n  \"message\": \"كلمة المرور غير صحيحة.\",\n  \"code\": \"invalid_password\"\n}"
+          "name": "422 — confirmation required",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/account/closure"
+            }
+          },
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"The confirm field is required.\",\n  \"errors\": {\n    \"confirm\": [\n      \"The confirm field is required.\"\n    ]\n  }\n}"
         }
       ]
     },
@@ -74,16 +168,44 @@
       "name": "Pharmacy — Closure status",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{pharmacy_token}}" }],
-        "url": { "raw": "{{base_url}}/api/pharmacy/account/closure-request", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "account", "closure-request"] },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{pharmacy_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/pharmacy/account/closure-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "pharmacy",
+            "account",
+            "closure-request"
+          ]
+        },
         "description": "آخر طلب إغلاق + الموانع الحالية. `request` يساوي null إن لم يُقدَّم طلب."
       },
       "response": [
         {
           "name": "200 — pending request with blockers",
-          "originalRequest": { "method": "GET", "url": { "raw": "{{base_url}}/api/pharmacy/account/closure-request" } },
-          "status": "OK", "code": 200, "_postman_previewlanguage": "json",
-          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/pharmacy/account/closure-request"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
           "body": "{\n  \"success\": true,\n  \"data\": {\n    \"account_status\": \"active\",\n    \"closed_at\": null,\n    \"request\": {\n      \"id\": 7,\n      \"status\": \"pending\",\n      \"reason\": \"إغلاق نهائي\",\n      \"created_at\": \"2026-11-05T09:00:00+00:00\",\n      \"reviewed_at\": null,\n      \"review_note\": null,\n      \"blockers\": [\n        { \"key\": \"ungrouped_dues\", \"label\": \"مستحقات لم تُجمَّع في تسوية\", \"count\": 3 }\n      ]\n    },\n    \"blockers\": [\n      { \"key\": \"ungrouped_dues\", \"label\": \"مستحقات لم تُجمَّع في تسوية\", \"count\": 3 }\n    ]\n  }\n}"
         }
       ]
@@ -93,26 +215,70 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{pharmacy_token}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Authorization",
+            "value": "Bearer {{pharmacy_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
-        "body": { "mode": "raw", "raw": "{\n  \"reason\": \"إغلاق نهائي\"\n}" },
-        "url": { "raw": "{{base_url}}/api/pharmacy/account/closure-request", "host": ["{{base_url}}"], "path": ["api", "pharmacy", "account", "closure-request"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"إغلاق نهائي\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/pharmacy/account/closure-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "pharmacy",
+            "account",
+            "closure-request"
+          ]
+        },
         "description": "يُسمح بالطلب حتى مع وجود مستحقات. الطلب المكرر يعيد نفس الطلب (201 بنفس id)."
       },
       "response": [
         {
           "name": "201 — created",
-          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/pharmacy/account/closure-request" } },
-          "status": "Created", "code": 201, "_postman_previewlanguage": "json",
-          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/pharmacy/account/closure-request"
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
           "body": "{\n  \"success\": true,\n  \"message\": \"تم إرسال طلب إغلاق الحساب للمراجعة.\",\n  \"data\": {\n    \"id\": 7,\n    \"status\": \"pending\",\n    \"reason\": \"إغلاق نهائي\",\n    \"created_at\": \"2026-11-05T09:00:00+00:00\",\n    \"reviewed_at\": null,\n    \"review_note\": null,\n    \"blockers\": []\n  }\n}"
         },
         {
           "name": "409 — already closed",
-          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/pharmacy/account/closure-request" } },
-          "status": "Conflict", "code": 409, "_postman_previewlanguage": "json",
-          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/pharmacy/account/closure-request"
+            }
+          },
+          "status": "Conflict",
+          "code": 409,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
           "body": "{\n  \"success\": false,\n  \"message\": \"حساب الصيدلية مغلق بالفعل.\",\n  \"code\": \"already_closed\"\n}"
         }
       ]
@@ -121,12 +287,28 @@
       "name": "Admin — List closure requests",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
         "url": {
           "raw": "{{base_url}}/api/admin/account-closures?status=pending",
-          "host": ["{{base_url}}"],
-          "path": ["api", "admin", "account-closures"],
-          "query": [{ "key": "status", "value": "pending" }]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "account-closures"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "pending"
+            }
+          ]
         },
         "description": "status: pending | approved | rejected | cancelled | all"
       },
@@ -137,19 +319,52 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
-        "body": { "mode": "raw", "raw": "{\n  \"note\": \"تمت التسوية\"\n}" },
-        "url": { "raw": "{{base_url}}/api/admin/account-closures/{{closure_id}}/approve", "host": ["{{base_url}}"], "path": ["api", "admin", "account-closures", "{{closure_id}}", "approve"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"note\": \"تمت التسوية\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/account-closures/{{closure_id}}/approve",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "account-closures",
+            "{{closure_id}}",
+            "approve"
+          ]
+        },
         "description": "يفشل بـ409 ما دامت هناك التزامات — لا يمكن للأدمن تجاوزها."
       },
       "response": [
         {
           "name": "409 — obligations remain",
-          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/admin/account-closures/7/approve" } },
-          "status": "Conflict", "code": 409, "_postman_previewlanguage": "json",
-          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/admin/account-closures/7/approve"
+            }
+          },
+          "status": "Conflict",
+          "code": 409,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
           "body": "{\n  \"success\": false,\n  \"message\": \"لا يمكن إتمام الإغلاق قبل تسوية الالتزامات القائمة.\",\n  \"code\": \"closure_blocked\",\n  \"data\": {\n    \"blockers\": [\n      { \"key\": \"unpaid_settlements\", \"label\": \"تسويات غير مدفوعة\", \"count\": 1 }\n    ]\n  }\n}"
         }
       ]
@@ -159,11 +374,32 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
-        "body": { "mode": "raw", "raw": "{\n  \"note\": \"بيانات ناقصة\"\n}" },
-        "url": { "raw": "{{base_url}}/api/admin/account-closures/{{closure_id}}/reject", "host": ["{{base_url}}"], "path": ["api", "admin", "account-closures", "{{closure_id}}", "reject"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"note\": \"بيانات ناقصة\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/account-closures/{{closure_id}}/reject",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "account-closures",
+            "{{closure_id}}",
+            "reject"
+          ]
+        },
         "description": "`note` مطلوب."
       },
       "response": []
@@ -172,9 +408,29 @@
       "name": "Admin — Reopen pharmacy",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
-        "body": { "mode": "raw", "raw": "" },
-        "url": { "raw": "{{base_url}}/api/admin/pharmacies/{{pharmacy_id}}/reopen", "host": ["{{base_url}}"], "path": ["api", "admin", "pharmacies", "{{pharmacy_id}}", "reopen"] },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/pharmacies/{{pharmacy_id}}/reopen",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "pharmacies",
+            "{{pharmacy_id}}",
+            "reopen"
+          ]
+        },
         "description": "الإغلاق قابل للتراجع: يعيد تفعيل الصيدلية وكل مستخدميها."
       },
       "response": []
