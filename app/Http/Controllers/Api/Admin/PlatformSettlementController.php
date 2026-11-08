@@ -237,7 +237,11 @@ class PlatformSettlementController extends Controller
             }],
             'reason' => ['required', 'string', 'max:500'],
         ]);
-        $row = $this->settlements->addAdjustment(Pharmacy::findOrFail($data['pharmacy_id']), $data['effective_period_start'], (float) $data['amount'], $data['reason'], (int) $request->user()->id);
+        try {
+            $row = $this->settlements->addAdjustment(Pharmacy::findOrFail($data['pharmacy_id']), $data['effective_period_start'], (float) $data['amount'], $data['reason'], (int) $request->user()->id);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['success' => true, 'message' => 'تم تسجيل التعديل للدفعة القادمة.', 'data' => [
             'id' => $row->id, 'pharmacy_id' => $row->pharmacy_id, 'effective_period_start' => $row->effective_period_start->toDateString(),
