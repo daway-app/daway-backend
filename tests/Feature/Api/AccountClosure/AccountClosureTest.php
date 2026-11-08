@@ -299,6 +299,20 @@ class AccountClosureTest extends TestCase
         $this->assertNull($this->pharmacyA->fresh()->closed_at);
     }
 
+    public function test_unsettled_delivered_order_blocks_pharmacy_closure_even_before_payment_approval(): void
+    {
+        $order = $this->orderFor($this->patient());
+        $order->forceFill(['status' => 'delivered', 'payment_status' => 'under_review'])->save();
+        $order->subOrders()->update(['status' => 'delivered', 'payment_status' => 'under_review']);
+        $this->actingAs($this->pharmacyA->user, 'sanctum')
+            ->postJson('/api/pharmacy/account/closure-request', [])->assertCreated();
+        $closure = AccountClosureRequest::where('subject_id', $this->pharmacyA->id)->firstOrFail();
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/account-closures/'.$closure->id.'/approve', [])
+            ->assertStatus(409)->assertJsonPath('data.blockers.0.key', 'ungrouped_dues');
+        $this->assertNull($this->pharmacyA->fresh()->closed_at);
+    }
+
     public function test_admin_can_approve_a_clean_pharmacy_and_it_disappears_from_search(): void
     {
         $pharmacy = Pharmacy::factory()->create(['is_active' => true]);

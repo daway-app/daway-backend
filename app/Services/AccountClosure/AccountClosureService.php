@@ -226,7 +226,7 @@ class AccountClosureService
             $ungrouped = SubOrder::query()
                 ->where('pharmacy_id', $pharmacy->id)
                 ->where('status', SubOrder::STATUS_DELIVERED)
-                ->where('payment_status', 'paid')
+                // An unpaid delivered order can become a payable while payment approval is in flight.
                 ->whereNotIn('id', DB::table('platform_settlement_items')->whereNotNull('sub_order_id')->select('sub_order_id'))
                 ->count();
 

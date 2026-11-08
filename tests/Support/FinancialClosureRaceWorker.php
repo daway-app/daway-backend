@@ -25,6 +25,7 @@ use App\Models\User;
 use App\Services\AccountClosure\AccountClosureBlocked;
 use App\Services\AccountClosure\AccountClosureService;
 use App\Services\PlatformSettlementService;
+use App\Services\PaymentFlowService;
 use Illuminate\Support\Facades\DB;
 
 $c = config('database.connections.mysql');
@@ -71,6 +72,82 @@ if ($argv[1] === 'setup') {
     exit;
 }
 [$pid, $aid, $rid, $saleId, $itemId, $patientId, $addressId, $customerId, $supplierId] = json_decode(file_get_contents($dir.'/ids.json'), true, 512, JSON_THROW_ON_ERROR);
+if ($argv[1] === 'prepare_payment') {
+    $order = Order::create(['user_id' => $patientId, 'address_id' => $addressId, 'pharmacy_id' => $pid,
+        'subtotal' => 50, 'total' => 50, 'delivery_fee' => 0, 'status' => 'delivered', 'payment_status' => 'under_review']);
+    \App\Models\SubOrder::create(['order_id' => $order->id, 'pharmacy_id' => $pid,
+        'subtotal' => 50, 'total' => 50, 'status' => 'delivered', 'payment_status' => 'under_review', 'delivered_at' => now()]);
+    DB::table('order_payment_submissions')->insert(['order_id' => $order->id, 'bank_name' => 'Bank',
+        'account_holder' => 'Holder', 'account_number' => '123', 'amount' => 50,
+        'receipt_path' => 'receipt.jpg', 'receipt_original_name' => 'receipt.jpg', 'receipt_mime' => 'image/jpeg',
+        'status' => 'under_review', 'created_at' => now(), 'updated_at' => now()]);
+    file_put_contents($dir.'/order_id', (string) $order->id);
+    exit;
+}
+if ($argv[1] === 'prepare_settlement') {
+    $orderId = (int) file_get_contents($dir.'/order_id');
+    DB::table('orders')->where('id', $orderId)->update(['payment_status' => 'paid']);
+    DB::table('sub_orders')->where('order_id', $orderId)->update(['payment_status' => 'paid']);
+    DB::table('order_payment_submissions')->where('order_id', $orderId)->update(['status' => 'approved']);
+    exit;
+}
+if ($argv[1] === 'prepare_cancellation') {
+    $orderId = (int) file_get_contents($dir.'/order_id');
+    DB::table('orders')->where('id', $orderId)->update(['status' => 'confirmed', 'payment_status' => 'pending']);
+    DB::table('sub_orders')->where('order_id', $orderId)->update(['status' => 'confirmed', 'payment_status' => 'pending']);
+    $subId = DB::table('sub_orders')->where('order_id', $orderId)->value('id');
+    $medicineId = DB::table('cart_items')->join('carts', 'carts.id', '=', 'cart_items.cart_id')
+        ->where('carts.user_id', $patientId)->value('pharmacy_medicine_id');
+    DB::table('pharmacy_medicines')->where('id', $medicineId)->update(['quantity' => 9]);
+    DB::table('order_items')->insert(['order_id' => $orderId, 'sub_order_id' => $subId, 'pharmacy_id' => $pid,
+        'pharmacy_medicine_id' => $medicineId, 'medicine_trade_name' => 'Race fixture', 'quantity' => 1,
+        'unit_price' => 50, 'total_price' => 50, 'created_at' => now(), 'updated_at' => now()]);
+    file_put_contents($dir.'/medicine_id', (string) $medicineId);
+    exit;
+}
+if ($argv[1] === 'settlement_holds') {
+    DB::transaction(function () use ($pid, $aid, $dir, $wait): void {
+        app(PlatformSettlementService::class)->createDraft(Pharmacy::findOrFail($pid), date('Y-m-d'), date('Y-m-d'), $aid);
+        file_put_contents($dir.'/held', '1');
+        $wait($dir.'/release');
+    });
+    echo json_encode(['result' => 'drafted']);
+    exit;
+}
+if ($argv[1] === 'cancel_holds') {
+    DB::transaction(function () use ($patientId, $dir, $wait): void {
+        $patient = User::findOrFail($patientId);
+        $http = Request::create('/api/patient/orders/cancel', 'POST');
+        $http->setUserResolver(static fn () => $patient);
+        $response = app(OrderController::class)->cancel($http, Order::findOrFail((int) file_get_contents($dir.'/order_id')));
+        if ($response->getStatusCode() !== 200) throw new RuntimeException('Cancellation failed: '.$response->getContent());
+        file_put_contents($dir.'/held', '1');
+        $wait($dir.'/release');
+    });
+    echo json_encode(['result' => 'cancelled', 'stock' => (int) DB::table('pharmacy_medicines')->where('id', (int) file_get_contents($dir.'/medicine_id'))->value('quantity')]);
+    exit;
+}
+if ($argv[1] === 'payment_holds') {
+    DB::transaction(function () use ($dir, $aid, $wait): void {
+        $result = app(PaymentFlowService::class)->approvePayment(Order::findOrFail((int) file_get_contents($dir.'/order_id')), User::findOrFail($aid), null);
+        if (! $result['ok']) throw new RuntimeException('Payment approval failed: '.$result['message']);
+        file_put_contents($dir.'/held', '1');
+        $wait($dir.'/release');
+    });
+    echo json_encode(['result' => 'paid']);
+    exit;
+}
+if ($argv[1] === 'close_probe') {
+    file_put_contents($dir.'/started', (string) DB::selectOne('SELECT CONNECTION_ID() AS id')->id);
+    try {
+        app(AccountClosureService::class)->approvePharmacyClosure(AccountClosureRequest::findOrFail($rid), User::findOrFail($aid));
+        echo json_encode(['result' => 'closed']);
+    } catch (AccountClosureBlocked $e) {
+        echo json_encode(['result' => 'blocked', 'blockers' => array_column($e->blockers(), 'key')]);
+    }
+    exit;
+}
+
 $service = app(PlatformSettlementService::class);
 $closure = app(AccountClosureService::class);
 if ($argv[1] === 'close_holds') {
@@ -143,6 +220,22 @@ if ($argv[1] === 'close_holds') {
         echo json_encode(['result' => 'rejected', 'closed' => Pharmacy::findOrFail($pid)->closed_at !== null,
             'count' => DB::table($table)->where('pharmacy_id', $pid)->count(), 'message' => $e->getMessage()]);
     }
+} elseif ($argv[1] === 'cancel_contends') {
+    $patient = User::findOrFail($patientId);
+    $order = Order::findOrFail((int) file_get_contents($dir.'/order_id'));
+    $http = Request::create('/api/patient/orders/cancel', 'POST');
+    $http->setUserResolver(static fn () => $patient);
+    file_put_contents($dir.'/started', (string) DB::selectOne('SELECT CONNECTION_ID() AS id')->id);
+    $response = app(OrderController::class)->cancel($http, $order);
+    echo json_encode(['status' => $response->getStatusCode(), 'payment' => $order->fresh()->payment_status,
+        'stock' => (int) DB::table('pharmacy_medicines')->where('id', (int) file_get_contents($dir.'/medicine_id'))->value('quantity')]);
+} elseif ($argv[1] === 'payment_contends') {
+    $order = Order::findOrFail((int) file_get_contents($dir.'/order_id'));
+    $admin = User::findOrFail($aid);
+    file_put_contents($dir.'/started', (string) DB::selectOne('SELECT CONNECTION_ID() AS id')->id);
+    $result = app(PaymentFlowService::class)->approvePayment($order, $admin, null);
+    echo json_encode(['ok' => $result['ok'], 'status' => $result['status'], 'order_status' => $order->fresh()->status,
+        'stock' => (int) DB::table('pharmacy_medicines')->where('id', (int) file_get_contents($dir.'/medicine_id'))->value('quantity')]);
 } elseif ($argv[1] === 'checkout_contends') {
     $patient = User::findOrFail($patientId);
     $http = Request::create('/api/patient/checkout', 'POST', ['address_id' => $addressId, 'idempotency_key' => 'race-'.bin2hex(random_bytes(8))]);

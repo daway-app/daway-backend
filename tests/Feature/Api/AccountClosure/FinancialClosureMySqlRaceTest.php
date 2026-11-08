@@ -107,6 +107,103 @@ class FinancialClosureMySqlRaceTest extends TestCase
         $this->assertSame(0, $result['count']);
     }
 
+    public function test_closure_rejects_an_unsettled_delivered_order_while_payment_is_approving(): void
+    {
+        $prepare = $this->startWorker('prepare_payment');
+        $this->finishWorker($prepare, 'prepare_payment');
+        $holder = $this->startWorker('payment_holds');
+        try {
+            $this->waitFor('held');
+            $this->assertTrue(proc_get_status($holder)['running']);
+            $closer = $this->startWorker('close_probe');
+            $raw = $this->finishWorker($closer, 'close_probe');
+            $this->assertJson($raw, 'close_probe output: '.$raw);
+            $result = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+            $this->assertSame('blocked', $result['result']);
+            $this->assertContains('ungrouped_dues', $result['blockers']);
+        } finally {
+            file_put_contents($this->directory.'/release', '1');
+            $this->finishWorker($holder, 'payment_holds');
+        }
+    }
+
+    public function test_closure_waits_for_settlement_then_sees_the_draft(): void
+    {
+        $this->prepareOrder('prepare_settlement');
+        [$closure, $settlement] = $this->closeAfterHolder('settlement_holds');
+        $this->assertSame('drafted', $settlement['result']);
+        $this->assertSame('blocked', $closure['result']);
+        $this->assertContains('unpaid_settlements', $closure['blockers']);
+    }
+
+    public function test_closure_waits_for_cancellation_and_stock_restoration(): void
+    {
+        $this->prepareOrder('prepare_cancellation');
+        [$closure, $cancellation] = $this->closeAfterHolder('cancel_holds');
+        $this->assertSame('cancelled', $cancellation['result']);
+        $this->assertSame(10, $cancellation['stock']);
+        $this->assertSame('closed', $closure['result']);
+    }
+
+    public function test_cancellation_waits_for_approved_payment_and_does_not_restore_stock(): void
+    {
+        $this->prepareOrder('prepare_cancellation');
+        $result = $this->race('payment_holds', 'cancel_contends');
+        $this->assertSame(422, $result['status']);
+        $this->assertSame('paid', $result['payment']);
+        $this->assertSame(9, $result['stock']);
+    }
+
+    public function test_payment_waits_for_cancellation_and_cannot_approve_it(): void
+    {
+        $this->prepareOrder('prepare_cancellation');
+        $result = $this->race('cancel_holds', 'payment_contends');
+        $this->assertFalse($result['ok']);
+        $this->assertSame(422, $result['status']);
+        $this->assertSame('cancelled', $result['order_status']);
+        $this->assertSame(10, $result['stock']);
+    }
+
+    public function test_concurrent_cancellations_restore_stock_only_once(): void
+    {
+        $this->prepareOrder('prepare_cancellation');
+        $result = $this->race('cancel_holds', 'cancel_contends');
+        $this->assertSame(422, $result['status']);
+        $this->assertSame(10, $result['stock']);
+    }
+
+    private function prepareOrder(string $mode): void
+    {
+        foreach (['prepare_payment', $mode] as $step) {
+            $worker = $this->startWorker($step);
+            $this->finishWorker($worker, $step);
+        }
+    }
+
+    private function closeAfterHolder(string $mode): array
+    {
+        $holder = $this->startWorker($mode);
+        $closer = null;
+        try {
+            $this->waitFor('held');
+            $closer = $this->startWorker('close_probe');
+            $this->waitFor('started');
+            $this->waitForDatabaseLock((int) file_get_contents($this->directory.'/started'));
+            $this->assertTrue(proc_get_status($closer)['running']);
+            file_put_contents($this->directory.'/release', '1');
+            $operation = json_decode($this->finishWorker($holder, $mode), true, 512, JSON_THROW_ON_ERROR);
+            $holder = null;
+            $raw = $this->finishWorker($closer, 'close_probe');
+            $closer = null;
+            $this->assertJson($raw, 'close_probe output: '.$raw);
+            return [json_decode($raw, true, 512, JSON_THROW_ON_ERROR), $operation];
+        } finally {
+            file_put_contents($this->directory.'/release', '1');
+            if (is_resource($holder)) { proc_terminate($holder); proc_close($holder); }
+            if (is_resource($closer)) { proc_terminate($closer); proc_close($closer); }
+        }
+    }
+
     private function race(string $holderMode, string $contenderMode): array
     {
         $holder = $this->startWorker($holderMode);
