@@ -170,12 +170,12 @@ class DeliveryFeeCheckoutTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.delivery_fee', 12.5)
+            ->assertJsonPath('data.delivery_fee', 13)
             ->assertJsonPath('data.total', 100)
-            ->assertJsonPath('data.grand_total', 112.5);
+            ->assertJsonPath('data.grand_total', 113);
 
         $order = Order::first();
-        $this->assertSame(12.5, (float) $order->delivery_fee);
+        $this->assertSame(13.0, (float) $order->delivery_fee);
         $this->assertSame(100.0, (float) $order->total, 'الرسوم لا تدخل في total.');
     }
 
@@ -228,9 +228,9 @@ class DeliveryFeeCheckoutTest extends TestCase
             'address_id' => $this->address->id,
             'delivery_fee' => 0, // محاولة تجاوز — يجب أن تُتجاهل.
         ])->assertStatus(201)
-            ->assertJsonPath('data.delivery_fee', 12.5);
+            ->assertJsonPath('data.delivery_fee', 13);
 
-        $this->assertSame(12.5, (float) Order::first()->delivery_fee);
+        $this->assertSame(13.0, (float) Order::first()->delivery_fee);
     }
 
     public function test_the_snapshotted_fee_is_stable_after_tier_changes(): void
@@ -248,7 +248,7 @@ class DeliveryFeeCheckoutTest extends TestCase
         // غيّر الرسوم لاحقًا: اللقطة يجب ألّا تتأثر.
         $tier->update(['fee' => 99.0]);
 
-        $this->assertSame(12.5, (float) $order->fresh()->delivery_fee);
+        $this->assertSame(13.0, (float) $order->fresh()->delivery_fee);
     }
 
     // ── متعدد الصيدليات: رسوم مسار واحدة (TSP مفتوح) ─────────────────────────
@@ -336,11 +336,11 @@ class DeliveryFeeCheckoutTest extends TestCase
         ])->assertStatus(201);
 
         $order = Order::first();
-        $this->assertSame(12.5, (float) $order->delivery_fee);
+        $this->assertSame(13.0, (float) $order->delivery_fee);
 
         $tier->update(['fee' => 99.0]);
 
-        $this->assertSame(12.5, (float) $order->fresh()->delivery_fee, 'اللقطة لا تتأثر بتغيّر الشرائح.');
+        $this->assertSame(13.0, (float) $order->fresh()->delivery_fee, 'اللقطة لا تتأثر بتغيّر الشرائح.');
     }
 
     public function test_multi_pharmacy_checkout_is_rejected_when_pricing_is_disabled(): void

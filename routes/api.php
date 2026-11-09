@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\Admin\CatalogMaintenanceController as AdminCatalogM
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvailabilityAlertController;
 use App\Http\Controllers\Api\BarcodeLookupController;
+use App\Http\Controllers\Api\CheckoutQuoteController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CouponController;
@@ -190,6 +191,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('cart/items/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
         Route::delete('cart', [CartController::class, 'clear'])->name('cart.clear');
 
+        // معاينة الملخص قبل الدفع — قراءة فقط، بنفس منطق الـcheckout.
+        Route::post('checkout/quote', [CheckoutQuoteController::class, 'quote'])
+            ->middleware('throttle:writes')
+            ->name('checkout.quote');
         Route::post('checkout', [OrderController::class, 'checkout'])->name('checkout');
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
