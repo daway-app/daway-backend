@@ -188,4 +188,41 @@ class SettlementReceiptStorageTest extends TestCase
         $this->assertSame($subOrderCount, SubOrder::count());
         $this->assertSame(SubOrder::STATUS_DELIVERED, $this->subOrderFor(Order::first(), $this->pharmacyA)->status);
     }
+    public function test_missing_cloudinary_never_affects_fake_disk_financial_payment(): void
+    {
+        config(['services.cloudinary.receipts.driver' => 'disk', 'services.cloudinary.cloud' => null, 'services.cloudinary.upload_preset' => null]);
+        Storage::fake('local');
+        \Illuminate\Support\Facades\Http::fake();
+        $this->deliveredPaidOrder();
+        $this->withHeaders(['Accept' => 'application/json'])->post('/api/admin/platform-settlements/pharmacies/'.$this->pharmacyA->id.'/pay', [
+            'receipt' => UploadedFile::fake()->create('receipt.png', 40, 'image/png'),
+        ])->assertOk();
+        $this->assertSame(PlatformSettlement::STATUS_PAID, PlatformSettlement::firstOrFail()->status);
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+    }
+
+    public function test_readiness_rejects_production_fallback_and_requires_cloudinary_settings(): void
+    {
+        $this->app['env'] = 'production';
+        try {
+            foreach (['disk', 'auto', 'unknown'] as $driver) {
+                config(['services.cloudinary.receipts.driver' => $driver]);
+                $this->artisan('settlements:check-receipt-storage')->assertExitCode(1);
+            }
+            config(['services.cloudinary.receipts.driver' => 'cloudinary_public', 'services.cloudinary.cloud' => null, 'services.cloudinary.upload_preset' => null]);
+            $this->artisan('settlements:check-receipt-storage')->assertExitCode(1);
+            config(['services.cloudinary.cloud' => 'example-cloud', 'services.cloudinary.upload_preset' => 'example-preset']);
+            \Illuminate\Support\Facades\Http::fake();
+            $this->artisan('settlements:check-receipt-storage')->assertExitCode(0);
+            \Illuminate\Support\Facades\Http::assertNothingSent();
+        } finally {
+            $this->app['env'] = 'testing';
+        }
+    }
+
+    public function test_phpunit_forces_testing_driver_and_environment(): void
+    {
+        $this->assertSame('testing', app()->environment());
+        $this->assertSame('disk', config('services.cloudinary.receipts.driver'));
+    }
 }

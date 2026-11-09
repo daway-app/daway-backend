@@ -87,7 +87,7 @@ class CloudinaryPublicReceipts
         $publicId = (string) $response->json('public_id', '');
         $url = (string) $response->json('secure_url', '');
 
-        if ($publicId === '' || $url === '') {
+        if ($publicId === '' || ! filter_var($url, FILTER_VALIDATE_URL) || parse_url($url, PHP_URL_SCHEME) !== 'https') {
             throw new RuntimeException('استجابة التخزين ناقصة: لا معرّف ملف ولا رابط.');
         }
 

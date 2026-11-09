@@ -46,26 +46,13 @@ return [
         // مجلد الجذر لكل صور التطبيق داخل Cloudinary
         'folder' => env('CLOUDINARY_FOLDER', 'daway'),
 
-        /*
-        |----------------------------------------------------------------------
-        | إيصالات التحويل المالي — مسار منفصل تمامًا عن الصور العامة
-        |----------------------------------------------------------------------
-        |
-        | الصور العامة تُرفع **غير موقّعة** عبر upload_preset وتُخزَّن بنوع
-        | التسليم الافتراضي (عام). الإيصالات لا يجوز أن تسلك ذلك المسار:
-        |
-        |  · الرفع **موقّع** من الخادم بمفتاح API + سر.
-        |  · نوع التسليم `authenticated` ⇒ لا رابط عام صالح إطلاقًا.
-        |  · التنزيل يمرّ عبر Laravel فقط بعد التحقق من الصلاحية.
-        |
-        | لا تُشارك `upload_preset` هنا: preset الصور عام بطبيعته.
-        |
-        */
+        /* Settlement receipts use the configured driver. The production
+         * cloudinary_public driver uses the unsigned preset and produces public
+         * assets; the legacy signed driver remains available for older records.
+         */
         'receipts' => [
-            // auto = Cloudinary إن كان مهيّأً، وإلا القرص المحلي (بيئة التطوير)
-            // cloudinary = إلزامي — يفشل الرفع صراحةً إن لم تُضبط المفاتيح
-            // disk = القرص المضبوط في filesystems.settlement_receipt_disk
-            'driver' => env('SETTLEMENT_RECEIPT_DRIVER', 'auto'),
+            // Production requires cloudinary_public; local development may use disk.
+            'driver' => env('SETTLEMENT_RECEIPT_DRIVER', 'disk'),
 
             'api_key' => env('CLOUDINARY_API_KEY'),
             'api_secret' => env('CLOUDINARY_API_SECRET'),

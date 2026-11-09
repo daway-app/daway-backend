@@ -221,4 +221,41 @@ class SettlementReceiptPublicCloudinaryTest extends TestCase
             ->expectsOutputToContain('cloudinary_public')
             ->assertSuccessful();
     }
+    public function test_timeout_never_records_a_payment(): void
+    {
+        Http::fake(fn () => throw new \Illuminate\Http\Client\ConnectionException('timeout'));
+        $this->deliveredPaidOrder();
+        $this->pay()->assertStatus(500);
+        $this->assertSame(0, PlatformSettlement::count());
+    }
+
+    public function test_incomplete_upload_response_never_records_a_payment(): void
+    {
+        Http::fake(['api.cloudinary.com/*' => Http::response(['public_id' => 'incomplete'], 200)]);
+        $this->deliveredPaidOrder();
+        $this->pay()->assertStatus(500);
+        $this->assertSame(0, PlatformSettlement::count());
+    }
+
+    public function test_production_missing_configuration_never_records_a_payment(): void
+    {
+        $this->deliveredPaidOrder();
+        $this->app['env'] = 'production';
+        config(['services.cloudinary.cloud' => null, 'services.cloudinary.upload_preset' => null]);
+        Http::fake();
+        try {
+            $this->pay()->assertStatus(500);
+            $this->assertSame(0, PlatformSettlement::count());
+            Http::assertNothingSent();
+        } finally {
+            $this->app['env'] = 'testing';
+        }
+    }
+    public function test_non_https_upload_response_never_records_a_payment(): void
+    {
+        Http::fake(['api.cloudinary.com/*' => Http::response(['public_id' => 'receipt', 'secure_url' => 'http://invalid.example/receipt'], 200)]);
+        $this->deliveredPaidOrder();
+        $this->pay()->assertStatus(500);
+        $this->assertSame(0, PlatformSettlement::count());
+    }
 }

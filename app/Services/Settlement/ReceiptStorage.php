@@ -32,7 +32,12 @@ class ReceiptStorage
     /** اسم السائق الذي سيُستخدم للرفع الآن. */
     public function driver(): string
     {
-        $mode = strtolower(trim((string) config('services.cloudinary.receipts.driver', 'auto')));
+        $mode = strtolower(trim((string) config('services.cloudinary.receipts.driver', 'disk')));
+
+        if (app()->environment('production') && $mode !== CloudinaryPublicReceipts::DRIVER) {
+            \Illuminate\Support\Facades\Log::error('settlement_receipt_configuration_invalid', ['reason' => 'production_requires_cloudinary_public']);
+            throw new RuntimeException('Production settlement receipts require cloudinary_public.');
+        }
 
         if ($mode === 'disk') {
             return DiskReceipts::DRIVER;
@@ -40,6 +45,7 @@ class ReceiptStorage
 
         if ($mode === CloudinaryPublicReceipts::DRIVER) {
             if (! $this->publicCloudinary->configured()) {
+                \Illuminate\Support\Facades\Log::error('settlement_receipt_configuration_invalid', ['reason' => 'missing_cloud_or_preset']);
                 throw new RuntimeException(
                     'SETTLEMENT_RECEIPT_DRIVER=cloudinary_public يحتاج '.
                     'CLOUDINARY_CLOUD_NAME و CLOUDINARY_UPLOAD_PRESET.'
@@ -61,10 +67,7 @@ class ReceiptStorage
             return CloudinaryReceipts::DRIVER;
         }
 
-        // auto: الوضع العام إن كان الـpreset مضبوطًا، وإلا القرص.
-        return $this->publicCloudinary->configured()
-            ? CloudinaryPublicReceipts::DRIVER
-            : DiskReceipts::DRIVER;
+        throw new RuntimeException('Unsupported settlement receipt driver; select an explicit driver.');
     }
 
     /** هل التخزين الحالي على Cloudinary (أي وضع)؟ */
