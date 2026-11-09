@@ -225,4 +225,27 @@ class SettlementReceiptStorageTest extends TestCase
         $this->assertSame('testing', app()->environment());
         $this->assertSame('disk', config('services.cloudinary.receipts.driver'));
     }
+
+    /**
+     * حارس الإنتاج يجب أن يمنع القرص المؤقت لا أن يمنع الوضع الأكثر أمانًا.
+     * كان يشترط cloudinary_public حصرًا، فيحجب السائق الموقّع `authenticated`
+     * — وهو عكس ترتيب الأمان المطلوب.
+     */
+    public function test_production_accepts_the_authenticated_driver(): void
+    {
+        $this->app['env'] = 'production';
+
+        try {
+            config([
+                'services.cloudinary.cloud' => 'test-cloud',
+                'services.cloudinary.receipts.driver' => 'cloudinary',
+                'services.cloudinary.receipts.api_key' => 'key',
+                'services.cloudinary.receipts.api_secret' => 'secret',
+            ]);
+
+            $this->assertSame('cloudinary', app(\App\Services\Settlement\ReceiptStorage::class)->driver());
+        } finally {
+            $this->app['env'] = 'testing';
+        }
+    }
 }

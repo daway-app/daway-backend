@@ -71,7 +71,11 @@ class PharmacySeederProductionSafetyTest extends TestCase
         // Run the seeder - it should skip demo pharmacies in production
         // But it will try to create the users/pharmacies first (PH-1234, PH-5678)
         // which requires the RolePermissionSeeder to have run
-        Artisan::call('db:seed', ['--class' => MedicineSeeder::class]);
+        // `--force` إلزامي: في بيئة production يطلب `db:seed` تأكيدًا عبر
+        // ConfirmableTrait، و`Artisan::call` يمرّر ArrayInput تفاعليًا فينتظر
+        // STDIN إلى الأبد — وهو سبب تعليق الحزمة الكاملة محليًا. الـassertions
+        // أدناه لم تتغيّر.
+        Artisan::call('db:seed', ['--class' => MedicineSeeder::class, '--force' => true]);
 
         // Manually call the seeder with production environment
         // The seeder checks app()->environment('local', 'testing')

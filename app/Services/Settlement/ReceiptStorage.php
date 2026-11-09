@@ -34,9 +34,19 @@ class ReceiptStorage
     {
         $mode = strtolower(trim((string) config('services.cloudinary.receipts.driver', 'disk')));
 
-        if (app()->environment('production') && $mode !== CloudinaryPublicReceipts::DRIVER) {
-            \Illuminate\Support\Facades\Log::error('settlement_receipt_configuration_invalid', ['reason' => 'production_requires_cloudinary_public']);
-            throw new RuntimeException('Production settlement receipts require cloudinary_public.');
+        // في الإنتاج: ممنوع القرص المؤقت (تفقد الإيصالات مع كل نشر) وممنوع
+        // السائق المجهول. الوضعان المسموحان فقط هما cloudinary_public
+        // وcloudinary (المحمي الموقّع) — لا نحجب الأخير لأنه **أكثر أمانًا**.
+        if (app()->environment('production') && ! in_array($mode, [
+            CloudinaryPublicReceipts::DRIVER,
+            CloudinaryReceipts::DRIVER,
+        ], true)) {
+            \Illuminate\Support\Facades\Log::error('settlement_receipt_configuration_invalid', ['reason' => 'production_requires_cloudinary']);
+
+            throw new RuntimeException(
+                'Production settlement receipts require cloudinary_public or cloudinary; '.
+                'disk and unknown drivers are rejected.'
+            );
         }
 
         if ($mode === 'disk') {
