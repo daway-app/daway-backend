@@ -47,6 +47,7 @@ class Pharmacy extends Model
             'longitude' => 'decimal:8',  // نفس دقة العمود بالداتابيز (11,8)
             'avg_rating' => 'decimal:2', // نفس دقة العمود بالداتابيز (3,2)
             'is_active' => 'boolean',
+            'closed_at' => 'datetime',
             'profile_completed_at' => 'datetime',
             'delivered_at' => 'datetime',
         ];

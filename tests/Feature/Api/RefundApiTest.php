@@ -81,6 +81,24 @@ class RefundApiTest extends TestCase
         return $sale;
     }
 
+    public function test_refund_is_rejected_after_pharmacy_closure(): void
+    {
+        [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();
+        $sale = $this->createSaleWithItems($pharmacy, 1);
+        $item = $sale->items->firstOrFail();
+        $pharmacy->forceFill(['closed_at' => now(), 'is_active' => false])->save();
+
+        try {
+            \App\Services\Accounting\RefundService::processRefund($pharmacy->id, $user->id, $sale, [
+                ['sale_item_id' => $item->id, 'quantity' => 1],
+            ]);
+            $this->fail('A closed pharmacy must reject a new refund.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('مغلقة', $e->getMessage());
+            $this->assertDatabaseMissing('refunds', ['pharmacy_id' => $pharmacy->id, 'sale_id' => $sale->id]);
+        }
+    }
+
     public function test_can_list_refunds(): void
     {
         [$user, $pharmacy] = $this->pharmacyUserWithPharmacy();

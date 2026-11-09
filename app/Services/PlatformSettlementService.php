@@ -249,14 +249,22 @@ class PlatformSettlementService
             throw new InvalidArgumentException('يجب أن يكون مبلغ التعديل أكبر أو أقل من صفر.');
         }
 
-        return PlatformSettlementAdjustment::create([
-            'pharmacy_id' => $pharmacy->id,
-            'pharmacy_name' => $pharmacy->pharmacy_name,
-            'effective_period_start' => $effectiveFrom,
-            'amount' => $amount,
-            'reason' => trim($reason),
-            'created_by' => $adminId,
-        ]);
+        return DB::transaction(function () use ($pharmacy, $effectiveFrom, $amount, $reason, $adminId) {
+            // Closure takes the same row lock; re-read after waiting for it.
+            $lockedPharmacy = Pharmacy::query()->whereKey($pharmacy->id)->lockForUpdate()->firstOrFail();
+            if ($lockedPharmacy->closed_at !== null) {
+                throw new InvalidArgumentException('لا يمكن إضافة تعديل تسوية لصيدلية مغلقة.');
+            }
+
+            return PlatformSettlementAdjustment::create([
+                'pharmacy_id' => $lockedPharmacy->id,
+                'pharmacy_name' => $lockedPharmacy->pharmacy_name,
+                'effective_period_start' => $effectiveFrom,
+                'amount' => $amount,
+                'reason' => trim($reason),
+                'created_by' => $adminId,
+            ]);
+        });
     }
 
     public function markPaid(PlatformSettlement $settlement, ?string $reference, Carbon $paidAt, int $adminId, array $receipt = []): PlatformSettlement

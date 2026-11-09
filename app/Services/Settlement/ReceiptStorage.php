@@ -32,7 +32,22 @@ class ReceiptStorage
     /** اسم السائق الذي سيُستخدم للرفع الآن. */
     public function driver(): string
     {
-        $mode = strtolower(trim((string) config('services.cloudinary.receipts.driver', 'auto')));
+        $mode = strtolower(trim((string) config('services.cloudinary.receipts.driver', 'disk')));
+
+        // في الإنتاج: ممنوع القرص المؤقت (تفقد الإيصالات مع كل نشر) وممنوع
+        // السائق المجهول. الوضعان المسموحان فقط هما cloudinary_public
+        // وcloudinary (المحمي الموقّع) — لا نحجب الأخير لأنه **أكثر أمانًا**.
+        if (app()->environment('production') && ! in_array($mode, [
+            CloudinaryPublicReceipts::DRIVER,
+            CloudinaryReceipts::DRIVER,
+        ], true)) {
+            \Illuminate\Support\Facades\Log::error('settlement_receipt_configuration_invalid', ['reason' => 'production_requires_cloudinary']);
+
+            throw new RuntimeException(
+                'Production settlement receipts require cloudinary_public or cloudinary; '.
+                'disk and unknown drivers are rejected.'
+            );
+        }
 
         if ($mode === 'disk') {
             return DiskReceipts::DRIVER;
@@ -40,6 +55,7 @@ class ReceiptStorage
 
         if ($mode === CloudinaryPublicReceipts::DRIVER) {
             if (! $this->publicCloudinary->configured()) {
+                \Illuminate\Support\Facades\Log::error('settlement_receipt_configuration_invalid', ['reason' => 'missing_cloud_or_preset']);
                 throw new RuntimeException(
                     'SETTLEMENT_RECEIPT_DRIVER=cloudinary_public يحتاج '.
                     'CLOUDINARY_CLOUD_NAME و CLOUDINARY_UPLOAD_PRESET.'
@@ -61,10 +77,7 @@ class ReceiptStorage
             return CloudinaryReceipts::DRIVER;
         }
 
-        // auto: الوضع العام إن كان الـpreset مضبوطًا، وإلا القرص.
-        return $this->publicCloudinary->configured()
-            ? CloudinaryPublicReceipts::DRIVER
-            : DiskReceipts::DRIVER;
+        throw new RuntimeException('Unsupported settlement receipt driver; select an explicit driver.');
     }
 
     /** هل التخزين الحالي على Cloudinary (أي وضع)؟ */

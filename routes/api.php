@@ -45,6 +45,9 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderPaymentController;
 use App\Http\Controllers\Api\PatientAssistantController;
 use App\Http\Controllers\Api\PatientInquiryController;
+use App\Http\Controllers\Api\Admin\AccountClosureController;
+use App\Http\Controllers\Api\PatientAccountController;
+use App\Http\Controllers\Api\PharmacyAccountClosureController;
 use App\Http\Controllers\Api\PatientProfileController;
 use App\Http\Controllers\Api\PharmacyAlternativeController;
 use App\Http\Controllers\Api\PharmacyController;
@@ -125,6 +128,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // حدّ 6/دقيقة كحارس ضد تخمين كلمة المرور الحالية عبر توكن مسروق.
     Route::post('/profile/patient/change-password', [PatientProfileController::class, 'changePassword'])
         ->middleware('throttle:6,1');
+
+    // إغلاق حساب المريض — فوري بعد المصادقة والتأكيد الصريح (D-3).
+    // حدّ 3/دقيقة: عملية لا رجعة فيها، ولا يصح أن تُجرَّب بكثافة.
+    Route::get('/account/status', [PatientAccountController::class, 'status'])->middleware('role:patient');
+    Route::post('/account/closure', [PatientAccountController::class, 'close'])
+        ->middleware(['role:patient', 'throttle:3,1']);
     Route::get('/profile/pharmacy', [PharmacyProfileController::class, 'show']);
     Route::post('/profile/pharmacy', [PharmacyProfileController::class, 'update']);
 
@@ -215,6 +224,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Pharmacy inquiries (role-checked)
     Route::middleware('role:pharmacy')->prefix('pharmacy')->group(function () {
+        // إغلاق حساب الصيدلية — طلب + مراجعة أدمن (D-3/D-6).
+        Route::get('account/closure-request', [PharmacyAccountClosureController::class, 'show']);
+        Route::post('account/closure-request', [PharmacyAccountClosureController::class, 'request'])
+            ->middleware('throttle:writes');
+
         Route::get('inquiries', [PharmacyInquiryController::class, 'index']);
         Route::get('inquiries/{inquiry}', [PharmacyInquiryController::class, 'show']);
         Route::put('inquiries/{inquiry}', [PharmacyInquiryController::class, 'update']);
@@ -558,6 +572,15 @@ Route::middleware(['auth:sanctum', 'role:admin', 'admin.password.changed'])->pre
     Route::match(['put', 'patch'], '/users/{user}', [AdminUserController::class, 'update']);
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
     Route::patch('/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus']);
+
+    // مراجعة طلبات إغلاق الحسابات (D-5: لا تجاوز للموانع).
+    Route::get('/account-closures', [AccountClosureController::class, 'index']);
+    Route::post('/account-closures/{closure}/approve', [AccountClosureController::class, 'approve'])
+        ->middleware('throttle:writes');
+    Route::post('/account-closures/{closure}/reject', [AccountClosureController::class, 'reject'])
+        ->middleware('throttle:writes');
+    Route::post('/pharmacies/{pharmacy}/reopen', [AccountClosureController::class, 'reopen'])
+        ->middleware('throttle:writes');
 
     // Patients + Inventory (read-only)
     Route::get('/patients', [AdminPatientInventoryController::class, 'patients']);

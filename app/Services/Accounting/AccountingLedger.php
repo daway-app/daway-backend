@@ -6,6 +6,7 @@ use App\Models\CashMovement;
 use App\Models\Customer;
 use App\Models\CustomerPayment;
 use App\Models\Expense;
+use App\Models\Pharmacy;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Sale;
@@ -45,6 +46,15 @@ use InvalidArgumentException;
  */
 final class AccountingLedger
 {
+    private static function lockOpenPharmacy(int $pharmacyId): void
+    {
+        // Match the closure lock order before creating financial records.
+        $pharmacy = Pharmacy::query()->whereKey($pharmacyId)->lockForUpdate()->firstOrFail();
+        if ($pharmacy->closed_at !== null) {
+            throw new InvalidArgumentException('لا يمكن تسجيل حركة مالية لصيدلية مغلقة.');
+        }
+    }
+
     /**
      * إنشاء فاتورة بيع كاملة: فاتورة + أسطر + خصم مخزون + دفتر صندوق + رصيد عميل.
      *
@@ -74,6 +84,8 @@ final class AccountingLedger
         $affectedPmIds = [];
 
         $sale = DB::transaction(function () use ($pharmacyId, $userId, $data, $items, &$affectedPmIds) {
+            static::lockOpenPharmacy($pharmacyId);
+
             $soldAt = isset($data['sold_at'])
                 ? Carbon::parse($data['sold_at'])
                 : Carbon::now();
@@ -289,6 +301,8 @@ final class AccountingLedger
     public static function recordExpense(int $pharmacyId, int $userId, array $data): Expense
     {
         return DB::transaction(function () use ($pharmacyId, $userId, $data) {
+            static::lockOpenPharmacy($pharmacyId);
+
             $amount = round((float) ($data['amount'] ?? 0), 2);
             if ($amount <= 0) {
                 throw new InvalidArgumentException('مبلغ المصروف يجب أن يكون أكبر من صفر');
@@ -378,6 +392,8 @@ final class AccountingLedger
         }
 
         return DB::transaction(function () use ($pharmacyId, $userId, $customer, $data) {
+            static::lockOpenPharmacy($pharmacyId);
+
             $amount = round((float) ($data['amount'] ?? 0), 2);
             if ($amount <= 0) {
                 throw new InvalidArgumentException('مبلغ الدفعة يجب أن يكون أكبر من صفر');
@@ -478,6 +494,8 @@ final class AccountingLedger
         }
 
         return DB::transaction(function () use ($pharmacyId, $userId, $supplier, $data) {
+            static::lockOpenPharmacy($pharmacyId);
+
             $amount = round((float) ($data['amount'] ?? 0), 2);
             if ($amount <= 0) {
                 throw new InvalidArgumentException('مبلغ الدفعة يجب أن يكون أكبر من صفر');
@@ -589,6 +607,8 @@ final class AccountingLedger
         }
 
         return DB::transaction(function () use ($pharmacyId, $userId, $data, $items) {
+            static::lockOpenPharmacy($pharmacyId);
+
             $purchasedAt = isset($data['purchased_at'])
                 ? Carbon::parse($data['purchased_at'])
                 : Carbon::now();
@@ -834,17 +854,21 @@ final class AccountingLedger
             ? CashMovement::SOURCE_DEPOSIT
             : CashMovement::SOURCE_WITHDRAWAL;
 
-        return static::recordCash(
-            $pharmacyId,
-            $direction,
-            $amount,
-            $source,
-            null,
-            null,
-            $date ?? Carbon::now(),
-            $userId,
-            $reason
-        );
+        return DB::transaction(function () use ($pharmacyId, $userId, $direction, $amount, $source, $date, $reason) {
+            static::lockOpenPharmacy($pharmacyId);
+
+            return static::recordCash(
+                $pharmacyId,
+                $direction,
+                $amount,
+                $source,
+                null,
+                null,
+                $date ?? Carbon::now(),
+                $userId,
+                $reason
+            );
+        });
     }
 
     /* ════════════════════════════════════════════════════════════════════

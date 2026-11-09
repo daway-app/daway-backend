@@ -65,7 +65,10 @@ final class RefundService
         return DB::transaction(function () use ($pharmacyId, $userId, $sale, $itemsToRefund, $reason, $refundedAt) {
             // ── 0) قفل الصيدلية: يُسلسل كل عمليات الإرجاع النقدي على نفس
             // الدرج، فلا يتنافس طلبان على رصيد واحد (انظر فحص الصندوق أدناه).
-            Pharmacy::query()->whereKey($pharmacyId)->lockForUpdate()->first();
+            $lockedPharmacy = Pharmacy::query()->whereKey($pharmacyId)->lockForUpdate()->firstOrFail();
+            if ($lockedPharmacy->closed_at !== null) {
+                throw new InvalidArgumentException('لا يمكن تسجيل إرجاع لصيدلية مغلقة.');
+            }
 
             // ── 1) قفل الفاتورة وإعادة قراءة أرصدتها **داخل** المعاملة.
             // طلبان متزامنان كانا يقرآن نفس `paid` قبل الإرجاع فيُرجعان مثليه.

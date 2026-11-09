@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\UserDeletionGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -112,6 +113,14 @@ class UserController extends Controller
     /** PUT/PATCH /api/admin/users/{user} */
     public function update(Request $request, User $user): JsonResponse
     {
+        if ($user->closed_at !== null || $user->pharmacy()->whereNotNull('closed_at')->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الحساب مغلق ولا يمكن تعديله من هذا المسار.',
+                'code' => 'account_closed',
+            ], 409);
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email,'.$user->id],
@@ -165,6 +174,14 @@ class UserController extends Controller
     /** PATCH /api/admin/users/{user}/toggle-status */
     public function toggleStatus(User $user): JsonResponse
     {
+        if ($user->closed_at !== null || $user->pharmacy()->whereNotNull('closed_at')->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الحساب مغلق ولا يمكن تعديله من هذا المسار.',
+                'code' => 'account_closed',
+            ], 409);
+        }
+
         if ($user->id === (int) auth()->id() && $user->is_active) {
             return response()->json([
                 'success' => false,
@@ -192,13 +209,25 @@ class UserController extends Controller
     }
 
     /** DELETE /api/admin/users/{user} */
-    public function destroy(User $user): JsonResponse
+    public function destroy(User $user, UserDeletionGuard $guard): JsonResponse
     {
         if ((int) $user->id === (int) auth()->id()) {
             return response()->json([
                 'success' => false,
                 'message' => 'لا يمكنك حذف حسابك الخاص.',
             ], 422);
+        }
+
+        // الحذف النهائي يمحو بالـcascade طلبات العميل، أو تاريخ صيدلية كاملة
+        // إن كان مالكها (users → pharmacies → sub_orders / sales / refunds …).
+        $blockers = $guard->blockers($user);
+
+        if ($blockers !== []) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يمكن حذف الحساب لوجود طلبات أو سجلات مالية مرتبطة به. عطّل الحساب بدل حذفه للحفاظ على السجلات.',
+                'data' => ['blockers' => $blockers],
+            ], 409);
         }
 
         $user->delete();

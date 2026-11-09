@@ -23,7 +23,7 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
+        <env name="APP_ENV" value="testing" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <!-- الاختبارات كانت تكتب 500+ مدخل ERROR/WARNING في storage/logs/laravel.log
              (محاكاة فشل OCR/AI/Cloudinary + مسارات الملفات المفقودة)، فتغرق السجل
@@ -33,16 +33,35 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-        <env name="DB_URL" value=""/>
+        <!--
+             🔴 force="true" مقصود: بدونها لا يتجاوز PHPUnit متغيرات الـshell،
+             فتمرير DB_CONNECTION=mysql (أو وجوده في بيئة المطوّر) يجعل
+             RefreshDatabase يضرب قاعدة **حقيقية**. أُثبت التسرب عمليًا:
+             DB_CONNECTION=mysql ⇒ SQLSTATE[HY000] No connection could be made.
+        -->
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
+        <env name="DB_HOST" value="127.0.0.1" force="true"/>
+        <env name="DB_PORT" value="3306" force="true"/>
+        <env name="DB_USERNAME" value="root" force="true"/>
+        <env name="DB_PASSWORD" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
-        <env name="CLOUDINARY_CLOUD_NAME" value=""/>
-        <env name="CLOUDINARY_UPLOAD_PRESET" value=""/>
+        <!-- Laravel reads $_SERVER before $_ENV; force both when the parent shell conflicts. -->
+        <server name="APP_ENV" value="testing" force="true"/>
+        <server name="DB_CONNECTION" value="sqlite" force="true"/>
+        <server name="DB_DATABASE" value=":memory:" force="true"/>
+        <server name="DB_URL" value="" force="true"/>
+        <server name="SETTLEMENT_RECEIPT_DRIVER" value="disk" force="true"/>
+        <server name="CLOUDINARY_CLOUD_NAME" value="" force="true"/>
+        <server name="CLOUDINARY_UPLOAD_PRESET" value="" force="true"/>
+        <env name="SETTLEMENT_RECEIPT_DRIVER" value="disk" force="true"/>
+        <env name="CLOUDINARY_CLOUD_NAME" value="" force="true"/>
+        <env name="CLOUDINARY_UPLOAD_PRESET" value="" force="true"/>
     </php>
 </phpunit>

@@ -226,6 +226,14 @@ class PharmacyController extends Controller
      */
     public function toggleStatus(Pharmacy $pharmacy): JsonResponse
     {
+        if ($pharmacy->closed_at !== null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الصيدلية مغلقة ويجب استخدام مسار إعادة الفتح.',
+                'code' => 'account_closed',
+            ], 409);
+        }
+
         $willActivate = ! $pharmacy->is_active;
         $pharmacy->is_active = $willActivate;
         $pharmacy->save();

@@ -159,4 +159,18 @@ class PlatformSettlementApiTest extends TestCase
         ])->assertOk()->assertJsonPath('data.0.status', 'paid')->assertJsonPath('data.0.orders_total', 100);
         $this->getJson('/api/admin/platform-settlements/due')->assertOk()->assertJsonCount(0, 'data');
     }
+    public function test_a_closed_pharmacy_rejects_settlement_adjustments(): void
+    {
+        $this->pharmacyA->forceFill(['closed_at' => now(), 'is_active' => false])->save();
+        $this->admin->syncRoles(['admin']);
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/platform-settlements/adjustments', [
+                'pharmacy_id' => $this->pharmacyA->id,
+                'effective_period_start' => '2026-10-27',
+                'amount' => 10,
+                'reason' => 'test',
+            ])->assertStatus(422);
+        $this->assertDatabaseMissing('platform_settlement_adjustments', ['pharmacy_id' => $this->pharmacyA->id]);
+    }
+
 }
