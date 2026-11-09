@@ -1,0 +1,154 @@
+{
+  "info": {
+    "name": "DAWAK — Checkout Quote",
+    "_postman_id": "c7f1a2b3-4d5e-6f70-8a9b-checkoutquote01",
+    "description": "معاينة ملخص الطلب قبل الدفع.\n\nالغرض: أن يرى المريض رسوم التوصيل والإجمالي النهائي **قبل** إنشاء الطلب، بنفس الأرقام التي سيُخصمها الدفع.\n\nقواعد مهمة:\n· المعاينة قراءة فقط: لا تنشئ طلبًا، لا تخصم مخزونًا، لا تستهلك كوبونًا، لا تحجز مبلغًا.\n· `delivery_fee` **عدد صحيح دائمًا** (تقريب في الخادم).\n· `total` = قيمة الأدوية بعد الخصم — لا يشمل التوصيل. `grand_total` = `total + delivery_fee`.\n· الأسعار تُقرأ من قاعدة البيانات، ولا يُقبل أي سعر من العميل.\n· عند الدفع، أرسل `quoted_delivery_fee` و`quoted_grand_total` ليرفض الخادم بـ409 بدل خصم مبلغ مختلف عن المعروض.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://daway-backend.onrender.com" },
+    { "key": "patient_token", "value": "" },
+    { "key": "address_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Quote — no coupon",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"address_id\": {{address_id}},\n  \"coupon_code\": null\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/patient/checkout/quote",
+          "host": ["{{base_url}}"],
+          "path": ["api", "patient", "checkout", "quote"]
+        },
+        "description": "يرجع subtotal/discount/total/delivery_fee/grand_total + المسافة ووضع التسعير."
+      },
+      "response": [
+        {
+          "name": "200 — per_km",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/patient/checkout/quote" } },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"تم حساب ملخص الطلب\",\n  \"data\": {\n    \"subtotal\": 80,\n    \"discount\": 0,\n    \"total\": 80,\n    \"delivery_fee\": 9,\n    \"grand_total\": 89,\n    \"distance_meters\": 4555,\n    \"pricing_mode\": \"per_km\",\n    \"tier_id\": null,\n    \"currency\": \"ILS\",\n    \"items_count\": 3,\n    \"price_changes\": []\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Quote — with coupon",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"address_id\": {{address_id}},\n  \"coupon_code\": \"SAVE10\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/patient/checkout/quote",
+          "host": ["{{base_url}}"],
+          "path": ["api", "patient", "checkout", "quote"]
+        },
+        "description": "الكوبون يؤثر في discount/total فقط — لا في delivery_fee."
+      },
+      "response": [
+        {
+          "name": "200 — tiers with discount",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/patient/checkout/quote" } },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"تم حساب ملخص الطلب\",\n  \"data\": {\n    \"subtotal\": 100,\n    \"discount\": 10,\n    \"total\": 90,\n    \"delivery_fee\": 13,\n    \"grand_total\": 103,\n    \"distance_meters\": 1500,\n    \"pricing_mode\": \"tiers\",\n    \"tier_id\": 4,\n    \"currency\": \"ILS\",\n    \"items_count\": 2,\n    \"price_changes\": []\n  }\n}"
+        },
+        {
+          "name": "422 — invalid coupon",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/patient/checkout/quote" } },
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"message\": \"الكوبون غير صالح أو لا ينطبق على مجموع الطلب\",\n  \"errors\": {\n    \"coupon_code\": [\"الكوبون غير صالح أو لا ينطبق على مجموع الطلب\"]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Quote — pricing disabled",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"address_id\": {{address_id}}\n}" },
+        "url": {
+          "raw": "{{base_url}}/api/patient/checkout/quote",
+          "host": ["{{base_url}}"],
+          "path": ["api", "patient", "checkout", "quote"]
+        },
+        "description": "عند تعطيل تسعير التوصيل أو نقص إحداثيات العنوان/الصيدلية."
+      },
+      "response": [
+        {
+          "name": "422 — delivery_fee error",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/patient/checkout/quote" } },
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"message\": \"تسعير التوصيل غير مفعّل حاليًا. يرجى مراجعة إعدادات التوصيل قبل إنشاء الطلب.\",\n  \"errors\": {\n    \"delivery_fee\": [\"تسعير التوصيل غير مفعّل حاليًا. يرجى مراجعة إعدادات التوصيل قبل إنشاء الطلب.\"]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Checkout — with quote guard",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"address_id\": {{address_id}},\n  \"coupon_code\": null,\n  \"quoted_delivery_fee\": 9,\n  \"quoted_grand_total\": 89,\n  \"idempotency_key\": \"quote-check-1\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/patient/checkout",
+          "host": ["{{base_url}}"],
+          "path": ["api", "patient", "checkout"]
+        },
+        "description": "الحقول `quoted_*` اختيارية. أرسلها من شاشة المعاينة ليرفض الخادم أي تغيّر بدل خصم مبلغ مختلف. العميل القديم الذي لا يرسلها يبقى يعمل كما هو."
+      },
+      "response": [
+        {
+          "name": "409 — quote changed",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/patient/checkout" } },
+          "status": "Conflict",
+          "code": 409,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"تغيّر المبلغ المعروض. يرجى مراجعة الملخص قبل الدفع.\",\n  \"code\": \"quote_changed\",\n  \"data\": {\n    \"changes\": {\n      \"delivery_fee\": { \"quoted\": 9, \"current\": 40 },\n      \"grand_total\": { \"quoted\": 89, \"current\": 120 }\n    },\n    \"quote\": {\n      \"subtotal\": 80,\n      \"discount\": 0,\n      \"total\": 80,\n      \"delivery_fee\": 40,\n      \"grand_total\": 120,\n      \"distance_meters\": 4555,\n      \"pricing_mode\": \"per_km\",\n      \"tier_id\": null\n    }\n  }\n}"
+        },
+        {
+          "name": "201 — created",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/patient/checkout" } },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"تم إنشاء الطلب بنجاح\",\n  \"data\": {\n    \"order_id\": 42,\n    \"subtotal\": 80,\n    \"discount\": 0,\n    \"total\": 80,\n    \"delivery_fee\": 9,\n    \"grand_total\": 89,\n    \"status\": \"pending\",\n    \"sub_orders_count\": 1\n  }\n}"
+        }
+      ]
+    }
+  ]
+}

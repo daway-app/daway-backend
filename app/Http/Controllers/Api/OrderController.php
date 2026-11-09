@@ -12,6 +12,8 @@ use App\Models\PharmacyMedicine;
 use App\Models\Pharmacy;
 use App\Models\SubOrder;
 use App\Exceptions\DeliveryPricingException;
+use App\Exceptions\QuoteChangedException;
+use App\Services\Checkout\CheckoutQuoteService;
 use App\Services\DeliveryPricingService;
 use App\Services\OrderCancellationPolicy;
 use App\Services\OrderNotificationService;
@@ -27,8 +29,45 @@ class OrderController extends Controller
     public function __construct(
         private readonly OrderNotificationService $notifications,
         private readonly PaymentFulfillmentGate $paymentGate,
-        private readonly OrderCancellationPolicy $cancelPolicy
+        private readonly OrderCancellationPolicy $cancelPolicy,
+        private readonly CheckoutQuoteService $quotes
     ) {}
+
+    /**
+     * لا يُحمَّل المريض مبلغًا أعلى بصمت.
+     *
+     * الحقول اختيارية: العميل القديم لا يرسلها فيبقى سلوكه كما هو. ومن يرسلها
+     * (تطبيق يعرض المعاينة) يحصل على 409 بالقيم الجديدة بدل خصم مبلغ مختلف
+     * عن الذي رآه — والطلب لا يُنشأ والمخزون لا يُخصم.
+     */
+    private function assertQuotedAmountUnchanged(array $data, array $quote): void
+    {
+        $pairs = [
+            'delivery_fee' => 'quoted_delivery_fee',
+            'discount' => 'quoted_discount',
+            'grand_total' => 'quoted_grand_total',
+        ];
+
+        $changes = [];
+
+        foreach ($pairs as $field => $input) {
+            if (! isset($data[$input])) {
+                continue;
+            }
+
+            // نصف أغورة: فرق تقريب لا يُعدّ تغيّرًا.
+            if (abs((float) $quote[$field] - (float) $data[$input]) > 0.009) {
+                $changes[$field] = [
+                    'quoted' => (float) $data[$input],
+                    'current' => (float) $quote[$field],
+                ];
+            }
+        }
+
+        if ($changes !== []) {
+            throw new QuoteChangedException($changes, $quote);
+        }
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -83,6 +122,11 @@ class OrderController extends Controller
             'address_id' => 'required|exists:addresses,id',
             'coupon_code' => 'nullable|string|exists:coupons,code',
             'idempotency_key' => 'nullable|string|max:255',
+            // اختيارية: القيم التي عرضتها شاشة المعاينة. لا تُستخدم للحساب
+            // إطلاقًا، بل لمقارنة النتيجة بالمعروض ورفض التحميل الصامت.
+            'quoted_delivery_fee' => 'nullable|numeric',
+            'quoted_discount' => 'nullable|numeric',
+            'quoted_grand_total' => 'nullable|numeric',
         ]);
 
         // Phase 0 — idempotency: a replay with the SAME key returns the original
@@ -139,179 +183,23 @@ class OrderController extends Controller
         }
 
         $order = DB::transaction(function () use ($user, $cart, $address, $data, $idempotencyKeyHash) {
-            $cartItems = $cart->items;
-
-            $pharmacyMedicineIds = $cartItems->pluck('pharmacy_medicine_id')->toArray();
-
-            // Lock pharmacies in a stable order before inventory; closure takes the same lock.
-            $pharmacyIds = PharmacyMedicine::query()->whereIn('id', $pharmacyMedicineIds)
-                ->distinct()->pluck('pharmacy_id');
-            $lockedPharmacies = Pharmacy::query()->whereIn('id', $pharmacyIds)
-                ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
-
-            $pharmacyMedicines = PharmacyMedicine::with(['medicine', 'mohMedicine', 'pharmacy'])
-                ->whereIn('id', $pharmacyMedicineIds)
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
-
-            $inventoryValid = true;
-            foreach ($cartItems as $item) {
-                $pm = $pharmacyMedicines->get($item->pharmacy_medicine_id);
-                // صيدلية مغلقة لا تستقبل طلبات جديدة: نمنعها هنا لا في الواجهة
-                // فقط، لأن البحث قد يكون مخزّنًا أو السلة قديمة.
-                $lockedPharmacy = $pm ? $lockedPharmacies->get($pm->pharmacy_id) : null;
-                $pharmacyClosed = ! $lockedPharmacy || $lockedPharmacy->closed_at !== null || ! $lockedPharmacy->is_active;
-
-                if (! $pm || $pharmacyClosed || ! $pm->is_available || $pm->quantity < $item->quantity) {
-                    $inventoryValid = false;
-                    break;
-                }
-            }
-
-            if (! $inventoryValid) {
-                throw ValidationException::withMessages([
-                    'quantity' => 'الكمية المطلوبة غير متوفرة في المخزون',
-                ]);
-            }
-
-            // Phase 0 — server-side price re-verification.
-            // The OFFICIAL price source is pharmacy_medicines.price (locked above).
-            // We NEVER trust the client-sent $item->price. If the price changed
-            // since the cart was last refreshed, we reject without silent update.
-            //
-            // Phase 1 — we also build the per-pharmacy "lines" here: each line is
-            // resolved against its locked PharmacyMedicine row, and its pharmacy
-            // is taken from that row (authoritative), not from the cart copy.
-            $priceChanges = [];
-            $subtotal = 0;
-            $lines = collect();
-
-            foreach ($cartItems as $item) {
-                $pm = $pharmacyMedicines->get($item->pharmacy_medicine_id);
-                $currentPrice = (float) $pm->price;
-                $cartPrice = (float) $item->price;
-
-                if ($currentPrice !== $cartPrice) {
-                    $priceChanges[] = [
-                        'medicine_trade_name' => $pm->medicine->trade_name ?? $pm->mohMedicine->trade_name,
-                        'cart_price' => $cartPrice,
-                        'current_price' => $currentPrice,
-                    ];
-                }
-
-                // Always recompute with the authoritative server price.
-                $lineTotal = $currentPrice * $item->quantity;
-                $subtotal += $lineTotal;
-
-                $lines->push([
-                    'cart_item' => $item,
-                    'pharmacy_medicine' => $pm,
-                    'pharmacy_id' => $pm->pharmacy_id,
-                    'unit_price' => $currentPrice,
-                    'line_total' => $lineTotal,
-                ]);
-            }
-
-            if (! empty($priceChanges)) {
-                // Reject + let the client review the cart. Stock is NOT decremented.
-                throw ValidationException::withMessages([
-                    'price_changed' => 'الأسعار تغيرت على بعض الأدوية. يرجى مراجعة السلة مرة أخرى.',
-                    'changed_items' => $priceChanges,
-                ]);
-            }
-
-            // ── Phase 2 — تقارب صيدليات الطلب ─────────────────────────────
-            // الطلب الواحد يُخدم برحلة توصيل واحدة، فأبعد زوج من صيدلياته
-            // يجب ألا يتجاوز 500 متر. الموضع مقصود: بعد بناء `$lines` من
-            // صفوف المخزون المقفلة (فالصيدلية مصدرها موثوق لا نسخة السلة)،
-            // وقبل أي خصم مخزون أو إنشاء طلب. الرفض هنا يتراجع بالكامل
-            // لأننا داخل الـtransaction — لا طلب ولا بند ولا خصم جزئي.
-            //
-            // `pharmacy` محمّلة مسبقاً في استعلام `lockForUpdate` أعلاه،
-            // و`pharmacy_medicines.pharmacy_id` هو `cascadeOnDelete` فلا
-            // يمكن أن تكون العلاقة null لسطر سلة حقيقي.
-            $proximity = PharmacyProximityGuard::inspect(
-                $lines->map(fn (array $line) => $line['pharmacy_medicine']->pharmacy)->all()
+            // الحساب كله في خدمة واحدة تشترك فيها المعاينة والدفع — لا نسخة
+            // ثانية من المعادلات يمكن أن تنحرف عن هذه.
+            $quote = $this->quotes->calculate(
+                $user,
+                $address,
+                $data['coupon_code'] ?? null,
+                lock: true,
             );
 
-            if ($proximity !== null) {
-                throw ValidationException::withMessages([
-                    'pharmacy_distance' => [$proximity['message']],
-                ]);
-            }
+            $this->assertQuotedAmountUnchanged($data, $quote);
 
-            // ── Phase 1 — تسعير التوصيل ───────────────────────────────────
-            // يُحسب هنا **قبل** أي خصم مخزون أو إنشاء طلب (بنفس موضع بوابة
-            // التقارب أعلاه) حتى يتراجع الرفض بالكامل: لا طلب ولا بند ولا خصم
-            // جزئي. الرسوم تُحتسب في الخادم فقط، وقيمة العميل لا تُقرأ أبدًا.
-            // عند تعطيل «تسعير التوصيل» أو غياب مفتاح التفعيل: يُرفض الطلب
-            // (خطأ `delivery_fee`) بلا إنشاء أي طلب — لا رسوم صفر صامتة.
-            // متعدد الصيدليات: تُحسب مسافة أقصر مسار مفتوح (TSP) يزور كل صيدليات
-            // الطلب وينتهي بالعنوان، ثم تُطبَّق الشرائح على الإجمالي — رسوم واحدة
-            // على الطلب، لا مجموع رسوم لكل صيدلية.
-            try {
-                $deliveryQuote = DeliveryPricingService::quoteForCheckout(
-                    $lines->map(fn (array $line) => $line['pharmacy_medicine']->pharmacy)->filter(),
-                    $address,
-                );
-            } catch (DeliveryPricingException $e) {
-                throw ValidationException::withMessages([
-                    'delivery_fee' => [$e->getMessage()],
-                ]);
-            }
-
-            $deliveryFee = (float) $deliveryQuote['fee'];
-
-            $discount = 0;
-            $couponCode = null;
-
-            if (! empty($data['coupon_code'])) {
-                // Phase 0 — enforce coupon usage limits atomically inside the
-                // order transaction. Lock the row to prevent double-spend under
-                // concurrent checkouts.
-                $coupon = \App\Models\Coupon::where('code', $data['coupon_code'])
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $coupon || ! $coupon->canApplyToOrder($subtotal)) {
-                    throw ValidationException::withMessages([
-                        'coupon_code' => 'الكوبون غير صالح أو لا ينطبق على مجموع الطلب',
-                    ]);
-                }
-
-                // Global usage-limit enforcement (used_count was previously never incremented).
-                if ($coupon->usage_limit > 0 && $coupon->used_count >= $coupon->usage_limit) {
-                    throw ValidationException::withMessages([
-                        'coupon_code' => 'تم استنفاد الكوبون',
-                    ]);
-                }
-
-                // Per-user usage-limit enforcement via the coupon_user pivot.
-                if ($coupon->per_user_limit > 0) {
-                    $alreadyUsed = \DB::table('coupon_user')
-                        ->where('coupon_id', $coupon->id)
-                        ->where('user_id', $user->id)
-                        ->exists();
-                    if ($alreadyUsed) {
-                        throw ValidationException::withMessages([
-                            'coupon_code' => 'لست مؤهلاً لاستخدام هذا الكوبون',
-                        ]);
-                    }
-                }
-
-                $discount = $coupon->calculateDiscount($subtotal);
-                $couponCode = $coupon->code;
-            }
-
-            // Phase 0 — the coupon discount is already capped at the eligible
-            // product subtotal by Coupon::calculateDiscount(). Clamp it once more
-            // here so the payable total can never go negative, whatever the
-            // coupon configuration. The clamped value is the one distributed
-            // across the pharmacy sub-orders below, so the parent total and every
-            // sub-order total stay consistent.
-            $discount = min(max(0.0, (float) $discount), max(0.0, (float) $subtotal));
-            $total = max(0.0, $subtotal - $discount);
+            $lines = $quote['lines'];
+            $subtotal = $quote['subtotal'];
+            $discount = $quote['discount'];
+            $total = $quote['total'];
+            $deliveryFee = $quote['delivery_fee'];
+            $couponCode = $quote['coupon_code'];
 
             foreach ($lines as $line) {
                 PharmacyMedicine::where('id', $line['pharmacy_medicine']->id)

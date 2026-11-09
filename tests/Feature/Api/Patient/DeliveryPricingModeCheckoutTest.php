@@ -248,9 +248,9 @@ class DeliveryPricingModeCheckoutTest extends TestCase
 
         $this->checkout()
             ->assertStatus(201)
-            ->assertJsonPath('data.delivery_fee', 12.5)
+            ->assertJsonPath('data.delivery_fee', 13)
             ->assertJsonPath('data.total', 100)
-            ->assertJsonPath('data.grand_total', 112.5);
+            ->assertJsonPath('data.grand_total', 113);
     }
 
     // ── وضع الشرائح: السعر الأساسي بديل عند غياب شريحة ───────────────────────

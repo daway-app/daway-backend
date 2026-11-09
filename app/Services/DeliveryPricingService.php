@@ -161,6 +161,9 @@ final class DeliveryPricingService
      *    السعر الأساسي كسعر نهائي بديل؛ ولا سعر أساسي ⇒ رفض.
      *  · `per_km`: `rate × المسافة(كم)` — تُتجاهل الشرائح والسعر الأساسي.
      *
+     * في كل الأوضاع: الرسوم **عدد صحيح** (round بلا خانات) لأن التعرفة تُعرض
+     * للمريض قبل الدفع ولا معنى للكسور. أسعار الأدوية والخصومات لا تُقرَّب هنا.
+     *
      * في كل الأوضاع: فشل حساب المسافة (إحداثيات ناقصة/غير صالحة) ⇒ رفض دائم،
      * ولا يُستبدل بأي سعر بديل.
      *
@@ -208,7 +211,8 @@ final class DeliveryPricingService
             }
 
             return [
-                'fee' => round($rate * ($distance / 1000), 2),
+                // رسوم التوصيل عدد صحيح دائمًا: round() بلا خانات عشرية.
+                'fee' => (float) round($rate * ($distance / 1000)),
                 'distance_meters' => $distance,
                 'tier_id' => null,
                 'mode' => $mode,
@@ -220,7 +224,7 @@ final class DeliveryPricingService
 
         if ($tier !== null) {
             return [
-                'fee' => (float) $tier->fee,
+                'fee' => (float) round((float) $tier->fee),
                 'distance_meters' => $distance,
                 'tier_id' => $tier->getKey(),
                 'mode' => $mode,
@@ -232,7 +236,7 @@ final class DeliveryPricingService
 
         if ($base !== null) {
             return [
-                'fee' => $base,
+                'fee' => (float) round($base),
                 'distance_meters' => $distance,
                 'tier_id' => null,
                 'mode' => $mode,
