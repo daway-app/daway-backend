@@ -26,6 +26,10 @@ class Notification extends Model
         'type',
         'message',
         'is_read',
+        'push_status',
+        'push_attempts',
+        'push_error_code',
+        'pushed_at',
         'created_at',
     ];
 
@@ -41,6 +45,8 @@ class Notification extends Model
         return [
             'is_read' => 'boolean',
             'created_at' => 'datetime',
+            'push_attempts' => 'integer',
+            'pushed_at' => 'datetime',
         ];
     }
 

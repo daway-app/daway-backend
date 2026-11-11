@@ -211,13 +211,12 @@ class NotificationGenerator
 
     private static function create(User $user, int $medicineId, string $type, string $message): void
     {
-        Notification::create([
-            'user_id' => $user->id,
+        // عبر الموزّع لا بـ`Notification::create` مباشرة: الإشعار المولَّد
+        // كان يبقى في قاعدة البيانات دون أي push، فلا يصل إلى الهاتف.
+        app(\App\Services\Notifications\NotificationDispatcher::class)->createAndPush($user, [
             'medicine_id' => $medicineId,
             'type' => $type,
             'message' => $message,
-            'is_read' => false,
-            'created_at' => now(),
         ]);
     }
 }

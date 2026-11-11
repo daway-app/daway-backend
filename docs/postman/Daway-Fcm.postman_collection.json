@@ -1,0 +1,101 @@
+{
+  "info": {
+    "name": "DAWAK — FCM (Push Notifications)",
+    "_postman_id": "d1e2f3a4-5b6c-7d8e-9f00-fcmpush000001",
+    "description": "إدارة أجهزة FCM + مرجع أحداث الـpush.\n\nقواعد أساسية لتطبيق Flutter:\n· سجّل التوكن بعد تسجيل الدخول (Bearer) وأعد تسجيله عند كل تحديث لـ`onTokenRefresh`.\n· استخدم `device_id` ثابتًا للجهاز — إعادة التسجيل بنفس المعرّف تحدّث التوكن بدل تكراره.\n· الإشعار الظاهر على شاشة القفل **عام** عمدًا (لا اسم دواء ولا استفسار). المحتوى الكامل يُقرأ من `GET /api/notifications` بعد المصادقة.\n· حمولة `data` تحمل `notification_id` و`type` ومعرّفات الكيانات — منها يُفتح الشاشة الصحيحة.\n· التوكنات الميتة تُحذف تلقائيًا من الخادم عند رفض Firebase لها (UNREGISTERED).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://daway-backend-zlh2.onrender.com" },
+    { "key": "token", "value": "" },
+    { "key": "fcm_token", "value": "" },
+    { "key": "device_id", "value": "android-abc123" }
+  ],
+  "item": [
+    {
+      "name": "Register device token",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"{{fcm_token}}\",\n  \"platform\": \"android\",\n  \"device_id\": \"{{device_id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/device-tokens",
+          "host": ["{{base_url}}"],
+          "path": ["api", "device-tokens"]
+        },
+        "description": "يعمل لكل الأدوار (patient/pharmacy/admin/rider). التسجيل بنفس device_id يستبدل التوكن القديم — لا تكرار."
+      },
+      "response": [
+        {
+          "name": "200 — registered",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/device-tokens" } },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"تم تسجيل الجهاز بنجاح\",\n  \"data\": {\n    \"id\": 12,\n    \"device_id\": \"android-abc123\",\n    \"platform\": \"android\"\n  }\n}"
+        },
+        {
+          "name": "422 — validation",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/api/device-tokens" } },
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"message\": \"The platform field must be one of android, ios, web.\",\n  \"errors\": {\n    \"platform\": [\"The platform field must be one of android, ios, web.\"]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Unregister current device",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_id\": \"{{device_id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/device-tokens/current",
+          "host": ["{{base_url}}"],
+          "path": ["api", "device-tokens", "current"]
+        },
+        "description": "يُستدعى عند تسجيل الخروج. لا يحذف أجهزة المستخدم الأخرى."
+      },
+      "response": [
+        {
+          "name": "200 — removed",
+          "originalRequest": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/device-tokens/current" } },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"تم حذف الجهاز\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "List notifications (source of truth)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/notifications",
+          "host": ["{{base_url}}"],
+          "path": ["api", "notifications"]
+        },
+        "description": "المحتوى الكامل موجود هنا فقط. الـpush يحمل معرّفًا لا نصًا طبيًا."
+      },
+      "response": []
+    }
+  ]
+}
