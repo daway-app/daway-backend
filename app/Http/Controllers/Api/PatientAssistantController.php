@@ -57,25 +57,6 @@ class PatientAssistantController extends Controller
             'sort' => ['nullable', 'string', Rule::in(PharmacyInventorySearch::SORTS)],
         ]);
 
-        // تحيات قصيرة لا تتضمن طلب دواء: رد مناسب من نفس عقد API الحالي.
-        // نتحقق من الرسالة كاملة حتى لا نبتلع طلباً مثل "مرحبا وين بلاقي بنادول".
-        $greeting = mb_strtolower(trim($data['message']));
-        $greeting = preg_replace('/[\\s؟?،,.!؛;]+/u', ' ', $greeting) ?? $greeting;
-        $greeting = trim($greeting);
-        if (in_array($greeting, ['مرحبا', 'مرحباً', 'اهلا', 'أهلا', 'أهلاً', 'هلا', 'السلام عليكم', 'وعليكم السلام', 'hello', 'hi', 'hey'], true)) {
-            return response()->json([
-                'success' => false,
-                'analysis' => ['intent' => MedicineIntentService::INTENT_UNKNOWN, 'drug_name' => null, 'confidence' => null],
-                'medicine' => null,
-                'pharmacies' => [],
-                'alternatives' => [],
-                'total_found' => 0,
-                'requires_location' => false,
-                'location_source' => 'none',
-                'message' => 'أهلًا فيك في دواك! كيف بقدر أساعدك بالبحث عن دواء؟',
-            ]);
-        }
-
         // الموقع: الإحداثيات المرسلة أولى؛ إن غابت نستخدم الموقع المخزن في
         // بروفايل المستخدم (كائن user محمّل أصلاً — لا استعلام إضافي)؛ وإلا
         // تبقى النتائج بلا مسافة كما في السلوك السابق. لا نسأل العميل قطعا.
@@ -108,6 +89,25 @@ class PatientAssistantController extends Controller
 
         $analysis = $this->intent->analyze($data['message']);
         $drugName = $analysis['drug_name'];
+
+        // Conversational replies come from the constrained Python assistant, not the medicine resolver.
+        if (isset($analysis['reply']) && is_string($analysis['reply']) && $analysis['reply'] !== '') {
+            return response()->json([
+                'success' => true,
+                'analysis' => [
+                    'intent' => $analysis['intent'],
+                    'drug_name' => null,
+                    'confidence' => null,
+                ],
+                'medicine' => null,
+                'pharmacies' => [],
+                'alternatives' => [],
+                'total_found' => 0,
+                'requires_location' => false,
+                'location_source' => 'none',
+                'message' => $analysis['reply'],
+            ]);
+        }
 
         // نية غير بحث دواء، أو رسالة بلا اسم دواء صالح → لا نخترع اسماً.
         if ($analysis['intent'] !== MedicineIntentService::INTENT_MEDICINE_SEARCH || $drugName === null) {
