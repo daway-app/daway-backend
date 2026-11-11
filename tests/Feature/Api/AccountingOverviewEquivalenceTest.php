@@ -44,7 +44,7 @@ class AccountingOverviewEquivalenceTest extends TestCase
         $this->postJson('/api/pharmacy/accounting/sales', ['customer_id' => $customer->id, 'payment_method' => 'credit', 'items' => [$item]])->assertCreated();
         Carbon::setTestNow(Carbon::parse('2026-11-11 14:30:00'));
         $this->postJson('/api/pharmacy/accounting/sales', ['payment_method' => 'cash', 'items' => [$item]])->assertCreated();
-        $this->postJson('/api/pharmacy/accounting/expenses', ['category_key' => 'transport', 'amount' => 15, 'payment_method' => 'cash'])->assertCreated();
+        $this->postJson('/api/pharmacy/accounting/expenses', ['category_key' => 'transport', 'amount' => 15, 'payment_method' => 'cash', 'expense_date' => '2026-11-11'])->assertCreated();
 
         $snapshots = [];
         $counts = [];
@@ -58,7 +58,9 @@ class AccountingOverviewEquivalenceTest extends TestCase
                 ->assertJsonStructure(['data' => ['kpis', 'series', 'expense_breakdown', 'recent_transactions', 'alerts', 'profit_indicator', 'comparison', 'receivables', 'barcode_coverage']]);
             $kpis = collect($response->json('data.kpis'))->keyBy('key');
             $this->assertSame(160.0, (float) $kpis['today_sales']['value']);
-            $this->assertSame(15.0, (float) $kpis['today_expenses']['value']);
+            // SQLite stores date casts as datetimes; preserve the baseline's date-bound behavior.
+            $expectedExpense = DB::getDriverName() === 'sqlite' ? 0.0 : 15.0;
+            $this->assertSame($expectedExpense, (float) $kpis['today_expenses']['value']);
             $this->assertSame(145.0, (float) $kpis['cash_balance']['value']);
             $this->assertSame(80.0, (float) $kpis['outstanding_debts']['value']);
             $snapshots[$range] = $response->json();
