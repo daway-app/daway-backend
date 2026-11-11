@@ -64,7 +64,12 @@ class PlatformSettlementApiTest extends TestCase
         $this->getJson('/api/pharmacy/accounting/platform-settlements')->assertOk()
             ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $settlementId);
         $this->getJson('/api/pharmacy/accounting/platform-settlements/'.$settlementId)->assertOk()
-            ->assertJsonPath('data.items.0.order_id', $order->id);
+            ->assertJsonPath('data.items.0.order_id', $order->id)
+            ->assertJsonPath('data.items.0.sub_order_id', $a->id)
+            ->assertJsonPath('data.items.0.amount', 100)
+            ->assertJsonPath('data.items.0.items.0.quantity', 2)
+            ->assertJsonPath('data.items.0.items.0.unit_price', 50)
+            ->assertJsonPath('data.items.0.items.0.total', 100);
         $this->actingAs($this->pharmacyB->user, 'sanctum');
         $this->getJson('/api/pharmacy/accounting/platform-settlements/'.$settlementId)->assertNotFound();
     }
