@@ -10,7 +10,6 @@ use App\Support\Accounting\BarcodeStatus;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * نظرة عامة المحاسبة — كل الأرقام مشتقّة من جداول المحاسبة الحقيقية.
@@ -79,33 +78,17 @@ class AccountingOverviewController extends Controller
 
     private function barcodeCoverage(int $pharmacyId): array
     {
-        $total = (int) PharmacyMedicine::query()
+        // Each status remains independent: one medicine can have both types.
+        $counts = PharmacyMedicine::query()
             ->where('pharmacy_id', $pharmacyId)
-            ->count();
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw('COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM medicine_barcodes WHERE medicine_barcodes.local_medicine_id = pharmacy_medicines.medicine_id AND medicine_barcodes.is_verified = ?) THEN 1 ELSE 0 END), 0) AS verified', [true])
+            ->selectRaw('COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM medicine_barcodes WHERE medicine_barcodes.local_medicine_id = pharmacy_medicines.medicine_id AND medicine_barcodes.is_verified = ?) THEN 1 ELSE 0 END), 0) AS pending', [false])
+            ->first();
 
-        // عدد سطور المخزون التي دواؤها مرتبط بباركود مؤكَّد فعلاً.
-        $verified = (int) PharmacyMedicine::query()
-            ->where('pharmacy_id', $pharmacyId)
-            ->whereNotNull('medicine_id')
-            ->whereExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('medicine_barcodes')
-                    ->whereColumn('medicine_barcodes.local_medicine_id', 'pharmacy_medicines.medicine_id')
-                    ->where('medicine_barcodes.is_verified', true);
-            })
-            ->count();
-
-        // مرتبط بباركود لكن غير موثَّق بعد.
-        $pending = (int) PharmacyMedicine::query()
-            ->where('pharmacy_id', $pharmacyId)
-            ->whereNotNull('medicine_id')
-            ->whereExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('medicine_barcodes')
-                    ->whereColumn('medicine_barcodes.local_medicine_id', 'pharmacy_medicines.medicine_id')
-                    ->where('medicine_barcodes.is_verified', false);
-            })
-            ->count();
+        $total = (int) $counts->total;
+        $verified = (int) $counts->verified;
+        $pending = (int) $counts->pending;
 
         $withBarcode = $verified + $pending;
         $unknown = max(0, $total - $withBarcode);
