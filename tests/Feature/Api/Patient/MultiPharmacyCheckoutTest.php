@@ -611,6 +611,8 @@ class MultiPharmacyCheckoutTest extends TestCase
     {
         $this->seedTwoPharmacyCart();
         $this->checkout();
+        $order = Order::firstOrFail();
+        $this->pay($order);
 
         $this->actingAs($this->pharmacyA->user, 'sanctum');
         $resp = $this->getJson('/api/pharmacy/sub-orders')->assertStatus(200);
