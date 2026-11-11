@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\MedicalProfileController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\MedicineRequestController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PatientPushTestController;
 use App\Http\Controllers\Api\OcrController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderPaymentController;
@@ -144,6 +145,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Notifications
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::get('notifications/count', [NotificationController::class, 'count']);
+    Route::post('patient/notifications/test-push', PatientPushTestController::class)
+        ->middleware(['role:patient', 'throttle:1,1']);
     Route::post('notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
