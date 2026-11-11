@@ -56,6 +56,8 @@ class AdminDashboardEquivalenceTest extends TestCase
             ->assertJsonPath('data.stats.medicinesAddedRecently', 1)
             ->assertJsonPath('data.stats.trendPatients', 0)
             ->assertJsonStructure(['data' => ['stats' => ['chartData', 'stockStatus', 'userRoles'], 'recent_activities']]);
+        $this->assertSame($response->json(), $this->getJson('/api/admin/dashboard')->assertOk()->json());
+
         if ($path = getenv('DASHBOARD_BENCHMARK_PATH')) {
             $samples = [];
             for ($i = 0; $i < 5; $i++) {
