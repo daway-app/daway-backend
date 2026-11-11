@@ -319,6 +319,7 @@ class PlatformSettlementService
                 'items' => $item->subOrder?->items?->map(fn ($line) => [
                     'name' => $line->medicine_trade_name,
                     'quantity' => (int) $line->quantity,
+                    'unit_price' => (float) $line->unit_price,
                     'total' => (float) $line->total_price,
                 ])->values() ?? [],
             ])->values() : [],
