@@ -21,6 +21,8 @@ final class MedicineIntentService
 
     public const INTENT_UNKNOWN = 'unknown';
 
+    private const CONVERSATIONAL_INTENTS = ['greeting', 'symptom_guidance', 'unclear', 'out_of_scope', 'pharmacy_locator', 'find_alternative', 'drug_info'];
+
     /**
      * قيمة النية كما تُرجعها خدمة daway-ai-api فعليًا (v1.1) لطلب بحث دواء.
      * تُطبَّع داخليًا إلى INTENT_MEDICINE_SEARCH حفاظًا على عقد الرد الذي يعتمده
@@ -113,6 +115,29 @@ final class MedicineIntentService
             if ($intent === self::INTENT_EXTERNAL_MEDICINE_SEARCH) {
                 $intent = self::INTENT_MEDICINE_SEARCH;
             }
+        }
+
+        if (is_string($intent) && in_array($intent, self::CONVERSATIONAL_INTENTS, true)) {
+            $reply = $raw['reply'] ?? null;
+            $guidance = $raw['guidance'] ?? null;
+            $emergency = ($raw['is_emergency'] ?? false) === true;
+            // Only bounded text returned by the configured Python service; never expose raw model data.
+            $reply = is_string($reply) ? mb_substr(trim(strip_tags($reply)), 0, 1500) : null;
+            $guidance = is_string($guidance) ? mb_substr(trim(strip_tags($guidance)), 0, 1500) : null;
+            if ($emergency && $guidance) {
+                $reply = $guidance;
+            }
+            if ($reply === null || $reply === '') {
+                return null;
+            }
+            return [
+                'intent' => $intent,
+                'drug_name' => null,
+                'confidence' => null,
+                'source' => 'llm',
+                'reply' => $reply,
+                'is_emergency' => $emergency,
+            ];
         }
 
         if (! is_string($intent) || ! in_array($intent, self::ALLOWED_INTENTS, true)) {

@@ -39,7 +39,7 @@ final class MedicineIntentClient
             try {
                 $request = Http::timeout($this->timeout)
                     ->acceptJson()
-                    ->when($this->key, fn ($r) => $r->withToken($this->key))
+                    ->when($this->key, fn ($r) => $r->withHeaders(['X-API-Key' => $this->key]))
                     ->post(rtrim($this->baseUrl, '/').'/ai/assistant', [
                         'message' => $message,
                     ]);
@@ -70,6 +70,9 @@ final class MedicineIntentClient
                     'drug_name' => $data['drug_name'] ?? null,
                     'confidence' => $data['confidence'] ?? null,
                     'source' => 'llm',
+                    'reply' => $data['reply'] ?? null,
+                    'guidance' => $data['guidance'] ?? null,
+                    'is_emergency' => $data['is_emergency'] ?? false,
                 ];
             }
 
