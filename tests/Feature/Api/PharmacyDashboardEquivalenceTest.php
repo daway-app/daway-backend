@@ -34,7 +34,7 @@ class PharmacyDashboardEquivalenceTest extends TestCase
         PatientInquiry::factory()->create(['pharmacy_id' => $pharmacy->id, 'user_id' => $patient->id, 'medicine_id' => $medicine->id, 'message' => 'First', 'status' => 'new']);
         PatientInquiry::factory()->create(['pharmacy_id' => $pharmacy->id, 'user_id' => $patient->id, 'medicine_id' => $medicine->id, 'message' => 'Second', 'status' => 'answered']);
         PatientInquiry::factory()->create(['pharmacy_id' => $other->id, 'user_id' => $patient->id, 'medicine_id' => $medicine->id, 'status' => 'new']);
-        Rating::factory()->create(['pharmacy_id' => $pharmacy->id, 'user_id' => $patient->id, 'stars_rating' => 5, 'comment' => 'Good']);
+        Rating::factory()->create(['pharmacy_id' => $pharmacy->id, 'user_id' => $patient->id, 'stars_rating' => 5, 'comment' => 'Good', 'created_at' => '2026-11-11 14:30:00']);
         Sanctum::actingAs($user);
 
         DB::flushQueryLog();
