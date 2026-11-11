@@ -95,18 +95,57 @@ class AssistantChatTest extends TestCase
             ->assertJsonValidationErrors('message');
     }
 
-    public function test_simple_greeting_gets_friendly_response_without_medicine(): void
+    public function test_python_greeting_is_displayed_without_medicine(): void
     {
+        config(['services.daway_ai.base_url' => 'https://ai.example.test']);
+        Http::fake(['ai.example.test/ai/assistant' => Http::response([
+            'intent' => 'greeting',
+            'drug_name' => null,
+            'reply' => 'أهلًا وسهلًا! أنا مساعد دوائي.',
+        ])]);
         Sanctum::actingAs($this->patient());
 
-        foreach (['مرحبا', 'أهلا', 'السلام عليكم', 'hello'] as $greeting) {
-            $this->postJson(self::ENDPOINT, ['message' => $greeting])
-                ->assertOk()
-                ->assertJsonPath('analysis.intent', 'unknown')
-                ->assertJsonPath('medicine', null)
-                ->assertJsonPath('pharmacies', [])
-                ->assertJsonPath('message', 'أهلًا فيك في دواك! كيف بقدر أساعدك بالبحث عن دواء؟');
-        }
+        $this->postJson(self::ENDPOINT, ['message' => 'مرحبا'])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('analysis.intent', 'greeting')
+            ->assertJsonPath('medicine', null)
+            ->assertJsonPath('pharmacies', [])
+            ->assertJsonPath('message', 'أهلًا وسهلًا! أنا مساعد دوائي.');
+        Http::assertSentCount(1);
+    }
+
+    public function test_python_symptom_guidance_and_emergency_are_displayed_without_invented_medicines(): void
+    {
+        config(['services.daway_ai.base_url' => 'https://ai.example.test']);
+        Http::fake(['ai.example.test/ai/assistant' => Http::response([
+            'intent' => 'symptom_guidance',
+            'drug_name' => null,
+            'reply' => 'اطلب الإسعاف فورًا.',
+            'guidance' => 'اطلب الإسعاف فورًا.',
+            'is_emergency' => true,
+        ])]);
+        Sanctum::actingAs($this->patient());
+
+        $this->postJson(self::ENDPOINT, ['message' => 'عندي ضيق تنفس شديد'])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('analysis.intent', 'symptom_guidance')
+            ->assertJsonPath('medicine', null)
+            ->assertJsonPath('pharmacies', [])
+            ->assertJsonPath('message', 'اطلب الإسعاف فورًا.');
+    }
+
+    public function test_python_api_key_uses_x_api_key_header(): void
+    {
+        config(['services.daway_ai.base_url' => 'https://ai.example.test', 'services.daway_ai.key' => 'test-key']);
+        Http::fake(['ai.example.test/ai/assistant' => Http::response([
+            'intent' => 'out_of_scope', 'reply' => 'أنا مساعد دوائي فقط.',
+        ])]);
+        Sanctum::actingAs($this->patient());
+        $this->postJson(self::ENDPOINT, ['message' => 'اكتب قصيدة'])
+            ->assertOk()->assertJsonPath('message', 'أنا مساعد دوائي فقط.');
+        Http::assertSent(fn ($request) => $request->hasHeader('X-API-Key', 'test-key'));
     }
 
     public function test_greeting_with_medicine_request_still_searches(): void
