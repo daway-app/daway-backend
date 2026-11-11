@@ -1,0 +1,83 @@
+name: Admin dashboard equivalence
+
+on:
+  pull_request:
+    paths:
+      - app/Http/Controllers/Api/Admin/DashboardController.php
+      - tests/Feature/Api/Admin/AdminDashboardEquivalenceTest.php
+      - .github/workflows/admin-dashboard-equivalence.yml
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        driver: [sqlite, mysql]
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: temporary-test-password
+          MYSQL_ROOT_HOST: '%'
+          MYSQL_DATABASE: dashboard_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptemporary-test-password"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, dom, gd, zip, bcmath, ctype, curl, fileinfo, json, pdo, pdo_sqlite, pdo_mysql, sqlite3, tokenizer, openssl, iconv, intl
+          coverage: none
+      - run: cp .env.example .env
+      - run: composer install --no-interaction --prefer-dist --no-progress --no-scripts --ignore-platform-reqs
+      - run: php artisan key:generate
+      - name: Create isolated PHPUnit configuration
+        env:
+          MATRIX_DRIVER: ${{ matrix.driver }}
+        run: |
+          python3 - <<'PY'
+          import os, xml.etree.ElementTree as ET
+          tree = ET.parse('phpunit.xml')
+          if os.environ['MATRIX_DRIVER'] == 'mysql':
+              for element in tree.getroot().find('php'):
+                  if element.get('name') == 'DB_CONNECTION':
+                      element.set('value', 'mysql')
+                  elif element.get('name') == 'DB_DATABASE':
+                      element.set('value', 'dashboard_test')
+                  elif element.get('name') == 'DB_PASSWORD':
+                      element.set('value', 'temporary-test-password')
+          tree.write('phpunit.compare.xml', encoding='utf-8', xml_declaration=True)
+          PY
+      - name: Compare base and proposed dashboard
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EXPECT_DB_DRIVER: ${{ matrix.driver }}
+        run: |
+          git show "$BASE_SHA:app/Http/Controllers/Api/Admin/DashboardController.php" > app/Http/Controllers/Api/Admin/DashboardController.php
+          DASHBOARD_BENCHMARK_PATH=/tmp/dashboard-base.json php vendor/bin/phpunit --configuration=phpunit.compare.xml tests/Feature/Api/Admin/AdminDashboardEquivalenceTest.php
+          git restore app/Http/Controllers/Api/Admin/DashboardController.php
+          DASHBOARD_BENCHMARK_PATH=/tmp/dashboard-head.json php vendor/bin/phpunit --configuration=phpunit.compare.xml tests/Feature/Api/Admin/AdminDashboardEquivalenceTest.php
+          python3 - <<'PY'
+          import json
+          with open('/tmp/dashboard-base.json') as f:
+              base = json.load(f)
+          with open('/tmp/dashboard-head.json') as f:
+              head = json.load(f)
+          print('Base:', base['queries'], 'queries; median ms:', base['median_ms'])
+          print('Head:', head['queries'], 'queries; median ms:', head['median_ms'])
+          if base['response'] != head['response']:
+              raise SystemExit('Dashboard API responses differ')
+          if head['queries'] >= base['queries']:
+              raise SystemExit('Expected fewer dashboard queries')
+          print('Complete responses match.')
+          PY
