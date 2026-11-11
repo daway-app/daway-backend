@@ -52,4 +52,4 @@ jobs:
           tree.write('phpunit.mysql.xml', encoding='utf-8', xml_declaration=True)
           PY
       - name: Run barcode coverage tests against disposable MySQL
-        run: php artisan test --configuration=phpunit.mysql.xml tests/Feature/Api/AccountingBarcodeCoveragePerformanceTest.php
+        run: php vendor/bin/phpunit --configuration=phpunit.mysql.xml tests/Feature/Api/AccountingBarcodeCoveragePerformanceTest.php
