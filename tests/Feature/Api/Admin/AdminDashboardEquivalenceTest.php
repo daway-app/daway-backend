@@ -72,6 +72,21 @@ class AdminDashboardEquivalenceTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_dashboard_with_no_patients_pharmacies_or_medicines(): void
+    {
+        $admin = User::factory()->admin()->create(['must_change_password' => false]);
+        $admin->syncRoles(['admin']);
+        Sanctum::actingAs($admin);
+        $this->forgetDashboard();
+
+        $this->getJson('/api/admin/dashboard')->assertOk()
+            ->assertJsonPath('data.stats.totalPatients', 0)
+            ->assertJsonPath('data.stats.activePharmacies', 0)
+            ->assertJsonPath('data.stats.totalMedicines', 0)
+            ->assertJsonPath('data.stats.newPharmaciesThisWeek', 0)
+            ->assertJsonPath('data.stats.medicinesAddedRecently', 0);
+    }
+
     public function test_non_admin_cannot_access_dashboard(): void
     {
         $this->getJson('/api/admin/dashboard')->assertUnauthorized();
