@@ -56,4 +56,6 @@ jobs:
       - name: Run barcode coverage tests against disposable MySQL
         env:
           EXPECT_DB_DRIVER: mysql
-        run: php vendor/bin/phpunit --configuration=phpunit.mysql.xml tests/Feature/Api/AccountingBarcodeCoveragePerformanceTest.php tests/Feature/Api/AccountingOverviewEquivalenceTest.php
+        run: |
+          php vendor/bin/phpunit --configuration=phpunit.mysql.xml tests/Feature/Api/AccountingBarcodeCoveragePerformanceTest.php
+          php vendor/bin/phpunit --configuration=phpunit.mysql.xml tests/Feature/Api/AccountingOverviewEquivalenceTest.php
