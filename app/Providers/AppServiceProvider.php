@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\FcmSender;
+use App\Services\Notifications\DeferredFcmSender;
 use App\Contracts\SmsProvider;
 use App\Models\PharmacyMedicine;
 use App\Models\Rating;
@@ -56,7 +57,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PharmacyInventorySearch::class);
 
         // FCM: الإرسال عبر واجهة قابلة للاستبدال في الاختبارات (Fake sender).
-        $this->app->singleton(FcmSender::class, FcmPushService::class);
+        // الإرسال الفعلي يبقى في FcmPushService؛ المزيّن يؤجّله إلى ما بعد
+        // تثبيت المعاملة كي لا يظهر إشعار لبيانات تراجعت.
+        $this->app->singleton(FcmPushService::class);
+        $this->app->singleton(FcmSender::class, fn ($app) => new DeferredFcmSender(
+            $app->make(FcmPushService::class),
+            // التأجيل معطّل في الاختبارات لأن معاملة `RefreshDatabase` لا تُثبَّت.
+            defer: ! $app->environment('testing'),
+        ));
 
         // SMS: Provider selection — Android SMS Gateway أولاً، ثم SMSGate.
         // الأولوية: Android إذا enabled → SMSGate إذا enabled → fallback فارغ.
