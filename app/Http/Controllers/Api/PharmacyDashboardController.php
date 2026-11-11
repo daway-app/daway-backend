@@ -28,13 +28,27 @@ class PharmacyDashboardController extends Controller
 
         $base = PharmacyMedicine::where('pharmacy_id', $pharmacy->id);
 
-        $totalMedicines = (clone $base)->count();
-        $availableCount = (clone $base)->where('is_available', true)->where('quantity', '>', 0)->count();
-        $lowCount = (clone $base)->where('quantity', '>', 0)->where('quantity', '<=', 10)->count();
-        $outCount = (clone $base)->where('quantity', '<=', 0)->count();
+        // One database round trip for the four inventory counters, preserving each
+        // counter's existing conditions and API response fields.
+        $counts = (clone $base)->selectRaw("
+            COUNT(*) AS total_medicines,
+            SUM(CASE WHEN is_available = 1 AND quantity > 0 THEN 1 ELSE 0 END) AS available_count,
+            SUM(CASE WHEN quantity > 0 AND quantity <= 10 THEN 1 ELSE 0 END) AS low_count,
+            SUM(CASE WHEN quantity <= 0 THEN 1 ELSE 0 END) AS out_count
+        ")->first();
 
-        $pendingInquiries = $pharmacy->patientInquiries()->where('status', 'new')->count();
-        $totalInquiries = $pharmacy->patientInquiries()->count();
+        $totalMedicines = (int) $counts->total_medicines;
+        $availableCount = (int) $counts->available_count;
+        $lowCount = (int) $counts->low_count;
+        $outCount = (int) $counts->out_count;
+
+        $inquiryCounts = $pharmacy->patientInquiries()->selectRaw("
+            COUNT(*) AS total_inquiries,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS pending_inquiries
+        ", ['new'])->first();
+
+        $pendingInquiries = (int) $inquiryCounts->pending_inquiries;
+        $totalInquiries = (int) $inquiryCounts->total_inquiries;
 
         $newRatingsThisWeek = $pharmacy->ratings()
             ->where('created_at', '>=', now()->subDays(7))
