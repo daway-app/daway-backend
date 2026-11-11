@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Medicine;
 use App\Models\Pharmacy;
 use App\Models\PharmacyMedicine;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,9 @@ class AccountingOverviewEquivalenceTest extends TestCase
 {
     public function test_overview_financial_contract_and_query_measurement(): void
     {
+        if (getenv('EXPECT_DB_DRIVER')) {
+            $this->assertSame(getenv('EXPECT_DB_DRIVER'), DB::connection()->getDriverName());
+        }
         Carbon::setTestNow(Carbon::parse('2026-11-11 14:30:00'));
         fake()->seed(112233);
         $user = User::factory()->pharmacy()->create();
@@ -46,6 +50,20 @@ class AccountingOverviewEquivalenceTest extends TestCase
         $this->postJson('/api/pharmacy/accounting/sales', ['payment_method' => 'cash', 'items' => [$item]])->assertCreated();
         $this->postJson('/api/pharmacy/accounting/expenses', ['category_key' => 'transport', 'amount' => 15, 'payment_method' => 'cash', 'expense_date' => '2026-11-11'])->assertCreated();
 
+        $supplier = Supplier::create(['pharmacy_id' => $pharmacy->id, 'name' => 'Test supplier', 'current_balance' => 0, 'is_active' => true]);
+        $this->postJson('/api/pharmacy/accounting/purchases', [
+            'supplier_id' => $supplier->id,
+            'payment_method' => 'credit',
+            'items' => [[
+                'pharmacy_medicine_id' => $stock->id,
+                'medicine_id' => $medicine->id,
+                'medicine_name' => 'Test medicine',
+                'unit_cost' => 12.5,
+                'quantity' => 2,
+                'line_discount' => 0,
+            ]],
+        ])->assertCreated();
+
         $snapshots = [];
         $counts = [];
         foreach (['today', '7d', '30d', 'month'] as $range) {
@@ -58,6 +76,8 @@ class AccountingOverviewEquivalenceTest extends TestCase
                 ->assertJsonStructure(['data' => ['kpis', 'series', 'expense_breakdown', 'recent_transactions', 'alerts', 'profit_indicator', 'comparison', 'receivables', 'barcode_coverage']]);
             $kpis = collect($response->json('data.kpis'))->keyBy('key');
             $this->assertSame(160.0, (float) $kpis['today_sales']['value']);
+            $this->assertSame(25.0, (float) $kpis['today_purchases']['value']);
+            $this->assertSame(25.0, (float) $response->json('data.receivables.supplier_balances'));
             // SQLite stores date casts as datetimes; preserve the baseline's date-bound behavior.
             $expectedExpense = DB::getDriverName() === 'sqlite' ? 0.0 : 15.0;
             $this->assertSame($expectedExpense, (float) $kpis['today_expenses']['value']);
