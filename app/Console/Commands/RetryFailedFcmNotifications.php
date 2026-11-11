@@ -24,10 +24,11 @@ class RetryFailedFcmNotifications extends Command
         $limit = max(1, (int) $this->option('limit'));
         $max = max(1, (int) $this->option('max'));
 
-        // قفل واحد عبر العمليات: تشغيلان متزامنان (cron + يدوي) كانا سيقرآن
-        // نفس الصفوف ويُرسلان الإشعار مرتين. القفل يُحرَّر في finally حتى عند
-        // الاستثناء، ومهلته أطول من أي دفعة متوقعة.
-        $lock = Cache::lock('fcm:retry-failed', 300);
+        // استخدم مخزن قاعدة البيانات للقفل فقط: Cache الافتراضي في Render هو file
+        // وغير مشترك بين حاوية الويب وخدمة Cron المستقلة. كلاهما يتصل بنفس
+        // قاعدة Aiven، فيمنع هذا القفل تكرار محاولة إرسال الدفعة بالتزامن.
+        // يظل Cache الافتراضي للتطبيق كما هو، والقفل يُحرر في finally.
+        $lock = Cache::store('database')->lock('fcm:retry-failed', 300);
 
         if (! $lock->get()) {
             $this->warn('retry already running — skipped');
