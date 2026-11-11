@@ -46,32 +46,30 @@ class AccountingOverviewController extends Controller
         $range = $this->normalizeRange($request->query('range'));
         [$from, $to] = $this->rangeBounds($range);
 
+        $kpis = AccountingReports::kpis($pharmacy->id);
+        $values = collect($kpis)->pluck('value', 'key');
+
+        // Keep the existing response order while reusing identical read results.
+        $data = [
+            'kpis' => $kpis,
+            'series' => AccountingReports::salesSeries($pharmacy->id),
+            'range' => $range,
+            'expense_breakdown' => AccountingReports::expenseBreakdown($pharmacy->id),
+            'recent_transactions' => AccountingReports::recentTransactions($pharmacy->id, 8),
+            'alerts' => array_merge(
+                AccountingReports::alerts($pharmacy->id, (float) $values->get('cash_balance')),
+                AccountingReports::inventoryAlerts($pharmacy->id, 2)
+            ),
+            'profit_indicator' => AccountingReports::profitIndicator($pharmacy->id, $from, $to),
+        ];
+        $data['comparison'] = AccountingReports::compareSales($pharmacy->id, $from, $to, $data['profit_indicator']['sales']);
+        $data['receivables'] = AccountingReports::receivablesAudit($pharmacy->id, (float) $values->get('outstanding_debts'));
+        $data['barcode_coverage'] = $this->barcodeCoverage($pharmacy->id);
+
         return response()->json([
             'success' => true,
             'message' => 'تم جلب نظرة عامة المحاسبة',
-            'data' => [
-                'kpis' => AccountingReports::kpis($pharmacy->id),
-
-                'series' => AccountingReports::salesSeries($pharmacy->id),
-                'range' => $range,
-
-                'expense_breakdown' => AccountingReports::expenseBreakdown($pharmacy->id),
-
-                'recent_transactions' => AccountingReports::recentTransactions($pharmacy->id, 8),
-
-                'alerts' => array_merge(
-                    AccountingReports::alerts($pharmacy->id),
-                    AccountingReports::inventoryAlerts($pharmacy->id, 2)
-                ),
-
-                'profit_indicator' => AccountingReports::profitIndicator($pharmacy->id, $from, $to),
-                'comparison' => AccountingReports::compareSales($pharmacy->id, $from, $to),
-
-                'receivables' => AccountingReports::receivablesAudit($pharmacy->id),
-
-
-                'barcode_coverage' => $this->barcodeCoverage($pharmacy->id),
-            ],
+            'data' => $data,
         ]);
     }
 
