@@ -48,6 +48,10 @@ class AccountingBarcodeCoveragePerformanceTest extends TestCase
 
     public function test_barcode_coverage_preserves_overlapping_statuses_and_uses_one_query(): void
     {
+        if (getenv('EXPECT_DB_DRIVER')) {
+            $this->assertSame(getenv('EXPECT_DB_DRIVER'), DB::connection()->getDriverName());
+        }
+
         $pharmacy = Pharmacy::factory()->create();
         $other = Pharmacy::factory()->create();
         $verified = $this->stock($pharmacy);
