@@ -95,6 +95,31 @@ class AssistantChatTest extends TestCase
             ->assertJsonValidationErrors('message');
     }
 
+    public function test_simple_greeting_gets_friendly_response_without_medicine(): void
+    {
+        Sanctum::actingAs($this->patient());
+
+        foreach (['مرحبا', 'أهلا', 'السلام عليكم', 'hello'] as $greeting) {
+            $this->postJson(self::ENDPOINT, ['message' => $greeting])
+                ->assertOk()
+                ->assertJsonPath('analysis.intent', 'unknown')
+                ->assertJsonPath('medicine', null)
+                ->assertJsonPath('pharmacies', [])
+                ->assertJsonPath('message', 'أهلًا فيك في دواك! كيف بقدر أساعدك بالبحث عن دواء؟');
+        }
+    }
+
+    public function test_greeting_with_medicine_request_still_searches(): void
+    {
+        $medicine = Medicine::factory()->create(['trade_name' => 'PANADOL', 'trade_name_ar' => 'بنادول']);
+        Sanctum::actingAs($this->patient());
+
+        $this->postJson(self::ENDPOINT, ['message' => 'مرحبا وين بلاقي بنادول؟'])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('medicine.id', $medicine->id);
+    }
+
     // ==================== Medicine identification ====================
 
     public function test_english_message_identifies_medicine_and_returns_inventory(): void
