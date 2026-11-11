@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\Notifications\NotificationDispatcher;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * إعادة إرسال الإشعارات التي فشل push‑ها بالكامل.
@@ -23,7 +24,22 @@ class RetryFailedFcmNotifications extends Command
         $limit = max(1, (int) $this->option('limit'));
         $max = max(1, (int) $this->option('max'));
 
-        $result = $dispatcher->retryFailed($limit, $max);
+        // قفل واحد عبر العمليات: تشغيلان متزامنان (cron + يدوي) كانا سيقرآن
+        // نفس الصفوف ويُرسلان الإشعار مرتين. القفل يُحرَّر في finally حتى عند
+        // الاستثناء، ومهلته أطول من أي دفعة متوقعة.
+        $lock = Cache::lock('fcm:retry-failed', 300);
+
+        if (! $lock->get()) {
+            $this->warn('retry already running — skipped');
+
+            return self::SUCCESS;
+        }
+
+        try {
+            $result = $dispatcher->retryFailed($limit, $max);
+        } finally {
+            $lock->release();
+        }
 
         $this->info(sprintf(
             'retried=%d sent=%d failed=%d',

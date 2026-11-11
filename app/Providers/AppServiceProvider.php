@@ -62,6 +62,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(FcmPushService::class);
         $this->app->singleton(FcmSender::class, fn ($app) => new DeferredFcmSender(
             $app->make(FcmPushService::class),
+            // التأجيل معطّل في الاختبارات لأن معاملة `RefreshDatabase` لا تُثبَّت.
+            defer: ! $app->environment('testing'),
         ));
 
         // SMS: Provider selection — Android SMS Gateway أولاً، ثم SMSGate.

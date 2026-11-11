@@ -20,7 +20,17 @@ use Illuminate\Support\Facades\DB;
  */
 class DeferredFcmSender implements FcmSender
 {
-    public function __construct(private readonly FcmSender $inner) {}
+    /**
+     * @param  bool  $defer  يُعطَّل في الاختبارات فقط: `RefreshDatabase` يلفّ
+     *                       كل اختبار في معاملة لا تُثبَّت، فـ`afterCommit` لا
+     *                       ينفّذ شيئًا وتصبح كل اختبارات FCM عمياء. الاختبار
+     *                       الحقيقي للتأجيل في `FcmAfterCommitTest` يبني هذا
+     *                       المزيّن يدويًا بـ`defer: true` فوق معاملة حقيقية.
+     */
+    public function __construct(
+        private readonly FcmSender $inner,
+        private readonly bool $defer = true,
+    ) {}
 
     public function enabled(): bool
     {
@@ -34,11 +44,7 @@ class DeferredFcmSender implements FcmSender
 
     public function fromNotification(Notification $notification): void
     {
-        // في الاختبارات يلفّ `RefreshDatabase` كل اختبار في معاملة لا تُثبَّت
-        // أبدًا، فـ`afterCommit` لن ينفّذ شيئًا ويصبح كل اختبار FCM أعمى.
-        // الإرسال الفوري هنا يحافظ على دلالات الاختبار؛ الضمان الإنتاجي
-        // مُثبت في `DeferredFcmSenderTest` بمعاملة حقيقية.
-        if (app()->environment('testing')) {
+        if (! $this->defer) {
             $this->inner->fromNotification($notification);
 
             return;
