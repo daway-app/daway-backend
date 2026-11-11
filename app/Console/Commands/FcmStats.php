@@ -30,17 +30,20 @@ class FcmStats extends Command
 
         $counts = DB::table('notifications')
             ->where('created_at', '>=', $since)
-            ->selectRaw('COALESCE(push_status, ?) AS status, COUNT(*) AS total', ['pending'])
+            ->selectRaw('COALESCE(push_status, ?) AS status, COUNT(*) AS total', ['untracked'])
             ->groupBy('status')
             ->pluck('total', 'status');
 
         $sent = (int) ($counts[FcmPushService::STATUS_SENT] ?? 0);
         $failed = (int) ($counts[FcmPushService::STATUS_FAILED] ?? 0);
         $skipped = (int) ($counts[FcmPushService::STATUS_SKIPPED] ?? 0);
+        // NULL includes legacy notifications created before FCM delivery tracking.
+        // Do not treat these as pending deliveries or trigger a false alert.
         $pending = (int) ($counts['pending'] ?? 0);
+        $untracked = (int) ($counts['untracked'] ?? 0);
 
         $this->line('window: last '.$hours.'h (since '.$since->toDateTimeString().')');
-        $this->line(sprintf('sent=%d failed=%d skipped=%d pending=%d', $sent, $failed, $skipped, $pending));
+        $this->line(sprintf('sent=%d failed=%d skipped=%d pending=%d untracked=%d', $sent, $failed, $skipped, $pending, $untracked));
 
         if ($failed > 0) {
             // رموز FCM المعروفة فقط؛ العمود لا يحمل نصوصًا من المزوّد.
