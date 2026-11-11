@@ -29,7 +29,7 @@ jobs:
       - run: php artisan key:generate
       - name: Measure base with identical test data
         env:
-          BASE_SHA: u => u
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           git show "$BASE_SHA:app/Http/Controllers/Api/AccountingOverviewController.php" > app/Http/Controllers/Api/AccountingOverviewController.php
           git show "$BASE_SHA:app/Services/Accounting/AccountingReports.php" > app/Services/Accounting/AccountingReports.php
