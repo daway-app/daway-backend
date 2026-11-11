@@ -693,6 +693,9 @@ class OrderController extends Controller
         $pharmacyId = $pharmacy->pharmacy?->id;
 
         $subOrders = SubOrder::where('pharmacy_id', $pharmacyId ?? -1)
+            ->whereHas('order', fn ($query) => $query
+                ->where('payment_status', Order::PAYMENT_PAID)
+                ->where('status', '!=', Order::STATUS_CANCELLED))
             ->with(['order.user', 'items', 'pharmacy'])
             ->latest('created_at')
             ->paginate(20);
@@ -716,6 +719,9 @@ class OrderController extends Controller
 
         $owned = SubOrder::query()
             ->where('pharmacy_id', $pharmacyId ?? -1)
+            ->whereHas('order', fn ($query) => $query
+                ->where('payment_status', Order::PAYMENT_PAID)
+                ->where('status', '!=', Order::STATUS_CANCELLED))
             ->with(['order.user', 'items', 'pharmacy'])
             ->findOrFail($subOrder);
 
