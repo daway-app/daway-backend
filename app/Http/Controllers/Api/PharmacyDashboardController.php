@@ -28,13 +28,23 @@ class PharmacyDashboardController extends Controller
 
         $base = PharmacyMedicine::where('pharmacy_id', $pharmacy->id);
 
-        $totalMedicines = (clone $base)->count();
-        $availableCount = (clone $base)->where('is_available', true)->where('quantity', '>', 0)->count();
-        $lowCount = (clone $base)->where('quantity', '>', 0)->where('quantity', '<=', 10)->count();
-        $outCount = (clone $base)->where('quantity', '<=', 0)->count();
+        $inventoryCounts = (clone $base)
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw('COALESCE(SUM(CASE WHEN is_available = ? AND quantity > 0 THEN 1 ELSE 0 END), 0) AS available_count', [true])
+            ->selectRaw('COALESCE(SUM(CASE WHEN quantity > 0 AND quantity <= 10 THEN 1 ELSE 0 END), 0) AS low_count')
+            ->selectRaw('COALESCE(SUM(CASE WHEN quantity <= 0 THEN 1 ELSE 0 END), 0) AS out_count')
+            ->first();
+        $totalMedicines = (int) $inventoryCounts->total;
+        $availableCount = (int) $inventoryCounts->available_count;
+        $lowCount = (int) $inventoryCounts->low_count;
+        $outCount = (int) $inventoryCounts->out_count;
 
-        $pendingInquiries = $pharmacy->patientInquiries()->where('status', 'new')->count();
-        $totalInquiries = $pharmacy->patientInquiries()->count();
+        $inquiryCounts = $pharmacy->patientInquiries()
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw('COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS pending_count', ['new'])
+            ->first();
+        $pendingInquiries = (int) $inquiryCounts->pending_count;
+        $totalInquiries = (int) $inquiryCounts->total;
 
         $newRatingsThisWeek = $pharmacy->ratings()
             ->where('created_at', '>=', now()->subDays(7))
