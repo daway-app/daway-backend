@@ -65,6 +65,21 @@ class PharmacyDashboardEquivalenceTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_empty_dashboard_counters_are_zero(): void
+    {
+        $user = User::factory()->pharmacy()->create();
+        Pharmacy::factory()->create(['user_id' => $user->id]);
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/pharmacy/dashboard/stats')->assertOk()
+            ->assertJsonPath('data.total_medicines', 0)
+            ->assertJsonPath('data.available_count', 0)
+            ->assertJsonPath('data.low_count', 0)
+            ->assertJsonPath('data.out_count', 0)
+            ->assertJsonPath('data.pending_inquiries', 0)
+            ->assertJsonPath('data.total_inquiries', 0);
+    }
+
     public function test_dashboard_rejects_guest_and_patient(): void
     {
         $this->getJson('/api/pharmacy/dashboard/stats')->assertUnauthorized();
