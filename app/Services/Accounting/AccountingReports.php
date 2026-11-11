@@ -203,17 +203,13 @@ final class AccountingReports
         ];
 
         $labels = [];
-        $data = [];
-
+        $buckets = [];
         foreach ($slots as [$start, $end, $label]) {
-            $bucketStart = Carbon::today()->setTimeFromTimeString($start);
-            $bucketEnd = Carbon::today()->setTimeFromTimeString($end);
-
             $labels[] = $label;
-            $data[] = self::sumSales($pharmacyId, $bucketStart, $bucketEnd)['total'];
+            $buckets[] = [Carbon::today()->setTimeFromTimeString($start), Carbon::today()->setTimeFromTimeString($end)];
         }
 
-        return ['labels' => $labels, 'data' => $data];
+        return ['labels' => $labels, 'data' => self::salesBucketTotals($pharmacyId, $buckets)];
     }
 
     /**
@@ -254,21 +250,45 @@ final class AccountingReports
     private static function seriesMonthly(int $pharmacyId): array
     {
         $startOfMonth = Carbon::today()->startOfMonth();
-
         $labels = [];
-        $data = [];
-
+        $buckets = [];
         for ($week = 0; $week < 4; $week++) {
             $wStart = $startOfMonth->copy()->addWeeks($week)->startOfDay();
             $wEnd = $week === 3
                 ? Carbon::today()->endOfMonth()
                 : $startOfMonth->copy()->addWeeks($week + 1)->subSecond();
-
             $labels[] = 'W'.($week + 1);
-            $data[] = self::sumSales($pharmacyId, $wStart, $wEnd)['total'];
+            $buckets[] = [$wStart, $wEnd];
         }
 
-        return ['labels' => $labels, 'data' => $data];
+        return ['labels' => $labels, 'data' => self::salesBucketTotals($pharmacyId, $buckets)];
+    }
+
+    /**
+     * Sum each inclusive interval independently, retaining overlapping endpoints.
+     *
+     * @param list<array{0:CarbonInterface,1:CarbonInterface}> $buckets
+     * @return list<float>
+     */
+    private static function salesBucketTotals(int $pharmacyId, array $buckets): array
+    {
+        $query = Sale::query()->forPharmacy($pharmacyId)->active()
+            ->between($buckets[0][0], $buckets[count($buckets) - 1][1]);
+
+        foreach ($buckets as $index => [$from, $to]) {
+            $query->selectRaw(
+                "COALESCE(SUM(CASE WHEN sold_at BETWEEN ? AND ? THEN total ELSE 0 END), 0) AS bucket_".$index,
+                [$from, $to]
+            );
+        }
+
+        $row = $query->first();
+        $totals = [];
+        foreach (array_keys($buckets) as $index) {
+            $totals[] = round((float) $row->{"bucket_".$index}, 2);
+        }
+
+        return $totals;
     }
 
     /**
@@ -457,9 +477,9 @@ final class AccountingReports
      *
      * @return array{customer_balances:float,invoice_remaining:float,drift:float,supplier_balances:float,purchase_remaining:float}
      */
-    public static function receivablesAudit(int $pharmacyId): array
+    public static function receivablesAudit(int $pharmacyId, ?float $customerBalances = null): array
     {
-        $customerBalances = self::customerReceivablesTotal($pharmacyId);
+        $customerBalances ??= self::customerReceivablesTotal($pharmacyId);
         // `active()` يستثني الملغاة. الفواتير المرجوعة كليًا صارت `remaining = 0`
         // (الدَين الملغى يُخصم فعلاً عند الإرجاع) فلا تظهر كذمّة قائمة، بينما
         // الإجمالي التاريخي (`total`) يبقى محفوظًا للسجل والتدقيق.
@@ -687,7 +707,7 @@ final class AccountingReports
      *
      * @return list<array{severity:string,icon:string,title:string,description:string,href:?string}>
      */
-    public static function alerts(int $pharmacyId): array
+    public static function alerts(int $pharmacyId, ?float $cashBalance = null): array
     {
         $alerts = [];
 
@@ -740,7 +760,7 @@ final class AccountingReports
         }
 
         // (3) انخفاض الصندوق
-        $cash = self::cashBalance($pharmacyId);
+        $cash = $cashBalance ?? self::cashBalance($pharmacyId);
 
         if ($cash < self::LOW_CASH_THRESHOLD) {
             $alerts[] = [
@@ -897,10 +917,10 @@ final class AccountingReports
      * `$from`/`$to` = null ⇒ بلا نطاق، فلا معنى للمقارنة: نُعيد الأرقام
      * الحالية وأصفار المقارنة بدل الفشل. سلوك صريح لا انهيار.
      */
-    public static function compareSales(int $pharmacyId, ?CarbonInterface $from = null, ?CarbonInterface $to = null): array
+    public static function compareSales(int $pharmacyId, ?CarbonInterface $from = null, ?CarbonInterface $to = null, ?float $currentTotal = null): array
     {
         if ($from === null || $to === null) {
-            $current = self::sumSales($pharmacyId)['total'];
+            $current = $currentTotal ?? self::sumSales($pharmacyId)['total'];
 
             return [
                 'current' => $current,
@@ -912,7 +932,7 @@ final class AccountingReports
 
         $days = max(1, (int) $from->diffInDays($to) + 1);
 
-        $current = self::sumSales($pharmacyId, $from, $to)['total'];
+        $current = $currentTotal ?? self::sumSales($pharmacyId, $from, $to)['total'];
         $previous = self::sumSales(
             $pharmacyId,
             $from->copy()->subDays($days),

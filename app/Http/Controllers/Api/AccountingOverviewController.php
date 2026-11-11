@@ -10,7 +10,6 @@ use App\Support\Accounting\BarcodeStatus;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * نظرة عامة المحاسبة — كل الأرقام مشتقّة من جداول المحاسبة الحقيقية.
@@ -47,65 +46,47 @@ class AccountingOverviewController extends Controller
         $range = $this->normalizeRange($request->query('range'));
         [$from, $to] = $this->rangeBounds($range);
 
+        $kpis = AccountingReports::kpis($pharmacy->id);
+        $values = collect($kpis)->pluck('value', 'key');
+
+        // Keep the existing response order while reusing identical read results.
+        $data = [
+            'kpis' => $kpis,
+            'series' => AccountingReports::salesSeries($pharmacy->id),
+            'range' => $range,
+            'expense_breakdown' => AccountingReports::expenseBreakdown($pharmacy->id),
+            'recent_transactions' => AccountingReports::recentTransactions($pharmacy->id, 8),
+            'alerts' => array_merge(
+                AccountingReports::alerts($pharmacy->id, (float) $values->get('cash_balance')),
+                AccountingReports::inventoryAlerts($pharmacy->id, 2)
+            ),
+            'profit_indicator' => AccountingReports::profitIndicator($pharmacy->id, $from, $to),
+        ];
+        $data['comparison'] = AccountingReports::compareSales($pharmacy->id, $from, $to, $data['profit_indicator']['sales']);
+        $data['receivables'] = AccountingReports::receivablesAudit($pharmacy->id, (float) $values->get('outstanding_debts'));
+        $data['barcode_coverage'] = $this->barcodeCoverage($pharmacy->id);
+
         return response()->json([
             'success' => true,
             'message' => 'تم جلب نظرة عامة المحاسبة',
-            'data' => [
-                'kpis' => AccountingReports::kpis($pharmacy->id),
-
-                'series' => AccountingReports::salesSeries($pharmacy->id),
-                'range' => $range,
-
-                'expense_breakdown' => AccountingReports::expenseBreakdown($pharmacy->id),
-
-                'recent_transactions' => AccountingReports::recentTransactions($pharmacy->id, 8),
-
-                'alerts' => array_merge(
-                    AccountingReports::alerts($pharmacy->id),
-                    AccountingReports::inventoryAlerts($pharmacy->id, 2)
-                ),
-
-                'profit_indicator' => AccountingReports::profitIndicator($pharmacy->id, $from, $to),
-                'comparison' => AccountingReports::compareSales($pharmacy->id, $from, $to),
-
-                'receivables' => AccountingReports::receivablesAudit($pharmacy->id),
-
-
-                'barcode_coverage' => $this->barcodeCoverage($pharmacy->id),
-            ],
+            'data' => $data,
         ]);
     }
 
 
     private function barcodeCoverage(int $pharmacyId): array
     {
-        $total = (int) PharmacyMedicine::query()
+        // Each status remains independent: one medicine can have both types.
+        $counts = PharmacyMedicine::query()
             ->where('pharmacy_id', $pharmacyId)
-            ->count();
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw('COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM medicine_barcodes WHERE medicine_barcodes.local_medicine_id = pharmacy_medicines.medicine_id AND medicine_barcodes.is_verified = ?) THEN 1 ELSE 0 END), 0) AS verified', [true])
+            ->selectRaw('COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM medicine_barcodes WHERE medicine_barcodes.local_medicine_id = pharmacy_medicines.medicine_id AND medicine_barcodes.is_verified = ?) THEN 1 ELSE 0 END), 0) AS pending', [false])
+            ->first();
 
-        // عدد سطور المخزون التي دواؤها مرتبط بباركود مؤكَّد فعلاً.
-        $verified = (int) PharmacyMedicine::query()
-            ->where('pharmacy_id', $pharmacyId)
-            ->whereNotNull('medicine_id')
-            ->whereExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('medicine_barcodes')
-                    ->whereColumn('medicine_barcodes.local_medicine_id', 'pharmacy_medicines.medicine_id')
-                    ->where('medicine_barcodes.is_verified', true);
-            })
-            ->count();
-
-        // مرتبط بباركود لكن غير موثَّق بعد.
-        $pending = (int) PharmacyMedicine::query()
-            ->where('pharmacy_id', $pharmacyId)
-            ->whereNotNull('medicine_id')
-            ->whereExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('medicine_barcodes')
-                    ->whereColumn('medicine_barcodes.local_medicine_id', 'pharmacy_medicines.medicine_id')
-                    ->where('medicine_barcodes.is_verified', false);
-            })
-            ->count();
+        $total = (int) $counts->total;
+        $verified = (int) $counts->verified;
+        $pending = (int) $counts->pending;
 
         $withBarcode = $verified + $pending;
         $unknown = max(0, $total - $withBarcode);

@@ -1,0 +1,86 @@
+name: Accounting barcode coverage MySQL
+
+on:
+  pull_request:
+    paths:
+      - app/Http/Controllers/Api/AccountingOverviewController.php
+      - tests/Feature/Api/AccountingBarcodeCoveragePerformanceTest.php
+      - .github/workflows/accounting-barcode-mysql.yml
+      - app/Services/Accounting/AccountingReports.php
+      - tests/Feature/Api/AccountingOverviewEquivalenceTest.php
+
+permissions:
+  contents: read
+
+jobs:
+  barcode-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: temporary-test-password
+          MYSQL_ROOT_HOST: '%'
+          MYSQL_DATABASE: accounting_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptemporary-test-password"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, curl, dom, fileinfo, gd, intl, mbstring, pdo_mysql, zip
+          tools: composer:v2
+          coverage: none
+      - run: cp .env.example .env
+      - run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+      - run: php artisan key:generate
+      - name: Create isolated MySQL PHPUnit configuration
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('phpunit.xml')
+          for element in tree.getroot().find('php'):
+              if element.get('name') == 'DB_CONNECTION':
+                  element.set('value', 'mysql')
+              elif element.get('name') == 'DB_DATABASE':
+                  element.set('value', 'accounting_test')
+              elif element.get('name') == 'DB_PASSWORD':
+                  element.set('value', 'temporary-test-password')
+          tree.write('phpunit.mysql.xml', encoding='utf-8', xml_declaration=True)
+          PY
+      - name: Run barcode coverage tests against disposable MySQL
+        env:
+          EXPECT_DB_DRIVER: mysql
+        run: |
+          php vendor/bin/phpunit --configuration=phpunit.mysql.xml tests/Feature/Api/AccountingBarcodeCoveragePerformanceTest.php
+      - name: Compare base and proposed overview on MySQL
+        env:
+          EXPECT_DB_DRIVER: mysql
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git show "$BASE_SHA:app/Http/Controllers/Api/AccountingOverviewController.php" > app/Http/Controllers/Api/AccountingOverviewController.php
+          git show "$BASE_SHA:app/Services/Accounting/AccountingReports.php" > app/Services/Accounting/AccountingReports.php
+          ACCOUNTING_BENCHMARK_PATH=/tmp/mysql-base.json php vendor/bin/phpunit --configuration=phpunit.mysql.xml tests/Feature/Api/AccountingOverviewEquivalenceTest.php
+          git restore app/Http/Controllers/Api/AccountingOverviewController.php app/Services/Accounting/AccountingReports.php
+          ACCOUNTING_BENCHMARK_PATH=/tmp/mysql-head.json php vendor/bin/phpunit --configuration=phpunit.mysql.xml tests/Feature/Api/AccountingOverviewEquivalenceTest.php
+          python3 - <<'PY'
+          import json
+          with open('/tmp/mysql-base.json') as f:
+              base = json.load(f)
+          with open('/tmp/mysql-head.json') as f:
+              head = json.load(f)
+          print('MySQL base queries:', base['queries'])
+          print('MySQL head queries:', head['queries'])
+          if base['responses'] != head['responses']:
+              raise SystemExit('MySQL accounting responses differ')
+          if not all(head['queries'][r] < base['queries'][r] for r in base['queries']):
+              raise SystemExit('Expected fewer MySQL queries for every range')
+          print('MySQL complete responses match for all ranges.')
+          PY

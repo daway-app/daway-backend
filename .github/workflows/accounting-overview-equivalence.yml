@@ -1,0 +1,59 @@
+name: Accounting overview equivalence
+
+on:
+  pull_request:
+    paths:
+      - app/Services/Accounting/AccountingReports.php
+      - app/Http/Controllers/Api/AccountingOverviewController.php
+      - tests/Feature/Api/AccountingOverviewEquivalenceTest.php
+      - .github/workflows/accounting-overview-equivalence.yml
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, dom, gd, zip, bcmath, ctype, curl, fileinfo, json, pdo, pdo_sqlite, sqlite3, tokenizer, openssl, iconv, intl
+          coverage: none
+      - run: cp .env.example .env
+      - run: composer install --no-interaction --prefer-dist --no-progress --no-scripts --ignore-platform-reqs
+      - run: php artisan key:generate
+      - name: Measure base with identical test data
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git show "$BASE_SHA:app/Http/Controllers/Api/AccountingOverviewController.php" > app/Http/Controllers/Api/AccountingOverviewController.php
+          git show "$BASE_SHA:app/Services/Accounting/AccountingReports.php" > app/Services/Accounting/AccountingReports.php
+          ACCOUNTING_BENCHMARK_PATH=/tmp/accounting-base.json php vendor/bin/phpunit tests/Feature/Api/AccountingOverviewEquivalenceTest.php
+      - name: Measure proposed code with identical test data
+        run: |
+          git restore app/Http/Controllers/Api/AccountingOverviewController.php app/Services/Accounting/AccountingReports.php
+          ACCOUNTING_BENCHMARK_PATH=/tmp/accounting-head.json php vendor/bin/phpunit tests/Feature/Api/AccountingOverviewEquivalenceTest.php
+      - name: Compare complete responses and query counts
+        run: |
+          python3 - <<'PY'
+          import json
+          with open('/tmp/accounting-base.json') as f:
+              base = json.load(f)
+          with open('/tmp/accounting-head.json') as f:
+              head = json.load(f)
+          print('BASE queries:', base['queries'])
+          print('HEAD queries:', head['queries'])
+          if base['responses'] != head['responses']:
+              for key in base['responses']:
+                  if base['responses'][key] != head['responses'][key]:
+                      print('Different response for range:', key)
+              raise SystemExit('Accounting API responses differ')
+          if not all(head['queries'][r] < base['queries'][r] for r in base['queries']):
+              raise SystemExit('Expected fewer queries for every range')
+          print('Complete responses match for all ranges.')
+          PY
