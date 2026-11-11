@@ -98,10 +98,12 @@ class PaymentController extends Controller
         );
 
         if ($result['ok'] && empty($result['data']['already_paid'])) {
+            $approvedOrder = $order->fresh();
             $this->notifications->paymentApproved(
-                $order->fresh(),
+                $approvedOrder,
                 (int) ($result['data']['submission']['id'] ?? 0)
             );
+            $this->notifications->pharmacyOrderPaymentApproved($approvedOrder);
         }
 
         return $this->respond($result);

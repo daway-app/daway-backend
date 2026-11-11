@@ -25,14 +25,32 @@ class OrderNotificationService
             "order:{$order->id}:created:patient"
         );
 
+    }
+
+    /**
+     * Notify each pharmacy only after an administrator has approved payment.
+     * Checkout and receipt submission must never notify pharmacies.
+     */
+    public function pharmacyOrderPaymentApproved(Order $order): void
+    {
+        if ($order->payment_status !== Order::PAYMENT_PAID || $order->status === Order::STATUS_CANCELLED) {
+            return;
+        }
+
+        $order->loadMissing(['subOrders.pharmacy.user', 'pharmacy.user']);
+
         foreach ($order->subOrders as $subOrder) {
+            if ($subOrder->status === SubOrder::STATUS_CANCELLED) {
+                continue;
+            }
+
             $this->notifyUser(
                 $subOrder->pharmacy?->user,
                 'order_created',
-                "وصل طلب جديد #{$order->id} إلى صيدليتك.",
+                "وصل طلب جديد #{$order->id} إلى صيدليتك بعد اعتماد الدفع.",
                 $order,
                 $subOrder,
-                "order:{$order->id}:sub:{$subOrder->id}:created:pharmacy"
+                "order:{$order->id}:sub:{$subOrder->id}:payment-approved:pharmacy"
             );
         }
 
@@ -40,10 +58,10 @@ class OrderNotificationService
             $this->notifyUser(
                 $order->pharmacy?->user,
                 'order_created',
-                "وصل طلب جديد #{$order->id} إلى صيدليتك.",
+                "وصل طلب جديد #{$order->id} إلى صيدليتك بعد اعتماد الدفع.",
                 $order,
                 null,
-                "order:{$order->id}:created:pharmacy"
+                "order:{$order->id}:payment-approved:pharmacy"
             );
         }
     }

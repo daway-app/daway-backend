@@ -40,7 +40,8 @@ class OrderNotificationFlowTest extends TestCase
         foreach ([$this->pharmacyA, $this->pharmacyB] as $pharmacy) {
             $subOrder = $this->subOrderFor($order, $pharmacy);
 
-            $this->assertDatabaseHas('notifications', [
+            $this->assertSame(0, $this->countFor($pharmacy->user, 'order_created'));
+            $this->assertDatabaseMissing('notifications', [
                 'user_id' => $pharmacy->user_id,
                 'type' => 'order_created',
                 'order_id' => $order->id,
@@ -52,11 +53,26 @@ class OrderNotificationFlowTest extends TestCase
 
         $this->assertSame(1, $this->countFor($this->admin, 'order_payment_receipt_submitted'));
 
+        foreach ([$this->pharmacyA, $this->pharmacyB] as $pharmacy) {
+            $this->assertSame(0, $this->countFor($pharmacy->user, 'order_created'));
+        }
+
         $this->actingAs($this->admin, 'sanctum');
         $this->postJson("/api/admin/payments/{$order->id}/approve")->assertOk();
         $this->postJson("/api/admin/payments/{$order->id}/approve")->assertOk();
 
         $this->assertSame(1, $this->countFor($this->patient, 'order_payment_approved'));
+
+        foreach ([$this->pharmacyA, $this->pharmacyB] as $pharmacy) {
+            $subOrder = $this->subOrderFor($order, $pharmacy);
+            $this->assertSame(1, $this->countFor($pharmacy->user, 'order_created'));
+            $this->assertDatabaseHas('notifications', [
+                'user_id' => $pharmacy->user_id,
+                'type' => 'order_created',
+                'order_id' => $order->id,
+                'sub_order_id' => $subOrder->id,
+            ]);
+        }
 
         $this->actingAs($this->patient, 'sanctum');
         $this->getJson('/api/notifications?type=order_payment_approved')
