@@ -34,17 +34,20 @@ class PharmacyInventoryController extends Controller
 
         $base = PharmacyMedicine::where('pharmacy_id', $pharmacy->id);
 
-        $total = (clone $base)->count();
-        $availableCount = (clone $base)->where('is_available', true)->where('quantity', '>', 0)->count();
-        $outCount = (clone $base)->where(function ($query) {
-            $query->where('is_available', false)->orWhere('quantity', '<=', 0);
-        })->count();
+        // Consolidate the four inventory counters into one query. Keep the
+        // inventory-page out_count rule (unavailable OR zero stock), which is
+        // intentionally different from the dashboard's quantity-only rule.
+        $counts = (clone $base)->selectRaw("
+            COUNT(*) AS total,
+            SUM(CASE WHEN is_available = 1 AND quantity > 0 THEN 1 ELSE 0 END) AS available_count,
+            SUM(CASE WHEN is_available = 0 OR quantity <= 0 THEN 1 ELSE 0 END) AS out_count,
+            SUM(CASE WHEN quantity > 0 AND quantity <= ? THEN 1 ELSE 0 END) AS low_count
+        ", [PharmacyMedicine::LOW_STOCK_THRESHOLD])->first();
 
-        // H10: عدّ low-stock عبر SQL بدل تحميل كل المخزون إلى الذاكرة.
-        $lowCount = (clone $base)
-            ->where('quantity', '>', 0)
-            ->where('quantity', '<=', PharmacyMedicine::LOW_STOCK_THRESHOLD)
-            ->count();
+        $total = (int) $counts->total;
+        $availableCount = (int) $counts->available_count;
+        $outCount = (int) $counts->out_count;
+        $lowCount = (int) $counts->low_count;
 
         $items = $base->with('medicine')->orderByDesc('id')->paginate($perPage);
 
