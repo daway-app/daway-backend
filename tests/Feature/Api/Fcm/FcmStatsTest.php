@@ -59,4 +59,23 @@ class FcmStatsTest extends TestCase
             ->doesntExpectOutputToContain('privacy-check@daway.test')
             ->doesntExpectOutputToContain('user_id');
     }
+    public function test_legacy_null_status_is_untracked_not_pending(): void
+    {
+        $notification = $this->notification(FcmPushService::STATUS_SENT);
+        $notification->forceFill(['push_status' => null])->save();
+
+        $this->artisan('fcm:stats')
+            ->assertExitCode(0)
+            ->expectsOutputToContain('sent=0 failed=0 skipped=0 pending=0 untracked=1');
+    }
+
+    public function test_explicit_pending_status_still_fails_monitoring(): void
+    {
+        $this->notification('pending');
+
+        $this->artisan('fcm:stats')
+            ->assertExitCode(1)
+            ->expectsOutputToContain('sent=0 failed=0 skipped=0 pending=1 untracked=0');
+    }
+
 }
