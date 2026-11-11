@@ -66,6 +66,7 @@ class AccountingOverviewEquivalenceTest extends TestCase
 
         $snapshots = [];
         $counts = [];
+        $timings = [];
         foreach (['today', '7d', '30d', 'month'] as $range) {
             DB::flushQueryLog();
             DB::enableQueryLog();
@@ -91,11 +92,21 @@ class AccountingOverviewEquivalenceTest extends TestCase
                 $this->assertSame(135.0 - $expectedExpense, (float) $response->json('data.profit_indicator.net'));
             }
             $snapshots[$range] = $response->json();
+            if (getenv('ACCOUNTING_BENCHMARK_PATH')) {
+                $samples = [];
+                for ($i = 0; $i < 5; $i++) {
+                    $start = hrtime(true);
+                    $this->getJson('/api/pharmacy/accounting/overview?range='.$range)->assertOk();
+                    $samples[] = (hrtime(true) - $start) / 1_000_000;
+                }
+                sort($samples);
+                $timings[$range] = round($samples[2], 2);
+            }
         }
 
         if ($path = getenv('ACCOUNTING_BENCHMARK_PATH')) {
-            file_put_contents($path, json_encode(['responses' => $snapshots, 'queries' => $counts], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
-            fwrite(STDERR, "\nACCOUNTING_QUERIES ".json_encode($counts)."\n");
+            file_put_contents($path, json_encode(['responses' => $snapshots, 'queries' => $counts, 'median_ms' => $timings], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+            fwrite(STDERR, "\nACCOUNTING_QUERIES ".json_encode($counts)."\nACCOUNTING_MEDIAN_MS ".json_encode($timings)."\n");
         }
         Carbon::setTestNow();
     }
