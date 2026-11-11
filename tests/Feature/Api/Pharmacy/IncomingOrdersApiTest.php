@@ -25,7 +25,7 @@ class IncomingOrdersApiTest extends TestCase
         $sub->items()->update(['medicine_trade_name' => 'Own medicine']);
         $other->items()->update(['medicine_trade_name' => 'Private other medicine']);
         // The parent is authoritative even if an old mirror has drifted.
-        $order->update(['payment_status' => Order::PAYMENT_PROBLEM_REPORTED]);
+        $order->update(['payment_status' => Order::PAYMENT_PAID]);
         $this->actingAs($this->pharmacyA->user, 'sanctum');
 
         $list = $this->getJson('/api/pharmacy/sub-orders')->assertOk()
@@ -33,7 +33,7 @@ class IncomingOrdersApiTest extends TestCase
             ->assertJsonPath('data.0.id', $sub->id)
             ->assertJsonPath('data.0.order_id', $order->id)
             ->assertJsonPath('data.0.patient.name', $this->patient->name)
-            ->assertJsonPath('data.0.payment_status', Order::PAYMENT_PROBLEM_REPORTED)
+            ->assertJsonPath('data.0.payment_status', Order::PAYMENT_PAID)
             ->assertJsonPath('data.0.fulfillment_method', 'delivery')
             ->assertJsonPath('data.0.currency', 'ILS')
             ->assertJsonPath('data.0.subtotal', 100)
@@ -51,6 +51,28 @@ class IncomingOrdersApiTest extends TestCase
         $this->assertArrayNotHasKey('phone', $detail->json('data.patient'));
         $this->getJson("/api/pharmacy/sub-orders/{$other->id}")->assertNotFound();
         $this->getJson('/api/pharmacy/sub-orders/999999')->assertNotFound();
+    }
+
+    public function test_unpaid_orders_are_hidden_until_payment_is_approved(): void
+    {
+        $order = $this->checkoutTwoPharmacy();
+        $sub = $this->subOrderFor($order, $this->pharmacyA);
+        $this->actingAs($this->pharmacyA->user, 'sanctum');
+
+        $this->getJson('/api/pharmacy/sub-orders')
+            ->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson("/api/pharmacy/sub-orders/{$sub->id}")->assertNotFound();
+
+        $order->update(['payment_status' => Order::PAYMENT_UNDER_REVIEW]);
+        $this->getJson('/api/pharmacy/sub-orders')
+            ->assertOk()->assertJsonCount(0, 'data');
+
+        $order->update(['payment_status' => Order::PAYMENT_PAID]);
+        $this->getJson('/api/pharmacy/sub-orders')
+            ->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $sub->id)
+            ->assertJsonPath('data.0.order_id', $order->id);
+        $this->getJson("/api/pharmacy/sub-orders/{$sub->id}")->assertOk();
     }
 
     public function test_incoming_orders_require_a_pharmacy_token(): void
