@@ -83,6 +83,13 @@ class AccountingOverviewEquivalenceTest extends TestCase
             $this->assertSame($expectedExpense, (float) $kpis['today_expenses']['value']);
             $this->assertSame(145.0, (float) $kpis['cash_balance']['value']);
             $this->assertSame(80.0, (float) $kpis['outstanding_debts']['value']);
+            // 06:00 belongs to both inclusive buckets in the existing contract.
+            $this->assertSame([80.0, 80.0, 80.0, 0.0], array_map('floatval', $response->json('data.series.today.data')));
+            if ($range === 'today') {
+                $this->assertSame(160.0, (float) $response->json('data.comparison.current'));
+                $this->assertSame(80.0, (float) $response->json('data.comparison.previous'));
+                $this->assertSame(135.0 - $expectedExpense, (float) $response->json('data.profit_indicator.net'));
+            }
             $snapshots[$range] = $response->json();
         }
 
