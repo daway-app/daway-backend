@@ -52,4 +52,6 @@ jobs:
           tree.write('phpunit.mysql.xml', encoding='utf-8', xml_declaration=True)
           PY
       - name: Run barcode coverage tests against disposable MySQL
+        env:
+          EXPECT_DB_DRIVER: mysql
         run: php vendor/bin/phpunit --configuration=phpunit.mysql.xml tests/Feature/Api/AccountingBarcodeCoveragePerformanceTest.php
