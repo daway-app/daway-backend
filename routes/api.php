@@ -238,6 +238,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Pharmacy inquiries (role-checked)
     Route::middleware('role:pharmacy')->prefix('pharmacy')->group(function () {
+        Route::post('google/challenge', [\App\Http\Controllers\Api\GooglePharmacyLinkController::class, 'challenge'])->middleware('throttle:writes');
+        Route::post('google/link', [\App\Http\Controllers\Api\GooglePharmacyLinkController::class, 'link'])->middleware('throttle:writes');
         // إغلاق حساب الصيدلية — طلب + مراجعة أدمن (D-3/D-6).
         Route::get('account/closure-request', [PharmacyAccountClosureController::class, 'show']);
         Route::post('account/closure-request', [PharmacyAccountClosureController::class, 'request'])

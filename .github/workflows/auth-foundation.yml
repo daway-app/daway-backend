@@ -16,6 +16,8 @@ on:
       - 'tests/Feature/Api/*Password*'
       - 'tests/Feature/Api/GoogleIdentityVerifierTest.php'
       - 'tests/Feature/Api/GoogleAuthChallengeTest.php'
+      - 'tests/Feature/Api/GooglePharmacyLinkTest.php'
+      - 'app/Http/Controllers/Api/GooglePharmacyLinkController.php'
       - 'database/migrations/*google*'
       - '.github/workflows/auth-foundation.yml'
 permissions:
@@ -38,4 +40,4 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ${{ github.workspace }}/database/database.sqlite
-        run: php artisan test --filter='PatientPasswordAuthTest|EmailPasswordResetTest|GoogleIdentityVerifierTest|GoogleAuthChallengeTest'
+        run: php artisan test --filter='PatientPasswordAuthTest|EmailPasswordResetTest|GoogleIdentityVerifierTest|GoogleAuthChallengeTest|GooglePharmacyLinkTest'
