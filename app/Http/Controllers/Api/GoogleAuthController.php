@@ -35,8 +35,8 @@ class GoogleAuthController extends Controller
         ]);
         try {
             $identity = $verifier->verify($data['id_token'], $data['nonce']);
+            $challenges->consume($data['nonce'], 'register_pharmacy');
             $pharmacy = DB::transaction(function () use ($data, $identity, $challenges): Pharmacy {
-                $challenges->consume($data['nonce'], 'register_pharmacy');
                 $customId = Pharmacy::generateUniqueCustomId();
                 if ($customId === null) throw new \RuntimeException('Could not create account.');
                 $user = new User(['name' => $data['pharmacy_name'], 'phone' => $data['phone'],
@@ -78,13 +78,13 @@ class GoogleAuthController extends Controller
         ]);
         try {
             $identity = $verifier->verify($data['id_token'], $data['nonce']);
+            $challenges->consume($data['nonce'], 'register_patient');
             // Google registration cannot attach by matching an existing email.
             if (! $identity['email_verified'] || ! is_string($identity['email']) ||
                 strcasecmp($identity['email'], $data['email']) !== 0) {
                 throw new \RuntimeException('Invalid account.');
             }
             $result = DB::transaction(function () use ($data, $identity, $challenges): array {
-                $challenges->consume($data['nonce'], 'register_patient');
                 $user = new User(['name' => $data['name'], 'phone' => $data['phone'], 'email' => $data['email'],
                     'password' => Hash::make(bin2hex(random_bytes(32))),
                     'birth_date' => now()->subYears((int) $data['age'])->toDateString(),
@@ -110,8 +110,8 @@ class GoogleAuthController extends Controller
             'role' => ['required', 'in:patient,pharmacy']]);
         try {
             $identity = $verifier->verify($data['id_token'], $data['nonce']);
+            $challenges->consume($data['nonce'], 'login');
             $result = DB::transaction(function () use ($data, $identity, $challenges): array {
-                $challenges->consume($data['nonce'], 'login');
                 $identityRow = DB::table('google_identities')->where('google_sub', $identity['sub'])->lockForUpdate()->first();
                 $user = $identityRow ? User::whereKey($identityRow->user_id)->lockForUpdate()->first() : null;
                 if (! $user || ! $user->is_active || $user->closed_at !== null || $user->role !== $data['role']) {
@@ -143,8 +143,8 @@ class GoogleAuthController extends Controller
         ]);
         try {
             $identity = $verifier->verify($data['id_token'], $data['nonce']);
+            $challenges->consume($data['nonce'], 'recover_pharmacy');
             DB::transaction(function () use ($data, $identity, $challenges): void {
-                $challenges->consume($data['nonce'], 'recover_pharmacy');
                 $identityRow = DB::table('google_identities')->where('google_sub', $identity['sub'])->lockForUpdate()->first();
                 $user = $identityRow ? User::whereKey($identityRow->user_id)->lockForUpdate()->first() : null;
                 if (! $user || $user->role !== 'pharmacy' || ! $user->is_active || $user->closed_at !== null) throw new \RuntimeException('Invalid account.');

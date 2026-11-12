@@ -43,7 +43,8 @@ class GooglePharmacyLinkController extends Controller
 
         try {
             $identity = $verifier->verify($data['id_token'], $data['nonce']);
-            DB::transaction(function () use ($user, $token, $data, $identity, $challenges): void {
+            $challenges->consume($data['nonce'], 'link_pharmacy', $user->id, $token->id);
+            DB::transaction(function () use ($user, $token, $data, $identity): void {
                 // Lock and re-check eligibility and the session at the actual write.
                 $fresh = User::whereKey($user->id)->lockForUpdate()->first();
                 $pharmacy = Pharmacy::where('user_id', $user->id)->lockForUpdate()->first();
@@ -54,7 +55,6 @@ class GooglePharmacyLinkController extends Controller
                     ! Hash::check($data['current_password'], $fresh->password)) {
                     throw new \RuntimeException('Invalid link.');
                 }
-                $challenges->consume($data['nonce'], 'link_pharmacy', $fresh->id, $token->id);
                 // Both subject and user_id have unique DB constraints. Never link by email.
                 DB::table('google_identities')->insert([
                     'user_id' => $fresh->id, 'google_sub' => $identity['sub'], 'email' => null,

@@ -42,6 +42,8 @@ class GoogleAuthControllerTest extends TestCase
         $this->postJson('/api/auth/google/login', $login)->assertUnauthorized();
         $pharmacy->forceFill(['is_active' => true])->save();
         $pharmacy->user->forceFill(['is_active' => true])->save();
+        // A verified attempt against a pending account consumes the challenge.
+        $this->postJson('/api/auth/google/login', $login)->assertUnauthorized();
         $login['nonce'] = $this->nonce('login');
         $login['role'] = 'patient';
         $this->postJson('/api/auth/google/login', $login)->assertUnauthorized();
@@ -63,6 +65,8 @@ class GoogleAuthControllerTest extends TestCase
         $payload['email'] = 'different@example.test';
         $this->postJson('/api/auth/google/register-patient', $payload)->assertUnprocessable();
         $payload['email'] = 'patient@example.test';
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.14']);
+        $payload['nonce'] = $this->nonce('register_patient');
         $response = $this->postJson('/api/auth/google/register-patient', $payload)->assertCreated()
             ->assertJsonPath('data.user.role', 'patient')->assertJsonStructure(['data' => ['token']]);
         $this->assertTrue(User::findOrFail($response->json('data.user.id'))->hasRole('patient'));
