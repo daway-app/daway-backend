@@ -132,6 +132,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // âœ… Routes Protected
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/patient/me', [\App\Http\Controllers\Api\PatientPasswordAuthController::class, 'me']);
     // H4: rate-limit ط¹ظ„ظ‰ طھط¬ط¯ظٹط¯ ط§ظ„ظ€ token (30 ط·ظ„ط¨/ط¯ظ‚ظٹظ‚ط©) ظ„ظ…ظ†ط¹ ط¥ط·ط§ظ„ط© ط¹ظ…ط± token ظ…ط³ط±ظˆظ‚.
     Route::post('/refresh-token', [AuthController::class, 'refreshToken'])->middleware('throttle:30,1');
 
@@ -685,3 +686,4 @@ Route::middleware(['auth:sanctum', 'role:rider'])->prefix('rider')->group(functi
     Route::post('/orders/{order}/pickup', [RiderOrderController::class, 'pickup'])->middleware('throttle:writes');
     Route::post('/orders/{order}/status', [RiderOrderController::class, 'status'])->middleware('throttle:writes');
 });
+

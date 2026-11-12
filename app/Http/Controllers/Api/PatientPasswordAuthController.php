@@ -13,6 +13,18 @@ use Illuminate\Validation\Rules\Password;
 
 class PatientPasswordAuthController extends Controller
 {
+    public function me(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user || $user->role !== 'patient' || ! $user->is_active || $user->closed_at !== null) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        return response()->json(['success' => true, 'data' => [
+            'user' => ['id' => $user->id, 'name' => $user->name, 'role' => 'patient'],
+        ]]);
+    }
+
     public function register(Request $request): JsonResponse
     {
         $data = Validator::make($request->all(), [
@@ -74,3 +86,4 @@ class PatientPasswordAuthController extends Controller
         ]);
     }
 }
+

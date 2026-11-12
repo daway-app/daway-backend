@@ -8,6 +8,23 @@ use Tests\TestCase;
 
 class PatientPasswordAuthTest extends TestCase
 {
+    public function test_patient_session_identity_requires_an_active_patient_token(): void
+    {
+        $this->getJson('/api/auth/patient/me')->assertUnauthorized();
+        $user = User::factory()->patient()->create(['is_active' => true]);
+        $token = $user->createToken('patient')->plainTextToken;
+        $this->withToken($token)->getJson('/api/auth/patient/me')
+            ->assertOk()->assertJsonPath('data.user.id', $user->id)
+            ->assertJsonPath('data.user.role', 'patient');
+        $user->forceFill(['is_active' => false])->save();
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->getJson('/api/auth/patient/me')->assertUnauthorized();
+        $other = User::factory()->create(['role' => 'pharmacy', 'is_active' => true]);
+        $this->app['auth']->forgetGuards();
+        $this->withToken($other->createToken('pharmacy')->plainTextToken)
+            ->getJson('/api/auth/patient/me')->assertUnauthorized();
+    }
+
     public function test_patient_can_register_and_login_without_otp(): void
     {
         $this->postJson('/api/auth/patient/register', [
@@ -116,3 +133,4 @@ class PatientPasswordAuthTest extends TestCase
     }
 
 }
+
