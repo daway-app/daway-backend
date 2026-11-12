@@ -168,13 +168,24 @@ $app->booted(function () {
     // M-3: حد معدل لكل حساب (وليس لكل IP فقط) — يحمي حساب صيدلية محدداً من هجوم
     // موزع من عناوين متعددة. pharmacy_id للـ API وidentity للويب؛ فارغ = بلا حد.
     RateLimiter::for('login-account', function (Request $request) {
-        $account = strtolower(trim((string) ($request->input('pharmacy_id') ?? $request->input('identity') ?? $request->input('identifier'))));
+        $account = strtolower(trim((string) ($request->input('pharmacy_id') ?? $request->input('identity'))));
 
         if ($account === '') {
             return Limit::none();
         }
 
         return Limit::perMinute(5)->by('acct|'.$account);
+    });
+
+    // Patient login accepts only "identifier" for its account-level limit.
+    // Do not let unrelated request fields override the protected account key.
+    RateLimiter::for('patient-login-account', function (Request $request) {
+        $identifier = strtolower(trim((string) $request->input('identifier', '')));
+        if ($identifier === '') {
+            return Limit::none();
+        }
+
+        return Limit::perMinute(5)->by('patient|'.hash('sha256', $identifier));
     });
 
     // M-9: حد مخصص لنقاط الكتابة المعرضة للإساءة (استفسارات، تقييمات، مزامنة، مخزون)

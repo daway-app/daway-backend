@@ -94,12 +94,25 @@ class PatientPasswordAuthTest extends TestCase
     {
         for ($attempt = 1; $attempt <= 5; $attempt++) {
             $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.'.$attempt])
-                ->postJson('/api/auth/patient/login', ['identifier' => 'not-found@example.test', 'password' => 'IncorrectPassword123'])
+                ->postJson('/api/auth/patient/login', ['identifier' => 'not-found@example.test', 'identity' => '', 'pharmacy_id' => '', 'password' => 'IncorrectPassword123'])
                 ->assertUnauthorized();
         }
         $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.6'])
             ->postJson('/api/auth/patient/login', ['identifier' => 'not-found@example.test', 'password' => 'IncorrectPassword123'])
             ->assertStatus(429);
+    }
+
+    public function test_unknown_and_wrong_password_login_have_the_same_error(): void
+    {
+        $user = User::factory()->patient()->create([
+            'email' => 'existing@example.test',
+            'password' => Hash::make('StrongPassword123'),
+        ]);
+        $existing = $this->postJson('/api/auth/patient/login', ['identifier' => $user->email, 'password' => 'IncorrectPassword123']);
+        $unknown = $this->postJson('/api/auth/patient/login', ['identifier' => 'missing@example.test', 'password' => 'IncorrectPassword123']);
+        $existing->assertUnauthorized();
+        $unknown->assertUnauthorized();
+        $this->assertSame($existing->json(), $unknown->json());
     }
 
 }
