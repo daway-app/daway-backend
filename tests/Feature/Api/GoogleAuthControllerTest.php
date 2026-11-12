@@ -72,6 +72,27 @@ class GoogleAuthControllerTest extends TestCase
         $this->assertTrue(User::findOrFail($response->json('data.user.id'))->hasRole('patient'));
     }
 
+    public function test_administrator_can_approve_google_registered_pharmacy_without_resetting_its_password(): void
+    {
+        $created = $this->postJson('/api/auth/google/register-pharmacy', [
+            'pharmacy_name' => 'Approval Test', 'phone' => '0591234508', 'region' => 'Gaza',
+            'password' => 'StrongPassword123', 'password_confirmation' => 'StrongPassword123',
+            'id_token' => 'verified-test-token', 'nonce' => $this->nonce('register_pharmacy'),
+        ])->assertCreated();
+        $pharmacy = Pharmacy::where('pharmacy_custom_id', $created->json('data.pharmacy_id'))->firstOrFail();
+        $credentials = ['pharmacy_id' => $pharmacy->pharmacy_custom_id, 'password' => 'StrongPassword123'];
+        $this->postJson('/api/login/pharmacy', $credentials)->assertForbidden();
+
+        $admin = User::factory()->admin()->create(['is_active' => true, 'must_change_password' => false]);
+        $admin->syncRoles(['admin']);
+        $this->actingAs($admin, 'sanctum')->patchJson('/api/admin/pharmacies/'.$pharmacy->id.'/toggle-status')
+            ->assertOk()->assertJsonPath('data.is_active', true)->assertJsonPath('data.credentials', null);
+        $this->assertTrue(Hash::check('StrongPassword123', $pharmacy->user->fresh()->password));
+        $this->assertNull($pharmacy->fresh()->pending_password);
+        $this->app['auth']->forgetGuards();
+        $this->postJson('/api/login/pharmacy', $credentials)->assertOk()->assertJsonPath('data.user.role', 'pharmacy');
+    }
+
     public function test_pharmacy_recovery_requires_linked_google_and_revokes_existing_sessions(): void
     {
         $user = User::factory()->pharmacy()->create(['password' => Hash::make('OldPassword123')]);
