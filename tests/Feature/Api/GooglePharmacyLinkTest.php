@@ -72,4 +72,17 @@ class GooglePharmacyLinkTest extends TestCase
         $pharmacy->forceFill(['is_active' => false])->save();
         $this->withToken($token)->postJson('/api/pharmacy/google/challenge')->assertForbidden();
     }
+
+    public function test_password_guesses_on_google_link_are_rate_limited(): void
+    {
+        [, , $token] = $this->account();
+        $payload = ['nonce' => str_repeat('a', 64), 'id_token' => 'verified-test-token', 'current_password' => 'incorrect'];
+        for ($attempt = 0; $attempt < 6; $attempt++) {
+            $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.'.($attempt + 1)])
+                ->withToken($token)->postJson('/api/pharmacy/google/link', $payload)->assertForbidden();
+        }
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.20'])
+            ->withToken($token)->postJson('/api/pharmacy/google/link', $payload)->assertStatus(429);
+        $this->assertSame(0, DB::table('google_identities')->count());
+    }
 }

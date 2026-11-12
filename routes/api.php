@@ -245,7 +245,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Pharmacy inquiries (role-checked)
     Route::middleware('role:pharmacy')->prefix('pharmacy')->group(function () {
         Route::post('google/challenge', [\App\Http\Controllers\Api\GooglePharmacyLinkController::class, 'challenge'])->middleware('throttle:writes');
-        Route::post('google/link', [\App\Http\Controllers\Api\GooglePharmacyLinkController::class, 'link'])->middleware('throttle:writes');
+        // This endpoint verifies the current password, so use the same tight
+        // per-user limit as password changes rather than the general write limit.
+        Route::post('google/link', [\App\Http\Controllers\Api\GooglePharmacyLinkController::class, 'link'])->middleware('throttle:google-link-password');
         // إغلاق حساب الصيدلية — طلب + مراجعة أدمن (D-3/D-6).
         Route::get('account/closure-request', [PharmacyAccountClosureController::class, 'show']);
         Route::post('account/closure-request', [PharmacyAccountClosureController::class, 'request'])

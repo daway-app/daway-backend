@@ -48,6 +48,21 @@ class EmailPasswordResetTest extends TestCase
         $this->postJson('/api/auth/password/reset', $payload)->assertUnprocessable();
     }
 
+    public function test_production_log_mailer_never_issues_a_reset_link(): void
+    {
+        $user = User::factory()->patient()->create(['email' => 'log-mailer@example.test']);
+        $previous = app()->environment();
+        try {
+            app()->instance('env', 'production');
+            config(['mail.default' => 'log']);
+            $this->postJson('/api/auth/password/email', ['email' => $user->email])->assertOk();
+            Notification::assertNotSentTo($user, ApiPasswordResetNotification::class);
+            $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
+        } finally {
+            app()->instance('env', $previous);
+        }
+    }
+
     public function test_expired_token_and_closed_account_are_rejected(): void
     {
         $expired = User::factory()->patient()->create(['email' => 'expired@example.test']);

@@ -28,7 +28,11 @@ class EmailPasswordResetController extends Controller
 
         // Never issue email resets for pharmacies, closed or inactive accounts.
         // The public response is identical for all account states and delivery errors.
-        if ($user && $user->is_active && $user->closed_at === null &&
+        // The log transport would write a live reset URL to application logs;
+        // the array transport silently discards it. Neither is suitable in production.
+        $mailReady = ! app()->environment('production') ||
+            ! in_array(config('mail.default'), ['log', 'array'], true);
+        if ($user && $user->is_active && $user->closed_at === null && $mailReady &&
             in_array($user->role, self::ELIGIBLE_ROLES, true) && $this->validResetUrl($url)) {
             try {
                 PasswordBroker::broker()->sendResetLink(['email' => $user->email],

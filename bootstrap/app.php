@@ -197,6 +197,11 @@ $app->booted(function () {
     // M-9: حد مخصص لنقاط الكتابة المعرضة للإساءة (استفسارات، تقييمات، مزامنة، مخزون)
     RateLimiter::for('writes', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()));
 
+    // Link requires the current password: limit attempts per account, even
+    // across IPs, without consuming the quota of unrelated pharmacy actions.
+    RateLimiter::for('google-link-password', fn (Request $request) => Limit::perMinute(6)
+        ->by('google-link|'.($request->user()?->id ?: $request->ip())));
+
     // إرسال الباركود من الجوال: المفتاح هو **جلسة المسح** لا المستخدم ولا IP.
     // السبب: تطبيق الجوال لا يسجّل دخولًا (يُفوَّض بتوكن الاقتران)، فلا user_id
     // لبناء المفتاح عليه؛ والـIP مشترك بين أجهزة شبكة الصيدلية فيحجب أبرياء.
@@ -232,3 +237,4 @@ $app->booted(function () {
 });
 
 return $app;
+
