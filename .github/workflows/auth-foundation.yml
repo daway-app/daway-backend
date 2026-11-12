@@ -6,10 +6,15 @@ on:
       - 'app/Http/Controllers/Api/*Auth*'
       - 'app/Http/Controllers/Api/EmailPasswordResetController.php'
       - 'app/Notifications/ApiPasswordResetNotification.php'
+      - 'app/Services/Auth/**'
+      - 'config/services.php'
+      - 'composer.json'
+      - 'composer.lock'
       - 'bootstrap/app.php'
       - 'routes/api.php'
       - 'database/migrations/*password*'
       - 'tests/Feature/Api/*Password*'
+      - 'tests/Feature/Api/GoogleIdentityVerifierTest.php'
       - '.github/workflows/auth-foundation.yml'
 permissions:
   contents: read
@@ -31,4 +36,4 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ${{ github.workspace }}/database/database.sqlite
-        run: php artisan test --filter='PatientPasswordAuthTest|EmailPasswordResetTest'
+        run: php artisan test --filter='PatientPasswordAuthTest|EmailPasswordResetTest|GoogleIdentityVerifierTest'
