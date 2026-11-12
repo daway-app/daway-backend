@@ -106,14 +106,15 @@ class GoogleAuthController extends Controller
 
     public function login(Request $request, GoogleAuthChallenge $challenges, GoogleIdentityVerifier $verifier): JsonResponse
     {
-        $data = $request->validate(['id_token' => ['required', 'string', 'max:10000'], 'nonce' => ['required', 'string', 'size:64']]);
+        $data = $request->validate(['id_token' => ['required', 'string', 'max:10000'], 'nonce' => ['required', 'string', 'size:64'],
+            'role' => ['required', 'in:patient,pharmacy']]);
         try {
             $identity = $verifier->verify($data['id_token'], $data['nonce']);
             $result = DB::transaction(function () use ($data, $identity, $challenges): array {
                 $challenges->consume($data['nonce'], 'login');
                 $identityRow = DB::table('google_identities')->where('google_sub', $identity['sub'])->lockForUpdate()->first();
                 $user = $identityRow ? User::whereKey($identityRow->user_id)->lockForUpdate()->first() : null;
-                if (! $user || ! $user->is_active || $user->closed_at !== null || ! in_array($user->role, ['patient', 'pharmacy'], true)) {
+                if (! $user || ! $user->is_active || $user->closed_at !== null || $user->role !== $data['role']) {
                     throw new \RuntimeException('Invalid account.');
                 }
                 $userData = ['id' => $user->id, 'name' => $user->name, 'role' => $user->role];

@@ -38,10 +38,16 @@ class GoogleAuthControllerTest extends TestCase
         $this->assertFalse($pharmacy->is_active);
         $this->assertNull($pharmacy->pending_password);
         $this->assertTrue(Hash::check('StrongPassword123', $pharmacy->user->password));
-        $login = ['id_token' => 'verified-test-token', 'nonce' => $this->nonce('login')];
+        $login = ['id_token' => 'verified-test-token', 'nonce' => $this->nonce('login'), 'role' => 'pharmacy'];
         $this->postJson('/api/auth/google/login', $login)->assertUnauthorized();
         $pharmacy->forceFill(['is_active' => true])->save();
         $pharmacy->user->forceFill(['is_active' => true])->save();
+        $login['nonce'] = $this->nonce('login');
+        $login['role'] = 'patient';
+        $this->postJson('/api/auth/google/login', $login)->assertUnauthorized();
+        $this->assertSame(0, $pharmacy->user->tokens()->count());
+        $login['role'] = 'pharmacy';
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.12']);
         $login['nonce'] = $this->nonce('login');
         $this->postJson('/api/auth/google/login', $login)->assertOk()->assertJsonPath('data.user.role', 'pharmacy')
             ->assertJsonPath('data.user.pharmacy_id', $pharmacy->pharmacy_custom_id)->assertJsonStructure(['data' => ['token']]);
