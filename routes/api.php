@@ -70,6 +70,10 @@ use App\Http\Controllers\Api\ScanSessionController;
 use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Route;
 
+// New password-based patient authentication; legacy OTP remains until clients migrate.
+Route::post('/auth/patient/register', [\App\Http\Controllers\Api\PatientPasswordAuthController::class, 'register'])->middleware('throttle:register');
+Route::post('/auth/patient/login', [\App\Http\Controllers\Api\PatientPasswordAuthController::class, 'login'])->middleware(['throttle:login', 'throttle:login-account']);
+
 Route::post('/otp/send', [AuthController::class, 'sendOtp'])->middleware('throttle:otp');
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:otp-verify');
 Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middleware(['throttle:login', 'throttle:login-account']);
