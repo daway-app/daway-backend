@@ -27,7 +27,11 @@ class EmailPasswordResetTest extends TestCase
         $blocked = $this->postJson('/api/auth/password/email', ['email' => $pharmacy->email])->assertOk();
         $this->assertSame($valid->json(), $unknown->json());
         $this->assertSame($valid->json(), $blocked->json());
-        Notification::assertSentTo($patient, ApiPasswordResetNotification::class);
+        Notification::assertSentTo($patient, ApiPasswordResetNotification::class,
+            function (ApiPasswordResetNotification $notification) use ($patient): bool {
+                $url = $notification->toMail($patient)->actionUrl;
+                return str_contains($url, '#token=') && ! str_contains($url, '?token=');
+            });
         Notification::assertNotSentTo($pharmacy, ApiPasswordResetNotification::class);
     }
 

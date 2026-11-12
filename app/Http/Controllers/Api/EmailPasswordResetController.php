@@ -33,9 +33,10 @@ class EmailPasswordResetController extends Controller
             try {
                 PasswordBroker::broker()->sendResetLink(['email' => $user->email],
                     function (User $recipient, string $token) use ($url): void {
-                        $separator = str_contains($url, '?') ? '&' : '?';
+                        // URL fragments stay in the browser and are not sent
+                        // in HTTP requests or Referer headers.
                         $recipient->notify(new ApiPasswordResetNotification(
-                            $url.$separator.'token='.rawurlencode($token).'&email='.rawurlencode($recipient->email),
+                            $url.'#token='.rawurlencode($token).'&email='.rawurlencode($recipient->email),
                         ));
                     });
             } catch (Throwable) {
