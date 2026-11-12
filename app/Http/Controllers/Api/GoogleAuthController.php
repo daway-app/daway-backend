@@ -120,7 +120,10 @@ class GoogleAuthController extends Controller
                 $userData = ['id' => $user->id, 'name' => $user->name, 'role' => $user->role];
                 if ($user->role === 'pharmacy') {
                     $pharmacy = Pharmacy::where('user_id', $user->id)->lockForUpdate()->first();
-                    if (! $pharmacy || ! $pharmacy->is_active || $pharmacy->closed_at !== null) throw new \RuntimeException('Invalid account.');
+                    if (! $pharmacy || ! $pharmacy->is_active || $pharmacy->closed_at !== null || $user->must_change_password) {
+                        // Preserve a forced password-change restriction; Google must not bypass it.
+                        throw new \RuntimeException('Invalid account.');
+                    }
                     $userData['pharmacy_id'] = $pharmacy->pharmacy_custom_id;
                     $userData['must_change_password'] = (bool) $user->must_change_password;
                 }

@@ -85,6 +85,16 @@ class GoogleAuthControllerTest extends TestCase
         $this->postJson('/api/auth/google/recover-pharmacy', $payload)->assertUnprocessable();
     }
 
+    public function test_google_login_cannot_bypass_required_pharmacy_password_change(): void
+    {
+        $user = User::factory()->pharmacy()->create();
+        $user->forceFill(['must_change_password' => true])->save();
+        Pharmacy::factory()->create(['user_id' => $user->id, 'is_active' => true]);
+        DB::table('google_identities')->insert(['user_id' => $user->id, 'google_sub' => 'subject-123', 'created_at' => now(), 'updated_at' => now()]);
+        $this->postJson('/api/auth/google/login', ['nonce' => $this->nonce('login'), 'id_token' => 'verified-test-token', 'role' => 'pharmacy'])->assertUnauthorized();
+        $this->assertSame(0, $user->tokens()->count());
+    }
+
     public function test_public_challenge_cannot_create_authenticated_link_challenge(): void
     {
         $this->postJson('/api/auth/google/challenge', ['purpose' => 'link_pharmacy'])->assertUnprocessable();
