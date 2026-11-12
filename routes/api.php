@@ -73,6 +73,8 @@ use Illuminate\Support\Facades\Route;
 // New password-based patient authentication; legacy OTP remains until clients migrate.
 Route::post('/auth/patient/register', [\App\Http\Controllers\Api\PatientPasswordAuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/auth/patient/login', [\App\Http\Controllers\Api\PatientPasswordAuthController::class, 'login'])->middleware(['throttle:login', 'throttle:patient-login-account']);
+Route::post('/auth/password/email', [\App\Http\Controllers\Api\EmailPasswordResetController::class, 'requestLink'])->middleware(['throttle:login', 'throttle:email-password-account']);
+Route::post('/auth/password/reset', [\App\Http\Controllers\Api\EmailPasswordResetController::class, 'reset'])->middleware(['throttle:login', 'throttle:email-password-account']);
 
 Route::post('/otp/send', [AuthController::class, 'sendOtp'])->middleware('throttle:otp');
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:otp-verify');

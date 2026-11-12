@@ -97,6 +97,7 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    'frontend_password_reset_url' => env('FRONTEND_PASSWORD_RESET_URL', ''),
 
     'asset_url' => env('ASSET_URL'),
 

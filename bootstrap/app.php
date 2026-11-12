@@ -188,6 +188,12 @@ $app->booted(function () {
         return Limit::perMinute(5)->by('patient|'.hash('sha256', $identifier));
     });
 
+    // Prevent distributed reset-link spam and token guessing per email.
+    RateLimiter::for('email-password-account', function (Request $request) {
+        $email = strtolower(trim((string) $request->input('email', '')));
+        return $email === '' ? Limit::none() : Limit::perMinute(5)->by('email-reset|'.hash('sha256', $email));
+    });
+
     // M-9: حد مخصص لنقاط الكتابة المعرضة للإساءة (استفسارات، تقييمات، مزامنة، مخزون)
     RateLimiter::for('writes', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()));
 
