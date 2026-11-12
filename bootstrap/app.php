@@ -168,7 +168,7 @@ $app->booted(function () {
     // M-3: حد معدل لكل حساب (وليس لكل IP فقط) — يحمي حساب صيدلية محدداً من هجوم
     // موزع من عناوين متعددة. pharmacy_id للـ API وidentity للويب؛ فارغ = بلا حد.
     RateLimiter::for('login-account', function (Request $request) {
-        $account = strtolower(trim((string) ($request->input('pharmacy_id') ?? $request->input('identity'))));
+        $account = strtolower(trim((string) ($request->input('pharmacy_id') ?? $request->input('identity') ?? $request->input('identifier'))));
 
         if ($account === '') {
             return Limit::none();

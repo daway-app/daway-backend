@@ -69,4 +69,37 @@ class PatientPasswordAuthTest extends TestCase
             'password' => 'StrongPassword123',
         ])->assertUnauthorized();
     }
+    public function test_registration_assigns_the_patient_role(): void
+    {
+        $this->postJson('/api/auth/patient/register', [
+            'name' => 'Role Patient', 'phone' => '0591234590',
+            'email' => 'role-patient@example.test', 'age' => 24,
+            'password' => 'StrongPassword123', 'password_confirmation' => 'StrongPassword123',
+            'terms_accepted' => true,
+        ])->assertCreated();
+        $this->assertTrue(User::where('email', 'role-patient@example.test')->firstOrFail()->hasRole('patient'));
+    }
+
+    public function test_closed_or_inactive_patient_cannot_log_in_even_with_the_correct_password(): void
+    {
+        foreach (['closed' => ['is_active' => true, 'closed_at' => now()], 'inactive' => ['is_active' => false, 'closed_at' => null]] as $suffix => $attributes) {
+            $user = User::factory()->patient()->create(['email' => $suffix.'@example.test', 'password' => Hash::make('StrongPassword123')]);
+            $user->forceFill($attributes)->save();
+            $this->postJson('/api/auth/patient/login', ['identifier' => $user->email, 'password' => 'StrongPassword123'])->assertUnauthorized();
+            $this->assertSame(0, $user->tokens()->count());
+        }
+    }
+
+    public function test_patient_login_is_limited_per_identifier_across_addresses(): void
+    {
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.'.$attempt])
+                ->postJson('/api/auth/patient/login', ['identifier' => 'not-found@example.test', 'password' => 'IncorrectPassword123'])
+                ->assertUnauthorized();
+        }
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.6'])
+            ->postJson('/api/auth/patient/login', ['identifier' => 'not-found@example.test', 'password' => 'IncorrectPassword123'])
+            ->assertStatus(429);
+    }
+
 }
