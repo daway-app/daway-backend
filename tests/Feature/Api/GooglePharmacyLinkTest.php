@@ -46,6 +46,8 @@ class GooglePharmacyLinkTest extends TestCase
         $input = ['nonce' => $nonce, 'id_token' => 'verified-test-token', 'current_password' => 'wrong'];
         $this->withToken($firstToken)->postJson('/api/pharmacy/google/link', $input)->assertForbidden();
         $input['current_password'] = 'CurrentPassword123';
+        // Laravel caches guards between requests within a test process.
+        $this->app['auth']->forgetGuards();
         $this->withToken($secondToken)->postJson('/api/pharmacy/google/link', $input)->assertUnprocessable();
         $this->assertSame(0, DB::table('google_identities')->count());
     }
@@ -55,6 +57,7 @@ class GooglePharmacyLinkTest extends TestCase
         [, , $first] = $this->account();
         [, , $second] = $this->account();
         foreach ([$first, $second] as $index => $token) {
+            $this->app['auth']->forgetGuards();
             $nonce = $this->withToken($token)->postJson('/api/pharmacy/google/challenge')->assertOk()->json('nonce');
             $response = $this->withToken($token)->postJson('/api/pharmacy/google/link',
                 ['nonce' => $nonce, 'id_token' => 'verified-test-token', 'current_password' => 'CurrentPassword123']);
