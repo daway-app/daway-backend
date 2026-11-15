@@ -1,417 +1,343 @@
 <div align="center">
 
-<img src="docs/images/logo-animated.svg" alt="Daway Logo" width="160" />
+<img src="docs/images/logo-animated.svg" alt="DAWAK logo" width="116" />
 
-# DAWAY | دواك
+# DAWAK | دوّاك
 
-### Healthcare, in one place.
+### Your medicine, closer to you.
 
-**Making medicine discovery easier by connecting patients with pharmacies.**
+*Healthcare, in one place.*
 
-A Laravel-powered REST API for the Daway healthcare platform.
+**A connected pharmacy experience, powered by a Laravel REST API.**
 
-[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com/)
-[![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white)](https://www.php.net/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Render](https://img.shields.io/badge/Deployment-Render-46E3B7?style=flat-square&logo=render&logoColor=102D26)](https://render.com/)
-[![CI](https://img.shields.io/github/actions/workflow/status/daway-app/daway-backend/laravel.yml?branch=develop&style=flat-square&label=CI)](https://github.com/daway-app/daway-backend/actions)
+[![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com/)
+[![PHP 8.3+](https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
+[![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[Overview](#overview) · [Features](#key-features) · [Architecture](#architecture) · [Setup](#getting-started) · [API](#api-reference) · [Testing](#testing) · [Deployment](#deployment)
+[**Frontend**](https://github.com/daway-app/daway-Frontend) · [**API service**](https://daway-backend-zlh2.onrender.com/healthz) · [**CI**](https://github.com/daway-app/daway-backend/actions) · [**Contributors**](https://github.com/daway-app/daway-backend/graphs/contributors)
 
 </div>
 
----
+<p align="center">
+  <img src="docs/images/readme/01-vision.webp" alt="DAWAK connects patients with pharmacies: search, compare, order, and track" width="100%" />
+</p>
 
-<img src="docs/images/banner.png" alt="Daway — making medicine discovery easier" width="100%" />
+> **About this repository:** This is DAWAK's **backend only**. The pharmacy and admin web interfaces are maintained in the separate [React frontend](https://github.com/daway-app/daway-Frontend), and the mobile clients communicate with this API. No Blade UI or frontend build is required here.
 
-## Overview
+## Contents
 
-Finding a medicine can involve calling multiple pharmacies, checking availability manually, and comparing prices across different sources.
+[The problem](#the-problem) · [Our approach](#our-approach) · [Capabilities](#platform-capabilities) · [Architecture](#how-it-works) · [Tech stack](#tech-stack) · [Setup](#run-locally) · [Configuration](#environment-configuration) · [API](#api-examples) · [Testing](#testing) · [Deployment](#deployment) · [Roadmap](#roadmap)
 
-**Daway (دواك)** aims to simplify this experience through a unified digital platform that connects patients and pharmacies.
+## The problem
 
-This repository contains the backend service responsible for API communication, application logic, data access, and the server-side workflows used by the platform.
+Finding a medicine can mean searching, calling individual pharmacies, asking about stock, comparing options, and repeating the process when something changes.
 
-Our product vision:
+<img src="docs/images/readme/02-problem.webp" alt="Medicine discovery today: search, call, ask, compare, repeat" width="100%" />
 
-**Discover → Compare → Request → Track**
+## Our approach
 
-Built with Laravel, the backend provides the foundation for a connected medicine-access experience.
+**One platform connecting patients and pharmacies.** DAWAK aims to make medicine discovery and coordination easier, from checking availability to communicating with pharmacies and tracking orders.
 
-## The Product
+<img src="docs/images/readme/03-solution.webp" alt="DAWAK platform: patients and pharmacies connected through search, compare, order, track" width="100%" />
 
-### The challenge
+The product visuals on this page illustrate the **DAWAK vision**. The backend implementation is the source of truth for currently available functionality.
 
-<img src="docs/images/problem.png" alt="The fragmented medicine discovery problem" width="100%" />
+## Platform capabilities
 
-Patients can face fragmented information, repeated pharmacy calls, and limited visibility into medicine availability.
+<img src="docs/images/readme/04-features.webp" alt="DAWAK product overview: medicine search, prescriptions, comparisons, order tracking, assistant, consultation, and health profile" width="100%" />
 
-### The solution
+The Laravel backend includes API routes for the following areas:
 
-<img src="docs/images/concept.png" alt="Daway connects patients and pharmacies" width="100%" />
+| Experience | Backend capabilities |
+|:--|:--|
+| **Patients** | Medicine and pharmacy discovery; availability and alternatives; favorites and stock alerts; health profile and addresses; cart, checkout, payments and order tracking; inquiries and assistant chat |
+| **Pharmacies** | Medicine catalog and inventory; bulk inventory import; alternatives; inquiries and messages; ratings; dashboard statistics; sub-order processing |
+| **Pharmacy accounting** | Sales, purchases, refunds, expenses, cash, customers, suppliers, barcode lookup and reports |
+| **Administration** | Management of users, pharmacies, medicines and categories; order dispatch; payment review; delivery pricing; logs and settings |
+| **Delivery riders** | Role-protected order views, pickup confirmation and delivery status updates |
+| **Shared services** | Sanctum authentication, role-based authorization, notifications, device tokens, Firebase integration, localization and activity logging |
 
-Daway brings the patient and pharmacy journey into a unified platform, with the goal of making medicine discovery and coordination simpler.
+Some experiences depend on connected client applications, external services, configuration, and deployment state. Do not treat a product concept slide as a complete feature specification. The initial launch sequence and product promises below are **vision and strategy**, not measured adoption.
 
-### Core product capabilities
+### Beyond finding medicine
 
-<img src="docs/images/features.png" alt="Daway product feature overview" width="100%" />
+<img src="docs/images/readme/05-benefits.webp" alt="DAWAK product value: less searching, better choices, one complete journey" width="100%" />
 
-### Two sides, one platform
 
-<img src="docs/images/two-sides.png" alt="Patient and pharmacy workflows" width="100%" />
+### Original project visuals
 
-### Why Daway?
+The illustrations from the existing README are **preserved**. They complement the new presentation slides above and remain at their original repository paths.
+
+<details>
+<summary><strong>Browse the existing DAWAK product gallery</strong></summary>
+
+<br />
+
+<img src="docs/images/banner.png" alt="Original DAWAK project banner" width="100%" />
 
 <table>
 <tr>
-<td width="50%" align="center">
-
-**Platform Benefits**
-
-<img src="docs/images/benefits.png" alt="Daway platform benefits" width="100%" />
-
-</td>
-<td width="50%" align="center">
-
-**A Simpler Journey**
-
-<img src="docs/images/before-after.png" alt="Medicine discovery before and after Daway" width="100%" />
-
-</td>
+<td width="50%" align="center"><strong>The original challenge</strong><br /><img src="docs/images/problem.png" alt="Original medicine discovery problem visual" width="100%" /></td>
+<td width="50%" align="center"><strong>The original concept</strong><br /><img src="docs/images/concept.png" alt="Original DAWAK platform concept visual" width="100%" /></td>
+</tr>
+<tr>
+<td align="center"><strong>Feature overview</strong><br /><img src="docs/images/features.png" alt="Original DAWAK feature overview" width="100%" /></td>
+<td align="center"><strong>Two-sided platform</strong><br /><img src="docs/images/two-sides.png" alt="Original patients and pharmacies diagram" width="100%" /></td>
+</tr>
+<tr>
+<td align="center"><strong>Platform benefits</strong><br /><img src="docs/images/benefits.png" alt="Original DAWAK platform benefits" width="100%" /></td>
+<td align="center"><strong>Before and after</strong><br /><img src="docs/images/before-after.png" alt="Original medicine discovery journey comparison" width="100%" /></td>
 </tr>
 </table>
 
-*Product concept visuals illustrate the intended experience; individual capabilities depend on the current implementation.*
+</details>
 
-## Key Features
-
-### Patient experience
-
-- Medicine search and discovery.
-- Medicine availability workflows.
-- Prescription-related requests, where implemented.
-- Pharmacy offer comparison workflows.
-- Order management and tracking workflows.
-- An AI assistant endpoint for medicine-related conversations.
-
-### Pharmacy operations
-
-- Medicine and inventory management.
-- Patient request workflows.
-- Pharmacy offers and availability information.
-- Order-related operations.
-
-### Platform capabilities
-
-- API authentication and access control.
-- Role-based permissions for protected operations.
-- Database migrations and seeders.
-- Automated testing infrastructure.
-- Containerized deployment configuration.
-- Continuous integration with GitHub Actions.
-
-> The list describes project capabilities and intended workflows. Consult the registered routes and current implementation to verify the exact functionality available in a particular deployment.
-
-## Architecture
-
-Daway uses a client-server architecture: client applications communicate with the backend through HTTP APIs, while the backend manages business logic and database access.
+## How it works
 
 ```mermaid
-flowchart TB
-    Patient[Patient App] --> API
-    Pharmacy[Pharmacy Dashboard] --> API
-    Admin[Admin Dashboard] --> API
-
-    subgraph Backend [Daway Backend]
-        API[Laravel REST API] --> Auth[Authentication and Authorization]
-        Auth --> Services[Application Logic]
-        Services --> Models[Models and Data Access]
-    end
-
-    Models --> DB[(Application Database)]
+flowchart LR
+    Patient[Patient / Mobile client] --> API[Laravel REST API]
+    Pharmacy[Pharmacy web / React] --> API
+    Admin[Admin web / React] --> API
+    Rider[Delivery rider client] --> API
+    API --> Auth[Sanctum + role checks]
+    Auth --> Services[Controllers + domain services]
+    Services --> DB[(MySQL database)]
+    Services --> Ext[Configured integrations]
 ```
 
-### Request lifecycle
+**Request flow:** Clients send JSON requests → Laravel validates and authorizes them → application logic interacts with data or integrated services → the API returns JSON responses. Clients do not access the database directly.
 
-1. The client sends an HTTP request.
-2. Laravel middleware processes the request and applies configured access controls.
-3. Controllers and application services execute the relevant logic.
-4. Models and database operations retrieve or update data.
-5. The backend returns an HTTP response.
+### Roles and access
 
-The database is accessed by the backend, not directly by the mobile application.
+Protected endpoints use `auth:sanctum` and, where applicable, role-based middleware such as `role:patient`, `role:pharmacy`, `role:admin`, or `role:rider`. Authentication requirements differ by route. Consult [`routes/api.php`](routes/api.php) before integrating.
 
-## Technology Stack
+## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Backend framework | Laravel 13 |
-| Language | PHP 8.3+ |
-| API | REST |
-| Authentication | Laravel Sanctum, where configured |
-| Data access | Eloquent ORM |
-| Database | MySQL / PostgreSQL, depending on environment |
-| Dependency management | Composer |
-| Testing | PHPUnit and Laravel testing tools |
-| CI/CD | GitHub Actions |
-| Containerization | Docker |
-| Hosting configuration | Render |
+| Area | Used in this repository |
+|:--|:--|
+| Framework | **Laravel 13** |
+| Language | **PHP 8.3+** required by Composer; deployment/CI uses **PHP 8.4** |
+| API | REST-style JSON endpoints |
+| Authentication | Laravel Sanctum; existing OTP and password-based routes |
+| Authorization | Spatie Laravel Permission and application middleware |
+| Data | Eloquent ORM, MySQL in the configured deployment |
+| Integrations | Firebase, Cloudinary, OCR/AI services where configured |
+| Developer tooling | Composer, PHPUnit, Laravel Pint, L5-Swagger |
+| Operations | Docker, Render, GitHub Actions |
 
-## Getting Started
+## Run locally
 
-### Prerequisites
+### Requirements
 
-- PHP 8.3 or later, with the extensions required by the project.
-- Composer.
-- A supported database server.
-- Git.
-- Node.js and npm if required by the project's asset build.
+- PHP **8.3 or newer** and required PHP extensions (PHP 8.4 recommended to match CI).
+- Composer and Git.
+- MySQL or another database supported by your local configuration.
 
-### 1. Clone the repository
+**1. Clone and install**
 
 ```bash
 git clone https://github.com/daway-app/daway-backend.git
 cd daway-backend
-```
-
-### 2. Install dependencies
-
-```bash
 composer install
 ```
 
-If the application requires npm dependencies:
-
-```bash
-npm install
-```
-
-### 3. Configure the environment
-
-On Windows CMD:
-
-```cmd
-copy .env.example .env
-```
-
-On Linux or macOS:
+**2. Configure the environment**
 
 ```bash
 cp .env.example .env
-```
-
-Generate the application key:
-
-```bash
 php artisan key:generate
 ```
 
-Update `.env` with the credentials for your local database and any required external services.
+On Windows Command Prompt, use `copy .env.example .env` instead of `cp`.
 
-### 4. Prepare the database
+Edit `.env` to configure your **local** database and any services needed for the features you want to test. Do not reuse production secrets.
 
-Create the configured database, verify the connection settings, and run:
+**3. Prepare the database**
 
 ```bash
 php artisan migrate
 ```
 
-If you need development seed data, review the project's seeders before running:
+Seeders are **optional**. Review their effects before running `php artisan db:seed`, and never run development seeders against production data.
 
-```bash
-php artisan db:seed
-```
-
-Do not run development seeders against production data.
-
-### 5. Start the application
+**4. Start the API**
 
 ```bash
 php artisan serve
 ```
 
-The default local address is:
+By default, the local API is at `http://127.0.0.1:8000/api`.
 
-`http://127.0.0.1:8000`
+> This is an API-only repository. Running `npm install` or building a web interface is **not** part of its backend setup.
 
-Inspect the registered API routes:
+
+## Environment configuration
+
+Start from [`.env.example`](.env.example); it is the repository's reference for configuration names. Configure only the integrations needed for the local workflows being tested.
+
+| Configuration | What it controls |
+|:--|:--|
+| `APP_*` | Application URL, key, and runtime environment |
+| `DB_*` | Database connection and credentials |
+| `CACHE_*`, `SESSION_*` | Cache and session storage |
+| `MAIL_*` | Email delivery, where configured |
+| Authentication and OTP settings | Existing authentication and code-delivery flows |
+| `FIREBASE_*` / `FIREBASE_CREDENTIALS` | Push notifications and Firebase integration |
+| `CLOUDINARY_*` | Media storage configuration |
+| `DAWAY_AI_*`, `DAWAY_OCR_*` | Optional external assistant and OCR integrations |
+
+Do not commit `.env`, payment proofs, patient data, access tokens, or service-account credentials. In production, configure secrets using the hosting provider.
+
+## API examples
+
+The following paths are registered in [`routes/api.php`](routes/api.php). This is a brief orientation, not the complete endpoint contract.
+
+| Method | Endpoint | Purpose | Authentication |
+|:--|:--|:--|:--|
+| `GET` | `/api/medicines/search` | Search medicines | Public |
+| `GET` | `/api/medicines/{id}/pharmacies` | Check participating pharmacies | Public |
+| `GET` | `/api/pharmacies` | List pharmacies | Public |
+| `POST` | `/api/login/pharmacy` | Pharmacy login | Public login route |
+| `GET` | `/api/patient/cart` | View patient cart | Sanctum |
+| `GET` | `/api/patient/orders/{order}/tracking` | Track an order | Sanctum |
+| `GET` | `/api/pharmacy/inventory` | Pharmacy inventory | Pharmacy role |
+| `GET` | `/api/pharmacy/accounting/overview` | Accounting overview | Pharmacy role |
+| `GET` | `/api/admin/dashboard` | Administration dashboard | Admin role |
+| `GET` | `/api/rider/orders` | Assigned rider orders | Rider role |
+
+**Public example:**
 
 ```bash
-php artisan route:list --path=api
+curl --request GET \
+  --header 'Accept: application/json' \
+  'http://127.0.0.1:8000/api/medicines/search?q=paracetamol'
 ```
 
-## Environment Configuration
+**Authenticated example:**
 
-Use `.env.example` as the reference for required configuration.
-
-| Variable group | Purpose |
-|---|---|
-| `APP_*` | Application environment and URL |
-| `DB_*` | Database connection |
-| `CACHE_*` | Cache configuration |
-| `SESSION_*` | Session configuration |
-| `MAIL_*` | Email delivery |
-| OTP / SMS settings | One-time-code delivery, if configured |
-| AI service settings | Assistant integration, if configured |
-
-### Security essentials
-
-- Never commit `.env` or production credentials.
-- Keep debug mode disabled in production.
-- Store secrets in the hosting provider's environment settings.
-- Protect sensitive endpoints with authentication and authorization.
-- Validate incoming data on the server.
-- Rotate any secret that has been exposed.
-
-## API Reference
-
-### Base URLs
-
-Local development:
-
-```text
-http://127.0.0.1:8000/api
+```bash
+curl --request GET \
+  --header 'Accept: application/json' \
+  --header 'Authorization: Bearer YOUR_TOKEN' \
+  'http://127.0.0.1:8000/api/pharmacy/inventory'
 ```
 
-Configured production service:
+The bearer token must be issued by a valid authentication flow. Do not publish real tokens, API keys, payment proofs, or patient data in issues or logs.
 
-```text
-https://daway-backend.onrender.com/api
-```
 
-Production availability depends on the deployed service and its current health.
+### Assistant endpoint example
 
-### API areas
-
-| Domain | Responsibility |
-|---|---|
-| Authentication | Login and OTP-related workflows |
-| Patient | Patient-facing operations |
-| Medicines | Medicine search and management |
-| Pharmacy | Pharmacy operations and offers |
-| Orders | Order-related workflows |
-| Administration | Protected management operations |
-
-### Example: Assistant API
-
-A known endpoint in the project is:
+The patient assistant chat route is also part of the existing API. It requires a valid Sanctum bearer token.
 
 ```http
 POST /api/patient/assistant/chat
+Accept: application/json
 Content-Type: application/json
 Authorization: Bearer YOUR_TOKEN
 ```
 
-Example request:
-
 ```json
-{
-  "message": "Do you have paracetamol 500mg?"
-}
+{ "message": "Do you have paracetamol 500mg?" }
 ```
 
-Example cURL command:
+Actual response fields and available assistant behavior depend on the current implementation and configured external services.
 
-```bash
-curl -X POST "http://127.0.0.1:8000/api/patient/assistant/chat" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"message":"Do you have paracetamol 500mg?"}'
+### API documentation
+
+- [Registered routes](routes/api.php)
+- [Accounting API contract](docs/ACCOUNTING-API-CONTRACT.md)
+- [Delivery rider API contract](docs/DELIVERY-RIDER-API.md)
+- [Catalog filters API](docs/CATALOG-FILTERS-API.md)
+- [Validation error contract](docs/VALIDATION-ERROR-CONTRACT.md)
+- [Postman resources](postman/)
+
+## Repository structure
+
+```text
+daway-backend/
+├── app/                 # API controllers, models, middleware and services
+├── bootstrap/           # Application bootstrap
+├── config/              # Laravel and integration configuration
+├── database/            # Migrations, factories and seeders
+├── docs/                # API, operational and implementation documentation
+│   └── images/readme/   # Product-story images shown here
+├── postman/             # API collections and testing resources
+├── routes/api.php       # Primary API route definitions
+├── tests/               # Unit and feature tests
+├── Dockerfile           # Container image
+├── render.yaml          # Render service configuration
+└── composer.json        # PHP dependencies and scripts
 ```
-
-Replace `YOUR_TOKEN` with a valid token from the configured authentication flow.
-
-### Discover all registered endpoints
-
-```bash
-php artisan route:list --path=api
-```
-
-Check the [`postman/`](./postman/) directory for available API testing resources.
-
-For complete API documentation, each endpoint should specify its HTTP method, authentication requirements, request parameters, response schema, and possible error codes.
 
 ## Testing
-
-Run the automated test suite:
 
 ```bash
 php artisan test
 ```
 
-Alternatively:
+For style checks, Laravel Pint is available in the development dependencies:
 
 ```bash
-vendor/bin/phpunit
+./vendor/bin/pint --test
 ```
 
-On Windows CMD:
+GitHub Actions workflows live in [`.github/workflows/`](.github/workflows/). See [CI runs](https://github.com/daway-app/daway-backend/actions) for actual status. **No unverified passing-test or coverage claim is made in this README.**
 
-```cmd
-vendor\bin\phpunit
-```
 
-### Quality assurance
+### Quality and CI
 
-The repository includes test areas for application features and other backend concerns. Relevant tests should be executed when changing:
-
-- API behavior and validation.
-- Authentication and permissions.
-- Medicine management.
-- Administrative workflows.
-- Database interactions.
-- Security-sensitive operations.
-
-### Continuous integration
-
-The GitHub Actions workflow is located at:
-
-[`.github/workflows/laravel.yml`](./.github/workflows/laravel.yml)
-
-Review the workflow configuration and its latest run to confirm which checks execute for each push and pull request.
-
-[**View CI runs →**](https://github.com/daway-app/daway-backend/actions)
-
-No test coverage percentage or passing status is claimed here; those should be reported from verified test results.
+- Validate behavior using `php artisan test` and targeted relevant test files.
+- For authentication, permissions, and accounting changes, review all applicable tests and environment dependencies.
+- The primary workflow is [`.github/workflows/laravel.yml`](.github/workflows/laravel.yml); other workflows cover specific areas such as accounting and dashboards.
+- Always check the [latest workflow runs](https://github.com/daway-app/daway-backend/actions) before claiming tests have passed.
 
 ## Deployment
 
-The repository includes a `Dockerfile` and a `render.yaml` configuration.
+The backend is configured to deploy with **Docker on Render**. The configured health-check path is `/healthz`.
 
-### Deployment workflow
+- [Render configuration](render.yaml)
+- [Dockerfile](Dockerfile)
+- [Production deployment procedure](docs/PRODUCTION-DEPLOY.md)
+- [Production API health endpoint](https://daway-backend-zlh2.onrender.com/healthz)
 
-1. Push the approved changes to the intended branch.
-2. Review CI results and test failures.
-3. Configure the service environment variables.
-4. Verify database connectivity and credentials.
-5. Deploy using the repository's actual hosting configuration.
-6. Apply migrations through the approved deployment process.
-7. Verify service health, logs, and critical API workflows.
+**Important:** Database migrations are a **separate, reviewed deployment step**. The production procedure explicitly warns against running development seeders during deploys. Back up data, test schema changes in staging, and follow [`docs/PRODUCTION-DEPLOY.md`](docs/PRODUCTION-DEPLOY.md). Do not infer that a successful build automatically makes migrations safe.
 
-### Production checklist
+## Go-to-market
 
-- [ ] Environment variables are configured securely.
-- [ ] Database connectivity is verified.
-- [ ] Migrations have been reviewed.
-- [ ] Debug mode is disabled.
-- [ ] Authentication and permissions are verified.
-- [ ] Health checks succeed.
-- [ ] Critical API workflows are smoke-tested.
+<img src="docs/images/readme/06-first-customers.webp" alt="Initial customer strategy: partner with pharmacies, reach patients, grow through referrals" width="100%" />
 
-Review [`Dockerfile`](./Dockerfile) and [`render.yaml`](./render.yaml) before deploying. The start command, port, health-check path, and migration strategy must match the actual configuration.
+The launch approach shown in the product presentation is **pharmacies first → patients next → referrals over time**. This is a strategy, not a claim of acquired customers or measured market traction.
+
+
+## Roadmap
+
+These items are directions for ongoing development, **not** claims that they have been completed.
+
+- [ ] Validate the complete patient-to-pharmacy workflow with users.
+- [ ] Keep API reference documents aligned with implemented route contracts.
+- [ ] Strengthen automated integration tests and deployment observability.
+- [ ] Improve reliable service integrations and operational monitoring.
+- [ ] Prepare and evaluate a broader pharmacy/patient rollout.
+
+## Security and responsible use
+
+- Store credentials in environment configuration, **never** in Git.
+- Protect endpoints with the appropriate middleware, role checks, rate limits, and server-side validation.
+- Disable application debug mode in production, use least-privilege credentials, and rotate exposed secrets.
+- Keep patient, pharmacy, and payment information out of public logs and screenshots.
+- Treat AI assistance and pharmacist messaging as guidance, **not a substitute for professional medical care**.
+- For vulnerability disclosures, contact the project maintainers privately rather than posting sensitive details publicly.
 
 ## Contributing
 
-Contributions should improve functionality, security, maintainability, or developer experience.
+Contributions should improve functionality, security, maintainability, or developer experience. Use clear, focused commits, and never change API contracts silently.
 
-1. Create a feature branch from the team's target branch.
-2. Follow the project's coding conventions.
-3. Add or update relevant tests.
-4. Run the applicable checks locally.
-5. Open a pull request with a clear explanation of the change.
-6. Request review before merging.
-
-Example workflow:
+1. Create a branch from `develop`.
+2. Keep changes focused, update tests for functional changes, and run appropriate checks.
+3. Open a pull request describing the scope and verification performed.
+4. Obtain team review before merging or deploying.
 
 ```bash
 git checkout develop
@@ -419,50 +345,22 @@ git pull origin develop
 git checkout -b feature/your-feature
 ```
 
-After making and testing your changes:
+Use commit messages such as `feat:`, `fix:`, `docs:`, and `test:` when appropriate.
 
-```bash
-git add .
-git commit -m "feat: describe your change"
-git push -u origin feature/your-feature
-```
+## Team and licensing
 
-Use clear, focused commit messages. The team may follow [Conventional Commits](https://www.conventionalcommits.org/), including prefixes such as `feat:`, `fix:`, `test:`, and `docs:`.
+DAWAK is a collaborative project focused on making medicine discovery and pharmacy coordination easier. [Meet the repository contributors](https://github.com/daway-app/daway-backend/graphs/contributors).
 
-## Roadmap
-
-The following are product and engineering goals, not claims of completed functionality.
-
-- [ ] Validate core workflows with patients and pharmacies.
-- [ ] Expand API documentation.
-- [ ] Improve automated test reliability and coverage.
-- [ ] Strengthen deployment monitoring.
-- [ ] Prepare for a broader pilot.
-
-## Team
-
-Daway is a collaborative healthcare technology project focused on making medicine discovery and pharmacy coordination easier.
-
-[**Explore contributors →**](https://github.com/daway-app/daway-backend/graphs/contributors)
-
-## License
-
-**Proprietary — All rights reserved.**
-
-Copyright © Daway.
-
-No permission to redistribute, modify, or commercially use this software is granted unless explicitly authorized by the rights holder.
+**License status:** No standalone `LICENSE` file was present in the inspected `develop` tree. Confirm usage and redistribution permissions with the maintainers; the `MIT` field in `composer.json` does not by itself resolve the licensing of every DAWAK-specific asset. The original README stated "Proprietary — All rights reserved"; this requires confirmation against the actual rights holder before being presented as formal licensing terms.
 
 ---
 
 <div align="center">
 
-### DAWAY | دواك
+**DAWAK | دوّاك**
 
-**Healthcare, in one place.**
+*Less searching. Better choices. One connected journey.*
 
-*Making medicine discovery easier.*
-
-[Repository](https://github.com/daway-app/daway-backend) · [Issues](https://github.com/daway-app/daway-backend/issues) · [CI Workflows](https://github.com/daway-app/daway-backend/actions)
+[Backend](https://github.com/daway-app/daway-backend) · [Frontend](https://github.com/daway-app/daway-Frontend) · [Issues](https://github.com/daway-app/daway-backend/issues)
 
 </div>
