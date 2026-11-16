@@ -177,8 +177,30 @@ $app->booted(function () {
         return Limit::perMinute(5)->by('acct|'.$account);
     });
 
+    // Patient login accepts only "identifier" for its account-level limit.
+    // Do not let unrelated request fields override the protected account key.
+    RateLimiter::for('patient-login-account', function (Request $request) {
+        $identifier = strtolower(trim((string) $request->input('identifier', '')));
+        if ($identifier === '') {
+            return Limit::none();
+        }
+
+        return Limit::perMinute(5)->by('patient|'.hash('sha256', $identifier));
+    });
+
+    // Prevent distributed reset-link spam and token guessing per email.
+    RateLimiter::for('email-password-account', function (Request $request) {
+        $email = strtolower(trim((string) $request->input('email', '')));
+        return $email === '' ? Limit::none() : Limit::perMinute(5)->by('email-reset|'.hash('sha256', $email));
+    });
+
     // M-9: حد مخصص لنقاط الكتابة المعرضة للإساءة (استفسارات، تقييمات، مزامنة، مخزون)
     RateLimiter::for('writes', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()));
+
+    // Link requires the current password: limit attempts per account, even
+    // across IPs, without consuming the quota of unrelated pharmacy actions.
+    RateLimiter::for('google-link-password', fn (Request $request) => Limit::perMinute(6)
+        ->by('google-link|'.($request->user()?->id ?: $request->ip())));
 
     // إرسال الباركود من الجوال: المفتاح هو **جلسة المسح** لا المستخدم ولا IP.
     // السبب: تطبيق الجوال لا يسجّل دخولًا (يُفوَّض بتوكن الاقتران)، فلا user_id
@@ -215,3 +237,4 @@ $app->booted(function () {
 });
 
 return $app;
+

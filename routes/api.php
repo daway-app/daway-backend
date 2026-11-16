@@ -70,6 +70,17 @@ use App\Http\Controllers\Api\ScanSessionController;
 use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Route;
 
+// New password-based patient authentication; legacy OTP remains until clients migrate.
+Route::post('/auth/patient/register', [\App\Http\Controllers\Api\PatientPasswordAuthController::class, 'register'])->middleware('throttle:register');
+Route::post('/auth/patient/login', [\App\Http\Controllers\Api\PatientPasswordAuthController::class, 'login'])->middleware(['throttle:login', 'throttle:patient-login-account']);
+Route::post('/auth/password/email', [\App\Http\Controllers\Api\EmailPasswordResetController::class, 'requestLink'])->middleware(['throttle:login', 'throttle:email-password-account']);
+Route::post('/auth/password/reset', [\App\Http\Controllers\Api\EmailPasswordResetController::class, 'reset'])->middleware(['throttle:login', 'throttle:email-password-account']);
+Route::post('/auth/google/challenge', [\App\Http\Controllers\Api\GoogleAuthController::class, 'challenge'])->middleware('throttle:register');
+Route::post('/auth/google/register-pharmacy', [\App\Http\Controllers\Api\GoogleAuthController::class, 'registerPharmacy'])->middleware('throttle:register');
+Route::post('/auth/google/register-patient', [\App\Http\Controllers\Api\GoogleAuthController::class, 'registerPatient'])->middleware('throttle:register');
+Route::post('/auth/google/login', [\App\Http\Controllers\Api\GoogleAuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/auth/google/recover-pharmacy', [\App\Http\Controllers\Api\GoogleAuthController::class, 'recoverPharmacy'])->middleware('throttle:login');
+
 Route::post('/otp/send', [AuthController::class, 'sendOtp'])->middleware('throttle:otp');
 Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:otp-verify');
 Route::post('/login/pharmacy', [AuthController::class, 'pharmacyLogin'])->middleware(['throttle:login', 'throttle:login-account']);
@@ -121,6 +132,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // âœ… Routes Protected
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/patient/me', [\App\Http\Controllers\Api\PatientPasswordAuthController::class, 'me']);
     // H4: rate-limit ط¹ظ„ظ‰ طھط¬ط¯ظٹط¯ ط§ظ„ظ€ token (30 ط·ظ„ط¨/ط¯ظ‚ظٹظ‚ط©) ظ„ظ…ظ†ط¹ ط¥ط·ط§ظ„ط© ط¹ظ…ط± token ظ…ط³ط±ظˆظ‚.
     Route::post('/refresh-token', [AuthController::class, 'refreshToken'])->middleware('throttle:30,1');
 
@@ -232,6 +244,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Pharmacy inquiries (role-checked)
     Route::middleware('role:pharmacy')->prefix('pharmacy')->group(function () {
+        Route::post('google/challenge', [\App\Http\Controllers\Api\GooglePharmacyLinkController::class, 'challenge'])->middleware('throttle:writes');
+        // This endpoint verifies the current password, so use the same tight
+        // per-user limit as password changes rather than the general write limit.
+        Route::post('google/link', [\App\Http\Controllers\Api\GooglePharmacyLinkController::class, 'link'])->middleware('throttle:google-link-password');
         // إغلاق حساب الصيدلية — طلب + مراجعة أدمن (D-3/D-6).
         Route::get('account/closure-request', [PharmacyAccountClosureController::class, 'show']);
         Route::post('account/closure-request', [PharmacyAccountClosureController::class, 'request'])
@@ -672,3 +688,4 @@ Route::middleware(['auth:sanctum', 'role:rider'])->prefix('rider')->group(functi
     Route::post('/orders/{order}/pickup', [RiderOrderController::class, 'pickup'])->middleware('throttle:writes');
     Route::post('/orders/{order}/status', [RiderOrderController::class, 'status'])->middleware('throttle:writes');
 });
+
